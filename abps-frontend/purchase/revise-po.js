@@ -500,77 +500,23 @@ function renderPORevisionCard() {
     const hasDesignRate = designRate != null;
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
 
-    const rpoRowBg = li.changed
-      ? (Number(li.newRequiredQty) > Number(li.orderedQty) ? "#f0fdf4" : "#fffbeb")
-      : "#fff";
-    return `
-    <div data-lineidx="${idx}" style="background:${rpoRowBg}; border:1.5px solid #000; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
-        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
-
-        <div style="flex:1; min-width:140px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
-          <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${li.description || ""}</div>
-        </div>
-        <div style="width:100%; order:99;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
-          <textarea rows="1" placeholder="Required — e.g. color, variant, spec detail..."
-            oninput="updateRPORowField(${idx},'additionalDescription',this.value)"
-            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(li.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
-        </div>
-        <div style="width:70px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#1a2332; font-size:0.85rem;">${fmt(li.orderedQty)}</div>
-        </div>
-        <div style="width:75px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">New Required Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:0.85rem; color:${Number(li.newRequiredQty) > Number(li.orderedQty) ? "#15803d" : "#b91c1c"};">${fmt(li.newRequiredQty)}</div>
-        </div>
-        <div style="width:70px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Already Received</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:${Number(li.receivedQty) > 0 ? "#b45309" : "var(--muted)"};">${fmt(li.receivedQty)}</div>
-        </div>
-        <div style="width:50px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Unit</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; color:#475569; font-size:0.85rem;">${li.unit || '—'}</div>
-        </div>
-        <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Vendor Discussed Qty *</div>
-          <input type="number" min="${Number(li.receivedQty)||0}" step="any" class="rpo-vdq" data-idx="${idx}" value="${formatQtyTrimmed(li.quantity)}"
-            oninput="updateRPORowField(${idx},'quantity',this.value)"
-            onblur="handleRPOQtyBlur(${idx})"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
-        </div>
-        <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}"
-            oninput="updateRPORowField(${idx},'rate',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </div>
-        <div style="width:65px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
-          <input type="number" min="0" max="100" step="any" class="rpo-disc" data-idx="${idx}" value="${formatQtyTrimmed(li.discountPercent)}"
-            oninput="updateRPORowField(${idx},'discountPercent',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </div>
-        <div style="width:100px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="rpo-costing-diff" data-idx="${idx}">${costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}</span></div>
-        </div>
-        <div style="width:110px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span id="rpo-amount-${idx}">0.00</span></div>
-        </div>
-      </div>
-
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:180px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div>
-          <button onclick="openRPOAllocationModal(${idx})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
-        </div>
-        <div style="flex:1; min-width:200px; padding-top:2px;">${chipsHtml}</div>
-      </div>
-    </div>`;
+    const _grow = Number(li.newRequiredQty) > Number(li.orderedQty);
+    return poRevRowHtml({
+      idx, itemCode: li.itemCode, description: li.description, unit: li.unit,
+      oldQty: Number(li.orderedQty) || 0, newQty: Number(li.newRequiredQty) || 0, received: Number(li.receivedQty) || 0,
+      vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
+      headBg: li.changed ? (_grow ? '#dcfce7' : '#fef3c7') : '#e0f2fe', headColor: li.changed ? (_grow ? '#166534' : '#78350f') : 'var(--brand)',
+      changeNote: li.changed ? (_grow ? 'Quantity going up' : 'Quantity going down') : '',
+      vdqAttrs: `min="${Number(li.receivedQty)||0}" class="rpo-vdq" data-idx="${idx}" value="${formatQtyTrimmed(li.quantity)}" oninput="updateRPORowField(${idx},'quantity',this.value)" onblur="handleRPOQtyBlur(${idx})"`,
+      rateAttrs: `class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)"`,
+      discAttrs: `class="rpo-disc" data-idx="${idx}" value="${formatQtyTrimmed(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)"`,
+      diffAttrs: `class="rpo-costing-diff" data-idx="${idx}"`,
+      amountId: `rpo-amount-${idx}`,
+      descOninput: `updateRPORowField(${idx},'additionalDescription',this.value)`,
+      additionalDescription: li.additionalDescription,
+      allocOnclick: `openRPOAllocationModal(${idx})`,
+      chipsHtml,
+    });
   }).filter(Boolean).join("");
 
   // PRN Change Summary — what changed in the PRN(s) that's PROMPTING this
@@ -1265,76 +1211,22 @@ function renderAPORCard(r) {
     const effectiveRate = rateNow * (100 - discNow) / 100;
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
 
-    const rowBg = Math.abs(newQty - oldQty) < 1e-9 ? "#fff" : (newQty > oldQty ? "#f0fdf4" : "#fffbeb");
-
-    return `
-    <div data-lineidx="${idx}" style="background:${rowBg}; border:1.5px solid #000; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
-        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
-
-        <div style="flex:1; min-width:140px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Material Name</div>
-          <div style="min-height:36px; box-sizing:border-box; display:flex; align-items:center; font-size:0.82rem; font-weight:600; padding:6px 4px; word-break:break-word; white-space:normal;">${line.description || ""}</div>
-        </div>
-        <div style="width:100%; order:99;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
-          <textarea rows="1" placeholder="Required — e.g. color, variant, spec detail..."
-            oninput="updateAPORRowField(${rid},${idx},'additionalDescription',this.value)"
-            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(line.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
-        </div>
-        <div style="width:70px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Old PO Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#1a2332; font-size:0.85rem;">${fmt(oldQty)}</div>
-        </div>
-        <div style="width:75px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">New Required Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:0.85rem; color:${newQty > oldQty ? "#15803d" : "#b91c1c"};">${fmt(newQty)}</div>
-        </div>
-        <div style="width:70px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Already Received</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:${received > 0 ? "#b45309" : "var(--muted)"};">${fmt(received)}</div>
-        </div>
-        <div style="width:50px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Unit</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; color:#475569; font-size:0.85rem;">${line.unit || '—'}</div>
-        </div>
-        <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Vendor Discussed Qty *</div>
-          <input type="number" min="${received}" step="any" class="apor-vdq" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.quantity)}"
-            oninput="updateAPORRowField(${rid},${idx},'quantity',this.value)"
-            onblur="handleAPORQtyBlur(${rid},${idx})"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:800; padding:6px; border:1.5px solid #15803d; border-radius:4px; font-size:0.85rem;">
-        </div>
-        <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.rate)}"
-            oninput="updateAPORRowField(${rid},${idx},'rate',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </div>
-        <div style="width:65px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
-          <input type="number" min="0" max="100" step="any" class="apor-disc" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.discountPercent)}"
-            oninput="updateAPORRowField(${rid},${idx},'discountPercent',this.value)"
-            style="width:100%; height:36px; box-sizing:border-box; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-        </div>
-        <div style="width:100px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="apor-costing-diff" data-idx="${idx}" data-requestid="${rid}">${costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}</span></div>
-        </div>
-        <div style="width:110px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span id="apor-amount-${rid}-${idx}">0</span></div>
-        </div>
-      </div>
-
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:180px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div>
-          <button onclick="openAPORAllocationModal(${rid},${idx})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
-        </div>
-        <div style="flex:1; min-width:200px; padding-top:2px;">${chipsHtml}</div>
-      </div>
-    </div>`;
+    const _changedQty = Math.abs(newQty - oldQty) >= 1e-9;
+    return poRevRowHtml({
+      idx, itemCode: line.itemCode, description: line.description, unit: line.unit,
+      oldQty, newQty, received, vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
+      headBg: !_changedQty ? '#e0f2fe' : (newQty > oldQty ? '#dcfce7' : '#fef3c7'), headColor: !_changedQty ? 'var(--brand)' : (newQty > oldQty ? '#166534' : '#78350f'),
+      changeNote: !_changedQty ? '' : (newQty > oldQty ? 'Quantity going up' : 'Quantity going down'),
+      vdqAttrs: `min="${received}" class="apor-vdq" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.quantity)}" oninput="updateAPORRowField(${rid},${idx},'quantity',this.value)" onblur="handleAPORQtyBlur(${rid},${idx})"`,
+      rateAttrs: `class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.rate)}" oninput="updateAPORRowField(${rid},${idx},'rate',this.value)"`,
+      discAttrs: `class="apor-disc" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.discountPercent)}" oninput="updateAPORRowField(${rid},${idx},'discountPercent',this.value)"`,
+      diffAttrs: `class="apor-costing-diff" data-idx="${idx}" data-requestid="${rid}"`,
+      amountId: `apor-amount-${rid}-${idx}`,
+      descOninput: `updateAPORRowField(${rid},${idx},'additionalDescription',this.value)`,
+      additionalDescription: line.additionalDescription,
+      allocOnclick: `openAPORAllocationModal(${rid},${idx})`,
+      chipsHtml,
+    });
   }).join("");
 
   // hc.deliveryDate is stored as "dd-Mon-yyyy" (e.g. "11-Aug-2026") by
@@ -1776,3 +1668,55 @@ async function rejectPORevisionUI(requestId) {
 // ── Revise PRN (store ↔ purchase re-split, + BOQ-driven delta revisions) ──
 window.rprnState = null;
 
+// One RM PO revision row, same look as Create / Authorize RM PO rows:
+// header strip, material name as text, a bordered block of number cells
+// (typed cells white, calculated cells grey), Description of Material as
+// an always-editable box, then the PRN line.
+function poRevRowHtml(o) {
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const esc = (t) => (t || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lbl = 'font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;';
+  const inCell = 'padding:8px 10px; background:#fff; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1;';
+  const calcCell = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1;';
+  const val = 'height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700;';
+  const inp = 'width:100%; height:34px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; text-align:center;';
+  const diff = o.costingDiff;
+  const pct = (diff != null && o.designRate != null && Number(o.designRate) * o.vdq > 0) ? Math.round(Math.abs(diff) / (Number(o.designRate) * o.vdq) * 100) : null;
+  const diffTxt = diff == null ? '—' : `${diff > 0 ? '▲ ' : (diff < 0 ? '▼ ' : '')}${Math.abs(diff).toLocaleString('en-IN', { maximumFractionDigits: 2 })}${pct != null ? ` (${pct}%)` : ''}`;
+  return `
+    <div data-lineidx="${o.idx}" style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; background:${o.headBg}; color:${o.headColor};">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${o.idx + 1}</span>
+        <span style="font-family:monospace; font-weight:700; font-size:0.8rem;">${o.itemCode || ''}</span>
+        <span style="font-size:0.78rem; font-weight:700;">${o.changeNote}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span id="${o.amountId}">0</span></strong></span>
+      </div>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <span style="font-weight:700; font-size:0.95rem; color:#111827;">${esc(o.description)}</span>
+          <span style="font-size:0.78rem; color:#64748b;">${esc(o.unit || '')}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden; margin:-1px 0 0 -1px;">
+          <div style="${calcCell}"><div style="${lbl}">Old PO Qty</div><div style="${val} color:#1a2332;">${fmt(o.oldQty)}</div></div>
+          <div style="${calcCell}"><div style="${lbl}">New Required Qty</div><div style="${val} color:${o.newQty > o.oldQty ? '#15803d' : '#b91c1c'};">${fmt(o.newQty)}</div></div>
+          <div style="${calcCell}"><div style="${lbl}">Already Received</div><div style="${val} color:${o.received > 0 ? '#b45309' : 'var(--muted)'};">${fmt(o.received)}</div></div>
+          <div style="${inCell}"><div style="${lbl}">Vendor Discussed Qty *</div><input type="number" step="any" ${o.vdqAttrs} style="${inp} border-color:#15803d;"></div>
+          <div style="${calcCell}"><div style="${lbl}">Design Rate / Qty</div><div style="${val} color:#334155;">${o.designRate != null ? fmt(o.designRate) : '—'}</div></div>
+          <div style="${inCell}"><div style="${lbl}">Rate / Qty *</div><input type="number" min="0" step="any" ${o.rateAttrs} style="${inp}"></div>
+          <div style="${inCell}"><div style="${lbl}">Disc %</div><input type="number" min="0" max="100" step="any" ${o.discAttrs} style="${inp}"></div>
+          <div style="${calcCell}"><div style="${lbl}">Costing Diff</div><div style="${val} color:${diff > 0 ? '#dc2626' : (diff < 0 ? '#15803d' : '#475569')};"><span ${o.diffAttrs}>${diffTxt}</span></div></div>
+        </div>
+        <div>
+          <label style="${lbl} display:block;">Description of Material *</label>
+          <textarea rows="1" placeholder="Required — e.g. color, variant, spec detail..."
+            oninput="${o.descOninput}; this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.85rem; font-family:inherit; resize:none; overflow:hidden;">${esc(o.additionalDescription)}</textarea>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="${lbl} margin:0;">PRNs *</span>
+          <div style="flex:1; min-width:200px;">${o.chipsHtml}</div>
+          <button onclick="${o.allocOnclick}" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
+        </div>
+      </div>
+    </div>`;
+}

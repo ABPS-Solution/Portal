@@ -877,15 +877,17 @@ function renderCPOMaterialRows() {
     body.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows yet. Click "+ Add Material Row".</div>`;
     return;
   }
+  const esc = (t) => (t || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const cellLbl = 'font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;';
+  const cellIn = 'padding:8px 10px; background:#fff;';
+  const cellCalc = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1;';
+  const inputCss = 'width:100%; height:34px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700;';
+
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
     const allocList = row.allocations || [];
     const allocSum = allocList.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const lineQtyNow = parseFloat(row.quantity) || 0;
     const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
-    const projectChips = (allocList.length || row._allocationTouched)
-      ? allocList.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
-        + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
-      : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
     // Rate / Qty is locked (can't be typed) until Quantity has a real value
     // AND the row has actually been through Allocate to PRNs at least once
@@ -896,13 +898,8 @@ function renderCPOMaterialRows() {
     const rateLocked = !(row._allocationTouched && lineQtyNow > 0);
 
     // Design Rate / Qty = lowest design_rate_per_quantity among only the
-    // PRNs this row is actually allocated to (see saveCPOAllocationPicker
-    // / fetchPODraftById). Costing Difference compares against the
-    // EFFECTIVE rate (after Disc %), not the raw Rate/Qty typed — a 100
-    // rate at 10% discount is really a 90 rate for costing purposes, and
-    // must track live as Disc % changes. Also only ever shown once Rate/
-    // Qty actually has a value — an empty/locked rate has nothing
-    // meaningful to compare yet, not "some rate is 0".
+    // PRNs this row is actually allocated to. Costing Diff compares against
+    // the EFFECTIVE rate (after Disc %), only once Rate/Qty has a value.
     const discNow = parseFloat(row.discountPercent) || 0;
     const rateNow = parseFloat(row.rate) || 0;
     const hasRateValue = row.rate !== '' && row.rate !== null && row.rate !== undefined && !isNaN(parseFloat(row.rate));
@@ -910,85 +907,125 @@ function renderCPOMaterialRows() {
     const designRate = row.designRatePerQuantity;
     const hasDesignRate = designRate != null;
     const isOverRate = hasRateValue && hasDesignRate && effectiveRate > Number(designRate) + 1e-9;
-    const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * lineQtyNow : null;
     const isAuthMode = window.cpoMode === 'authorize';
-    const rowBg = (isAuthMode && isOverRate) ? "#fef2f2" : "#fff";
-    const rowBorderColor = (isAuthMode && isOverRate) ? "#dc2626" : "#000";
     const overRateWarning = isOverRate
-      ? `<div style="margin-top:10px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
+      ? `<div style="margin-top:8px; padding:7px 10px; background:${isAuthMode ? "#fee2e2" : "#fffbeb"}; border:1px solid ${isAuthMode ? "#fca5a5" : "#fde68a"}; border-radius:4px; font-size:0.75rem; font-weight:700; color:${isAuthMode ? "#b91c1c" : "#78350f"};">
           ⚠️ Rate / Qty after Disc % (${fmtQty(effectiveRate)}) is higher than Design Rate / Qty (${fmtQty(designRate)}).
         </div>`
       : "";
 
-    return `<div data-rowid="${row.id}" style="background:${rowBg}; border:1.5px solid ${rowBorderColor}; border-radius:var(--radius); padding:12px; margin-bottom:10px;">
-      <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
-        <div style="font-weight:700; color:var(--brand); padding-bottom:8px; min-width:20px;">${idx + 1}</div>
-
-        <div style="flex:1; min-width:190px; position:relative;">
-          <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Material Name *</label>
-          <textarea rows="2" class="cpo-desc-search" data-rowid="${row.id}" placeholder="Search material name / rating..." autocomplete="off"
+    const showSearch = !row.itemCode || row._editingName;
+    const nameBlock = showSearch
+      ? `<div style="position:relative;">
+          <textarea rows="1" class="cpo-desc-search" data-rowid="${row.id}" placeholder="Search material name, rating or make" autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
-            style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid ${row.itemCode ? 'var(--brand)' : '#f59e0b'}; border-radius:4px; font-size:0.82rem; font-family:inherit; resize:none; overflow-y:auto;">${(row.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.9rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.description)}</textarea>
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-        </div>
+        </div>`
+      : `<div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <span style="font-weight:700; font-size:0.95rem; color:#111827;">${esc(row.description)}</span>
+          <span style="font-size:0.78rem; color:#64748b;">${esc(row.unit || '')}</span>
+          <a href="javascript:void(0)" class="cpo-change-name" onclick="cpoChangeRowMaterial(${row.id})" style="font-size:0.78rem; font-weight:700; color:var(--brand);">Change</a>
+        </div>`;
 
-        <div style="width:95px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Item Code</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:var(--brand); font-size:0.85rem;">${row.itemCode || '—'}</div>
-        </div>
-        <div style="width:50px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Unit</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; color:#475569; font-size:0.85rem;">${row.unit || '—'}</div>
-        </div>
-        <div style="width:80px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Quantity *</div>
-          <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
-        </div>
-        <div style="width:100px; flex-shrink:0; text-align:center;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Design Rate / Qty</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; color:#475569; font-size:0.85rem;">${hasDesignRate ? fmtQty(designRate) : '—'}</div>
-        </div>
-        <div style="width:90px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Rate / Qty *</div>
-          <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
-            ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}
-            style="width:100%; height:36px; box-sizing:border-box; text-align:right; padding:7px 6px; border:1.5px solid ${isOverRate ? '#dc2626' : 'var(--border)'}; border-radius:4px; ${isOverRate ? 'background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}">
-        </div>
-        <div style="width:70px; flex-shrink:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; text-align:center;">Disc %</div>
-          <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="width:100%; height:36px; box-sizing:border-box; text-align:center; padding:7px 4px; border:1.5px solid var(--border); border-radius:4px;">
-        </div>
-        <div style="width:110px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Costing Diff</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:700; font-size:0.85rem; color:${costingDiff > 0 ? '#dc2626' : (costingDiff < 0 ? '#15803d' : '#475569')};"><span class="cpo-costing-diff">${costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}</span></div>
-        </div>
-        <div style="width:120px; flex-shrink:0; text-align:right;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Amount</div>
-          <div style="height:36px; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; font-family:monospace; font-weight:800; font-size:1.05rem; color:#0f172a;"><span class="cpo-amount" data-rowid="${row.id}">0</span></div>
-        </div>
+    const prnChips = allocList.map(a => `<span title="${esc(a.prnId)}" style="display:inline-block; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ");
+    const allocOk = allocList.length > 0 && Math.abs(unallocNow) < 1e-9;
+    const allocCheck = allocList.length
+      ? `<span style="font-size:0.78rem; font-weight:700; color:${allocOk ? '#15803d' : '#b45309'};">${fmtQty(allocSum)} / ${fmtQty(lineQtyNow)} allocated${unallocNow > 0 ? ` (${fmtQty(unallocNow)} extra)` : ''}</span>`
+      : `<span style="font-size:0.78rem; font-weight:700; color:#b91c1c;">No PRNs allocated</span>`;
 
-        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.95rem; width:32px; height:36px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; align-self:flex-end;">✕</button>
+    const rowBorderColor = (isAuthMode && isOverRate) ? "#dc2626" : "#475569";
+    return `<div data-rowid="${row.id}" style="background:#fff; border:1.5px solid ${rowBorderColor}; border-radius:8px; margin-bottom:12px; overflow:hidden;">
+      <div class="cpo-row-head" data-rowid="${row.id}" style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; ${cpoRowHeadStyle(row)}">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}</span>
+        <span style="font-family:monospace; font-weight:700; font-size:0.8rem;">${row.itemCode || ''}</span>
+        <span class="cpo-row-status" data-rowid="${row.id}" style="font-size:0.78rem; font-weight:700;">${cpoRowStatusHtml(row)}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span class="cpo-amount" data-rowid="${row.id}">0</span></strong></span>
+        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:28px; height:28px; border-radius:4px;">✕</button>
       </div>
-
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
-        <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Description of Material *</label>
-        <textarea rows="1" data-rowid="${row.id}" placeholder="Required — e.g. color, variant, spec detail..."
-          oninput="updateCPORowField(${row.id},'additionalDescription',this.value)"
-          style="width:100%; box-sizing:border-box; padding:7px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem; font-family:inherit; resize:vertical;">${(row.additionalDescription||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
-      </div>
-
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <div style="min-width:180px;">
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">PRNs using this Material *</div>
-          <button onclick="openCPOAllocationPicker(${row.id})" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Allocate to PRNs</button>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        ${nameBlock}
+        <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
+          <div style="${cellIn}"><div style="${cellLbl}">Quantity *</div>
+            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss} text-align:center;"></div>
+          <div style="${cellCalc}"><div style="${cellLbl}">Design Rate / Qty</div>
+            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
+          <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Rate / Qty *</div>
+            <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
+              ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}
+              style="${inputCss} text-align:right; ${isOverRate ? 'border-color:#dc2626; background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}"></div>
+          <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Disc %</div>
+            <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="${inputCss} text-align:center;"></div>
+          <div style="${cellCalc}"><div style="${cellLbl}">Costing Diff</div>
+            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700;"><span class="cpo-costing-diff">—</span></div></div>
+          <div style="${cellCalc}"><div style="${cellLbl}">Amount</div>
+            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:800; font-size:1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
         </div>
-        <div style="flex:1; min-width:200px; padding-top:2px;">${projectChips}</div>
+        <div>
+          <label style="${cellLbl} display:block;">Description of Material *</label>
+          <textarea rows="1" data-rowid="${row.id}" placeholder="Required — e.g. color, variant, spec detail..."
+            oninput="updateCPORowField(${row.id},'additionalDescription',this.value); cpoRefreshRowStatus(${row.id}); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.85rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.additionalDescription)}</textarea>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="${cellLbl} margin:0;">PRNs *</span>
+          ${prnChips}
+          ${allocCheck}
+          <button onclick="openCPOAllocationPicker(${row.id})" style="margin-left:auto; font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
+        </div>
+        ${overRateWarning}
       </div>
-      ${overRateWarning}
     </div>`;
-  }).join("");
+  }).join("") + `<div id="cpo-rows-summary" style="display:flex; align-items:center; gap:12px; padding:9px 12px; background:#f8fafc; border:1.5px solid #94a3b8; border-radius:8px; font-size:0.85rem;"></div>`;
+
   window.cpoMaterialRows.forEach(r => updateCPORowAmount(r.id));
+  body.querySelectorAll('textarea').forEach(t => { if (t.offsetParent) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; } });
   if (window.cpoMode === 'authorize') lockCPOForAuthorize();
+}
+
+// What a row still needs before the PO can be submitted.
+function cpoRowMissing(row) {
+  const missing = [];
+  if (!row.itemCode) missing.push('material');
+  if (!(parseFloat(row.quantity) > 0)) missing.push('quantity');
+  if (row.rate === '' || row.rate == null || isNaN(parseFloat(row.rate))) missing.push('rate');
+  if (!(row.additionalDescription || '').toString().trim()) missing.push('description');
+  if (!(row.allocations || []).length) missing.push('PRN');
+  return missing;
+}
+function cpoRowStatusHtml(row) {
+  const m = cpoRowMissing(row);
+  return m.length ? `<span style="color:#b91c1c;">Missing: ${m.join(', ')}</span>` : `<span style="color:#15803d;">✓ Ready</span>`;
+}
+function cpoRowHeadStyle(row) {
+  return cpoRowMissing(row).length ? 'background:#fef3c7; color:#78350f;' : 'background:#e0f2fe; color:var(--brand);';
+}
+function cpoRefreshRowStatus(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  const st = document.querySelector(`.cpo-row-status[data-rowid="${rowId}"]`);
+  if (st) st.innerHTML = cpoRowStatusHtml(row);
+  const head = document.querySelector(`.cpo-row-head[data-rowid="${rowId}"]`);
+  if (head) head.style.cssText = head.style.cssText.replace(/background:[^;]*;\s*color:[^;]*;/, '') + ' ' + cpoRowHeadStyle(row);
+  cpoRefreshRowsSummary();
+}
+function cpoRefreshRowsSummary() {
+  const el = document.getElementById("cpo-rows-summary");
+  if (!el) return;
+  const rows = window.cpoMaterialRows || [];
+  const ready = rows.filter(r => cpoRowMissing(r).length === 0).length;
+  const sub = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  el.innerHTML = `<span><strong>${rows.length}</strong> row${rows.length === 1 ? '' : 's'} · <span style="color:#15803d; font-weight:700;">${ready} ready</span>${rows.length - ready ? ` · <span style="color:#b45309; font-weight:700;">${rows.length - ready} incomplete</span>` : ''}</span>
+    <span style="margin-left:auto;">Sub Total <strong style="font-size:1rem;">₹${sub.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong></span>`;
+}
+// "Change" on a picked material: show the search box again for that row.
+function cpoChangeRowMaterial(rowId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row._editingName = true;
+  renderCPOMaterialRows();
+  const box = document.querySelector(`.cpo-desc-search[data-rowid="${rowId}"]`);
+  if (box) { box.focus(); box.select(); }
 }
 
 // lockCPOForAuthorize — Authorize approves the latest signed draft exactly
@@ -999,7 +1036,7 @@ function lockCPOForAuthorize() {
   const holder = rows && rows.closest('[id^="po-auth-expand-"]');
   if (!holder) return;
   holder.querySelectorAll("input, textarea, select").forEach(el => { el.disabled = true; });
-  holder.querySelectorAll('button[onclick^="removeCPOMaterialRow"], button[onclick^="openCPOAllocationPicker"], #cpo-add-row-btn').forEach(b => { b.style.display = "none"; });
+  holder.querySelectorAll('button[onclick^="removeCPOMaterialRow"], button[onclick^="openCPOAllocationPicker"], #cpo-add-row-btn, .cpo-change-name').forEach(b => { b.style.display = "none"; });
   if (!holder.querySelector(".cpo-auth-note")) {
     const note = document.createElement("div");
     note.className = "cpo-auth-note";
@@ -1039,6 +1076,7 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   // 2026, explicit request) — still a free-text field the operator can
   // edit afterward, this just saves retyping the obvious starting point.
   row.additionalDescription = combinedName;
+  row._editingName = false;
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
   persistCPODraft();
@@ -1095,8 +1133,9 @@ function updateCPORowAmount(rowId) {
   const disc = parseFloat(row.discountPercent) || 0;
   const amount = qty * rate * (100 - disc) / 100;
   row.amount = amount;
-  const span = document.querySelector(`.cpo-amount[data-rowid="${rowId}"]`);
-  if (span) span.textContent = amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  document.querySelectorAll(`.cpo-amount[data-rowid="${rowId}"], .cpo-amount-cell[data-rowid="${rowId}"]`).forEach(span => {
+    span.textContent = amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  });
 
   // Costing Diff / over-rate flag are Rate-dependent — updated here (not
   // just at render time) so typing a new Rate (or Disc %) reflects live
@@ -1112,14 +1151,18 @@ function updateCPORowAmount(rowId) {
   const rowEl = document.querySelector(`[data-rowid="${rowId}"]`);
   const diffSpan = rowEl ? rowEl.querySelector(".cpo-costing-diff") : null;
   if (diffSpan) {
-    diffSpan.textContent = costingDiff != null ? costingDiff.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : "—";
+    const base = Number(designRate) * qty;
+    const pct = (costingDiff != null && base > 0) ? Math.round(Math.abs(costingDiff) / base * 100) : null;
+    diffSpan.textContent = costingDiff == null ? "—"
+      : `${costingDiff > 0 ? "▲ " : (costingDiff < 0 ? "▼ " : "")}${Math.abs(costingDiff).toLocaleString('en-IN', { maximumFractionDigits: 2 })}${pct != null ? ` (${pct}%)` : ""}`;
     diffSpan.style.color = costingDiff > 0 ? "#dc2626" : (costingDiff < 0 ? "#15803d" : "#475569");
   }
   const rateInput = document.querySelector(`.cpo-rate[data-rowid="${rowId}"]`);
   if (rateInput) {
-    rateInput.style.borderColor = isOverRate ? "#dc2626" : "var(--border)";
+    rateInput.style.borderColor = isOverRate ? "#dc2626" : "#cbd5e1";
     rateInput.style.background = isOverRate ? "#fef2f2" : "";
   }
+  cpoRefreshRowStatus(rowId);
   // The row-level red background and the warning strip below the row are
   // static-render-only (they'd need a full re-render to move/appear) —
   // acceptable since Authorize's authoritative block re-checks on submit
