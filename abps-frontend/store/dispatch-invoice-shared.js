@@ -18,7 +18,6 @@
 // to the old screen's PINV_DOC_META.
 const PDI_DOC_META = {
   packingList:        { dropzoneId: "cpdi-doc-packingList-dropzone",        listId: "cpdi-doc-packingList-filelist",        label: "Packing List",                             placeholder: "📎 Click to attach Packing List" },
-  deliveryChallan:     { dropzoneId: "cpdi-doc-deliveryChallan-dropzone",    listId: "cpdi-doc-deliveryChallan-filelist",    label: "Delivery Challan",                          placeholder: "📎 Click to attach Delivery Challan" },
   lrCopy:              { dropzoneId: "cpdi-doc-lrCopy-dropzone",            listId: "cpdi-doc-lrCopy-filelist",             label: "LR Copy",                                   placeholder: "📎 Click to attach LR Copy" },
   historyCard:         { dropzoneId: "cpdi-doc-historyCard-dropzone",       listId: "cpdi-doc-historyCard-filelist",        label: "History Card",                              placeholder: "📎 Click to attach History Card" },
   truckLoadedImages:   { dropzoneId: "cpdi-doc-truckLoadedImages-dropzone", listId: "cpdi-doc-truckLoadedImages-filelist",  label: "Images of Products Loaded in Truck",        placeholder: "📎 Click to attach Images of Products Loaded in Truck" },

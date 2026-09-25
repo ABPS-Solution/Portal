@@ -155,7 +155,7 @@ async function loadRpdiForm(invoiceId) {
     rpdiState = {
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
-      mobileNo: last.mobileNo || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
+      mobileNo: last.mobileNo || "", freightText: last.freightText || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
       tradeType: last.tradeType || "Local", usdRate: last.usdRate || "",
       poNumber: data.poNumber || "", poDate: data.poDate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
@@ -216,6 +216,7 @@ function renderRpdiForm() {
         ${field('DC No & Date', 'dcNoDate')}
         ${field('Vehicle No.', 'vehicleNo')}
         ${field('Mobile No', 'mobileNo')}
+        ${field('Freight', 'freightText')}
         ${field('Incoterms', 'incoterms')}
         <div class="grid-cell-item"><label>Named Place</label>
           <input type="text" placeholder="e.g. Mumbai Port" value="${esc(s.incotermsPlace)}" oninput="updateRpdiField('incotermsPlace', this.value)" style="width:100%; padding:6px 4px;" />
@@ -451,7 +452,7 @@ async function toggleRpdiEditCard(requestId) {
     rpdiState = {
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
-      mobileNo: last.mobileNo || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
+      mobileNo: last.mobileNo || "", freightText: last.freightText || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
       tradeType: last.tradeType || "Local", usdRate: last.usdRate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
       shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.shipTo || {}) },

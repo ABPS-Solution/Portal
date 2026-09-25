@@ -91,8 +91,18 @@ async function submitApdiAuthorize() {
   try {
     const data = await apFetch({ action: "authorizeProjectDispatchInvoice", invoiceId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) {
-      showBOQBanner("apdi-feedback", `Invoice ${data.invoiceNo} authorized.${data.pdfPending ? ' PDF generation is pending and will retry automatically.' : ''}`, "success");
       initializeApdiWorkspace();
+      const pending = [];
+      if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
+      if (!data.challanUrl) pending.push("The Delivery Challan PDF is still being generated and will retry automatically — find it later in Search Material Outward on Delivery Challan.");
+      showSuccessWithReset("apdi-feedback",
+        `Invoice ${escapeHtml(String(data.invoiceNo || ""))} authorized.${data.challanNumber ? ` Delivery Challan ${escapeHtml(String(data.challanNumber))} created.` : ""}${pending.length ? `<div style="font-weight:600; color:#b45309; margin-top:6px;">${pending.join("<br>")}</div>` : ""}`,
+        "Authorize Another", "initializeApdiWorkspace()",
+        [
+          { label: "📄 Open Invoice PDF", url: data.url ? driveLink(data.url) : "" },
+          { label: "📄 Open Delivery Challan PDF", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
+        ]);
+      document.getElementById("apdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`apdi-card-feedback-${invoiceId}`);
       if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;

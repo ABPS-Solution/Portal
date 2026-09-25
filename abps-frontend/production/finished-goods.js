@@ -71,7 +71,6 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
   const entryDate     = get("fg-date");
   const projectId     = get("fg-project");
   const customerName  = get("fg-customer");
-  const serialNumber  = get("fg-serial");
   const jobCardNumber = get("fg-jobcard");
   const productRating = get("fg-rating");
   const productDetails= get("fg-details");
@@ -98,7 +97,6 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
       projectId,
       customerName,
       productName:          productDetails,
-      productSerialNumber:  serialNumber,
       itemCode:             "",         // populate from your fg-item-code field if it exists in this form
       productRating,
       jobCardNumber,
@@ -221,7 +219,7 @@ async function handleFGAddProjectChange(projectId) {
   const meta = window.fgAddProjectMeta && window.fgAddProjectMeta[projectId];
   document.getElementById("fg-add-customer").value = meta ? (meta.companyName || "") : "";
 
-  const fieldsToToggle = ["fg-add-department","fg-add-serial","fg-add-remarks"];
+  const fieldsToToggle = ["fg-add-department","fg-add-remarks"];
   const submitBtn = document.getElementById("fg-add-submit-btn");
   const boqLabel = document.getElementById("fg-add-boq-label");
   const jobCardLabel = document.getElementById("fg-add-jobcard-label");
@@ -513,7 +511,7 @@ function resetFGAddForm() {
   });
   ["fg-add-customer","fg-add-product-name-display","fg-add-product-name",
    "fg-add-rating","fg-add-item-code-display","fg-add-item-code",
-   "fg-add-jobcard","fg-add-boq","fg-add-serial","fg-add-remarks",
+   "fg-add-jobcard","fg-add-boq","fg-add-remarks",
    "fg-add-description","fg-add-description-id","fg-add-make"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
@@ -552,7 +550,6 @@ async function submitFGAddItem() {
   const rating     = document.getElementById("fg-add-rating").value.trim();
   const itemCode   = document.getElementById("fg-add-item-code").value.trim();
   const jobCard    = document.getElementById("fg-add-jobcard").value.trim();
-  const serialNumber = document.getElementById("fg-add-serial").value.trim();
   const unit = document.getElementById("fg-add-unit").value.trim();
   const remarks    = document.getElementById("fg-add-remarks").value.trim();
   const descriptionOfMaterial = document.getElementById("fg-add-description").value.trim() || null;
@@ -575,7 +572,6 @@ async function submitFGAddItem() {
   if (!department)  return failFG("Department is required.");
   if (!projectId)   return failFG("Project ID is required.");
   if (!productName) return failFG("Product Name is required.");
-  if (!serialNumber) return failFG("Product Serial Number is required.");
   if (!finishedGoodUse) return failFG("Select Use (Use in other Product / Ready for Dispatch) before submitting.");
   if (!window.fgBOQValidationRan) return failFG("BOQ material check for this Job Card hasn't completed yet.");
   if (packingQualityConfirmation !== "Yes") return failFG("Packing Quality Confirmation must be set to Yes before this item can be submitted.");
@@ -629,7 +625,6 @@ async function submitFGAddItem() {
       action: "addFinishedGoodsItem",
       department, projectId, customerName, productName,
       itemCode, productRating: rating, jobCardNumber: jobCard,
-      productSerialNumber: serialNumber,
       unit, additionalRemarks: remarks,
       productionPersonName, finishedGoodUse, documents,
       descriptionOfMaterial, descriptionId, make,

@@ -140,7 +140,12 @@ function renderFGApprovalDetailBody(fgId) {
         ${field("Project ID", fg.projectId)}
         ${field("Department", fg.department)}
         ${field("Unit", fg.unit)}
-        ${field("Product Serial Number", fg.productSerialNumber)}
+        <div>
+          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Product Serial Number *</div>
+          <input type="text" id="fg-approval-serial-${fgId}" value="${escapeHtml(fgApprovalSerialValue(fgId))}"
+            oninput="window._fgApprovalState[${fgId}].serial = this.value; updateFGApprovalSubmitState(${fgId});"
+            placeholder="Enter product serial number..." style="padding:7px 9px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; font-weight:600;" />
+        </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
         ${field("Product Name", fg.productName)}
@@ -473,16 +478,24 @@ async function triggerFGNewRowUpload(fgId, tempId) {
 // re-uploading it still passed that bar as long as whatever docs
 // remained were all checked, letting an FG item through missing a
 // document this system treats as compulsory everywhere else.
+function fgApprovalSerialValue(fgId) {
+  const st = window._fgApprovalState[fgId];
+  if (!st) return "";
+  if (st.serial === undefined) st.serial = (st.fg && st.fg.productSerialNumber) || "";
+  return st.serial;
+}
+
 function updateFGApprovalSubmitState(fgId) {
   const btn = document.getElementById(`fg-approval-submit-${fgId}`);
   if (!btn) return;
   const st = window._fgApprovalState[fgId];
+  const hasSerial = !!fgApprovalSerialValue(fgId).trim();
   const presentTypes = new Set(st.docs.map(d => d.docType));
   const missingTypes = FG_APPROVAL_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
   const hasEveryRequiredType = missingTypes.length === 0;
   const uncheckedCount = st.docs.filter(d => !d.qaChecked).length;
   const allChecked = st.docs.length > 0 && uncheckedCount === 0 && st.newRows.length === 0;
-  const canApprove = hasEveryRequiredType && allChecked;
+  const canApprove = hasEveryRequiredType && allChecked && hasSerial;
   btn.disabled = !canApprove;
   btn.style.opacity = canApprove ? "1" : "0.5";
   btn.style.cursor = canApprove ? "pointer" : "not-allowed";
@@ -493,6 +506,7 @@ function updateFGApprovalSubmitState(fgId) {
   // "deleted a doc to replace it, forgot to actually re-upload" case
   // this whole gate exists to catch.
   const reasons = [];
+  if (!hasSerial) reasons.push('Product Serial Number is required');
   if (missingTypes.length > 0) {
     reasons.push(`Missing: ${missingTypes.map(t => FG_DOC_TYPE_LABELS[t] || t).join(', ')}`);
   }
@@ -511,11 +525,17 @@ async function submitFGApprovalDecision(fgId, action) {
   if (action === "reject" && !confirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
 
   const fg = window._fgApprovalState[fgId]?.fg || {};
+  const productSerialNumber = fgApprovalSerialValue(fgId).trim();
+  if (action === "approve" && !productSerialNumber) {
+    feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b91c1c; background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
+    feedback.textContent = "Product Serial Number is required before approving.";
+    return;
+  }
 
   showBlockingOverlay(action === "approve" ? "Approving..." : "Rejecting...");
   try {
     const actionName = action === "approve" ? "approveFinishedGoodsItem" : "rejectFinishedGoodsItem";
-    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, productSerialNumber, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       delete window._fgApprovalState[fgId];
@@ -539,7 +559,7 @@ async function submitFGApprovalDecision(fgId, action) {
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${fg.productName || "—"}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${fg.productRating || "—"}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Department</span><span style="font-weight:700;">${fg.department || "—"}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Serial Number</span><span style="font-weight:700;">${fg.productSerialNumber || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Serial Number</span><span style="font-weight:700;">${escapeHtml(productSerialNumber || "—")}</span></div>
           </div>
           <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"
             style="margin-top:4px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">

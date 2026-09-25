@@ -145,8 +145,18 @@ async function submitArpdiAuthorize() {
   try {
     const data = await apFetch({ action: "authorizeProjectDispatchInvoiceRevision", requestId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) {
-      showBOQBanner("arpdi-feedback", `Revision authorized — now at V${data.revision}.${data.pdfPending ? ' PDF generation is pending and will retry automatically.' : ''}`, "success");
       initializeArpdiWorkspace();
+      const pending = [];
+      if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
+      if (data.challanNumber && !data.challanUrl) pending.push("The updated Delivery Challan PDF is still being generated and will retry automatically.");
+      showSuccessWithReset("arpdi-feedback",
+        `Revision authorized${data.invoiceNo ? ` for Invoice ${escapeHtml(String(data.invoiceNo))}` : ""} — now at V${data.revision}.${pending.length ? `<div style="font-weight:600; color:#b45309; margin-top:6px;">${pending.join("<br>")}</div>` : ""}`,
+        "Authorize Another", "initializeArpdiWorkspace()",
+        [
+          { label: "📄 Open Invoice PDF", url: data.url ? driveLink(data.url) : "" },
+          { label: "📄 Open Delivery Challan PDF", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
+        ]);
+      document.getElementById("arpdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`arpdi-card-feedback-${requestId}`);
       if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;

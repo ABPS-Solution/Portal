@@ -124,7 +124,7 @@ async function handleCpdiProjectChange(projectId) {
 
 function cpdiInitInvoiceStateFromLines() {
   cpdiInvoiceState = {
-    insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "",
+    insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", freightText: "",
     incoterms: "", incotermsPlace: "", tradeType: "Local", usdRate: "",
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -265,6 +265,7 @@ function cpdiRenderInvoiceForm() {
         ${field('DC No & Date', 'dcNoDate')}
         ${field('Vehicle No.', 'vehicleNo')}
         ${field('Mobile No', 'mobileNo')}
+        ${field('Freight', 'freightText')}
         ${field('Incoterms', 'incoterms')}
         <div class="grid-cell-item"><label>Named Place</label>
           <input type="text" placeholder="e.g. Mumbai Port" value="${esc(s.incotermsPlace)}" oninput="updateCpdiField('incotermsPlace', this.value)" style="width:100%; padding:6px 4px;" />
@@ -449,8 +450,8 @@ function openCpdiConfirmModal(mode) {
       return;
     }
   }
-  if (document.getElementById("cpdi-payment-received").value.trim() !== "Yes") {
-    showBOQBanner("cpdi-feedback", "Payment Received Confirmation must be set to Yes before this draft can be created.", "error");
+  if (!["Yes", "Credit"].includes(document.getElementById("cpdi-payment-received").value.trim())) {
+    showBOQBanner("cpdi-feedback", "Payment Received Confirmation must be set to Yes or Credit before this draft can be created.", "error");
     return;
   }
   cpdiSubmitMode = mode;
