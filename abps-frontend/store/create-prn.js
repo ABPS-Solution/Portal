@@ -1191,7 +1191,7 @@ function renderAllPRNCards(prns, boqId) {
         <div style="font-size:0.72rem; color:var(--brand); font-weight:700;">▾ Click to <span id="${toggleId}">expand and view materials</span></div>
         <div id="${expandId}" style="display:none; margin-top:12px;">
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table class="prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
+            <table class="prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
               <thead><tr style="background:#f8fafc;">
                 <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
