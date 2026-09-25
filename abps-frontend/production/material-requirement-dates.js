@@ -306,7 +306,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
   return `
     ${readOnlyNote}
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+      <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:900px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.92rem; text-align:center; width:44px; border-bottom:1.5px solid var(--border);">Sr No</th>
           <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:140px; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Material Name</th>
