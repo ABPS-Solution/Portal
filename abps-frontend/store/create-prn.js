@@ -633,7 +633,7 @@ function renderAPRNRows(prnId) {
         <tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-          <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
+          <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${r.typeOfMaterial || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
@@ -687,7 +687,7 @@ function renderAPRNRows(prnId) {
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${r.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimNum(buffered)}</td>
@@ -848,7 +848,7 @@ function renderPRNCreateTable() {
     const common = `
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${item.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${item.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
@@ -1161,7 +1161,7 @@ function renderAllPRNCards(prns, boqId) {
       rowsHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${liIdx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${li.materialName}</td>
-        <td style="padding:8px; font-size:0.75rem; color:var(--muted); text-align:center;">${li.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${li.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${fmtSmart(li.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtSmart(li.bufferPct)}%</td>
         <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${fmtSmart(li.bufferedPurchaseQty)}</td>
