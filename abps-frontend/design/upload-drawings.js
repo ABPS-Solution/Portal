@@ -165,7 +165,7 @@ async function submitUploadDrawing() {
   } finally {
     hideBlockingOverlay();
     btn.disabled = false;
-    btn.textContent = "Upload Document";
+    btn.textContent = "Upload Drawings";
   }
 
   const esc = (t) => escapeHtml(String(t));
@@ -181,7 +181,7 @@ async function submitUploadDrawing() {
     uploadDrawingsSelectedFile = null;
     document.getElementById("upload-drawings-input").value = "";
     const box = document.getElementById("upload-drawings-dropzone");
-    box.textContent = "📎 Click to select drawing documents (you can pick several)";
+    box.textContent = "📋 Select Drawing Documents *";
     box.title = "";
     box.classList.remove("done");
     await refreshUploadDrawingsList(projectId, uploadDrawingsSelectedType);
