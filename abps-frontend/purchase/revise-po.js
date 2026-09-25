@@ -482,7 +482,7 @@ function renderPORevisionCard() {
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
     const chipsHtml = (workingAllocs.length || li._allocationTouched)
-      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/,"")}: <strong>${a.quantity}</strong></div>`).join("")
+      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
@@ -1195,7 +1195,7 @@ function renderAPORCard(r) {
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
     const chipsHtml = (workingAllocs.length || line._allocationTouched)
-      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId.replace(/^PRN_/,"")}: <strong>${a.quantity}</strong></div>`).join("")
+      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
@@ -1676,10 +1676,10 @@ function poRevRowHtml(o) {
   const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const esc = (t) => (t || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const lbl = 'font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;';
-  const inCell = 'padding:8px 10px; background:#fff; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1;';
-  const calcCell = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1;';
-  const val = 'height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700;';
-  const inp = 'width:100%; height:34px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; text-align:center;';
+  const inCell = 'padding:8px 10px; background:#fff; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1; text-align:center;';
+  const calcCell = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1; border-top:1px solid #cbd5e1; text-align:center;';
+  const val = 'height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; font-size:1.02rem;';
+  const inp = 'width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1.02rem; text-align:center;';
   const diff = o.costingDiff;
   const pct = (diff != null && o.designRate != null && Number(o.designRate) * o.vdq > 0) ? Math.round(Math.abs(diff) / (Number(o.designRate) * o.vdq) * 100) : null;
   const diffTxt = diff == null ? '—' : `${diff > 0 ? '▲ ' : (diff < 0 ? '▼ ' : '')}${Math.abs(diff).toLocaleString('en-IN', { maximumFractionDigits: 2 })}${pct != null ? ` (${pct}%)` : ''}`;
@@ -1713,7 +1713,7 @@ function poRevRowHtml(o) {
             style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.85rem; font-family:inherit; resize:none; overflow:hidden;">${esc(o.additionalDescription)}</textarea>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="${lbl} margin:0;">PRNs *</span>
+          <span style="${lbl} margin:0;">Allocated PRNs:</span>
           <div style="flex:1; min-width:200px;">${o.chipsHtml}</div>
           <button onclick="${o.allocOnclick}" style="font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
         </div>

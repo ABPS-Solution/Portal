@@ -879,9 +879,9 @@ function renderCPOMaterialRows() {
   }
   const esc = (t) => (t || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const cellLbl = 'font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;';
-  const cellIn = 'padding:8px 10px; background:#fff;';
-  const cellCalc = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1;';
-  const inputCss = 'width:100%; height:34px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700;';
+  const cellIn = 'padding:8px 10px; background:#fff; text-align:center;';
+  const cellCalc = 'padding:8px 10px; background:#f1f5f9; border-left:1px solid #cbd5e1; text-align:center;';
+  const inputCss = 'width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1.02rem; text-align:center;';
 
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
     const allocList = row.allocations || [];
@@ -929,7 +929,7 @@ function renderCPOMaterialRows() {
           <a href="javascript:void(0)" class="cpo-change-name" onclick="cpoChangeRowMaterial(${row.id})" style="font-size:0.78rem; font-weight:700; color:var(--brand);">Change</a>
         </div>`;
 
-    const prnChips = allocList.map(a => `<span title="${esc(a.prnId)}" style="display:inline-block; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ");
+    const prnChips = allocList.map(a => `<span style="display:inline-block; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ");
     const allocOk = allocList.length > 0 && Math.abs(unallocNow) < 1e-9;
     const allocCheck = allocList.length
       ? `<span style="font-size:0.78rem; font-weight:700; color:${allocOk ? '#15803d' : '#b45309'};">${fmtQty(allocSum)} / ${fmtQty(lineQtyNow)} allocated${unallocNow > 0 ? ` (${fmtQty(unallocNow)} extra)` : ''}</span>`
@@ -948,19 +948,19 @@ function renderCPOMaterialRows() {
         ${nameBlock}
         <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
           <div style="${cellIn}"><div style="${cellLbl}">Quantity *${row.unit ? ` (${esc(row.unit)})` : ""}</div>
-            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss} text-align:center;"></div>
+            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss}"></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Design Rate / Qty</div>
-            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; font-size:1.02rem; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
           <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Rate / Qty *</div>
             <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
               ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}
-              style="${inputCss} text-align:right; ${isOverRate ? 'border-color:#dc2626; background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}"></div>
+              style="${inputCss} ${isOverRate ? 'border-color:#dc2626; background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}"></div>
           <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Disc %</div>
-            <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="${inputCss} text-align:center;"></div>
+            <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${row.discountPercent}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="${inputCss}"></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Costing Diff</div>
-            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:700;"><span class="cpo-costing-diff">—</span></div></div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; font-size:1.02rem;"><span class="cpo-costing-diff">—</span></div></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Amount</div>
-            <div style="height:34px; display:flex; align-items:center; font-family:monospace; font-weight:800; font-size:1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:1.1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
         </div>
         <div>
           <label style="${cellLbl} display:block;">Description of Material *</label>
@@ -969,7 +969,7 @@ function renderCPOMaterialRows() {
             style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.85rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.additionalDescription)}</textarea>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="${cellLbl} margin:0;">PRNs *</span>
+          <span style="${cellLbl} margin:0;">Allocated PRNs:</span>
           ${prnChips}
           ${allocCheck}
           <button onclick="openCPOAllocationPicker(${row.id})" style="margin-left:auto; font-size:0.75rem; padding:5px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700;">Allocate to PRNs</button>
