@@ -1544,19 +1544,37 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
 let targetRMPOFileObj       = null;
 let activeParsedRMPOPayload = null;
 
-function handleAssStockSearch(query) {
+// The item code list is shared with other screens and was only ever filled
+// by them, so opening this screen first left the search empty (25 Sep 2026).
+let assSearchMatches = [];
+async function handleAssStockSearch(query) {
   const dropdown = document.getElementById("ass-material-dropdown");
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
+  if (!(window.itemCodeCatalogCache || []).length) {
+    dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">Loading item codes...</div>`;
+    dropdown.style.display = "block";
+    await loadItemCodeCatalogIntoCache();
+    const input = document.getElementById("ass-material-search");
+    if (!input || input.value !== query) return;
+  }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
   const combinedLabel = (item) => item.rating ? `${item.productName} - ${item.rating}` : item.productName;
-  const matches = catalog.filter(item => combinedLabel(item).toLowerCase().includes(q)).slice(0, 10);
-  if (matches.length === 0) { dropdown.style.display = "none"; return; }
-  dropdown.innerHTML = matches.map(item => `
-    <div onclick="loadAssStockForItem('${item.itemCode}', \`${combinedLabel(item).replace(/`/g,"'")}\`)"
+  const matches = catalog.filter(item => {
+    const hay = `${item.itemCode} ${item.combinedName || combinedLabel(item)} ${item.make || ''}`.toLowerCase();
+    return hay.includes(q);
+  }).slice(0, 15);
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">No item code matches "${escapeHtml(query)}".</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+  assSearchMatches = matches;
+  dropdown.innerHTML = matches.map((item, i) => `
+    <div onmousedown="event.preventDefault();" onclick="loadAssStockForItem(assSearchMatches[${i}].itemCode, (function(it){ return it.rating ? it.productName + ' - ' + it.rating : it.productName; })(assSearchMatches[${i}]))"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${item.itemCode}</span>${combinedLabel(item)}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${escapeHtml(item.itemCode)}</span>${escapeHtml(combinedLabel(item) || '')}${item.make ? ` <span style="color:var(--muted);">- Make: ${escapeHtml(item.make)}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -1645,6 +1663,7 @@ async function initializeAssignCurrentStockPanel() {
   document.getElementById("ass-material-search").value = "";
   document.getElementById("ass-material-dropdown").style.display = "none";
   assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, reservedStock: 0, availableStock: 0 }, assignments: [] };
+  loadItemCodeCatalogIntoCache();
 }
 
 // ═══════════════════════════════════════════════════════
