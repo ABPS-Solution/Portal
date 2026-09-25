@@ -214,7 +214,9 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
   const draftLines = readOnly ? null : prnDraftMrdLinesFor(ns, prnId);
   const rows = lines.map(line => {
     const key = mrdSanitizeKey(line.itemCode);
-    const purchaseQty = Number(line.purchaseQty) || 0;
+    // Everything still outstanding already on a PO -> nothing left to date.
+    const fullyOnPO = line.stillToOrderQty != null && Number(line.stillToOrderQty) <= 1e-9;
+    const purchaseQty = fullyOnPO ? 0 : (Number(line.purchaseQty) || 0);
     st.meta[key] = purchaseQty;
     st.itemCodeByKey[key] = line.itemCode;
     if (!st.lines[key] && draftLines && Array.isArray(draftLines[key])) st.lines[key] = draftLines[key];
