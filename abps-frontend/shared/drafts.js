@@ -135,6 +135,7 @@ function abpsDraftOfferRestore(key, containerId, applyExtraState, opts) {
     // Restored textareas keep their empty-state height; regrow them to fit.
     requestAnimationFrame(() => {
       document.querySelectorAll(`#${CSS.escape(containerId)} textarea`).forEach(t => {
+        if (!t.offsetParent) return;
         t.style.height = "auto"; t.style.height = t.scrollHeight + "px";
       });
     });
