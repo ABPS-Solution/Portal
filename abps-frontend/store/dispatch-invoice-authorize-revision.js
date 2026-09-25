@@ -29,7 +29,7 @@ async function initializeArpdiWorkspace() {
             <div style="font-size:0.8rem; color:var(--muted);">Requested by ${r.requestedBy || '—'} · current revision V${r.currentRevision}</div>
           </div>
           <div style="text-align:right;">
-            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Checking Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No checking draft yet</span>`}
+            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
           </div>
         </div>
         <div id="arpdi-card-${r.requestId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>

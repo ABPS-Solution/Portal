@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 // store/authorize-material-outward.js — Authorize Material Outward on
 // Delivery Challan (24 Sep 2026). Same maker-checker idea as RM PO: the
-// preparer fills the challan and prints a Checking Draft on Material
+// preparer fills the challan and prints a Draft on Material
 // Outward on Delivery Challan; it then waits here for someone else to
 // authorize it (admins may authorize their own). Authorizing is what
 // issues the real document (finaliseDeliveryChallan); Reject discards the
@@ -100,7 +100,7 @@ function amoRenderCard(c) {
           <span style="color:var(--muted);">${amoConsigneeLabel(c)}:</span> <strong>${escapeHtml(c.consignee_name || "—")}</strong>
         </div>
         <div style="display:flex; align-items:center; gap:12px; font-size:0.82rem; color:var(--muted);">
-          ${c.checking_doc_url ? `<a href="${driveLink(c.checking_doc_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700;">📄 Checking Draft #${escapeHtml(String(c.checking_draft_count || ""))} ↗</a>` : ""}
+          ${c.checking_doc_url ? `<a href="${driveLink(c.checking_doc_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700;">📄 Draft #${escapeHtml(String(c.checking_draft_count || ""))} ↗</a>` : ""}
           <span>Prepared by ${escapeHtml(c.created_by_name || "—")}</span>
           <span style="font-weight:700;">${open ? "▾" : "▸"}</span>
         </div>

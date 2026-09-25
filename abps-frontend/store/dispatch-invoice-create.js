@@ -7,7 +7,7 @@
 // A draft RESERVES units (Job Cards claimed via invoiced_in_invoice_id)
 // but commits nothing — no invoice number, no Dispatched status, no
 // project completion. Submitting here always ends with a watermarked
-// checking draft, never the real invoice PDF; that only exists once
+// draft, never the real invoice PDF; that only exists once
 // Authorize Project Dispatch Invoice commits it.
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -526,7 +526,7 @@ async function submitCpdiCreate() {
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
           ${isFinal ? 'Final' : 'Partial'} Invoice draft #${data.invoiceId} created for Project ID: ${cpdiCache.projectId} — awaiting authorization.
         </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Invoice Checking Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Invoice checking draft generation failed — retry from the Editing tab.</div>`}
+        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Invoice Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Invoice draft generation failed — retry from the Editing tab.</div>`}
         <div id="cpdi-dc-checking-zone" style="margin-top:10px;"></div>
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchCreatePdiTab('new')">+ Create New Draft</button>
@@ -563,9 +563,9 @@ async function initializeCpdiEditingTab() {
             <div style="font-size:0.8rem; color:var(--muted);">Created by ${inv.createdBy || '—'} · ${formatOrdinalDateTime ? formatOrdinalDateTime(inv.createdAt) : inv.createdAt}</div>
           </div>
           <div style="text-align:right;">
-            ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Invoice Checking Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No invoice checking draft yet</span>`}
+            ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Invoice Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No invoice draft yet</span>`}
             <br/>
-            ${inv.dcCheckingDocUrl ? `<a href="${driveLink(inv.dcCheckingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Delivery Challan Checking Draft #${inv.dcCheckingDraftCount} ↗</a>` : (inv.dispatchChallanId ? `<span style="color:#b45309; font-size:0.8rem;">No Delivery Challan checking draft yet</span>` : '')}
+            ${inv.dcCheckingDocUrl ? `<a href="${driveLink(inv.dcCheckingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Delivery Challan Draft #${inv.dcCheckingDraftCount} ↗</a>` : (inv.dispatchChallanId ? `<span style="color:#b45309; font-size:0.8rem;">No Delivery Challan draft yet</span>` : '')}
           </div>
         </div>
         <div id="cpdi-edit-card-${inv.invoiceId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
@@ -604,8 +604,8 @@ async function toggleCpdiEditCard(invoiceId) {
       <div id="cpdi-edit-form-${invoiceId}"></div>
       <div id="cpdi-edit-lineitems-wrap-${invoiceId}" style="overflow-x:auto; margin-top:10px;"></div>
       <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">📄 Save &amp; Generate Invoice Checking Draft</button>
-        ${cpdiEditDispatchChallanId ? `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiDcCheckingDraft(${invoiceId}, ${cpdiEditDispatchChallanId})">📄 Generate Delivery Challan Checking Draft</button>` : ''}
+        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">📄 Save &amp; Generate Invoice Draft</button>
+        ${cpdiEditDispatchChallanId ? `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiDcCheckingDraft(${invoiceId}, ${cpdiEditDispatchChallanId})">📄 Generate Delivery Challan Draft</button>` : ''}
       </div>
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
     cpdiRenderEditForm(invoiceId);
@@ -654,7 +654,7 @@ async function saveCpdiEdit(invoiceId) {
 
 async function generateCpdiCheckingDraftOnly(invoiceId) {
   const fb = document.getElementById(`cpdi-edit-feedback-${invoiceId}`);
-  showBlockingOverlay("Generating checking draft...");
+  showBlockingOverlay("Generating draft...");
   try {
     const data = await apFetch({ action: "regenerateProjectDispatchInvoiceCheckingDraft", invoiceId });
     if (data.success && data.checkingDocUrl) {
@@ -665,7 +665,7 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
       if (tabsBar) tabsBar.style.display = "none";
       const fbEl = document.getElementById("cpdi-editing-feedback");
       fbEl.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
-      fbEl.innerHTML = `Changes saved. Invoice Checking Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Invoice Checking Draft ↗</a>
+      fbEl.innerHTML = `Changes saved. Invoice Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Invoice Draft ↗</a>
         <div id="cpdi-edit-done-dc" style="margin-top:10px;"></div>
         <div><button class="nav-btn-styled" style="margin-top:12px; background:var(--accent); padding:7px 18px; font-weight:700;" onclick="switchCreatePdiTab('editing')">+ Edit Another Dispatch Invoice</button></div>`;
       if (challanId) renderCpdiDcCheckingControl('cpdi-edit-done-dc', challanId);
@@ -673,7 +673,7 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
       return;
     }
     fb.innerHTML = data.success
-      ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the checking draft could not be generated. Click the button again to retry.</div>`
+      ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the draft could not be generated. Click the button again to retry.</div>`
       : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
@@ -683,7 +683,7 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
 }
 
 // generateCpdiDcCheckingDraft — same watermarked-paper-review loop as
-// every ticket-sourced Delivery Challan's own checking draft
+// every ticket-sourced Delivery Challan's own draft
 // (generateDeliveryChallanCheckingDraft, store/material-outward.js), just
 // invoked from here since a Dispatch challan has no card of its own on
 // the Material Outward screen. Reuses that exact backend route — the
@@ -691,11 +691,11 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
 // perm_create_project_dispatch_invoice.
 async function generateCpdiDcCheckingDraft(invoiceId, challanId) {
   const fb = document.getElementById(`cpdi-edit-feedback-${invoiceId}`);
-  showBlockingOverlay("Generating Delivery Challan checking draft...");
+  showBlockingOverlay("Generating Delivery Challan draft...");
   try {
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
     fb.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Checking Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+      ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
       : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
@@ -711,15 +711,15 @@ async function generateCpdiDcCheckingDraft(invoiceId, challanId) {
 function renderCpdiDcCheckingControl(containerId, challanId) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.innerHTML = `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px; font-weight:700;" onclick="generateCpdiDcCheckingDraftInline('${containerId}', ${challanId})">📄 Generate Delivery Challan Checking Draft</button>`;
+  el.innerHTML = `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px; font-weight:700;" onclick="generateCpdiDcCheckingDraftInline('${containerId}', ${challanId})">📄 Generate Delivery Challan Draft</button>`;
 }
 async function generateCpdiDcCheckingDraftInline(containerId, challanId) {
   const el = document.getElementById(containerId);
-  showBlockingOverlay("Generating Delivery Challan checking draft...");
+  showBlockingOverlay("Generating Delivery Challan draft...");
   try {
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
     if (el) el.innerHTML = data.success
-      ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Checking Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+      ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
       : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
   } catch(e) {
     if (el) el.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;

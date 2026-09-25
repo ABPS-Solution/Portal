@@ -11,11 +11,11 @@
 // "Materials for Outward" (the pool + open drafts) and "Search Challans"
 // (the register, filterable by project + date range).
 //
-// Same watermarked checking-draft paper-review loop as RM PO's Checking
+// Same draft paper-review loop as RM PO's Checking
 // Draft and Project Dispatch Invoice, collapsed onto one screen for one
 // person (no separate maker/checker here — everything is
 // perm_material_outward): Save Draft (fields + which tickets are on it —
-// no PDF, no number) -> Generate Checking Draft (as many times as
+// no PDF, no number) -> Generate Draft (as many times as
 // needed) -> Finalise Challan (mints the real number + the clean PDF).
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -67,7 +67,7 @@ async function loadMaterialOutwardServiceQueue() {
       return;
     }
     // New Challan / Editing tabs (24 Sep 2026, same idea as Create PO): a
-    // draft stays under New until its first Checking Draft is printed,
+    // draft stays under New until its first Draft is printed,
     // then it moves to Editing for any changes after the paper review.
     const tab = window._mowTab || "new";
     const editing = mowDraftsCache.filter(d => Number(d.checking_draft_count) > 0);
@@ -308,9 +308,9 @@ function renderDraftChallanCard(draft, collapsible) {
         <div id="mow-crosscheck-band-${challanId}"></div>
 
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
-          ${draft.checking_doc_url ? `<a href="${driveLink(draft.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Checking Draft #${escapeHtml(String(draft.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
+          ${draft.checking_doc_url ? `<a href="${driveLink(draft.checking_doc_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-right:auto;">View Draft #${escapeHtml(String(draft.checking_draft_count || ''))} ↗</a>` : '<span></span>'}
           <button class="nav-btn-styled" style="background:#718096;" onclick="mowDiscardDraft(${challanId})">Discard Entire Draft</button>
-          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">Save &amp; Generate Checking Draft</button>
+          <button class="nav-btn-styled" id="mow-checking-btn-${challanId}" style="background:var(--brand);" onclick="mowGenerateCheckingDraft(${challanId})">Save &amp; Generate Draft</button>
         </div>
         <div id="mow-inline-feedback-${challanId}" style="display:none; margin-top:12px; padding:10px; border-left:4px solid; border-radius:var(--radius);"></div>
       </div>
@@ -333,7 +333,7 @@ function mowDraftCollapsedHeader(draft, expanded) {
         ${cell('Purpose', escapeHtml(draft.outward_type || '—'))}
         ${cell('Challan No', escapeHtml(draft.challan_number || '—'), true)}
         ${cell('Challan Date', escapeHtml(today))}
-        ${cell('Draft', 'Checking Draft #' + escapeHtml(String(draft.checking_draft_count || 0)))}
+        ${cell('Draft', 'Draft #' + escapeHtml(String(draft.checking_draft_count || 0)))}
         ${cell('Ticket ID' + (tickets.length === 1 ? '' : 's'), tickets.map(t => escapeHtml(t.ticketId)).join('<br>') || '—', true)}
         ${cell('Company Name', companies.map(escapeHtml).join('<br>') || '—')}
       </div>
@@ -425,7 +425,7 @@ function mowValidateDraftCard(challanId) {
   if (bandEl) {
     bandEl.innerHTML = errors.length
       ? `<div style="margin-bottom:10px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-size:0.82rem;">
-          <strong>Cannot generate a checking draft until these are resolved:</strong>
+          <strong>Cannot generate a draft until these are resolved:</strong>
           <ul style="margin:6px 0 0; padding-left:18px;">${errors.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul></div>`
       : '';
   }
@@ -479,7 +479,7 @@ function mowCollectCardPayload(challanId) {
   };
 }
 
-// mowSaveDraftCore — the shared save step Generate Checking Draft and
+// mowSaveDraftCore — the shared save step Generate Draft and
 // Finalise both run first (so neither can act on stale field values
 // without the operator needing a separate explicit Save click). Returns
 // true/false; on failure it has already shown the inline error.
@@ -506,27 +506,27 @@ async function mowSaveDraft(challanId) {
 async function mowGenerateCheckingDraft(challanId) {
   const btn = document.getElementById(`mow-checking-btn-${challanId}`);
   if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
-  showBlockingOverlay("Saving challan and generating checking draft...");
+  showBlockingOverlay("Saving challan and generating draft...");
   try {
     const ok = await mowSaveDraftCore(challanId);
     if (!ok) return;
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
-    if (!data.success) throw new Error(data.error || "Failed to generate checking draft.");
+    if (!data.success) throw new Error(data.error || "Failed to generate draft.");
     // Done view: only the success message until the next action is chosen.
     const wasEditing = (window._mowTab || "new") === "editing";
     const feed = document.getElementById("mow-service-queue-feed");
     if (feed) feed.style.display = "none";
     const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
     showSuccessWithReset("mow-feedback-banner",
-      `Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved. Checking Draft #${escapeHtml(String(data.draftNumber))} generated — print it for review. It now waits in Authorize Material Outward on Delivery Challan.`,
+      `Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved. Draft #${escapeHtml(String(data.draftNumber))} generated — print it for review. It now waits in Authorize Material Outward on Delivery Challan.`,
       wasEditing ? "Edit Another Challan" : "Create New Challan",
       wasEditing ? "mowSwitchTab('editing')" : "mowSwitchTab('new')",
-      data.url ? [{ url: driveLink(data.url), label: "📄 Open Checking Draft #" + data.draftNumber }] : []);
+      data.url ? [{ url: driveLink(data.url), label: "📄 Open Draft #" + data.draftNumber }] : []);
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {
     hideBlockingOverlay();
-    if (btn) { btn.disabled = false; btn.textContent = "Save & Generate Checking Draft"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Save & Generate Draft"; }
   }
 }
 
@@ -681,7 +681,7 @@ async function runMaterialOutwardSearch() {
 // Same treatment as Create BOQ: everything typed on a draft challan card
 // (header fields, Status, HSN codes) is kept in this browser as you type,
 // so leaving for the dashboard, a refresh or a dropped connection doesn't
-// lose it. Cleared once Save & Generate Checking Draft saves the card, or
+// lose it. Cleared once Save & Generate Draft saves the card, or
 // the draft is discarded.
 const MOW_QUEUE_CACHE_KEY = "mowQueueCache";
 function mowCardKey(challanId) { return "mowCard:" + challanId; }

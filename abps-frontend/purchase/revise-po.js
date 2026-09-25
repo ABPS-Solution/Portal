@@ -129,7 +129,7 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
 // ── Revise PO ────────────────────────────────────────────────────────────
 window.rpoActive = null;   // { po, lineItems, kind }
 
-// switchRevisePOTab — three tabs now (18 Sep 2026, Checking Draft loop):
+// switchRevisePOTab — three tabs now (18 Sep 2026, Draft loop):
 // 'queue' (PRN-driven), 'other' (search any authorized PO), 'editing' (the
 // caller's own pending revisions, awaiting authorization, still editable).
 function switchRevisePOTab(tab) {
@@ -151,7 +151,7 @@ function switchRevisePOTab(tab) {
   else if (isEditing) initializeRPOEditingTab();
 }
 
-// ── Pending Revisions (Editing) — the Checking Draft loop's revision-side
+// ── Pending Revisions (Editing) — the Draft loop's revision-side
 // tab. Lists the caller's own pending revisions (admin sees all, same
 // server-side scoping as Edit Raw Material Purchase Order); opening one
 // reuses fetchPOForRevision + renderPORevisionCard with requestId set, so
@@ -173,7 +173,7 @@ async function initializeRPOEditingTab() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${r.poNo}</div>
           <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${r.vendorName || ""} &nbsp;·&nbsp; ${r.revisionKind}</div>
-          ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Checking Draft #${r.checkingDraftCount}</div>` : ""}
+          ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Draft #${r.checkingDraftCount}</div>` : ""}
         </div>
         <button class="nav-btn-styled" onclick="openPORevisionForEdit('${r.requestId}', '${r.poNo}')" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
       </div>`).join("");
@@ -265,14 +265,14 @@ async function updatePORevisionUI() {
       // Saving and printing are one step (24 Sep 2026): a fresh checking
       // draft is generated from what was just saved.
       await generateRevisionCheckingDraftUI();
-      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
     } else {
-      btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
+      btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
       showPurchaseFeedback("rpo-feedback", data.error || "Save failed.", "error");
     }
   } catch (e) {
     hideBlockingOverlay();
-    btn.disabled = false; btn.textContent = "📄 Save & Generate Checking Draft";
+    btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
     showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
   }
 }
@@ -280,7 +280,7 @@ async function updatePORevisionUI() {
 async function generateRevisionCheckingDraftUI() {
   const st = window.rpoActive;
   if (!st || !st.requestId) return;
-  showBlockingOverlay("Changes saved. Generating checking draft...");
+  showBlockingOverlay("Changes saved. Generating draft...");
   try {
     const data = await apFetch({ action: "regenerateRevisionCheckingDraft", requestId: st.requestId, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
@@ -289,9 +289,9 @@ async function generateRevisionCheckingDraftUI() {
       window.rpoActive = null;
       const tabsZone = document.getElementById("rpo-tabs-and-lists");
       if (tabsZone) tabsZone.style.display = "none";
-      showPurchaseFeedback("rpo-feedback", `<strong>Changes saved. Checking Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Checking Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('rpo-feedback').style.display='none'; document.getElementById('rpo-tabs-and-lists').style.display=''; switchRevisePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO Revision</button></div>`, "success", true);
+      showPurchaseFeedback("rpo-feedback", `<strong>Changes saved. Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('rpo-feedback').style.display='none'; document.getElementById('rpo-tabs-and-lists').style.display=''; switchRevisePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO Revision</button></div>`, "success", true);
     } else if (data.success) {
-      showPurchaseFeedback("rpo-feedback", `⚠️ Checking Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Checking Draft" again to retry the printout.`, "error");
+      showPurchaseFeedback("rpo-feedback", `⚠️ Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Draft" again to retry the printout.`, "error");
     } else {
       showPurchaseFeedback("rpo-feedback", data.error || "Failed.", "error");
     }
@@ -673,7 +673,7 @@ function renderPORevisionCard() {
         <div style="display:flex; gap:10px;">
           <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
           ${st.editMode
-            ? `               <button class="nav-btn-styled" id="rpo-submit-btn" onclick="updatePORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">📄 Save &amp; Generate Checking Draft</button>`
+            ? `               <button class="nav-btn-styled" id="rpo-submit-btn" onclick="updatePORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">📄 Save &amp; Generate Draft</button>`
             : `<button class="nav-btn-styled" id="rpo-submit-btn" onclick="submitPORevisionUI()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit Revision for Authorization</button>`}
         </div>
       </div>
@@ -1092,7 +1092,7 @@ async function initializeAuthorizePORevisionPanel() {
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
             <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
             <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
-            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="display:inline-block; margin-top:4px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;">📄 Open Checking Draft #${r.checkingDraftCount}</a>` : ""}
+            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="display:inline-block; margin-top:4px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;">📄 Open Draft #${r.checkingDraftCount}</a>` : ""}
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${r.revisionKind === "Cancellation" ? "#fee2e2" : "#fef3c7"}; color:${r.revisionKind === "Cancellation" ? "#7f1d1d" : "#78350f"};">${r.revisionKind === "Cancellation" ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
@@ -1125,6 +1125,24 @@ function toggleAPORCard(requestId) {
   expandDiv.innerHTML = renderAPORCard(r);
   (r.revisedLineItems || []).forEach((_, idx) => updateAPORLineTotals(idx, requestId));
   updateAPORGrandTotal(requestId);
+  lockAPORCardForAuthorize(expandDiv);
+}
+
+// lockAPORCardForAuthorize — Authorize approves the latest signed revision
+// draft exactly as printed (migration 224), so the whole card is view only.
+function lockAPORCardForAuthorize(expandDiv) {
+  if (!expandDiv) return;
+  expandDiv.querySelectorAll("input, textarea, select").forEach(el => { el.disabled = true; });
+  expandDiv.querySelectorAll("button").forEach(b => {
+    if (!/authorizePORevisionUI|rejectPORevision/.test(b.getAttribute("onclick") || "")) b.style.display = "none";
+  });
+  if (!expandDiv.querySelector(".apor-auth-note")) {
+    const note = document.createElement("div");
+    note.className = "apor-auth-note";
+    note.style.cssText = "padding:10px 12px; margin-bottom:12px; border-left:4px solid #0ea5e9; background:#f0f9ff; color:#0c4a6e; border-radius:var(--radius); font-size:0.82rem; font-weight:600;";
+    note.textContent = "Authorizing approves the latest signed draft exactly as printed. Everything here is view only. To change anything, the person who drafted it edits it in Pending Revisions (Editing) and prints a new draft.";
+    expandDiv.insertBefore(note, expandDiv.firstChild);
+  }
 }
 
 function renderAPORCard(r) {
@@ -1448,6 +1466,7 @@ function handleAPORQtyBlur(requestId, idx) {
     expandDiv.innerHTML = renderAPORCard(r);
     (r.revisedLineItems || []).forEach((_, i) => updateAPORLineTotals(i, requestId));
     updateAPORGrandTotal(requestId);
+    lockAPORCardForAuthorize(expandDiv);
   }
 }
 
@@ -1628,6 +1647,7 @@ function saveAPORAllocationModal(requestId, idx) {
     expandDiv.innerHTML = renderAPORCard(r);
     (r.revisedLineItems || []).forEach((_, i) => updateAPORLineTotals(i, requestId));
     updateAPORGrandTotal(requestId);
+    lockAPORCardForAuthorize(expandDiv);
   }
 }
 
@@ -1717,7 +1737,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ <strong>${data.poNo}</strong> revised to V${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PDF →</a>`;
-      msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">Checking drafts for this revision have been removed.</div>`;
+      msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">The signed draft is now the revised PO document in Drive.</div>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
       showPurchaseFeedback("apor-feedback", msg, "success", true);
     } else {
