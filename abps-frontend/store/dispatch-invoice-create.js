@@ -19,6 +19,10 @@ let cpdiCache = null;
 let cpdiActiveIdPrefix = 'cpdi';
 let cpdiAllLines = [];
 let cpdiDocFiles = {};
+// Where the invoice form renders: the New tab's zone, or an expanded
+// Editing card's zone (25 Sep 2026: editing shows the whole form).
+const CPDI_NEW_FORM_ZONE = "cpdi-invoice-form-zone";
+let cpdiFormZoneId = CPDI_NEW_FORM_ZONE;
 
 function cpdiResetDocFiles() {
   cpdiDocFiles = {};
@@ -71,6 +75,7 @@ function switchCreatePdiTab(tab) {
 
 // ── New tab ──────────────────────────────────────────────────────────
 async function initializeCpdiWorkspace() {
+  cpdiFormZoneId = CPDI_NEW_FORM_ZONE;
   document.getElementById("cpdi-feedback").style.display = "none";
   document.getElementById("cpdi-detail-zone").style.display = "none";
   document.getElementById("cpdi-invoice-form-zone").style.display = "none";
@@ -224,7 +229,8 @@ function updateCpdiGenerateButtonsState() {
 }
 
 function cpdiRenderInvoiceForm() {
-  const zone = document.getElementById("cpdi-invoice-form-zone");
+  const zone = document.getElementById(cpdiFormZoneId);
+  if (!zone) return;
   zone.style.display = "block";
   const s = cpdiInvoiceState;
   const esc = (v) => (v == null ? '' : v.toString()).replace(/"/g, '&quot;');
@@ -256,7 +262,7 @@ function cpdiRenderInvoiceForm() {
       </div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
-        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">Given when the draft is created</div></div>
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">${s._invoiceNo ? escapeHtml(s._invoiceNo) : 'Given when the draft is created'}</div></div>
         ${field('Insurance No.', 'insuranceNo')}
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
@@ -369,6 +375,12 @@ function cpdiRenderInvoiceForm() {
 
 function cpdiRenderLineItemsTable() {
   cpdiActiveIdPrefix = 'cpdi';
+  // Editing a saved draft: lines can be re-quantified / re-priced, but not
+  // added or removed (the reservation is per line).
+  if (cpdiFormZoneId !== CPDI_NEW_FORM_ZONE) {
+    renderPdiLineItemsTable('cpdi-lineitems-wrap', cpdiInvoiceState.lineItems, 'cpdi', 'updateCpdiLineItem', null, null);
+    return;
+  }
   const presentIds = new Set(cpdiCache.lines.map(l => l.lineId));
   const candidates = cpdiAllLines.filter(l => !presentIds.has(l.lineId));
   const addRowHtml = candidates.length === 0
@@ -599,16 +611,21 @@ async function toggleCpdiEditCard(invoiceId) {
     if (!cpdiInvoiceState.bankDetails) cpdiInvoiceState.bankDetails = { beneficiary: "ABPS SOLUTION PRIVATE LIMITED", swift: "", ...PDI_STANDARD_BANK_DETAILS };
     if (!cpdiInvoiceState.bankAccountKey) cpdiInvoiceState.bankAccountKey = (PDI_BANK_OPTIONS.find(o => o.ac === cpdiInvoiceState.bankDetails.ac) || PDI_BANK_OPTIONS[0]).key;
     cpdiEditDispatchChallanId = data.dispatchChallanId || null;
+    cpdiInvoiceState._invoiceNo = data.invoiceNo || "";
 
+    // Only one invoice form may exist on the page (shared element ids):
+    // clear the New tab's form before rendering into this card.
+    const newZone = document.getElementById(CPDI_NEW_FORM_ZONE);
+    if (newZone) { newZone.innerHTML = ""; newZone.style.display = "none"; }
+    cpdiFormZoneId = `cpdi-edit-form-${invoiceId}`;
     card.innerHTML = `
       <div id="cpdi-edit-form-${invoiceId}"></div>
-      <div id="cpdi-edit-lineitems-wrap-${invoiceId}" style="overflow-x:auto; margin-top:10px;"></div>
       <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
         <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">Save &amp; Generate Invoice Draft</button>
         ${cpdiEditDispatchChallanId ? `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiDcCheckingDraft(${invoiceId}, ${cpdiEditDispatchChallanId})">Generate Delivery Challan Draft</button>` : ''}
       </div>
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
-    cpdiRenderEditForm(invoiceId);
+    cpdiRenderInvoiceForm();
   } catch(e) {
     card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   }

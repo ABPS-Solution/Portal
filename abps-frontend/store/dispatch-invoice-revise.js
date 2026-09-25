@@ -12,6 +12,8 @@ let rpdiProjectMeta = {};
 let rpdiLoaded = false;
 let rpdiState = null;
 let rpdiCache = { invoiceId: null, projectId: "", invoiceType: "", invoiceRevision: 0 };
+const RPDI_NEW_FORM_ZONE = "rpdi-invoice-form-zone";
+let rpdiFormZoneId = RPDI_NEW_FORM_ZONE;
 
 function switchRevisePdiTab(tab) {
   const isSelect = tab === 'select';
@@ -257,12 +259,13 @@ async function loadRpdiForm(invoiceId) {
   if (rpdiFormOpenId === invoiceId) { rpdiCloseForm(); return; }
   document.querySelectorAll('[id^="rpdi-docs-row-"]').forEach(r => { r.style.display = "none"; });
   rpdiFormOpenId = invoiceId;
+  rpdiFormZoneId = RPDI_NEW_FORM_ZONE;
   const zone = document.getElementById("rpdi-invoice-form-zone");
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.9rem;">Loading current invoice details...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId });
     if (!data.success) { zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "Failed to load."}</div>`; return; }
-    rpdiCache = { invoiceId: data.invoiceId, projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
+    rpdiCache = { invoiceId: data.invoiceId, invoiceNo: data.invoiceNo || "", projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
     const last = data.lastInvoiceDetails || {};
     rpdiState = {
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
@@ -287,7 +290,8 @@ async function loadRpdiForm(invoiceId) {
 }
 
 function renderRpdiForm() {
-  const zone = document.getElementById("rpdi-invoice-form-zone");
+  const zone = document.getElementById(rpdiFormZoneId);
+  if (!zone) return;
   const s = rpdiState;
   const esc = (v) => (v == null ? '' : v.toString()).replace(/"/g, '&quot;');
   const field = (label, key, path) => {
@@ -298,7 +302,7 @@ function renderRpdiForm() {
 
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">${rpdiCache.invoiceType} Invoice ${rpdiCache.invoiceId} — proposed Revision V${(rpdiCache.invoiceRevision || 0) + 1}</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">${rpdiCache.invoiceType} Invoice ${escapeHtml(rpdiCache.invoiceNo || String(rpdiCache.invoiceId))} — proposed Revision V${(rpdiCache.invoiceRevision || 0) + 1}</div>
       <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Prefilled from this invoice's current values. Edit anything, then submit — this creates a REVISION REQUEST for authorization; the live invoice is untouched until then. Invoice number never changes.</div>
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
@@ -500,9 +504,9 @@ async function submitRpdiCreateRequest() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
-          Revision request #${data.requestId} submitted for Invoice ${rpdiCache.invoiceId} — awaiting authorization.
+          Revision request #${data.requestId} submitted for Invoice ${escapeHtml(rpdiCache.invoiceNo || String(rpdiCache.invoiceId))}. Print the draft, get it signed, then it can be authorized.
         </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Checking draft generation failed — retry from the Editing tab.</div>`}
+        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">The draft could not be generated. Retry from the Pending Revisions (Editing) tab.</div>`}
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchRevisePdiTab('select')">+ Revise Another Invoice</button>
           <button class="nav-btn-styled" style="background:var(--muted); padding:8px 20px; font-weight:700; margin-left:8px;" onclick="switchRevisePdiTab('editing')">Go to Pending Revisions (Editing)</button>
@@ -560,7 +564,7 @@ async function toggleRpdiEditCard(requestId) {
     if (!r) { card.innerHTML = `<div style="color:#b91c1c;">Request not found.</div>`; return; }
     const invData = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId: r.invoiceId });
     const last = invData.lastInvoiceDetails || {};
-    rpdiCache = { invoiceId: r.invoiceId, projectId: r.projectId, invoiceType: r.invoiceType, invoiceRevision: 0 };
+    rpdiCache = { invoiceId: r.invoiceId, invoiceNo: r.invoiceNo || "", projectId: r.projectId, invoiceType: r.invoiceType, invoiceRevision: Number(r.currentRevision) || 0 };
     rpdiState = {
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
@@ -575,13 +579,32 @@ async function toggleRpdiEditCard(requestId) {
       bankDetails: { beneficiary: "ABPS SOLUTION PRIVATE LIMITED", swift: "", ...PDI_STANDARD_BANK_DETAILS, ...(last.bankDetails || {}) },
       declaration: last.declaration || PDI_STANDARD_DECLARATION,
     };
+    // Overlay this revision's own saved changes on the live values.
+    const rev = r.revisedInvoiceDetails || {};
+    Object.keys(rev).forEach(k => {
+      if (rev[k] == null) return;
+      rpdiState[k] = (typeof rev[k] === 'object' && !Array.isArray(rev[k])) ? { ...(rpdiState[k] || {}), ...rev[k] } : rev[k];
+    });
+    const revLines = {};
+    (r.revisedLineItems || []).forEach(l => { if (l && l.poLineId != null) revLines[l.poLineId] = l; });
+    rpdiState.lineItems.forEach(li => {
+      const rl = revLines[li.lineId];
+      if (!rl) return;
+      li.quantity = rl.quantity; li.ratePerQuantity = rl.ratePerQuantity;
+      li.totalBasicPrice = (parseFloat(rl.quantity) || 0) * (parseFloat(rl.ratePerQuantity) || 0);
+    });
+
+    // Only one invoice form may exist on the page (shared element ids).
+    const newZone = document.getElementById(RPDI_NEW_FORM_ZONE);
+    if (newZone) newZone.innerHTML = "";
+    rpdiFormZoneId = `rpdi-edit-form-${requestId}`;
     card.innerHTML = `
-      <div id="rpdi-edit-lineitems-wrap-${requestId}" style="overflow-x:auto;"></div>
+      <div id="rpdi-edit-form-${requestId}"></div>
       <div style="display:flex; gap:10px; margin-top:14px;">
         <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">Save &amp; Generate Draft</button>
       </div>
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
-    renderPdiLineItemsTable(`rpdi-edit-lineitems-wrap-${requestId}`, rpdiState.lineItems, `rpdi-edit-${requestId}`, 'updateRpdiEditLineItem', null, null);
+    renderRpdiForm();
   } catch(e) {
     card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   }
