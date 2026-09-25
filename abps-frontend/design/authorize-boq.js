@@ -737,7 +737,8 @@ async function submitEBOQAuthorize() {
 
       const pdfNote = data.pdfWarning
         ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — BOQ is authorized. Contact admin to verify Drive folder setup.</div>`
-        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``);
+        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>`
+          : `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">The BOQ is authorized, but its PDF could not be created just now. It is retried automatically within the hour.</div>`);
 
       const fb = document.getElementById(feedbackId);
       if (fb) {
