@@ -2061,12 +2061,11 @@ function renderTicketExpectedReturns() {
   const body = document.getElementById("ticket-expected-return-body");
   if (!body) return;
   const rows = window.ticketExpectedReturnRows || [];
-  const cell = "padding:6px; border:1px solid var(--border);";
-  const head = "padding:7px 8px; border:1px solid var(--border); background:var(--highlight-bg); font-size:0.72rem; text-transform:uppercase; color:var(--muted);";
+  const cell = "vertical-align:middle;";
   body.innerHTML = `
-    <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+    <table class="store-basket-data-table prn-bordered-table cmit-basket-table" style="table-layout:fixed;">
       <colgroup><col style="width:64%"><col style="width:12%"><col style="width:16%"><col style="width:8%"></colgroup>
-      <thead><tr><th style="${head} text-align:left;">Material Name *</th><th style="${head}">Unit</th><th style="${head}">Qty *</th><th style="${head}"></th></tr></thead>
+      <thead><tr><th style="text-align:left;">Material Name *</th><th style="text-align:center;">Unit</th><th style="text-align:center;">Quantity *</th><th></th></tr></thead>
       <tbody>${rows.map((r, i) => `
         <tr>
           <td style="${cell}">

@@ -86,7 +86,7 @@ async function toggleBOQRevisionExpansion(updateId) {
           <input type="text" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===reqItem.productName && (x.rating||'')===(reqItem.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
+      <div style="display:grid; grid-template-columns:1.7fr 1fr 1fr 1fr; gap:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
           <input type="number" id="boqrev-order-qty-${updateId}" value="${formatQtyTrimmed(reqItem.newOrderQuantity)}" min="1" readonly
@@ -473,7 +473,7 @@ function renderUBOQForm() {
           <input type="text" id="uboq-header-make" readonly value="${(() => { const c=(window.itemCodeCatalogCache||[]).find(x=>x.productName===draft.productName && (x.rating||'')===(draft.productRating||'')); return c ? (c.make||'') : ''; })()}" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1.7fr 1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
           <input type="number" id="uboq-order-qty" value="${Math.round(Number(draft.orderQuantity) || 0)}" min="1" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
