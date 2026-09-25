@@ -187,8 +187,8 @@ async function loadProductionPlanningQueue() {
     const data = await apFetch({ action: "fetchProductionPlanningQueue" });
     if (!data.success) { zone.innerHTML = ""; return; }
     zone.innerHTML =
-      pplanRenderNeedQueueList("Overdue — Production Planning", data.overdue || [], "✅ Nothing overdue.") +
-      pplanRenderNeedQueueList("Due / Upcoming — Production Planning", data.due || [], "✅ Nothing else due yet.");
+      pplanRenderNeedQueueList("Overdue — Production Planning", data.overdue || [], "Nothing overdue.") +
+      pplanRenderNeedQueueList("Due / Upcoming — Production Planning", data.due || [], "Nothing else due yet.");
     if (typeof checkProductionPlanningReminder === "function") checkProductionPlanningReminder();
   } catch (e) {
     zone.innerHTML = "";

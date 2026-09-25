@@ -213,7 +213,7 @@ async function loadPRNNeedQueue() {
     if (!data.success) { zone.innerHTML = ""; return; }
     const queue = data.queue || [];
     if (queue.length === 0) {
-      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ No new BOQs need a PRN.</div>`;
+      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">No new BOQs need a PRN.</div>`;
       return;
     }
     // Held BOQs stay in the queue, greyed with an "On Hold" badge instead
@@ -763,7 +763,7 @@ async function authorizePRN(prnId) {
       const feed = document.getElementById("aprn-cards-feed");
       if (feed) feed.style.display = "none";
 
-      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
+      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
 
       const fb = document.getElementById("aprn-feedback");
       if (fb) {
@@ -772,7 +772,7 @@ async function authorizePRN(prnId) {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Purchase Request Note Authorized Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Purchase Request Note Authorized Successfully!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">PRN ID</span><span style="font-family:monospace; font-weight:800;">${prnId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${prn.projectId || ""}</span></div>
@@ -1063,7 +1063,7 @@ async function submitNewPRNCreation() {
       const needQueueZone = document.getElementById("prn-needqueue-zone");
       if (needQueueZone) { needQueueZone.style.display = "none"; needQueueZone.innerHTML = ""; }
       showPurchaseFeedback("prn-feedback",
-        `<div style="font-weight:800; margin-bottom:8px;">✅ PRN created and sent for authorization. Store quantities are reserved.</div>` +
+        `<div style="font-weight:800; margin-bottom:8px;">PRN created and sent for authorization. Store quantities are reserved.</div>` +
         `<div style="font-size:0.82rem;"><span style="font-weight:700;">PRN ID:</span> <span style="font-family:monospace; font-weight:700;">${data.prnId}</span></div>` +
         `<button onclick="document.getElementById('prn-feedback').style.display='none'; window.prnPendingCreate=null; initializePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Create Another PRN</button>`,
         "success", true);
@@ -1087,14 +1087,14 @@ async function submitNewPRNCreation() {
 
     const pdfNote = data.pdfWarning
       ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PRN is saved. Contact admin to verify Drive folder setup.</div>`
-      : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
+      : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : "");
 
     abpsDraftClear(PRN_DRAFT_KEYS.create);
     if (successZone) {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="background:#f0fff4; border-left:4px solid var(--accent); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:10px;">✅ PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
+          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:10px;">PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
           <div style="font-size:0.82rem; color:#276749; line-height:1.6;"><span style="font-weight:700;">PRN ID:</span> <span style="font-family:monospace; font-weight:700;">${data.prnId}</span></div>
           ${pdfNote}
           <button onclick="resetPRNPanelForNewEntry();"

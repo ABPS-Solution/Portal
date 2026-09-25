@@ -135,7 +135,7 @@ function renderMaterialListByType(materials) {
 
   if (active.length === 0) {
     zone.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted);">
-      <div style="font-size:2rem; margin-bottom:10px;">✅</div>
+      <div style="font-size:2rem; margin-bottom:10px;"></div>
       <div style="font-weight:700; color:var(--accent);">All materials fully covered!</div>
       <div style="font-size:0.82rem; margin-top:4px;">No items with purchase quantity greater than zero.</div>
     </div>`;

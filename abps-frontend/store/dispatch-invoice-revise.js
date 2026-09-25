@@ -502,7 +502,7 @@ async function submitRpdiCreateRequest() {
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
           Revision request #${data.requestId} submitted for Invoice ${rpdiCache.invoiceId} — awaiting authorization.
         </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Checking draft generation failed — retry from the Editing tab.</div>`}
+        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Checking draft generation failed — retry from the Editing tab.</div>`}
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchRevisePdiTab('select')">+ Revise Another Invoice</button>
           <button class="nav-btn-styled" style="background:var(--muted); padding:8px 20px; font-weight:700; margin-left:8px;" onclick="switchRevisePdiTab('editing')">Go to Pending Revisions (Editing)</button>
@@ -537,7 +537,7 @@ async function initializeRpdiEditingTab() {
             <div style="font-size:0.8rem; color:var(--muted);">Requested by ${r.requestedBy || '—'}</div>
           </div>
           <div style="text-align:right;">
-            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
+            ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
           </div>
         </div>
         <div id="rpdi-edit-card-${r.requestId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
@@ -578,7 +578,7 @@ async function toggleRpdiEditCard(requestId) {
     card.innerHTML = `
       <div id="rpdi-edit-lineitems-wrap-${requestId}" style="overflow-x:auto;"></div>
       <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">📄 Save &amp; Generate Draft</button>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">Save &amp; Generate Draft</button>
       </div>
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
     renderPdiLineItemsTable(`rpdi-edit-lineitems-wrap-${requestId}`, rpdiState.lineItems, `rpdi-edit-${requestId}`, 'updateRpdiEditLineItem', null, null);
@@ -624,7 +624,7 @@ async function generateRpdiCheckingDraftOnly(requestId) {
       if (tabsBar) tabsBar.style.display = "none";
       const fbEl = document.getElementById("rpdi-editing-feedback");
       fbEl.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
-      fbEl.innerHTML = `Changes saved. Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Draft ↗</a>
+      fbEl.innerHTML = `Changes saved. Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft ↗</a>
         <div><button class="nav-btn-styled" style="margin-top:12px; background:var(--accent); padding:7px 18px; font-weight:700;" onclick="switchRevisePdiTab('editing')">+ Edit Another Invoice Revision</button></div>`;
       fbEl.scrollIntoView({ behavior: "smooth", block: "center" });
       return;

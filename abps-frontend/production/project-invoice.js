@@ -56,7 +56,7 @@ function renderPinvFileList(type) {
   const files = pinvDocFiles[type] || [];
   const box = document.getElementById(meta.dropzoneId);
   if (box) {
-    if (files.length > 0) { box.textContent = `✅ ${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
+    if (files.length > 0) { box.textContent = `${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
     else { box.textContent = meta.placeholder; box.classList.remove("done"); }
   }
   const list = document.getElementById(meta.listId);

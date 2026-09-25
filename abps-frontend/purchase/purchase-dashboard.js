@@ -196,7 +196,7 @@ function pdRenderDashboard(data) {
   const overdueTbody = document.getElementById("pd-overdue-tbody");
   document.getElementById("pd-overdue-count").textContent = overdueList.length;
   overdueTbody.innerHTML = overdueList.length === 0
-    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">✅ No overdue Purchase Orders</td></tr>`
+    ? `<tr><td colspan="5" style="padding:8px; color:var(--muted); font-size:0.72rem;">No overdue Purchase Orders</td></tr>`
     : overdueList.map((po, i) => {
         const rowBg = i%2===0?"var(--card)":"#f8fafc";
         const overdueBg = po.daysOverdue<=3?"#fef3c7":po.daysOverdue<=7?"#fee2e2":"#fecaca";

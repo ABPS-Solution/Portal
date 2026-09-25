@@ -80,7 +80,7 @@ function ddRenderDashboard(data) {
   const mfcList = mfcAwaitingBoq || [];
   if (mfcCountEl) mfcCountEl.textContent = mfcList.length;
   mfcTbody.innerHTML = mfcList.length === 0
-    ? `<tr><td colspan="3" style="padding:8px 4px; color:var(--muted); font-size:0.72rem;">✅ Nothing waiting on a first BOQ.</td></tr>`
+    ? `<tr><td colspan="3" style="padding:8px 4px; color:var(--muted); font-size:0.72rem;">Nothing waiting on a first BOQ.</td></tr>`
     : mfcList.map(r => `
         <tr style="border-top:1px solid #f1f5f9;">
           <td style="padding:2px 4px;"><span style="font-family:monospace; font-weight:700; font-size:0.7rem; color:var(--brand);">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.68rem;">${r.companyName || ""}</span></td>

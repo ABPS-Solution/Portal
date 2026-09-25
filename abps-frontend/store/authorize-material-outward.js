@@ -30,7 +30,7 @@ async function amoLoadQueue() {
     window._amoChallans = data.challans || [];
     window._amoViewer = { personKey: data.viewerPersonKey, isAdmin: !!data.viewerIsAdmin };
     if (!window._amoChallans.length) {
-      feed.innerHTML = `<div style="padding:16px; text-align:center; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-weight:600;">✅ No Delivery Challans are waiting for authorization.</div>`;
+      feed.innerHTML = `<div style="padding:16px; text-align:center; background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-weight:600;">No Delivery Challans are waiting for authorization.</div>`;
       return;
     }
     feed.innerHTML = window._amoChallans.map(amoRenderCard).join("");
@@ -100,7 +100,7 @@ function amoRenderCard(c) {
           <span style="color:var(--muted);">${amoConsigneeLabel(c)}:</span> <strong>${escapeHtml(c.consignee_name || "—")}</strong>
         </div>
         <div style="display:flex; align-items:center; gap:12px; font-size:0.82rem; color:var(--muted);">
-          ${c.checking_doc_url ? `<a href="${driveLink(c.checking_doc_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700;">📄 Draft #${escapeHtml(String(c.checking_draft_count || ""))} ↗</a>` : ""}
+          ${c.checking_doc_url ? `<a href="${driveLink(c.checking_doc_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700;">Draft #${escapeHtml(String(c.checking_draft_count || ""))} ↗</a>` : ""}
           <span>Prepared by ${escapeHtml(c.created_by_name || "—")}</span>
           <span style="font-weight:700;">${open ? "▾" : "▸"}</span>
         </div>
@@ -142,7 +142,7 @@ async function amoAuthorize(id) {
     hideBlockingOverlay();
     if (!data.success) { amoInlineError(id, data.error || "Authorization failed."); return; }
     amoShowDone(`<div style="font-weight:700;">Delivery Challan ${escapeHtml(data.challanNumber)} authorized.</div>
-      ${data.url ? `<div style="margin-top:8px;"><a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">📄 Open Delivery Challan ↗</a></div>`
+      ${data.url ? `<div style="margin-top:8px;"><a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Delivery Challan ↗</a></div>`
                  : `<div style="margin-top:8px;">The PDF is still being generated and will appear in Search Challans shortly.</div>`}`);
   } catch (err) {
     hideBlockingOverlay();

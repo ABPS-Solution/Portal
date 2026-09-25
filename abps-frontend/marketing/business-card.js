@@ -1,13 +1,13 @@
 let fileFront = null, fileBack = null;
 document.getElementById('card-front').onchange = (e) => {
   fileFront = e.target.files[0];
-  document.getElementById('front-box').textContent = "Front ✅";
+  document.getElementById('front-box').textContent = "Front ";
   document.getElementById('front-box').classList.add('done');
   document.getElementById('parse-btn').disabled = false;
 };
 document.getElementById('card-back').onchange = (e) => {
   fileBack = e.target.files[0];
-  document.getElementById('back-box').textContent = "Back ✅";
+  document.getElementById('back-box').textContent = "Back ";
   document.getElementById('back-box').classList.add('done');
 };
 

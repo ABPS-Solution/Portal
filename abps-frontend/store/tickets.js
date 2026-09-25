@@ -1321,8 +1321,8 @@ async function executeShortfallResolution(ticketId, projectId, resolutionType) {
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display:block;background:#dcfce7;border-left:4px solid #15803d;color:#15803d;padding:12px;margin-bottom:12px;font-weight:700;";
         feedbackBanner.textContent = resolutionType === "partial"
-          ? "✅ Partial release completed. Backorder logged for shortfall quantities — will surface on next GRN."
-          : "✅ Stock reallocated and ticket fully released.";
+          ? "Partial release completed. Backorder logged for shortfall quantities — will surface on next GRN."
+          : "Stock reallocated and ticket fully released.";
       }
       const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
       if (card) card.remove();

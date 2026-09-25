@@ -25,7 +25,7 @@ async function initializeApdiWorkspace() {
             <div style="font-size:0.8rem; color:var(--muted);">Created by ${inv.createdBy || '—'} · pending ${inv.pendingDays === 0 ? 'today' : `${inv.pendingDays} day(s)`}</div>
           </div>
           <div style="text-align:right;">
-            ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">📄 Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
+            ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
           </div>
         </div>
         <div id="apdi-card-${inv.invoiceId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
@@ -99,8 +99,8 @@ async function submitApdiAuthorize() {
         ],
         notes: pending,
         links: [
-          { label: "📄 Open Invoice", url: data.url ? driveLink(data.url) : "" },
-          { label: "📄 Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
+          { label: "Open Invoice", url: data.url ? driveLink(data.url) : "" },
+          { label: "Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
         ],
         resetLabel: "Authorize Another", resetFn: "initializeApdiWorkspace()",
       });

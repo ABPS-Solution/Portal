@@ -33,7 +33,7 @@ async function initializeAuthorizePOPanel() {
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
-            ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet. Sign this printout, then authorize.">📄 Draft #${po.checkingDraftCount}</a>` : ""}
+            ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet. Sign this printout, then authorize.">Draft #${po.checkingDraftCount}</a>` : ""}
             ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
           <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
@@ -680,7 +680,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           ? `<button class="nav-btn-styled" onclick="rejectPOFromForm()" style="background:#dc2626;">Reject PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="authorizePOFromForm()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Authorize PO</button>`
           : window.cpoMode === 'edit'
-          ? `<button class="nav-btn-styled" id="cpo-submit-btn" onclick="saveEditedPO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">📄 Save &amp; Generate Draft</button>`
+          ? `<button class="nav-btn-styled" id="cpo-submit-btn" onclick="saveEditedPO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Save &amp; Generate Draft</button>`
           : `<button class="nav-btn-styled" onclick="clearCPOForm()" style="background:#718096;">Clear PO</button>
              <button class="nav-btn-styled" id="cpo-submit-btn" onclick="submitCreatePO()" style="background:var(--brand); color:#fff; font-weight:700; padding:10px 24px;">Submit for Authorization</button>`}
       </div>
@@ -1342,7 +1342,7 @@ async function submitCreatePO() {
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       let msg = `<strong>PO Draft Created: ${data.poNo}</strong><br/>It has been sent for Authorization.`;
       if (data.checkingDocUrl) {
-        msg += ` <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:6px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:5px 12px; border-radius:var(--radius); font-weight:700; font-size:0.8rem; text-decoration:none;">📄 Open Draft #1</a>`;
+        msg += ` <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:6px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:5px 12px; border-radius:var(--radius); font-weight:700; font-size:0.8rem; text-decoration:none;">Open Draft #1</a>`;
       } else if (data.checkingDocWarning) {
         msg += `<br/><span style="font-size:0.78rem; color:#b45309;">⚠️ Draft #1 could not be generated — open Edit Raw Material Purchase Order and click "Generate Draft" to retry.</span>`;
       }
@@ -1455,8 +1455,8 @@ async function authorizePOFromForm() {
       const body = document.getElementById("authorize-po-body");
       if (body) body.innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
-      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">✅ ${poNo} Authorized Successfully!</div>`;
-      if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open PO PDF</a>`;
+      let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">${poNo} Authorized Successfully!</div>`;
+      if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">Open PO PDF</a>`;
       else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
       msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">The signed draft is now the PO document in Drive.</div>`;
       msg += `<button onclick="document.getElementById('authorize-po-feedback').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
@@ -1596,16 +1596,16 @@ async function saveEditedPO() {
       // Saving and printing are one step (24 Sep 2026): a fresh checking
       // draft is generated from what was just saved.
       await generateCheckingDraftOnly();
-      btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
+      btn.disabled = false; btn.textContent = "Save & Generate Draft";
     } else {
-      btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
+      btn.disabled = false; btn.textContent = "Save & Generate Draft";
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
       banner.textContent = "Server error: " + data.error;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   } catch (e) {
     hideBlockingOverlay();
-    btn.disabled = false; btn.textContent = "📄 Save & Generate Draft";
+    btn.disabled = false; btn.textContent = "Save & Generate Draft";
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
     banner.textContent = "Network error: " + e.message;
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
@@ -1630,7 +1630,7 @@ async function generateCheckingDraftOnly() {
         document.getElementById("edit-po-body").innerHTML = "";
         const cpoTabsBar = document.getElementById("cpo-tab-new")?.parentElement;
         if (cpoTabsBar) cpoTabsBar.style.display = "none";
-        banner.innerHTML = `<strong>Changes saved. Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 Open Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('edit-po-feedback').style.display='none'; const tb=document.getElementById('cpo-tab-new').parentElement; tb.style.display='flex'; switchCreatePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO</button></div>`;
+        banner.innerHTML = `<strong>Changes saved. Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">Open Draft #${data.checkingDraftNumber}</a><div><button onclick="document.getElementById('edit-po-feedback').style.display='none'; const tb=document.getElementById('cpo-tab-new').parentElement; tb.style.display='flex'; switchCreatePOTab('editing');" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Edit Another RM PO</button></div>`;
       } else {
         banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b45309; background:#fffbeb; color:#78350f; border-radius:var(--radius); font-weight:600;";
         banner.textContent = `⚠️ Draft #${data.checkingDraftNumber} could not be generated — your changes are saved; click "Save & Generate Draft" again to retry the printout.`;
@@ -1761,7 +1761,7 @@ function handleRMPOFileSelection(input) {
   targetRMPOFileObj = input.files[0];
   if (targetRMPOFileObj) {
     const box = document.getElementById("rm-po-file-dropzone");
-    box.textContent = "📄 " + targetRMPOFileObj.name + " ✅";
+    box.textContent = "" + targetRMPOFileObj.name + " ";
     box.classList.add("done");
   }
 }
@@ -1772,7 +1772,7 @@ function resetRMPOUploadState() {
   const fileInput = document.getElementById("rm-po-file-input");
   if (fileInput) fileInput.value = "";
   const box = document.getElementById("rm-po-file-dropzone");
-  if (box) { box.textContent = "📄 Select Raw Material Purchase Order (PDF or Image)"; box.classList.remove("done"); }
+  if (box) { box.textContent = "Select Raw Material Purchase Order (PDF or Image)"; box.classList.remove("done"); }
   document.getElementById("rm-po-verification-zone").style.display = "none";
   document.getElementById("rm-po-verification-table-body").innerHTML = "";
   ["rm-po-vendor-name","rm-po-number","rm-po-order-date","rm-po-delivery-date","rm-po-grand-total"].forEach(id => {

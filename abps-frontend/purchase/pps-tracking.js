@@ -127,8 +127,8 @@ async function loadPPSNeedQueues() {
     const data = await apFetch({ action: "fetchPRNsNeedingDeliverySchedule" });
     if (!data.success) { zone.innerHTML = ""; return; }
     zone.innerHTML =
-      ppsRenderNeedQueueList("Unscheduled PRNs — Need a Delivery Schedule", data.unscheduled || [], "✅ No PRNs are unscheduled.") +
-      ppsRenderNeedQueueList("Partially Scheduled PRNs — Need a Delivery Schedule", data.partial || [], "✅ No PRNs are partially scheduled.");
+      ppsRenderNeedQueueList("Unscheduled PRNs — Need a Delivery Schedule", data.unscheduled || [], "No PRNs are unscheduled.") +
+      ppsRenderNeedQueueList("Partially Scheduled PRNs — Need a Delivery Schedule", data.partial || [], "No PRNs are partially scheduled.");
   } catch(e) {
     zone.innerHTML = "";
   }
@@ -622,10 +622,10 @@ async function savePPSDeliverySchedule(prnId, btn) {
       // and must not appear to have failed over a best-effort document.
       const docUrls = data.docUrls || {};
       const docLinksHtml = Object.values(docUrls).map((url) => `
-        <a href="${driveLink(url)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 View PPS Document</a>`).join("");
+        <a href="${driveLink(url)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">View PPS Document</a>`).join("");
       showSuccessWithReset(
         "pps-feedback",
-        `✅ Delivery schedule saved.<div style="margin-top:8px; padding:8px 10px; background:#fff; border:1px solid #86efac; border-radius:6px; font-family:monospace; font-weight:800; font-size:0.8rem; color:var(--brand); line-height:1.4; word-break:break-word;">${prnId}</div>${docLinksHtml}`,
+        `Delivery schedule saved.<div style="margin-top:8px; padding:8px 10px; background:#fff; border:1px solid #86efac; border-radius:6px; font-family:monospace; font-weight:800; font-size:0.8rem; color:var(--brand); line-height:1.4; word-break:break-word;">${prnId}</div>${docLinksHtml}`,
         "Action Another PPS", "initializePPSTrackingPanel()"
       );
     } else {

@@ -50,7 +50,7 @@ function renderFGFileList(type) {
   const files = fgDocFiles[type] || [];
   const box = document.getElementById(meta.dropzoneId);
   if (box) {
-    if (files.length > 0) { box.textContent = `✅ ${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
+    if (files.length > 0) { box.textContent = `${files.length} file${files.length > 1 ? "s" : ""} attached — click to add more`; box.classList.add("done"); }
     else { box.textContent = meta.placeholder; box.classList.remove("done"); }
   }
   const list = document.getElementById(meta.listId);
@@ -449,7 +449,7 @@ async function triggerFGBOQValidation() {
     }
 
     const rowsHtml = data.details.map(d => {
-      const statusColor = d.matched ? { bg: "#dcfce7", color: "#15803d", icon: "✅" } : { bg: "#fee2e2", color: "#b91c1c", icon: "❌" };
+      const statusColor = d.matched ? { bg: "#dcfce7", color: "#15803d", icon: "" } : { bg: "#fee2e2", color: "#b91c1c", icon: "❌" };
       return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${statusColor.bg}; border-radius:4px; margin-bottom:4px;">
         <div style="font-size:0.8rem; font-weight:600; color:#1e293b;">${statusColor.icon} ${d.materialName} <span style="font-size:0.68rem; color:var(--muted); font-weight:400;">(${d.typeOfStore})</span></div>
         <div style="font-size:0.78rem; font-weight:700; color:${statusColor.color};">Required: ${fmtQty(d.required)} ${d.unitType} | Consumed: ${fmtQty(d.consumed)} ${d.unitType}</div>
@@ -468,7 +468,7 @@ async function triggerFGBOQValidation() {
 
     if (data.matched) {
       zone.innerHTML = `
-        <div style="padding:10px 12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius) var(--radius) 0 0; color:#15803d; font-size:0.85rem; font-weight:700;">✅ Bill of Quantity material consumption matches for this Job Card.</div>
+        <div style="padding:10px 12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius) var(--radius) 0 0; color:#15803d; font-size:0.85rem; font-weight:700;">Bill of Quantity material consumption matches for this Job Card.</div>
         <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
     } else {
       zone.innerHTML = `

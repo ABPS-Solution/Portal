@@ -842,7 +842,7 @@ async function submitCreateBOQ() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Submitted for Authorization!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Bill of Quantity Submitted for Authorization!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${projectId}</span></div>

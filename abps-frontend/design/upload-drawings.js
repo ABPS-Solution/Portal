@@ -101,7 +101,7 @@ async function refreshUploadDrawingsList(projectId, drawingType) {
 
     mount.innerHTML = data.documents.map(doc => `
       <a href="${driveLink(doc.url)}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
-        <span>📄 ${doc.name}</span>
+        <span>${doc.name}</span>
         <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${formatOrdinalDateTime(doc.lastUpdated) || doc.lastUpdated}</span>
       </a>`).join("");
   } catch(e) {
@@ -115,8 +115,8 @@ function handleUploadDrawingsFileSelection(input) {
   const box = document.getElementById("upload-drawings-dropzone");
   if (uploadDrawingsSelectedFile.length) {
     box.textContent = uploadDrawingsSelectedFile.length === 1
-      ? uploadDrawingsSelectedFile[0].name + " ✅"
-      : `${uploadDrawingsSelectedFile.length} documents selected ✅`;
+      ? uploadDrawingsSelectedFile[0].name + " "
+      : `${uploadDrawingsSelectedFile.length} documents selected `;
     box.title = uploadDrawingsSelectedFile.map(f => f.name).join("\n");
     box.classList.add("done");
   }

@@ -70,7 +70,7 @@ async function loadMRDNeedQueue() {
     if (!data.success) { zone.innerHTML = ""; return; }
     const queue = data.queue || [];
     if (queue.length === 0) {
-      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">✅ No PRNs need requirement dates.</div>`;
+      zone.innerHTML = `<div style="padding:10px 14px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">No PRNs need requirement dates.</div>`;
       return;
     }
     const rowHtml = item => `
@@ -191,7 +191,7 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
       if (zone) zone.style.display = "none";
       const selRow = document.getElementById("mrd-selector-row");
       if (selRow) selRow.style.display = "none";
-      showSuccessWithReset("mrd-feedback", `✅ Production requirement dates submitted for PRN ${prnId}.`, "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
+      showSuccessWithReset("mrd-feedback", `Production requirement dates submitted for PRN ${prnId}.`, "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
     } else {
       btn.disabled = false; btn.textContent = originalText;
       showPurchaseFeedback("mrd-feedback", data.error || "Failed to save.", "error");
@@ -488,7 +488,7 @@ async function loadRMRDQueueTab() {
     const data = await apFetch({ action: "fetchPRNsNeedingRequirementDates", badgeFilter: "Revised" });
     const queue = (data.success ? (data.queue || []) : []);
     if (queue.length === 0) {
-      feed.innerHTML = `<div style="padding:16px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.85rem; font-weight:600; text-align:center;">✅ No requirement dates are waiting on a revision.</div>`;
+      feed.innerHTML = `<div style="padding:16px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.85rem; font-weight:600; text-align:center;">No requirement dates are waiting on a revision.</div>`;
       return;
     }
     queue.forEach(item => { window.rmrdQueueMeta[item.prnId] = item; });
@@ -567,7 +567,7 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
       const tabsBar = document.getElementById("rmrd-tabs-bar");
       if (tabsBar) tabsBar.style.display = "none";
       showPurchaseFeedback("rmrd-delta-feedback",
-        `✅ Requirement dates for <strong>${prnId}</strong> revised.<br>` +
+        `Requirement dates for <strong>${prnId}</strong> revised.<br>` +
         `<button onclick="document.getElementById('rmrd-delta-feedback').style.display='none'; const tb=document.getElementById('rmrd-tabs-bar'); if(tb) tb.style.display='flex'; loadRMRDQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
         "success", true);
     } else {
@@ -658,7 +658,7 @@ async function submitReviseMRDOther(ns, prnId, btn) {
       if (tabsBar) tabsBar.style.display = "none";
       const fb = document.getElementById("rmrd-feedback");
       fb.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
-      fb.innerHTML = `✅ Requirement dates revised for <strong>${prnId}</strong>.
+      fb.innerHTML = `Requirement dates revised for <strong>${prnId}</strong>.
         <div><button onclick="initializeReviseMRDPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button></div>`;
     } else {
       btn.disabled = false; btn.textContent = originalText;

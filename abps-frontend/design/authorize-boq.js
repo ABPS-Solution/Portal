@@ -169,7 +169,7 @@ async function authorizeBOQRevision(updateId) {
       // message (submitEBOQAuthorize), not the plain one-line banner this
       // used to show.
       const pdfNote = data.pdfUrl
-        ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``;
+        ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``;
       const fb = document.getElementById("auth-boq-upd-feedback");
       if (fb) {
         fb.style.borderLeftColor = "var(--accent)";
@@ -177,7 +177,7 @@ async function authorizeBOQRevision(updateId) {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity Revision Authorized Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Bill of Quantity Revision Authorized Successfully!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId || reqItem.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${reqItem.projectId || ""}</span></div>
@@ -737,7 +737,7 @@ async function submitEBOQAuthorize() {
 
       const pdfNote = data.pdfWarning
         ? `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — BOQ is authorized. Contact admin to verify Drive folder setup.</div>`
-        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;">📄 <a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``);
+        : (data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``);
 
       const fb = document.getElementById(feedbackId);
       if (fb) {
@@ -746,7 +746,7 @@ async function submitEBOQAuthorize() {
         fb.style.color           = "#276749";
         fb.style.display         = "block";
         fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Bill of Quantity ${eboqMode === "authorize" ? "Authorized" : "Revision Authorized"} Successfully!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Bill of Quantity ${eboqMode === "authorize" ? "Authorized" : "Revision Authorized"} Successfully!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${data.boqId}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>

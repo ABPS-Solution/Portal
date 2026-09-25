@@ -223,7 +223,7 @@ function renderSVCIResultsTable() {
       </table>
     </div>
     <div style="text-align:right; margin-top:14px;">
-      <button class="nav-btn-styled" onclick="downloadSVCIPdf(this)" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 22px;">📄 Download Vendor Costing Information</button>
+      <button class="nav-btn-styled" onclick="downloadSVCIPdf(this)" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 22px;">Download Vendor Costing Information</button>
     </div>`;
 }
 

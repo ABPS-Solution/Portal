@@ -553,7 +553,7 @@ async function submitFGApprovalDecision(fgId, action) {
         if (feed) feed.style.display = "none";
         feedback.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#f0fff4; color:#276749; border-radius:var(--radius);";
         feedback.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">✅ Finished Good Approved & Added to FG Store!</div>
+          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Finished Good Approved & Added to FG Store!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Job Card Number</span><span style="font-weight:700;">${fg.jobCardNumber || "—"}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${fg.productName || "—"}</span></div>
