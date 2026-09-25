@@ -1069,6 +1069,14 @@ function handleCPODescSearch(rowId, query) {
 function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
+  // One item code = one line per PO (PPS, delivery schedule and Gate Entry
+  // all key on it). Point to the existing row instead of adding a second.
+  const dupIdx = window.cpoMaterialRows.findIndex(r => r.id !== rowId && r.itemCode === itemCode);
+  if (dupIdx !== -1) {
+    alert(`${itemCode} is already on this PO in Row ${dupIdx + 1}. Increase the quantity there instead of adding it again.`);
+    document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
+    return;
+  }
   row.description = combinedName;
   row.itemCode = itemCode;
   row.unit = unitType || "Nos";
@@ -1329,6 +1337,8 @@ async function submitCreatePO() {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
+    const firstIdx = window.cpoMaterialRows.findIndex(r => r.itemCode && r.itemCode === row.itemCode);
+    if (row.itemCode && firstIdx !== -1 && firstIdx < n - 1) return showErr(`Row ${n}: ${row.itemCode} is already on this PO in Row ${firstIdx + 1}. Remove the duplicate and increase the quantity there.`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
     if (!(row.additionalDescription || "").trim()) return showErr(`Row ${n}: Description of Material is required.`);
@@ -1442,6 +1452,8 @@ async function authorizePOFromForm() {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
+    const firstIdx = window.cpoMaterialRows.findIndex(r => r.itemCode && r.itemCode === row.itemCode);
+    if (row.itemCode && firstIdx !== -1 && firstIdx < n - 1) return showErr(`Row ${n}: ${row.itemCode} is already on this PO in Row ${firstIdx + 1}. Remove the duplicate and increase the quantity there.`);
     if (!(parseFloat(row.quantity) > 0)) return showErr(`Row ${n}: Quantity must be greater than 0.`);
     if (!(parseFloat(row.rate) > 0)) return showErr(`Row ${n}: Rate must be greater than 0.`);
     if (!(row.additionalDescription || "").trim()) return showErr(`Row ${n}: Description of Material is required.`);
