@@ -169,7 +169,8 @@ async function authorizeBOQRevision(updateId) {
       // message (submitEBOQAuthorize), not the plain one-line banner this
       // used to show.
       const pdfNote = data.pdfUrl
-        ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>` : ``;
+        ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View BOQ PDF</a></div>`
+        : `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">The revision is authorized, but its PDF could not be created just now. It is retried automatically within the hour.</div>`;
       const fb = document.getElementById("auth-boq-upd-feedback");
       if (fb) {
         fb.style.borderLeftColor = "var(--accent)";
