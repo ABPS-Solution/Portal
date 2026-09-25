@@ -934,8 +934,8 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:100px;">Store Available Stock</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *<br><label style="font-size:0.66rem; font-weight:600; cursor:pointer; white-space:nowrap;"><input type="checkbox" onchange="prnCreateCheckAll(this.checked)" style="width:13px; height:13px; vertical-align:middle;" /> Check all</label></th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *<br><button type="button" onclick="prnCreateFillMinimum()" style="margin-top:3px; font-size:0.64rem; font-weight:700; padding:2px 6px; border:1px solid #0369a1; color:#0369a1; background:#fff; border-radius:3px; cursor:pointer;">Fill minimum</button></th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:110px;">Purchase Qty</th>
           </tr>
         </thead>
@@ -1353,3 +1353,24 @@ async function generatePRNPDF() {
 let materialListCache = [];
 let materialListSelectedProjectId = null; // null = ALL Active Projects
 
+
+// TEMPORARY (dry run, 26 Sep 2026) — header helpers on Create PRN.
+function prnCreateCheckAll(on) {
+  document.querySelectorAll(".prn-create-checked").forEach(cb => {
+    if (cb.checked !== on) { cb.checked = on; cb.dispatchEvent(new Event("change")); }
+  });
+}
+// Store Quantity = min(Buffered BOQ Qty, Store Available Stock) per row,
+// through the normal input handler so Purchase Qty / stock refresh as usual.
+function prnCreateFillMinimum() {
+  document.querySelectorAll(".prn-create-storeqty:not(.prn-create-decrease-storeqty)").forEach(inp => {
+    const cb = document.querySelector(`.prn-create-checked[data-idx="${inp.dataset.idx}"]`);
+    if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event("change")); }
+    const row = inp.closest("tr");
+    const live = row && row.querySelector(".prn-create-livestock");
+    const liveTotal = (live && live.dataset.liveTotal !== undefined) ? Number(live.dataset.liveTotal) || 0 : 0;
+    const buffered = Number(inp.dataset.bufferedReq) || 0;
+    inp.value = Math.round(Math.min(buffered, liveTotal) * 100) / 100;
+    inp.dispatchEvent(new Event("input"));
+  });
+}
