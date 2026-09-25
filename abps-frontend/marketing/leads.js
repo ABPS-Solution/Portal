@@ -2886,14 +2886,18 @@ function validatePoReviewBeforeSubmit(s) {
   if (!(s.deliveryDate || '').toString().trim()) return "Tentative Delivery Date is required.";
   const items = s.lineItems || [];
   if (items.length === 0) return "At least one product row is required.";
-  const badRow = items.some(it =>
-    !(it.description || '').toString().trim() ||
-    !(it.quantity !== '' && it.quantity !== null && it.quantity !== undefined && it.quantity.toString().trim() !== '') ||
-    !(it.unit || '').toString().trim() ||
-    !(it.ratePerQuantity !== '' && it.ratePerQuantity !== null && it.ratePerQuantity !== undefined && it.ratePerQuantity.toString().trim() !== '') ||
-    !(it.gstAmount !== '' && it.gstAmount !== null && it.gstAmount !== undefined && it.gstAmount.toString().trim() !== '')
-  );
-  if (badRow) return "Every product row must have Order Product Description, Order Quantity, UOM, Rate / Quantity, and GST Amount filled in.";
+  const isBlank = v => v === '' || v === null || v === undefined || v.toString().trim() === '';
+  const missingByRow = [];
+  items.forEach((it, i) => {
+    const missing = [];
+    if (isBlank(it.description)) missing.push('Order Product Description');
+    if (isBlank(it.quantity)) missing.push('Order Quantity');
+    if (isBlank(it.unit)) missing.push('UOM');
+    if (isBlank(it.ratePerQuantity)) missing.push('Rate / Quantity');
+    if (isBlank(it.gstAmount)) missing.push('GST Amount');
+    if (missing.length) missingByRow.push(`Row ${i + 1}: ${missing.join(', ')} ${missing.length > 1 ? 'are' : 'is'} missing`);
+  });
+  if (missingByRow.length) return missingByRow.join('. ') + '.';
   if (!(s.poBasicAmount !== '' && s.poBasicAmount !== null && s.poBasicAmount !== undefined && s.poBasicAmount.toString().trim() !== '')) return "Basic PO Amount is required.";
   if (!(s.poGstAmount !== '' && s.poGstAmount !== null && s.poGstAmount !== undefined && s.poGstAmount.toString().trim() !== '')) return "PO GST Amount is required.";
   if (!(s.poTotalAmount !== '' && s.poTotalAmount !== null && s.poTotalAmount !== undefined && s.poTotalAmount.toString().trim() !== '')) return "PO Total Amount is required.";
