@@ -23,6 +23,9 @@ ABPS-Tour-Vouchers/
 ABPS_SYSTEM_OVERVIEW.md
 CLAUDE.md
 HANDOFF.md
+Database Schema Reference/
+Extra docs/
+Fake_Project_E2E_Test_Plan.md
 
 # Dependencies
 node_modules/
