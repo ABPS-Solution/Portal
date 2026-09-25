@@ -144,7 +144,7 @@ function oppRenderCard(p) {
   const isLeadExpanded = window.oppLeadExpandedProjects.has(p.projectId);
 
   return `
-    <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; overflow:hidden;">
+    <div style="border:2px solid #94a3b8; border-radius:var(--radius); margin-bottom:16px; background:#fff; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.08);">
       <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; cursor:pointer;" onclick="oppToggleProject('${p.projectId}')">
         <div style="flex:1; min-width:220px;">
           <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(p.companyName || '-')}</div>
