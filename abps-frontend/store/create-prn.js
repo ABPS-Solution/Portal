@@ -153,10 +153,8 @@ async function initializePRNPanel() {
   const projDropList = document.getElementById("prn-project-select-ta-dropdown");
   if (projDropList) projDropList.style.display = "none";
   projDrop.placeholder = "Loading...";
-  boqDrop.innerHTML  = '<option value="">— Select Project First —</option>';
-  boqDrop.disabled   = true;
-  boqDrop.style.opacity  = "0.5";
-  boqDrop.style.cursor   = "not-allowed";
+  genericDropdownReset("prn-boq-select", "— Select Project First —");
+  genericDropdownSetDisabled("prn-boq-select", true);
   document.getElementById("prn-details-zone").style.display = "none";
   document.getElementById("prn-feedback").style.display     = "none";
   const bodyZoneInit = document.getElementById("prn-body-zone");
@@ -285,7 +283,8 @@ async function jumpToPRNFromQueue(projectId, boqId, btn) {
     projDrop.value = projectId;
     await handlePRNProjectChange(projectId);
     if (boqDrop) {
-      boqDrop.value = boqId;
+      const m = (window.prnBOQMeta || {})[boqId] || {};
+      genericDropdownSelect("prn-boq-select", boqId, m.optionLabel || boqId);
       await handlePRNBOQChange(boqId, true);
     }
     const bodyZone = document.getElementById("prn-body-zone");
@@ -302,29 +301,28 @@ async function handlePRNProjectChange(projectId) {
   prnCurrentData = null;
 
   if (!projectId) {
-    boqDrop.innerHTML = '<option value="">— Select Project First —</option>';
-    boqDrop.disabled  = true; boqDrop.style.opacity = "0.5"; boqDrop.style.cursor = "not-allowed";
+    genericDropdownReset("prn-boq-select", "— Select Project First —");
+    genericDropdownSetDisabled("prn-boq-select", true);
     return;
   }
 
-  boqDrop.innerHTML = '<option value="">Loading...</option>';
-  boqDrop.disabled  = true;
+  genericDropdownReset("prn-boq-select", "Loading...");
+  genericDropdownSetDisabled("prn-boq-select", true);
 
   try {
     const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
-    boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
     window.prnBOQMeta = {};
-    (data.drafts || []).forEach(draft => {
-      const opt = document.createElement("option");
-      opt.value = draft.boqId;
-      opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department || "—"}`;
-      boqDrop.appendChild(opt);
+    const options = (data.drafts || []).map(draft => {
+      const label = escapeHtml(`${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department || "—"}`);
       window.prnBOQMeta[draft.boqId] = { productName: draft.productName, productRating: draft.productRating, orderQuantity: draft.orderQuantity, customerName: draft.customerName,
-        descriptionOfMaterial: draft.descriptionOfMaterial, make: draft.make };
+        descriptionOfMaterial: draft.descriptionOfMaterial, make: draft.make, optionLabel: label };
+      return { value: draft.boqId, label };
     });
-    boqDrop.disabled = false; boqDrop.style.opacity = "1"; boqDrop.style.cursor = "pointer";
+    genericDropdownReset("prn-boq-select", "— Select BOQ —");
+    genericDropdownPopulate("prn-boq-select", options, (v) => handlePRNBOQChange(v));
+    genericDropdownSetDisabled("prn-boq-select", false);
   } catch(e) {
-    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+    genericDropdownReset("prn-boq-select", "Error loading BOQs");
   }
 }
 
@@ -934,8 +932,8 @@ function renderPRNCreateTable() {
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#6b7a8d; min-width:100px;">Store Available Stock</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *<br><label style="font-size:0.66rem; font-weight:600; cursor:pointer; white-space:nowrap;"><input type="checkbox" onchange="prnCreateCheckAll(this.checked)" style="width:13px; height:13px; vertical-align:middle;" /> Check all</label></th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *<br><button type="button" onclick="prnCreateFillMinimum()" style="margin-top:3px; font-size:0.64rem; font-weight:700; padding:2px 6px; border:1px solid #0369a1; color:#0369a1; background:#fff; border-radius:3px; cursor:pointer;">Fill minimum</button></th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#9333ea; width:80px;">Checked *</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; color:#0369a1; min-width:120px;">Store Quantity *</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#15803d; min-width:110px;">Purchase Qty</th>
           </tr>
         </thead>
@@ -1354,23 +1352,3 @@ let materialListCache = [];
 let materialListSelectedProjectId = null; // null = ALL Active Projects
 
 
-// TEMPORARY (dry run, 26 Sep 2026) — header helpers on Create PRN.
-function prnCreateCheckAll(on) {
-  document.querySelectorAll(".prn-create-checked").forEach(cb => {
-    if (cb.checked !== on) { cb.checked = on; cb.dispatchEvent(new Event("change")); }
-  });
-}
-// Store Quantity = min(Buffered BOQ Qty, Store Available Stock) per row,
-// through the normal input handler so Purchase Qty / stock refresh as usual.
-function prnCreateFillMinimum() {
-  document.querySelectorAll(".prn-create-storeqty:not(.prn-create-decrease-storeqty)").forEach(inp => {
-    const cb = document.querySelector(`.prn-create-checked[data-idx="${inp.dataset.idx}"]`);
-    if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event("change")); }
-    const row = inp.closest("tr");
-    const live = row && row.querySelector(".prn-create-livestock");
-    const liveTotal = (live && live.dataset.liveTotal !== undefined) ? Number(live.dataset.liveTotal) || 0 : 0;
-    const buffered = Number(inp.dataset.bufferedReq) || 0;
-    inp.value = Math.round(Math.min(buffered, liveTotal) * 100) / 100;
-    inp.dispatchEvent(new Event("input"));
-  });
-}
