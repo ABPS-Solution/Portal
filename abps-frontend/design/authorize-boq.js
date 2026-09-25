@@ -361,7 +361,7 @@ function renderEBOQForm(containerId) {
               <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit</th>
               <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
               <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
-              <th style="width:70px; padding:8px; font-size:0.82rem; text-align:center;">Costing Verified *<br><label style="font-size:0.68rem; font-weight:600; cursor:pointer; white-space:nowrap;"><input type="checkbox" onchange="boqTickAllCostingVerified(this, 'eboq')" style="width:14px; height:14px; vertical-align:middle;" /> Tick all</label></th>
+              <th style="width:70px; padding:8px; font-size:0.82rem; text-align:center;">Costing Verified *</th>
               <th style="width:40px; padding:8px; font-size:0.82rem; text-align:center;">Del</th>
             </tr>
           </thead>
@@ -784,14 +784,3 @@ async function submitEBOQAuthorize() {
 // ═══════════════════════════════════════════════════════
 
 
-// Header "Tick all" for the Costing Verified column (Authorize BOQ and
-// Authorize BOQ Revision). The server still checks every row itself.
-function boqTickAllCostingVerified(box, prefix) {
-  const rows = prefix === 'eboq' ? eboqMaterialRows : uboqRevRows;
-  (rows || []).forEach((r, i) => {
-    const cb = document.getElementById(`${prefix}-cv-${i}`);
-    if (!cb || cb.disabled) return;
-    cb.checked = box.checked;
-    r.costingVerified = box.checked;
-  });
-}
