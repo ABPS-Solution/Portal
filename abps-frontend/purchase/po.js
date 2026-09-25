@@ -1457,7 +1457,7 @@ async function authorizePOFromForm() {
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;">${poNo} Authorized Successfully!</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">Open PO PDF</a>`;
-      else if (data.pdfWarning) msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">⚠️ PDF could not be generated — PO is authorized. Contact admin to verify Drive folder setup.</div>`;
+      else msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`;
       msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">The signed draft is now the PO document in Drive.</div>`;
       msg += `<button onclick="document.getElementById('authorize-po-feedback').style.display='none'; initializeAuthorizePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO</button>`;
       banner.innerHTML = msg;

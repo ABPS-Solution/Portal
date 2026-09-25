@@ -165,8 +165,11 @@ function showPurchaseFeedback(elementId, message, type, persist) {
 function showSuccessWithReset(elementId, message, resetButtonLabel, resetFnCall, docLinks) {
   const el = document.getElementById(elementId);
   if (!el) return;
-  const links = (docLinks || []).filter(d => d && d.url).map(d =>
-    `<div style="margin-top:8px;"><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${d.label} ↗</a></div>`
+  // An entry with a label but no url means the document failed to generate;
+  // say so rather than silently showing no link.
+  const links = (docLinks || []).filter(d => d && (d.url || d.label)).map(d => d.url
+    ? `<div style="margin-top:8px;"><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${d.label} ↗</a></div>`
+    : `<div style="margin-top:8px; font-size:0.8rem; color:#b45309; font-weight:600;">${d.label}: The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`
   ).join("");
   el.style.cssText = "display:block; background:#f0fdf4; border-left:4px solid var(--accent); color:#15803d; padding:14px; margin-bottom:14px; border-radius:var(--radius);";
   el.innerHTML = `

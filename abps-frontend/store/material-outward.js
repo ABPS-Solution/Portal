@@ -521,7 +521,7 @@ async function mowGenerateCheckingDraft(challanId) {
       `Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved. Draft #${escapeHtml(String(data.draftNumber))} generated — print it for review. It now waits in Authorize Material Outward on Delivery Challan.`,
       wasEditing ? "Edit Another Challan" : "Create New Challan",
       wasEditing ? "mowSwitchTab('editing')" : "mowSwitchTab('new')",
-      data.url ? [{ url: driveLink(data.url), label: "Open Draft #" + data.draftNumber }] : []);
+      [{ url: data.url ? driveLink(data.url) : "", label: "Draft #" + data.draftNumber }]);
   } catch (err) {
     mowShowInlineError(challanId, err.message);
   } finally {

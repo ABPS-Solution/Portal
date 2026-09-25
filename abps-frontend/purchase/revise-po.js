@@ -1737,6 +1737,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       let msg = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:8px;"><strong>${data.poNo}</strong> revised to V${data.revisionNumber}!</div>`;
       if (notes.length) msg += `<div style="font-size:0.8rem; margin-bottom:8px;">${notes.join(" ")}</div>`;
       if (data.pdfUrl) msg += `<a href="${driveLink(data.pdfUrl)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">Open PDF →</a>`;
+      else msg += `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`;
       msg += `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">The signed draft is now the revised PO document in Drive.</div>`;
       msg += `<button onclick="document.getElementById('apor-feedback').style.display='none'; initializeAuthorizePORevisionPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Authorize Another PO Revision</button>`;
       showPurchaseFeedback("apor-feedback", msg, "success", true);

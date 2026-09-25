@@ -297,7 +297,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
           `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`,
           "Approve Another Ticket",
           "initializeStoreManagerApprovalsWorkspace()",
-          result.pdfUrl ? [{ url: driveLink(result.pdfUrl), label: "Download Material Issue Ticket PDF" }] : []
+          [{ url: result.pdfUrl ? driveLink(result.pdfUrl) : "", label: "Download Material Issue Ticket PDF" }]
         );
       }
 

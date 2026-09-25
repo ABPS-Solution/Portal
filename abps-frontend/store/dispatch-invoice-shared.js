@@ -341,6 +341,7 @@ function renderPdiSuccessCard(elementId, opts) {
   if (!el) return;
   const rows = (opts.rows || []).filter(r => r && r[1] != null && r[1] !== '');
   const links = (opts.links || []).filter(l => l && l.url);
+  const missingLinks = (opts.links || []).filter(l => l && !l.url && l.label);
   el.style.cssText = "display:block; margin-bottom:14px;";
   el.innerHTML = `
     <div style="border:1.5px solid #86efac; background:#f0fdf4; border-radius:var(--radius); padding:18px;">
@@ -354,6 +355,7 @@ function renderPdiSuccessCard(elementId, opts) {
       ${(opts.notes || []).length ? `<div style="margin-top:10px; font-size:0.84rem; font-weight:600; color:#b45309;">${opts.notes.join('<br>')}</div>` : ''}
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
         ${links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" style="display:inline-block; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:8px 16px; border-radius:var(--radius); font-weight:700; font-size:0.84rem; text-decoration:none;">${l.label} ↗</a>`).join('')}
+        ${missingLinks.map(l => `<div style="width:100%; font-size:0.8rem; color:#b45309; font-weight:600;">${l.label}: The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`).join('')}
         <button class="nav-btn-styled" style="background:var(--accent); color:#fff; padding:8px 18px; font-weight:700; font-size:0.84rem;" onclick="${opts.resetFn}">+ ${opts.resetLabel}</button>
       </div>
     </div>`;

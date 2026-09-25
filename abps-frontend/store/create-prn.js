@@ -763,7 +763,7 @@ async function authorizePRN(prnId) {
       const feed = document.getElementById("aprn-cards-feed");
       if (feed) feed.style.display = "none";
 
-      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : ``;
+      const pdfNote = data.pdfUrl ? `<div style="font-size:0.78rem; margin-top:6px;"><a href="${driveLink(data.pdfUrl)}" target="_blank" style="color:var(--accent); font-weight:700;">View PRN PDF</a></div>` : `<div style="font-size:0.78rem; color:#b45309; margin-top:6px;">The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`;
 
       const fb = document.getElementById("aprn-feedback");
       if (fb) {

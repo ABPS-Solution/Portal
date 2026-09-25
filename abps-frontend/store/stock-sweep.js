@@ -177,7 +177,7 @@ async function submitStockSweep() {
       if (data.notFound && data.notFound.length) msg += ` NOT found in catalog (skipped): ${data.notFound.join(", ")}.`;
       sweepBasket = [];
       renderSweepBasket();
-      const docLinks = data.pdfUrl ? [{ url: driveLink(data.pdfUrl), label: "Download Stock Sweep Record PDF" }] : [];
+      const docLinks = [{ url: data.pdfUrl ? driveLink(data.pdfUrl) : "", label: "Download Stock Sweep Record PDF" }];
       showSuccessWithReset("sweep-feedback", msg, "Record Another Sweep", "initializeStockSweepPanel()", docLinks);
       const formBody = document.getElementById("sweep-form-body");
       if (formBody) formBody.style.display = "none";
