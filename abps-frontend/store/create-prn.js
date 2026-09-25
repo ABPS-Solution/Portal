@@ -773,12 +773,12 @@ async function authorizePRN(prnId) {
         fb.style.display         = "block";
         fb.innerHTML = `
           <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Purchase Request Note Authorized Successfully!</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">PRN ID</span><span style="font-family:monospace; font-weight:800;">${prnId}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${prn.projectId || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${prn.customerName || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product</span><span style="font-weight:700;">${prn.productName || ""} ${prn.productRating || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Order Qty (Sets)</span><span style="font-weight:700;">${Math.round(Number(prn.orderQuantity) || 0)}</span></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.8rem; margin-bottom:14px;">
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">PRN ID</span><span style="font-family:monospace; font-weight:800; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prnId}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Project ID</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.projectId || ""}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Customer</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.customerName || ""}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Product</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.productName || ""} ${prn.productRating || ""}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Order Qty (Sets)</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${Math.round(Number(prn.orderQuantity) || 0)}</span></div>
           </div>
           ${pdfNote}
           <button onclick="
@@ -1095,8 +1095,13 @@ async function submitNewPRNCreation() {
       successZone.style.display = "block";
       successZone.innerHTML = `
         <div style="background:#f0fff4; border-left:4px solid var(--accent); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:10px;">PRN Created Successfully for ${boqMeta.customerName || "this customer"}!</div>
-          <div style="font-size:0.82rem; color:#276749; line-height:1.6;"><span style="font-weight:700;">PRN ID:</span> <span style="font-family:monospace; font-weight:700;">${data.prnId}</span></div>
+          <div style="font-size:0.85rem; font-weight:800; color:#276749; margin-bottom:10px;">PRN Created Successfully!</div>
+          ${prnSuccessGrid([
+            prnSuccessTile("PRN ID", escapeHtml(data.prnId || ""), true),
+            prnSuccessTile("Customer", escapeHtml(boqMeta.customerName || "—")),
+            prnSuccessTile("Product", escapeHtml(`${boqMeta.productName || ""} ${boqMeta.productRating || ""}`.trim() || "—")),
+            prnSuccessTile("Order Qty (Sets)", escapeHtml(String(boqMeta.orderQuantity ?? "—")))
+          ])}
           ${pdfNote}
           <button onclick="resetPRNPanelForNewEntry();"
             style="margin-top:14px; background:var(--brand); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
@@ -1356,3 +1361,11 @@ let materialListCache = [];
 let materialListSelectedProjectId = null; // null = ALL Active Projects
 
 
+
+// One labelled value box, same look as the BOQ / Authorize PRN success cards.
+function prnSuccessTile(label, value, mono) {
+  return `<div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">${label}</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;${mono ? " font-family:monospace;" : ""}">${value}</span></div>`;
+}
+function prnSuccessGrid(tiles) {
+  return `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:6px;">${tiles.join("")}</div>`;
+}

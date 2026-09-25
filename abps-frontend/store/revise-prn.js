@@ -304,7 +304,8 @@ async function submitRPRNDelta() {
     if (window._rprnDeltaStockInterval) { clearInterval(window._rprnDeltaStockInterval); window._rprnDeltaStockInterval = null; }
     window.rprnPendingCreate = null;
     showPurchaseFeedback("rprn-delta-feedback",
-      `PRN revision: <strong>${data.prnId}</strong> submitted and sent for authorization.<br>` +
+      `<div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">PRN Revision Submitted for Authorization!</div>` +
+      prnSuccessGrid([prnSuccessTile("PRN ID", escapeHtml(data.prnId || ""), true)]) +
       `<button onclick="document.getElementById('rprn-delta-feedback').style.display='none'; loadRPRNQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
       "success", true);
   } catch (e) {
@@ -476,7 +477,8 @@ async function submitRevisePRN() {
       const fb = document.getElementById("rprn-feedback");
       if (fb) {
         fb.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
-        fb.innerHTML = `PRN Revision submitted for <strong>${data.prnId}</strong>. ${data.changed.length} material(s) changed, pending authorization. 
+        fb.innerHTML = `<div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">PRN Revision Submitted for Authorization!</div>
+          ${prnSuccessGrid([prnSuccessTile("PRN ID", escapeHtml(data.prnId || ""), true), prnSuccessTile("Materials Changed", String(data.changed.length))])}
           <div>
             <button onclick="initializeRevisePRNPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
               + Revise Another PRN
