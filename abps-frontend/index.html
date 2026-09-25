@@ -237,9 +237,10 @@
   .nav-links-list-stack li a:hover { background: var(--highlight-bg); color: var(--brand); font-weight: 600; }
   
   /* --- CONTACT CARDS & DIRECTORY WORKSPACE LAYOUTS --- */
-  .contact-summary-card-parent { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.2s ease; }
+  .contact-summary-card-parent { background: #fff; border: 2px solid #94a3b8; border-radius: 8px; padding: 12px; margin-bottom: 14px; box-shadow: 0 2px 6px rgba(15,23,42,0.08); transition: all 0.2s ease; }
+  .contact-summary-card-parent:hover { border-color: var(--brand); }
   /* Lead wrapper header band — subtle blue tint, full-bleed to the card edge. */
-  .contact-summary-card-parent > .contact-summary-header-row.lead-wrapper-header { background: #eaf1fb; margin: -12px -12px 0; padding: 12px; border-radius: 6px 6px 0 0; border-bottom: 1px solid #d3e0f2; }
+  .contact-summary-card-parent > .contact-summary-header-row.lead-wrapper-header { background: #eaf1fb; margin: -12px -12px 0; padding: 12px; border-radius: 6px 6px 0 0; border-bottom: 1.5px solid #94a3b8; }
   .contact-summary-card-parent.search-highlighted-focus-node { background: var(--highlight-bg) !important; border: 2px solid var(--highlight-border) !important; box-shadow: 0 4px 10px rgba(0, 86, 179, 0.1) !important; }
   
   .contact-summary-header-row { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 10px; }
@@ -251,6 +252,7 @@
   .contact-summary-title-info span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; background: #edf2f7; padding: 2px 6px; border-radius: 4px; display: inline-block; flex-shrink: 0; }
       input.boq-center-num { text-align: center !important; }
   .contact-summary-title-info strong { color: #111827; word-break: break-word; }
+  .contact-summary-title-info span { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
   @media(max-width: 480px) {
     .contact-summary-title-info .meta-pair { flex: 1 1 100%; }
   }

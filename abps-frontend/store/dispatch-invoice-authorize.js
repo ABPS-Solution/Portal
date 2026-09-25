@@ -18,7 +18,7 @@ async function initializeApdiWorkspace() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
     if (!(data.invoices || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No invoices awaiting authorization.</div>`; return; }
     feed.innerHTML = data.invoices.map(inv => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; background:#fff;">
+      <div style="border:2px solid #94a3b8; border-radius:8px; margin-bottom:14px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,0.08);">
         ${renderPdiQueueCardHeader(`toggleApdiCard(${inv.invoiceId})`, [
           ["Invoice No.", escapeHtml(inv.invoiceNo || '')],
           ["Invoice Type", escapeHtml(inv.invoiceType || '')],

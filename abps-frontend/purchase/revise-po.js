@@ -1086,7 +1086,7 @@ async function initializeAuthorizePORevisionPanel() {
       return;
     }
     feed.innerHTML = revs.map(r => `
-      <div style="background:#fff; border:1px solid var(--border); border-left:3px solid ${r.revisionKind === "Cancellation" ? "#b91c1c" : "var(--accent)"}; border-radius:var(--radius); padding:16px;">
+      <div style="background:#fff; border:2px solid #94a3b8; border-left:4px solid ${r.revisionKind === "Cancellation" ? "#b91c1c" : "var(--accent)"}; border-radius:8px; padding:16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(15,23,42,0.08);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer;" onclick="toggleAPORCard(${r.requestId})">
           <div>
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>

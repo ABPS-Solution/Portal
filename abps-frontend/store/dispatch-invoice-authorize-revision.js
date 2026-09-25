@@ -22,7 +22,7 @@ async function initializeArpdiWorkspace() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
     if (!(data.requests || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No revision requests awaiting authorization.</div>`; return; }
     feed.innerHTML = data.requests.map(r => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; background:#fff;">
+      <div style="border:2px solid #94a3b8; border-radius:8px; margin-bottom:14px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,0.08);">
         ${renderPdiQueueCardHeader(`toggleArpdiCard(${r.requestId})`, [
           ["Invoice No.", escapeHtml(r.invoiceNo || '')],
           ["Revision", `V${Number(r.currentRevision) || 1} → V${(Number(r.currentRevision) || 1) + 1}`],
