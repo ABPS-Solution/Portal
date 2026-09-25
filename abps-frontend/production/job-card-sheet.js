@@ -160,7 +160,8 @@ async function handleJCSHProjectChange(projectId) {
   jcshBOQDisplayReset("Loading...");
   try {
     const data = await apFetch({ action: "fetchJobCardsForProject", projectId });
-    jcshAllJobCardsForProject = data.jobCards || [];
+    // Dispatched Job Cards (or ones built into a dispatched product) are not offered.
+    jcshAllJobCardsForProject = (data.jobCards || []).filter(jc => !jc.isDispatched);
 
     // Distinct BOQ IDs that already have job cards, per requirement
     const seenBoq = {};

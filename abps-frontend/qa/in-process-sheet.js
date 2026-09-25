@@ -179,7 +179,8 @@ async function handleIPSHProjectChange(projectId) {
   ipshBOQDisplayReset("Loading...");
   try {
     const data = await apFetch({ action: "fetchJobCardsForProject", projectId });
-    ipshAllJobCardsForProject = data.jobCards || [];
+    // Dispatched Job Cards (or ones built into a dispatched product) are not offered.
+    ipshAllJobCardsForProject = (data.jobCards || []).filter(jc => !jc.isDispatched);
 
     // Distinct BOQ IDs that already have job cards, per requirement
     const seenBoq = {};
