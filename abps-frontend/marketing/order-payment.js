@@ -328,13 +328,13 @@ function oppRenderTranches(projectId) {
           <div style="flex-shrink:0; align-self:flex-end;">
             <span id="opp-status-badge-${projectId}-${i}" style="display:inline-block; padding:5px 10px; border-radius:10px; font-size:0.7rem; font-weight:700; background:${isReceived ? '#dcfce7' : (t.status === 'Partially Received' ? '#fef3c7' : '#f1f5f9')}; color:${isReceived ? '#15803d' : (t.status === 'Partially Received' ? '#b45309' : '#475569')};">${t.status}</span>
           </div>
-          <button type="button" onclick="oppRemoveTranche('${projectId}', ${i})" title="Remove this tranche" style="flex-shrink:0; align-self:flex-end; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; padding:6px 9px; cursor:pointer;">✕</button>
+          <button type="button" onclick="oppRemoveTranche('${projectId}', ${i})" title="Remove this payment" style="flex-shrink:0; align-self:flex-end; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; padding:6px 9px; cursor:pointer;">✕</button>
         </div>
         ${note}
       </div>`;
   }).join("");
   const empty = list.length === 0
-    ? `<div style="font-size:0.75rem; color:var(--muted); font-style:italic; margin-bottom:6px;">No payment tranches yet.</div>` : "";
+    ? `<div style="font-size:0.75rem; color:var(--muted); font-style:italic; margin-bottom:6px;">No payments added yet.</div>` : "";
   wrap.innerHTML = `${empty}${rows}
     <button type="button" onclick="oppAddTranche('${projectId}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:5px; font-size:0.78rem; font-weight:700; padding:8px; cursor:pointer;">+ Add Payment</button>`;
   oppRenderBalanceLine(projectId);
@@ -423,7 +423,7 @@ async function oppSaveSchedule(projectId) {
   const fbId = `opp-editor-feedback-${projectId}`;
   for (const t of list) {
     if (!(Number(t.expectedAmount) > 0) || !t.expectedDate) {
-      showBOQBanner(fbId, "Every tranche needs a positive expected amount and a date.", "error");
+      showBOQBanner(fbId, "Every payment needs a positive expected amount and a date.", "error");
       return;
     }
   }
