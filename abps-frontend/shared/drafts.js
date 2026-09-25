@@ -132,6 +132,12 @@ function abpsDraftOfferRestore(key, containerId, applyExtraState, opts) {
     abpsRestoreFields(containerId, draft.payload.fields);
     if (typeof applyExtraState === "function") applyExtraState(draft.payload.state);
     bar.remove();
+    // Restored textareas keep their empty-state height; regrow them to fit.
+    requestAnimationFrame(() => {
+      document.querySelectorAll(`#${CSS.escape(containerId)} textarea`).forEach(t => {
+        t.style.height = "auto"; t.style.height = t.scrollHeight + "px";
+      });
+    });
   };
 
   const discardBtn = document.createElement("button");
