@@ -631,7 +631,7 @@ function renderAPRNRows(prnId) {
         : 'transparent';
       return `
         <tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
-          <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
+          <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
           <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
           <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
@@ -655,8 +655,9 @@ function renderAPRNRows(prnId) {
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
           <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:150px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Type of Material</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand);">New Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#94a3b8;">Unit</th>
@@ -684,7 +685,7 @@ function renderAPRNRows(prnId) {
   const buffered = r.editable !== false ? (Number(r.bufferedRequirement) || 0) : Math.abs(Number(r.deltaRequirement) || 0);
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
         <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${r.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.boqRequiredQty)}</td>
@@ -709,8 +710,9 @@ function renderAPRNRows(prnId) {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
         <thead><tr style="background:#f8fafc;">
+          <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-          <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+          <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center;">Type of Material</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
           <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
@@ -844,7 +846,7 @@ function renderPRNCreateTable() {
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
     const common = `
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
         <td style="padding:8px; font-size:0.8rem; color:#475569; text-align:center;">${item.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
@@ -924,8 +926,9 @@ function renderPRNCreateTable() {
       <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead>
           <tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:230px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">Type of Material</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
@@ -1154,9 +1157,9 @@ function renderAllPRNCards(prns, boqId) {
       return Number.isInteger(num) ? String(num) : String(Math.round(num * 100) / 100);
     };
     let rowsHtml = "";
-    (data.lineItems || []).forEach(li => {
+    (data.lineItems || []).forEach((li, liIdx) => {
       rowsHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${liIdx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${li.materialName}</td>
         <td style="padding:8px; font-size:0.75rem; color:var(--muted); text-align:center;">${li.typeOfMaterial || "—"}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${fmtSmart(li.boqRequiredQty)}</td>
@@ -1190,8 +1193,9 @@ function renderAllPRNCards(prns, boqId) {
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
             <table class="prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1000px;">
               <thead><tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:240px;">Material Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px;">Material Name</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:60px;">Type of Material</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center;">BOQ Qty</th>
                 <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>

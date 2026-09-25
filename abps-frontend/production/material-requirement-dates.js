@@ -212,7 +212,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
   const esc = (s) => (s==null?"":s.toString().replace(/</g,"&lt;").replace(/>/g,"&gt;"));
 
   const draftLines = readOnly ? null : prnDraftMrdLinesFor(ns, prnId);
-  const rows = lines.map(line => {
+  const rows = lines.map((line, lineIdx) => {
     const key = mrdSanitizeKey(line.itemCode);
     // Everything still outstanding already on a PO -> nothing left to date.
     const fullyOnPO = line.stillToOrderQty != null && Number(line.stillToOrderQty) <= 1e-9;
@@ -286,7 +286,8 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     const firstColBorder = "border-bottom:1.5px solid var(--border);";
     return `
       <tr>
-        <td style="padding:8px; font-size:0.9rem; font-weight:600; ${firstColBorder}">${esc(line.materialName)}</td>
+        <td style="padding:8px; text-align:center; font-size:0.9rem; font-weight:700; color:#64748b; width:44px; ${firstColBorder}">${lineIdx + 1}</td>
+        <td style="padding:8px; font-size:0.9rem; font-weight:600; ${colBorder}">${esc(line.materialName)}</td>
         <td style="padding:8px; text-align:center; font-size:0.9rem; color:#475569; ${colBorder}">${esc(line.typeOfMaterial || "—")}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem; ${colBorder}">${fmt(displayStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; ${colBorder}">${fmt(displayPurchaseQty)}</td>
@@ -307,7 +308,8 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
         <thead><tr style="background:#f8fafc;">
-          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:180px; border-bottom:1.5px solid var(--border);">Material Name</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:center; width:44px; border-bottom:1.5px solid var(--border);">Sr No</th>
+          <th style="padding:8px; font-size:0.92rem; text-align:left; min-width:140px; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Material Name</th>
           <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Type of Material</th>
           <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Store Qty</th>
           <th style="padding:8px; font-size:0.92rem; text-align:center; border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);">Purchase Qty</th>

@@ -90,7 +90,7 @@ function renderRPRNDeltaTable() {
   pending.lineItems.forEach((item, idx) => {
     const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
     const common = `
-        <td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
@@ -158,8 +158,9 @@ function renderRPRNDeltaTable() {
       <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
         <thead>
           <tr style="background:#f8fafc;">
+            <th style="padding:8px; font-size:0.7rem; text-align:center; width:40px;">Sr No</th>
             <th style="padding:8px; font-size:0.7rem; text-align:left;">Item Code</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:230px;">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:190px;">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center;">New BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309;">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand); width:100px;">New Buffered BOQ Qty</th>
@@ -394,7 +395,7 @@ function renderRevisePRNTable() {
     const cap = Math.min(Number(li.bufferedRequirement)||0, maxStore);
     return `
       <tr style="border-bottom:1px solid #f1f5f9; ${blocked ? "background:#fffbeb;" : ""}">
-        <td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.materialName || ""}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${li.unit || "—"}</td>
@@ -418,8 +419,9 @@ function renderRevisePRNTable() {
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px;">
       <table class="store-basket-data-table prn-bordered-table" style="width:100%; border-collapse:collapse; min-width:1050px;">
         <thead><tr style="background:#f8fafc;">
+          <th style="padding:8px; font-size:0.68rem; text-align:center; width:40px;">Sr No</th>
           <th style="padding:8px; font-size:0.68rem; text-align:left;">Item Code</th>
-          <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:190px;">Material Name</th>
+          <th style="padding:8px; font-size:0.68rem; text-align:left; min-width:150px;">Material Name</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:var(--brand);">New Buffered BOQ Qty</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center; color:#94a3b8;">Unit</th>
           <th style="padding:8px; font-size:0.68rem; text-align:center;">Current PRN Store Qty</th>
