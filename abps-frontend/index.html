@@ -756,27 +756,28 @@
   .psn-suggestion-row:hover { background: var(--highlight-bg); }
 
   .psn-section-card {
-    background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--psn-accent, var(--brand));
-    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px;
+    background: var(--card); border: 2.5px solid #94a3b8; border-left: 6px solid var(--psn-accent, var(--brand));
+    border-radius: var(--radius); padding: 0 18px 16px; margin-bottom: 20px; overflow: hidden;
     box-shadow: 0 1px 2px rgba(16,24,40,0.04);
   }
   .psn-section-title {
-    display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.92rem;
-    color: var(--text); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.05rem; letter-spacing: 0.02em;
+    color: var(--psn-accent, var(--brand)); text-transform: uppercase;
+    margin: 0 -18px 14px; padding: 11px 18px; background: #f1f5f9; border-bottom: 2px solid #cbd5e1;
   }
   .psn-field-grid.psn-grid-2 { grid-template-columns: repeat(2, 1fr); }
   .psn-field-grid.psn-grid-3 { grid-template-columns: repeat(3, 1fr); }
   .psn-field-grid.psn-grid-5 { grid-template-columns: repeat(5, 1fr); }
-  .psn-field-grid.psn-grid-6 { grid-template-columns: repeat(6, 1fr); }
+  .psn-field-grid.psn-grid-6 { grid-template-columns: 25% 40% 11% 6% 6% 12%; }
   .psn-bordered { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
-  .psn-bordered th, .psn-bordered td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; vertical-align: top; word-break: break-word; }
+  .psn-bordered th, .psn-bordered td { border: 2px solid var(--border); padding: 7px 9px; text-align: left; vertical-align: top; word-break: break-word; }
   .psn-bordered th { background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
-  .psn-doc-type { background: var(--brand); color: #fff; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 4px; }
+  .psn-doc-type { background: var(--brand); color: #fff; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
   .psn-doc-name { color: var(--text); }
-  .psn-field-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .psn-field-grid > .psn-field { padding: 9px 12px; border-right: 1px solid var(--border); }
+  .psn-field-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .psn-field-grid > .psn-field { padding: 9px 12px; border-right: 2px solid var(--border); }
   .psn-field-grid > .psn-field:last-child { border-right: none; }
-  .psn-field-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 2px; }
+  .psn-field-label { font-size: 0.78rem; color: #111827; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; margin-bottom: 3px; }
   .psn-field-value { font-size: 0.92rem; color: var(--text); word-break: break-word; }
   .psn-field-value.psn-mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 0.85rem; }
 
@@ -814,12 +815,12 @@
 
   #psn-queue-wrap table.psn-table { border-collapse: separate; border-spacing: 0; }
   #psn-queue-wrap table.psn-table thead th {
-    position: sticky; top: 0; background: #f8fafc; z-index: 5; border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; background: #f8fafc; z-index: 5; border-bottom: 2px solid var(--border); color: #111827 !important; font-size: 0.78rem !important;
   }
   #psn-queue-wrap table.psn-table tbody tr { transition: background 0.1s; }
   #psn-queue-wrap table.psn-table tbody tr:nth-child(even) { background: #fafbfc; }
   #psn-queue-wrap table.psn-table tbody tr:hover { background: var(--highlight-bg); }
-  #psn-queue-wrap table.psn-table th, #psn-queue-wrap table.psn-table td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  #psn-queue-wrap table.psn-table th, #psn-queue-wrap table.psn-table td { border-right: 2px solid var(--border); border-bottom: 2px solid var(--border); }
   #psn-queue-wrap table.psn-table th:last-child, #psn-queue-wrap table.psn-table td:last-child { border-right: none; }
   /* Status values here can be long ("Reserved / On Ticket", "Consumed in
      Production") — the badge is smaller and allowed to wrap inside its
@@ -2791,10 +2792,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <col style="width:8%;" />
               <col style="width:9%;" />
               <col style="width:12%;" />
-              <col style="width:27%;" />
+              <col style="width:37%;" />
               <col style="width:9%;" />
               <col style="width:12%;" />
-              <col style="width:10%;" />
             </colgroup>
             <thead>
               <tr style="text-align:left;">
@@ -2805,7 +2805,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
                 <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Product Name</th>
                 <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">FG Date</th>
                 <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Status</th>
-                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Attribution</th>
               </tr>
             </thead>
             <tbody id="psn-queue-body"></tbody>

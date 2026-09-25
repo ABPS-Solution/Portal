@@ -87,7 +87,7 @@ function initializeProductSerialTrackingPanel() {
 function psnRenderTabBar() {
   const bar = document.getElementById('psn-tab-bar');
   if (!bar) return;
-  const tabs = [{ key: 'search', label: 'Search by Serial' }, { key: 'queue', label: 'All Units' }];
+  const tabs = [{ key: 'search', label: 'Search by Serial Number' }, { key: 'queue', label: 'All Units' }];
   bar.innerHTML = tabs.map(t => {
     const active = psnActiveTab === t.key;
     const bg = active ? 'var(--brand)' : '#e2e8f0';
@@ -239,7 +239,6 @@ const PSN_CARD_META = {
   'Who Built It, Who Cleared It': '#7c3aed',
   'Documents':                    '#475569',
   'What Went Into It':            '#b45309',
-  'Source Attribution':           '#0f766e',
 };
 
 function psnCard(title, innerHtml) {
@@ -321,27 +320,11 @@ function psnRenderDetail(data) {
 
   const materialHtml = psnRenderMaterialSources(trace);
 
-  let provenanceHtml;
-  if (!trace) {
-    provenanceHtml = `<div style="padding:10px 12px; background:#f1f5f9; border-left:4px solid #64748b; border-radius:var(--radius); color:var(--muted); font-size:0.85rem;">No source record was saved for this unit (it was added before this tracking started).</div>`;
-  } else if (trace.snapshotStatus !== 'ok') {
-    provenanceHtml = `<div style="padding:10px 12px; background:#fef3c7; border-left:4px solid #b45309; border-radius:var(--radius); margin-bottom:10px; font-size:0.85rem;">
-        <strong>Source record is ${escapeHtml(trace.snapshotStatus)}.</strong> ${escapeHtml(trace.snapshotError || 'Some material quantity could not be traced to a specific receipt.')}
-      </div>
-      <button class="nav-btn-styled" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button>`;
-  } else {
-    provenanceHtml = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-      <span style="font-size:0.85rem; color:var(--muted);">Saved on ${escapeHtml(formatOrdinalDateTime(trace.builtAt) || '')}${trace.builtBy ? ' by ' + escapeHtml(trace.builtBy) : ''}.</span>
-      <button class="nav-btn-styled" style="padding:3px 12px; font-size:0.75rem;" onclick="psnRebuildSnapshot(${h.fgId})">Rebuild</button></div>`;
-  }
-  provenanceHtml = `<p style="font-size:0.82rem; color:var(--muted); margin:0 0 10px;">A saved record of which purchase orders and GRNs supplied the material in this unit. It is made when the unit is added to Finished Goods, so later PO or stock changes cannot alter it. "What Went Into It" above is built from it. Use Rebuild only if it shows a problem.</p>` + provenanceHtml;
-
   return psnCard('Identity', identity)
     + psnCard('Where It Went', whereItWent)
     + psnCard('Who Built It, Who Cleared It', buildChain)
     + psnCard('Documents', docsHtml)
-    + psnCard('What Went Into It', materialHtml)
-    + psnCard('Source Attribution', provenanceHtml);
+    + psnCard('What Went Into It', materialHtml);
 }
 
 function psnRenderMaterialSources(trace) {
@@ -387,9 +370,9 @@ function psnRenderMaterialSources(trace) {
       : '';
 
     return `<div class="psn-material-card">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">
-          <div><strong>${escapeHtml(m.itemCode || '')}</strong> <span style="color:var(--text);">${escapeHtml(m.materialName || '')}</span></div>
-          <span style="font-size:0.95rem; font-weight:600; color:var(--text); white-space:nowrap;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+          <div style="flex:1; min-width:0;"><strong>${escapeHtml(m.itemCode || '')}</strong> <span style="color:var(--text);">${escapeHtml(m.materialName || '')}</span></div>
+          <span style="font-size:0.95rem; font-weight:600; color:var(--text); white-space:nowrap; flex-shrink:0;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
         </div>
         <div class="psn-qty-bar-track"><div class="psn-qty-bar-fill" style="width:${attributedPct}%; ${unattributed > 0 ? 'background:#dc2626;' : ''}"></div></div>
         ${poRows || '<div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No source receipts recorded.</div>'}
@@ -399,6 +382,8 @@ function psnRenderMaterialSources(trace) {
   }).join('');
 }
 
+// No longer called: the Source Attribution section was removed from the
+// screen on 25 Sep 2026 (the route still exists). Flagged, not deleted.
 async function psnRebuildSnapshot(fgId) {
   try {
     const data = await apFetch({ action: 'rebuildProductSerialSnapshot', fgId, operatorName: appActiveOperatorIdentityString });
@@ -420,15 +405,15 @@ async function psnLoadQueue() {
   const body = document.getElementById('psn-queue-body');
   const filterInput = document.getElementById('psn-queue-filter-input');
   if (filterInput) filterInput.value = '';
-  body.innerHTML = `<tr><td colspan="8" style="padding:16px; color:var(--muted); text-align:center;"><span class="psn-spinner"></span>Loading...</td></tr>`;
+  body.innerHTML = `<tr><td colspan="7" style="padding:16px; color:var(--muted); text-align:center;"><span class="psn-spinner"></span>Loading...</td></tr>`;
   try {
     const data = await apFetch({ action: 'fetchProductSerialQueue' });
-    if (!data.success) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</td></tr>`; return; }
+    if (!data.success) { body.innerHTML = `<tr><td colspan="7" style="padding:10px; color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</td></tr>`; return; }
     psnQueueRows = data.rows || [];
     psnRenderQueueRows(psnQueueRows);
   } catch (err) {
     psnQueueRows = [];
-    body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:#b91c1c;">Failed to load.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" style="padding:10px; color:#b91c1c;">Failed to load.</td></tr>`;
   }
 }
 
@@ -436,11 +421,8 @@ function psnRenderQueueRows(rows) {
   const body = document.getElementById('psn-queue-body');
   const countEl = document.getElementById('psn-queue-count');
   if (countEl) countEl.textContent = `${rows.length} of ${psnQueueRows.length} unit${psnQueueRows.length === 1 ? '' : 's'}`;
-  if (rows.length === 0) { body.innerHTML = `<tr><td colspan="8" style="padding:10px; color:var(--muted);">No units found.</td></tr>`; return; }
+  if (rows.length === 0) { body.innerHTML = `<tr><td colspan="7" style="padding:10px; color:var(--muted);">No units found.</td></tr>`; return; }
   body.innerHTML = rows.map(r => {
-    const attribution = !r.traceId
-      ? '<span style="color:var(--muted);">Not built</span>'
-      : (r.snapshotStatus === 'ok' ? `<span style="color:#15803d; font-weight:600;">OK (${r.poCount || 0} PO${r.poCount === 1 ? '' : 's'})</span>` : `<span style="color:#b45309; font-weight:600;">${escapeHtml(r.snapshotStatus)}</span>`);
     return `<tr style="cursor:pointer;" onclick="psnOpenFromQueue(${r.fgId})">
         <td style="padding:8px; font-family:ui-monospace, 'SF Mono', Consolas, monospace; font-weight:600;">${escapeHtml(r.productSerialNumber || '')}</td>
         <td style="padding:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.jobCardNumber || '')}">${escapeHtml(psnShortJobCard(r.jobCardNumber))}</td>
@@ -449,7 +431,6 @@ function psnRenderQueueRows(rows) {
         <td style="padding:8px;">${escapeHtml(r.productName || '')} ${escapeHtml(r.productRating || '')}</td>
         <td style="padding:8px;">${formatOrdinalDate(r.fgDate)}</td>
         <td style="padding:8px;">${psnStatusBadge(r.status)}</td>
-        <td style="padding:8px;">${attribution}</td>
       </tr>`;
   }).join('');
 }
