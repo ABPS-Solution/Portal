@@ -914,12 +914,13 @@ function renderCPOMaterialRows() {
         </div>`
       : "";
 
-    const showSearch = !row.itemCode || row._editingName;
+    // Always the editable search box: click and type to switch material.
+    const showSearch = true;
     const nameBlock = showSearch
       ? `<div style="position:relative;">
           <textarea rows="1" class="cpo-desc-search" data-rowid="${row.id}" placeholder="Search material name, rating or make" autocomplete="off"
             oninput="handleCPODescSearch(${row.id}, this.value)"
-            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.9rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.description)}</textarea>
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid ${row.itemCode ? '#cbd5e1' : '#f59e0b'}; border-radius:4px; font-size:0.92rem; font-weight:${row.itemCode ? 700 : 400}; color:#111827; font-family:inherit; resize:none; overflow:hidden;">${esc(row.description)}</textarea>
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>`
       : `<div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
