@@ -520,11 +520,12 @@ function renderRawMaterialsStockGrid() {
           const card = document.createElement("div");
           card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
           card.title = "Click to see how Reserved stock is assigned across BOQs";
-          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock);
+          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock, item.make);
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
               ${item.materialName}
             </div>
+            ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
             <div style="text-align:right;">
               <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "PCS").toUpperCase()}</span>
             </div>
@@ -641,11 +642,12 @@ function renderSpareStoreStockGrid() {
         const card = document.createElement("div");
         card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
         card.title = "Click to see how Reserved stock is assigned across BOQs";
-        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock);
+        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
             ${item.materialName}
           </div>
+          ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
           <div style="text-align:right;">
             <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
           </div>
@@ -1476,7 +1478,7 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (cell) { cell.textContent = trimNum(purchaseQty); cell.style.color = "#1a2332"; }
 }
 
-async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType, reservedQty) {
+async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType, reservedQty, make) {
   const totalQty = (Number(availableQty) || 0) + (Number(reservedQty) || 0);
   const existing = document.getElementById("stock-assignment-breakdown-modal-overlay");
   if (existing) existing.remove();
@@ -1491,7 +1493,7 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
         <div>
           <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong>${make ? ` &nbsp;·&nbsp; Make: <strong>${escapeHtml(make)}</strong>` : ''}</div>
           <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Available ${trimNum(availableQty || 0)} + Reserved ${trimNum(reservedQty || 0)}</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-shrink:0; margin-left:14px;">
