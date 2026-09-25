@@ -483,7 +483,7 @@ function renderRawMaterialsStockGrid() {
 
         // Section wrapper
         const section = document.createElement("div");
-        section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+        section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:2px solid #64748b; border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
 
         // Section header
         const headerDiv = document.createElement("div");
@@ -518,7 +518,7 @@ function renderRawMaterialsStockGrid() {
 
         items.forEach(item => {
           const card = document.createElement("div");
-          card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
+          card.style.cssText = "background:#f8fafc; border:2px solid #94a3b8; padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
           card.title = "Click to see how Reserved stock is assigned across BOQs";
           card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock, item.make);
           card.innerHTML = `
@@ -608,7 +608,7 @@ function renderSpareStoreStockGrid() {
       const isCollapsed = localStorage.getItem("spare_section_" + type) === "collapsed";
 
       const section = document.createElement("div");
-      section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+      section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:2px solid #64748b; border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
 
       const headerDiv = document.createElement("div");
       headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); cursor:pointer; user-select:none;";
@@ -640,7 +640,7 @@ function renderSpareStoreStockGrid() {
 
       items.forEach(item => {
         const card = document.createElement("div");
-        card.style.cssText = "background:#f8fafc; border:1px solid var(--border); padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
+        card.style.cssText = "background:#f8fafc; border:2px solid #94a3b8; padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
         card.title = "Click to see how Reserved stock is assigned across BOQs";
         card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
         card.innerHTML = `
