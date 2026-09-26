@@ -919,7 +919,7 @@ function renderCPOMaterialRows() {
     const nameBlock = showSearch
       ? `<div style="position:relative;">
           <textarea rows="1" class="cpo-desc-search" data-rowid="${row.id}" placeholder="Search material name, rating or make" autocomplete="off"
-            oninput="handleCPODescSearch(${row.id}, this.value)"
+            oninput="cpoGrowNameBox(this); handleCPODescSearch(${row.id}, this.value)"
             style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid ${row.itemCode ? '#cbd5e1' : '#f59e0b'}; border-radius:4px; font-size:0.92rem; font-weight:${row.itemCode ? 700 : 400}; color:#111827; font-family:inherit; resize:none; overflow:hidden;">${esc(row.description)}</textarea>
           <div id="cpo-desc-dd-${row.id}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>`
@@ -984,6 +984,13 @@ function renderCPOMaterialRows() {
   window.cpoMaterialRows.forEach(r => updateCPORowAmount(r.id));
   body.querySelectorAll('textarea').forEach(t => { if (t.offsetParent) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; } });
   if (window.cpoMode === 'authorize') lockCPOForAuthorize();
+  document.querySelectorAll('#cpo-rows-body .cpo-desc-search').forEach(cpoGrowNameBox);
+}
+
+function cpoGrowNameBox(el) {
+  if (!el || !el.offsetParent) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 // What a row still needs before the PO can be submitted.
