@@ -172,7 +172,7 @@ async function initializeRPOEditingTab() {
       <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${r.poNo}</div>
-          <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${r.vendorName || ""} &nbsp;·&nbsp; ${r.revisionKind}</div>
+          <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${escapeHtml(r.vendorName || "")} &nbsp;·&nbsp; ${r.revisionKind}</div>
           ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Draft #${r.checkingDraftCount}</div>` : ""}
         </div>
         <button class="nav-btn-styled" onclick="openPORevisionForEdit('${r.requestId}', '${r.poNo}')" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
@@ -187,7 +187,7 @@ async function openPORevisionForEdit(requestId, poNo) {
   zone.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading revision…</div>`;
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, requestId });
-    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     const lineItems = (data.lineItems || []).map(li => ({
       ...li,
       quantity: li.orderedQty, // already overlaid with the drafted value server-side
@@ -322,7 +322,7 @@ async function initializeRevisePOPanel() {
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
             <div style="flex:1; min-width:240px;">
               <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
-              <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
+              <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${escapeHtml(po.vendorName || "")}</div>
               <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
             </div>
             <div style="display:flex; gap:8px; flex-shrink:0;">
@@ -372,7 +372,7 @@ function handleRPOOtherSearchInput(query) {
           <div onclick="selectRPOOtherSearchSuggestion('${r.poNo.replace(/'/g,"\\'")}')"
             style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
             onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-            <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${r.vendorName || ''}
+            <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
           </div>`).join("");
         dd.style.display = "block";
       } catch (e) { dd.style.display = "none"; }
@@ -385,9 +385,9 @@ function handleRPOOtherSearchInput(query) {
         const matches = vendors.filter(v => (v.vendorName || "").toLowerCase().includes(q)).slice(0, 10);
         if (matches.length === 0) { dd.style.display = "none"; return; }
         dd.innerHTML = matches.map(v => `
-          <div onclick="selectRPOOtherSearchSuggestion('${v.vendorName.replace(/'/g,"\\'")}')"
+          <div onclick="selectRPOOtherSearchSuggestion(${jsArg(v.vendorName)})"
             style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
-            onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v.vendorName}</div>`).join("");
+            onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(v.vendorName)}</div>`).join("");
         dd.style.display = "block";
       } catch (e) { dd.style.display = "none"; }
     }, 250);
@@ -429,7 +429,7 @@ async function searchPOsForRevisionUI() {
       <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
-          <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
+          <div style="font-size:0.8rem; font-weight:600;">${escapeHtml(po.vendorName || "")}</div>
           <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
         </div>
         ${po.revisionPending
@@ -446,7 +446,7 @@ async function openPORevision(poNo, changedOnly) {
   zone.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading PO…</div>`;
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, changedOnly });
-    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     const lineItems = (data.lineItems || []).map(li => ({
       ...li,
       quantity: li.orderedQty, // Vendor Discussed Qty starts at the PO's existing ordered qty, editable from there
@@ -532,7 +532,7 @@ function renderPORevisionCard() {
     const bullets = lineItems.filter(li => li.changed).map(li => {
       const delta = (Number(li.newRequiredQty)||0) - (Number(li.orderedQty)||0);
       const dirColor = delta > 0 ? "#15803d" : "#b91c1c";
-      return `<li> <strong> ${li.description || li.itemCode}: </strong> ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
+      return `<li> <strong> ${escapeHtml(li.description || li.itemCode)}: </strong> ${fmt(li.orderedQty)} → <span style="font-weight:700; color:${dirColor};">${fmt(li.newRequiredQty)}</span> (${delta > 0 ? "+" : ""}${fmt(delta)})</li>`;
     });
     if (bullets.length) {
       prnSummaryHtml = `
@@ -552,7 +552,7 @@ function renderPORevisionCard() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Supplier Offer No</label>
-          <input type="text" id="rpo-supplier-ref" value="${(po.supplierRef||"").replace(/"/g,"&quot;")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <input type="text" id="rpo-supplier-ref" value="${escapeHtml(po.supplierRef||"")}" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Delivery Date</label>
@@ -596,14 +596,14 @@ function renderPORevisionCard() {
         </div>
         <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Terms</div>
-          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="rpo-warranty" value="${(po.warranty||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="rpo-insurance" value="${(po.insurance||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="rpo-payment" value="${(po.paymentTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="rpo-freight-terms" value="${(po.freightTerms||"").replace(/"/g,"&quot;")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Warranty</label><input type="text" id="rpo-warranty" value="${escapeHtml(po.warranty||"")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Insurance</label><input type="text" id="rpo-insurance" value="${escapeHtml(po.insurance||"")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div style="margin-bottom:8px;"><label class="field-label" style="margin-top:0;">Payment Terms</label><input type="text" id="rpo-payment" value="${escapeHtml(po.paymentTerms||"")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Freight Terms</label><input type="text" id="rpo-freight-terms" value="${escapeHtml(po.freightTerms||"")}" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
         <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
-          <textarea id="rpo-notes" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${(po.notes||"")}</textarea>
+          <textarea id="rpo-notes" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${(escapeHtml(po.notes||""))}</textarea>
         </div>
       </div>
 
@@ -790,7 +790,7 @@ function openRPOAllocationModal(idx) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${li.unit || ""} of ${li.itemCode || li.description || ""} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(li.unit || "")} of ${escapeHtml(li.itemCode || li.description || "")} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="rpo-alloc-modal-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -1036,8 +1036,8 @@ async function initializeAuthorizePORevisionPanel() {
         <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer;" onclick="toggleAPORCard(${r.requestId})">
           <div>
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
-            <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
+            <div style="font-size:0.82rem; font-weight:700;">${escapeHtml(r.vendorName || "")}</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${escapeHtml(r.requestedBy || "—")} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
             ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="display:inline-block; margin-top:4px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;">Open Draft #${r.checkingDraftCount}</a>` : ""}
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
@@ -1107,7 +1107,7 @@ function renderAPORCard(r) {
     const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
     if (Math.abs(newQty - oldQty) < 1e-9 && Math.abs(newRate - oldRate) < 1e-9) return "";
     const qtyColor = newQty > oldQty ? "#15803d" : "#b91c1c";
-    return `<li> <strong> ${line.description || line.itemCode}: </strong> ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
+    return `<li> <strong> ${escapeHtml(line.description || line.itemCode)}: </strong> ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
   }).filter(Boolean);
   const summaryHtml = summaryLines.length ? `
       <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
@@ -1309,7 +1309,7 @@ function renderAPORCard(r) {
         </div>
         <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; grid-column:1 / -1;">
           <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Notes (optional)</div>
-          <textarea id="apor-notes-${rid}" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${(hc.notes != null ? hc.notes : r.notes || "")}</textarea>
+          <textarea id="apor-notes-${rid}" rows="2" placeholder="Left blank, nothing extra appears on the document." style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%; font-family:inherit; font-size:0.85rem;">${escapeHtml(hc.notes != null ? hc.notes : r.notes || "")}</textarea>
         </div>
       </div>
 
@@ -1475,7 +1475,7 @@ function openAPORAllocationModal(requestId, idx) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${line.unit || ""} of ${line.itemCode || line.description || ""} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(line.unit || "")} of ${escapeHtml(line.itemCode || line.description || "")} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="apor-alloc-modal-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -1688,7 +1688,7 @@ function poRevRowHtml(o) {
       <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; background:${o.headBg}; color:${o.headColor};">
         <span style="font-weight:800; font-size:0.85rem;">Row ${o.idx + 1}</span>
         <span style="font-family:monospace; font-weight:700; font-size:0.8rem;">${o.itemCode || ''}</span>
-        <span style="font-size:0.78rem; font-weight:700;">${o.changeNote}</span>
+        <span style="font-size:0.78rem; font-weight:700;">${escapeHtml(o.changeNote)}</span>
         <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span id="${o.amountId}">0</span></strong></span>
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">

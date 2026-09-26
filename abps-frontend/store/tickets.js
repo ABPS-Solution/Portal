@@ -245,7 +245,7 @@ async function submitMaterialRequestTicketToBackend() {
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
             <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.</h3>
-            ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${outwardPurposeVal}</strong></div>` : ""}
+            ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${escapeHtml(outwardPurposeVal)}</strong></div>` : ""}
             <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
               Assigned Reference Tracking ID: 
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px; font-size: 1rem;">
@@ -262,7 +262,7 @@ async function submitMaterialRequestTicketToBackend() {
     else {
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
-        feedbackBanner.innerHTML = `<strong>Submission Rejected by Server:</strong> ${result.error}`;
+        feedbackBanner.innerHTML = `<strong>Submission Rejected by Server:</strong> ${escapeHtml(result.error)}`;
         feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       submitBtn.disabled = false;
@@ -749,7 +749,7 @@ function renderDraftBasketTableViewportRows() {
 
     tr.innerHTML = `
       <td style="font-weight:600; padding:10px 8px;">
-        ${rowItem.materialName} 
+        ${escapeHtml(rowItem.materialName)} 
         ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
       </td>
       <td style="text-align:center; font-weight:700; font-size:0.95rem;">${rowItem.unitType}</td>
@@ -881,7 +881,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
       action: "fetchPendingTicketsQueueStream"
     });
     if (!data.success) {
-      cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${data.error}</div>`;
+      cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${escapeHtml(data.error)}</div>`;
       return;
     }
 
@@ -1169,14 +1169,14 @@ async function openFGReleaseSelectionModal(ticketId) {
 
   try {
     const data = await apFetch({ action: "fetchTicketFGReservationDetails", ticketId });
-    if (!data.success) { overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Error: ${data.error}</div>`; return; }
+    if (!data.success) { overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Error: ${escapeHtml(data.error)}</div>`; return; }
 
     window._fgReleaseSelections = {};
     data.items.forEach(it => { window._fgReleaseSelections[it.itemCode] = it.reserved.map(r => r.fgId); });
 
     const itemsHtml = data.items.map(it => `
       <div style="margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
-        <div style="font-weight:700; margin-bottom:8px;">${it.materialName} <span style="color:var(--muted); font-weight:400;">(need ${fmtQty(it.quantity)})</span></div>
+        <div style="font-weight:700; margin-bottom:8px;">${escapeHtml(it.materialName)} <span style="color:var(--muted); font-weight:400;">(need ${fmtQty(it.quantity)})</span></div>
         ${it.swapCandidates.map(c => `
           <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.85rem; cursor:pointer;">
             <input type="checkbox" ${it.reserved.some(r => r.fgId === c.fgId) ? 'checked' : ''}
@@ -1214,7 +1214,7 @@ function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
       ? (item.reallocationOptions || []).map(opt => `
           <label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;flex-wrap:wrap;">
             <input type="checkbox" class="realloc-check"
-              data-itemcode="${item.itemCode}" data-material="${(item.materialName||'').replace(/"/g,'&quot;')}"
+              data-itemcode="${item.itemCode}" data-material="${escapeHtml(item.materialName||'')}"
               data-donor="${opt.boqId}" data-surplus="${opt.surplusQty}"
               onchange="updateReallocQtyInput(this)" style="width:auto;flex-shrink:0;" />
             <span>From <strong>${opt.boqId}</strong> — surplus: <strong style="color:#15803d;">${opt.surplusQty}</strong></span>
@@ -1228,7 +1228,7 @@ function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
     return `
       <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
         <div style="font-family:monospace;font-size:0.78rem;color:var(--brand);font-weight:700;">${item.itemCode}</div>
-        <div style="font-weight:700;font-size:0.88rem;margin-bottom:8px;">${item.materialName}</div>
+        <div style="font-weight:700;font-size:0.88rem;margin-bottom:8px;">${escapeHtml(item.materialName)}</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
           <div style="background:#f0fdf4;padding:6px;border-radius:4px;text-align:center;">
             <div style="color:var(--muted);font-size:0.62rem;font-weight:700;text-transform:uppercase;">Requested</div>
@@ -2119,7 +2119,7 @@ function ticketExpectedReturnSearch(query, i) {
   }).slice(0, 10);
   if (!matches.length) {
     dd.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching material found.
-      <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a></div>`;
+      <a href="${escapeHtml(window.location.pathname)}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a></div>`;
     dd.style.display = "block";
     return;
   }

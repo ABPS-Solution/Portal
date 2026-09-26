@@ -416,7 +416,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
     // replied-to email still needs filing. Tooltip names who replied and
     // when, since the badge alone doesn't say whether it was handled.
     const repliedTitle = mail.repliedAt
-      ? `Replied on ${formatOrdinalDate(String(mail.repliedAt).slice(0, 10))}${mail.repliedBy ? ` from ${mail.repliedBy}` : ""}`
+      ? `Replied on ${formatOrdinalDate(String(mail.repliedAt).slice(0, 10))}${mail.repliedBy ? ` from ${escapeHtml(mail.repliedBy)}` : ""}`
       : "";
     const repliedBadgeHtml = mail.repliedAt
       ? `<span title="${escapeHtml(repliedTitle)}" style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:#dcfce7; color:#166534;">Replied</span>`

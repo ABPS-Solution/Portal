@@ -33,7 +33,7 @@ async function loadUnfreedBlockedAllocations() {
     }
     sel.innerHTML = '<option value="">— Choose an unfreed Blocked allocation —</option>' +
       sweepBlockedAllocationsCache.map(a =>
-        `<option value="${a.allocationId}">${a.materialName} (${a.itemCode}) — ${fmtQty(a.quantity)} — JC: ${a.jobCardNumber}</option>`
+        `<option value="${a.allocationId}">${escapeHtml(a.materialName)} (${a.itemCode}) — ${fmtQty(a.quantity)} — JC: ${a.jobCardNumber}</option>`
       ).join("");
   } catch (e) {
     sel.innerHTML = '<option value="">Error loading allocations</option>';
@@ -122,14 +122,14 @@ function renderSweepBasket() {
     body.innerHTML = sweepBasket.map(b => b.isBlockedExit ? `
       <tr>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px; border:1.5px solid #64748b;">${b.materialName} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
+        <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted);">—</td>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; font-weight:700;">${fmtQty(b.quantity)}</td>
         <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>` : `
       <tr>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace;">${b.itemCode}</td>
-        <td style="padding:8px; border:1.5px solid #64748b;">${b.materialName}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${b.rating}</span>` : ""}</td>
+        <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(b.rating)}</span>` : ""}</td>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted);">${b.unitType || "NOS"}</td>
         <td style="padding:8px; border:1.5px solid #64748b;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px;"></td>
         <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>

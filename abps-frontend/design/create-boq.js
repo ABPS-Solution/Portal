@@ -27,10 +27,10 @@ function handleCBOQImportProductSearch(query) {
   if (matches.length === 0) { dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching BOQ found.</div>`; dropdown.style.display = "block"; return; }
 
   dropdown.innerHTML = matches.map(m => `
-    <div onclick="selectCBOQImportProduct('${(m.productName||'').replace(/'/g,"\\'")}', '${(m.productRating||'').replace(/'/g,"\\'")}')"
+    <div onclick="selectCBOQImportProduct(${jsArg(m.productName||'')}, ${jsArg(m.productRating||'')})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${m.productName}${m.productRating ? ` - <span style="color:var(--brand); font-weight:700;">${m.productRating}</span>` : ""}
+      ${escapeHtml(m.productName)}${m.productRating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(m.productRating)}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -64,11 +64,11 @@ function selectCBOQImportProduct(productName, productRating) {
   descSelect.style.background = "#fff"; descSelect.style.color = "var(--text)";
   if (descOptions.length === 1) {
     // Only one variant (with or without a description) — skip straight to Project ID.
-    descSelect.innerHTML = `<option value="${descOptions[0][0]}" selected>${descOptions[0][1] || "— No Description of Material —"}</option>`;
+    descSelect.innerHTML = `<option value="${descOptions[0][0]}" selected>${escapeHtml(descOptions[0][1] || "— No Description of Material —")}</option>`;
     handleCBOQImportDescriptionChange(String(descOptions[0][0]));
   } else {
     descSelect.innerHTML = '<option value="">— Select Description of Material —</option>' +
-      descOptions.map(([id, text]) => `<option value="${id}">${text || "— No Description of Material —"}</option>`).join("");
+      descOptions.map(([id, text]) => `<option value="${id}">${escapeHtml(text || "— No Description of Material —")}</option>`).join("");
   }
 }
 
@@ -369,7 +369,7 @@ function showCBOQProductDropdown() {
   // this is purely so the operator sees WHY a product they expect isn't
   // pickable instead of thinking the list is wrong.
   dropdown.innerHTML = options.map(opt => opt.onHold ? `
-    <div title="${(opt.holdReason || '').replace(/"/g,'&quot;')}"
+    <div title="${escapeHtml(opt.holdReason || '')}"
       style="padding:8px 12px; cursor:not-allowed; border-bottom:1px solid #f1f5f9; font-size:0.82rem; color:var(--muted); background:#f8fafc; display:flex; justify-content:space-between; align-items:center; gap:8px;">
       <span>${opt.displayLabel || opt.productName}</span>
       <span style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap;">⏸ On Hold</span>
@@ -478,7 +478,7 @@ function renderCBOQMaterialRows() {
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center; vertical-align:middle;">
-        <input type="text" value="${row.unit || "—"}" readonly
+        <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
           style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -504,7 +504,7 @@ function renderCBOQMaterialRows() {
         <td></td>
         <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
-          <input type="text" id="cboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+          <input type="text" id="cboq-row-desc-${idx}" value="${escapeHtml(row.descriptionOfMaterial || "")}" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-row-desc-${idx}', 'cboq-row-desc-dropdown-${idx}', 'cboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'cboq:${idx}'); cboqMaterialRows[${idx}].descriptionOfMaterial=this.value; cboqMaterialRows[${idx}].descriptionId=null;"
             style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
           <div id="cboq-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
@@ -720,7 +720,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     dropdown.style.display = "block";
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
       No matching product found. 
-      <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      <a href="${escapeHtml(window.location.pathname)}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     return;
   }
@@ -734,10 +734,10 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     // Make) so the picker remains unambiguous.
     const bareNameRating = item.productName + (item.rating ? ' - ' + item.rating : '');
     return `
-    <div onclick="selectBOQRowMaterial(${rowIdx}, '${bareNameRating.replace(/'/g,"\\'")}', '${item.itemCode}', '${formPrefix}')"
+    <div onclick="selectBOQRowMaterial(${rowIdx}, ${jsArg(bareNameRating)}, '${item.itemCode}', '${formPrefix}')"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600; color:var(--text); flex:1;">${item.combinedName || item.productName}</span>
+      <span style="font-weight:600; color:var(--text); flex:1;">${escapeHtml(item.combinedName || item.productName)}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${window.typeLabelDisplay_(item.typeOfMaterial)}</span>
     </div>`;
   }).join("");
@@ -846,7 +846,7 @@ async function submitCreateBOQ() {
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.8rem; margin-bottom:14px;">
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">BOQ ID</span><span style="font-family:monospace; font-weight:800; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${data.boqId}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Project ID</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${projectId}</span></div>
-            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Customer</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${customerName}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Customer</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${escapeHtml(customerName)}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Product Name</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${productName}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Product Rating</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${productRating}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Order Quantity (Sets)</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${orderQty}</span></div>
@@ -906,7 +906,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
 
   try {
     const data = await apFetch({ action:"fetchBOQDraftById", boqId });
-    if (!data.success) { bodyEl.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { bodyEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
 
     eboqCurrentDraft = data.draft;
     // Every row starts unticked: the authorizer checks each one's costing here.

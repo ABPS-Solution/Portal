@@ -42,7 +42,7 @@ async function loadRPRNQueueTab() {
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius);">
         <div style="min-width:0; padding:6px 0;">
           <span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:4px; margin-right:8px;">Revised</span>
-          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productName || "")} ${escapeHtml(item.productRating || "")}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>
@@ -91,7 +91,7 @@ function renderRPRNDeltaTable() {
     const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
     const common = `
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
-        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(item.materialName || "")}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
@@ -110,7 +110,7 @@ function renderRPRNDeltaTable() {
       <tr style="border-bottom:1px solid #f1f5f9; background:${rprnRowBg};">${common}
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(qty)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-delta-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="checkbox" class="rprn-delta-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
@@ -136,7 +136,7 @@ function renderRPRNDeltaTable() {
       <tr style="border-bottom:1px solid #f1f5f9; background:${removed ? '#fef2f2' : '#fffbeb'};">${common}
         <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${trimNum(changeVal)}${changeBadge}</td>
         <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-delta-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="checkbox" class="rprn-delta-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
@@ -373,7 +373,7 @@ async function loadPRNForRevision() {
   body.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted);">Loading PRN…</div>`;
   try {
     const data = await apFetch({ action: "fetchPRNForRevision", prnId });
-    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     window.rprnState = { prn: data.prn, lineItems: data.lineItems || [] };
     renderRevisePRNTable();
   } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`; }
@@ -397,9 +397,9 @@ function renderRevisePRNTable() {
     return `
       <tr style="border-bottom:1px solid #f1f5f9; ${blocked ? "background:#fffbeb;" : ""}">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
-        <td style="padding:8px; font-size:0.8rem; font-weight:600;">${li.materialName || ""}</td>
+        <td style="padding:8px; font-size:0.8rem; font-weight:600;">${escapeHtml(li.materialName || "")}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${li.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(li.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(li.storeQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(li.purchaseQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(li.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(li.onOrderQty)}</td>

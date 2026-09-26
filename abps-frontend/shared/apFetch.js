@@ -772,7 +772,7 @@ async function showAppView() {
             const safeId = `chk_tm_eng_${eng.personKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
             matrixEngBoxEnclosure.innerHTML += `
               <input type="checkbox" name="taskMatrixEngineer" value="${eng.personKey}" id="${safeId}">
-              <label for="${safeId}">${eng.name}</label>
+              <label for="${safeId}">${escapeHtml(eng.name)}</label>
             `;
           });
         }, 50);
@@ -865,7 +865,7 @@ function handleCompanySearchTypeaheadInput(query, inputId = "lookup-module-compa
     .slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(item => `
-    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}', '${inputId}', '${ddId}')"
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead(${jsArg(item.companyValue)}, '${inputId}', '${ddId}')"
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(item.displayLabel)}</div>
   `).join("");

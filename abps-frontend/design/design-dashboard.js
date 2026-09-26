@@ -83,8 +83,8 @@ function ddRenderDashboard(data) {
     ? `<tr><td colspan="3" style="padding:8px 4px; color:var(--muted); font-size:0.72rem;">Nothing waiting on a first BOQ.</td></tr>`
     : mfcList.map(r => `
         <tr style="border-top:1px solid #f1f5f9;">
-          <td style="padding:2px 4px;"><span style="font-family:monospace; font-weight:700; font-size:0.7rem; color:var(--brand);">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.68rem;">${r.companyName || ""}</span></td>
-          <td style="padding:2px 4px;">${r.productName || ""}${r.productRating ? " " + r.productRating : ""}</td>
+          <td style="padding:2px 4px;"><span style="font-family:monospace; font-weight:700; font-size:0.7rem; color:var(--brand);">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.68rem;">${escapeHtml(r.companyName || "")}</span></td>
+          <td style="padding:2px 4px;">${escapeHtml(r.productName || "")}${r.productRating ? " " + r.productRating : ""}</td>
           <td style="padding:2px 4px; text-align:center; font-size:0.68rem;">${r.mfcDate ? formatDMYFromISO(r.mfcDate) : "—"}</td>
         </tr>`).join("");
 
@@ -127,7 +127,7 @@ function ddRenderDashboard(data) {
     ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
     : dueToday.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
           <td style="padding:4px;">${r.label}</td>
         </tr>`).join("");
 
@@ -136,7 +136,7 @@ function ddRenderDashboard(data) {
     ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
     : overdue.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
           <td style="padding:4px;">${r.label}</td>
           <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
         </tr>`).join("");

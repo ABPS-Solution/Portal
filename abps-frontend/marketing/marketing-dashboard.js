@@ -122,8 +122,8 @@ function mdRenderDashboard(data) {
     ? `<tr><td colspan="4" style="color:var(--muted); padding:6px;">No stale leads — nice work.</td></tr>`
     : staleLeads.map(l => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;">${l.company}</td>
-          <td style="padding:4px;">${l.engineer}</td>
+          <td style="padding:4px;">${escapeHtml(l.company)}</td>
+          <td style="padding:4px;">${escapeHtml(l.engineer)}</td>
           <td style="padding:4px;">${l.status}</td>
           <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${l.daysSince}d</td>
         </tr>`).join("");
@@ -134,8 +134,8 @@ function mdRenderDashboard(data) {
     ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">No orders received in this period.</td></tr>`
     : recentWins.map(w => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;">${w.company}</td>
-          <td style="padding:4px;">${w.engineer}</td>
+          <td style="padding:4px;">${escapeHtml(w.company)}</td>
+          <td style="padding:4px;">${escapeHtml(w.engineer)}</td>
           <td style="padding:4px; text-align:right;">${formatOrdinalDate(w.date)}</td>
         </tr>`).join("");
 

@@ -154,7 +154,7 @@ async function loadCqIncomingEmails() {
   cqOpenCreateFormFor = null;
   try {
     const data = await apFetch({ action: "fetchIncomingQueryEmails" });
-    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${data.error || "Failed to load."}</div>`; return; }
+    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${escapeHtml(data.error || "Failed to load.")}</div>`; return; }
     cqIncomingEmails = data.emails || [];
     renderCqIncomingList();
   } catch (e) {
@@ -214,7 +214,7 @@ async function toggleCqCreateForm(messageId) {
     projectId: "", customerName: "",
     standardProductNames: [], orderProductDescriptions: [],
     stageName: "", stageOtherText: "",
-    customerQueryDate: (mail?.receivedDate || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
+    customerQueryDate: (mail?.receivedDate || "").slice(0, 10) || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
     customerQuery: "", concernedDepartments: [], abpsResponsiblePerson: "", targetClosingDate: "",
   };
   await ensureCqProjectData();
@@ -241,7 +241,7 @@ async function toggleCqManualForm() {
     projectId: "", customerName: "",
     standardProductNames: [], orderProductDescriptions: [],
     stageName: "", stageOtherText: "",
-    customerQueryDate: new Date().toISOString().slice(0, 10),
+    customerQueryDate: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
     customerQuery: "", concernedDepartments: [], abpsResponsiblePerson: "", targetClosingDate: "",
   };
   await ensureCqProjectData();
@@ -283,12 +283,12 @@ function renderCqCreateForm(messageId) {
       <label class="field-label" style="margin-top:0;">Standard Product Name * (select one or more)</label>
       <div class="pill-group">
         ${products.length === 0 ? `<span style="font-size:0.78rem; color:var(--muted);">${s.projectId ? 'No Standard Product Names found for this project.' : 'Select a Project first.'}</span>` : products.map(p => `
-          <input type="checkbox" id="cq-cf-prod-${messageId}-${p.standardProductName}" name="cq-cf-prod-${messageId}" value="${esc(p.standardProductName)}"
+          <input type="checkbox" id="cq-cf-prod-${messageId}-${escapeHtml(p.standardProductName)}" name="cq-cf-prod-${messageId}" value="${esc(p.standardProductName)}"
             ${s.standardProductNames.includes(p.standardProductName) ? 'checked' : ''} onchange="updateCqCreateProducts('${messageId}')" />
-          <label for="cq-cf-prod-${messageId}-${p.standardProductName}">${p.standardProductName}</label>
+          <label for="cq-cf-prod-${messageId}-${escapeHtml(p.standardProductName)}">${escapeHtml(p.standardProductName)}</label>
         `).join('')}
       </div>
-      ${s.orderProductDescriptions.length ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Order Product Description: ${s.orderProductDescriptions.join('; ')}</div>` : ''}
+      ${s.orderProductDescriptions.length ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Order Product Description: ${escapeHtml(s.orderProductDescriptions.join('; '))}</div>` : ''}
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px;">
@@ -373,7 +373,7 @@ function handleCqCreateProjectInput(messageId, query) {
     return `<div onmousedown="event.preventDefault();" onclick="selectCqCreateProject('${messageId}', '${p.replace(/'/g, "\\'")}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
+      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}
     </div>`;
   }).join("");
   dd.style.display = "block";
@@ -465,7 +465,7 @@ async function loadCqPendingQueries() {
   cqOpenPendingId = null;
   try {
     const data = await apFetch({ action: "fetchPendingCustomerQueries", bucket: cqActiveBucket || undefined });
-    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${data.error || "Failed to load."}</div>`; return; }
+    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${escapeHtml(data.error || "Failed to load.")}</div>`; return; }
     cqPendingQueries = data.queries || [];
     renderCqPendingList();
   } catch (e) {
@@ -529,9 +529,9 @@ function renderCqPendingEditForm(queryId) {
       <label class="field-label" style="margin-top:0;">Standard Product Name * (select one or more)</label>
       <div class="pill-group">
         ${products.map(p => `
-          <input type="checkbox" id="cq-pe-prod-${queryId}-${p.standardProductName}" name="cq-pe-prod-${queryId}" value="${esc(p.standardProductName)}"
+          <input type="checkbox" id="cq-pe-prod-${queryId}-${escapeHtml(p.standardProductName)}" name="cq-pe-prod-${queryId}" value="${esc(p.standardProductName)}"
             ${s.standardProductNames.includes(p.standardProductName) ? 'checked' : ''} onchange="updateCqPendingProducts(${queryId}, '${q.projectId}')" />
-          <label for="cq-pe-prod-${queryId}-${p.standardProductName}">${p.standardProductName}</label>
+          <label for="cq-pe-prod-${queryId}-${escapeHtml(p.standardProductName)}">${escapeHtml(p.standardProductName)}</label>
         `).join('')}
       </div>
     </div>
@@ -775,7 +775,7 @@ async function searchCqResolvedQueries() {
   cqOpenResolvedId = null;
   try {
     const data = await apFetch(payload);
-    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${data.error || "Search failed."}</div>`; return; }
+    if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${escapeHtml(data.error || "Search failed.")}</div>`; return; }
     cqResolvedQueries = data.queries || [];
     renderCqResolvedList();
   } catch (e) {

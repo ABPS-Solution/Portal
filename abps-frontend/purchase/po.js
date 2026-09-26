@@ -14,7 +14,7 @@ async function initializeAuthorizePOPanel() {
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading pending POs...</div>`;
   try {
     const data = await apFetch({ action: "fetchPendingPOsForAuthorization" });
-    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     if (!data.pos || data.pos.length === 0) {
       body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No Purchase Orders pending authorization.</div>`;
       return;
@@ -32,11 +32,11 @@ async function initializeAuthorizePOPanel() {
         <div class="contact-summary-header-row" onclick="toggleAuthorizePOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
-            <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+            <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
             ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet. Sign this printout, then authorize.">Draft #${po.checkingDraftCount}</a>` : ""}
             ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
-          <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+          <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${escapeHtml(po.preparedBy)}</div>
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
@@ -159,7 +159,7 @@ function handleSrchPOPoInput(query) {
         <div onclick="document.getElementById('srchpo-po-input').value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('srchpo-po-dd').style.display='none';"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-          <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${r.vendorName || ''}
+          <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
         </div>`).join("");
       dd.style.display = "block";
     } catch(e) { dd.style.display = "none"; }
@@ -175,10 +175,10 @@ function handleSrchPOMaterialInput(query) {
   const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectSrchPOMaterial('${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
+    <div onclick="selectSrchPOMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -204,9 +204,9 @@ function handleSrchPOVendorInput(query) {
     if (!dd) return;
     if (matches.length === 0) { dd.style.display = "none"; return; }
     dd.innerHTML = matches.map(v => `
-      <div onclick="selectSrchPOVendor('${v.vendorName.replace(/'/g,"\\'")}')"
+      <div onclick="selectSrchPOVendor(${jsArg(v.vendorName)})"
         style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
-        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v.vendorName}</div>`).join("");
+        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(v.vendorName)}</div>`).join("");
     dd.style.display = "block";
   });
 }
@@ -316,7 +316,7 @@ async function searchRMPOMatrixUI() {
   // From-only means "from that date through today" — the same way a
   // human would read an open-ended range.
   if (dateFrom && !dateTo) {
-    dateTo = new Date().toISOString().slice(0, 10);
+    dateTo = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   }
 
   const results = document.getElementById("srchpo-results");
@@ -362,7 +362,7 @@ function renderSrchPOResultsAsPOCards(list) {
       <div class="contact-summary-header-row" onclick="toggleSrchPOCard('${po.poNo}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
-          <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+          <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
         </div>
         <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
@@ -390,7 +390,7 @@ async function toggleSrchPOCard(poNo) {
   expandDiv.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">Loading PO detail...</div>`;
   try {
     const data = await apFetch({ action: "fetchRMPOFullDetail", poNo });
-    if (!data.success) { expandDiv.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { expandDiv.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     expandDiv.innerHTML = renderRMPOViewOnlyDetail(data.po, data.lineItems || []);
   } catch(e) { expandDiv.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
@@ -415,8 +415,8 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
           : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>');
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${l.description || ''}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${l.additionalDescription}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
-      <td style="padding:8px; text-align:center;">${l.unit || '—'}</td>
+      <td style="padding:8px;">${escapeHtml(l.description || '')}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${escapeHtml(l.additionalDescription)}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
+      <td style="padding:8px; text-align:center;">${escapeHtml(l.unit || '—')}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.quantity)}</td>
       <td style="padding:8px; text-align:right;">${fmt(l.rate)}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
@@ -564,7 +564,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     ? (projRes.value.projects || projRes.value.projectCodes || []).map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean)
     : [];
 
-  const vendorOptions = window.cpoVendors.filter(v => v.vendorName).map(v => `<option value="${v.vendorName.replace(/"/g,'&quot;')}">${v.vendorName}</option>`).join("");
+  const vendorOptions = window.cpoVendors.filter(v => v.vendorName).map(v => `<option value="${v.vendorName.replace(/"/g,'&quot;')}">${escapeHtml(v.vendorName)}</option>`).join("");
 
   const today = new Date();
   const dd = String(today.getDate()).padStart(2,'0');
@@ -743,7 +743,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           };
         });
       } else {
-        body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Could not load ${authorizePoNo}: ${data.error || "not found"}</div>`;
+        body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Could not load ${authorizePoNo}: ${escapeHtml(data.error || "not found")}</div>`;
         return;
       }
     } catch (e) {
@@ -844,7 +844,7 @@ function handleCPOVendorChange() {
   const v = window.cpoVendors.find(x => x.vendorName === name);
   if (!v) { preview.style.display = "none"; persistCPODraft(); return; }
   preview.style.display = "block";
-  preview.innerHTML = `<strong>${v.vendorName}</strong> &nbsp;|&nbsp; ${v.address || "(no address)"} &nbsp;|&nbsp; GSTIN: ${v.gstin || "—"} &nbsp;|&nbsp; ${v.state || "—"} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${v.email || "—"}`;
+  preview.innerHTML = `<strong>${escapeHtml(v.vendorName)}</strong> &nbsp;|&nbsp; ${escapeHtml(v.address || "(no address)")} &nbsp;|&nbsp; GSTIN: ${escapeHtml(v.gstin || "—")} &nbsp;|&nbsp; ${escapeHtml(v.state || "—")} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${escapeHtml(v.email || "—")}`;
   // Prefilled from the vendor's own record — still a normal editable
   // input afterward, this just sets the starting value.
   const cgstEl = document.getElementById("cpo-cgst");
@@ -1065,10 +1065,10 @@ function handleCPODescSearch(rowId, query) {
   const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', \`${(it.combinedName || it.productName || '').replace(/\`/g,"'")}\`, '${(it.unit||'Nos').replace(/'/g,'')}')"
+    <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', ${jsArg(it.combinedName || it.productName || '')}, ${jsArg(it.unit||'Nos')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.combinedName || it.productName}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.combinedName || it.productName)}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -1749,7 +1749,7 @@ async function initializeEditPOPanel() {
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading your pending POs...</div>`;
   try {
     const data = await apFetch({ action: "fetchPendingPOsForEditing" });
-    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     if (!data.pos || data.pos.length === 0) {
       body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No pending Purchase Orders to edit.</div>`;
       return;
@@ -1760,7 +1760,7 @@ async function initializeEditPOPanel() {
         <div class="contact-summary-header-row" onclick="toggleEditPOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
-            <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
+            <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
             ${po.checkingDraftCount > 0 ? `<span style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700;">Draft #${po.checkingDraftCount}</span>` : ""}
           </div>
           <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
@@ -1932,10 +1932,10 @@ async function parseRawMaterialPOWithAI() {
                onclick="reopenRMPONameSearch(${idx})"
                title="Click to change"
                style="display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:600; padding:4px; border:1px solid #86efac; border-radius:3px; background:#f0fdf4;">
-               <span class="rm-po-mat-name-locked-text">${resolvedName}</span>
+               <span class="rm-po-mat-name-locked-text">${escapeHtml(resolvedName)}</span>
                <span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎ change</span>
              </div>
-             <input type="text" class="rm-po-mat-name-input rm-po-name-search" data-idx="${idx}" value="${resolvedName}"
+             <input type="text" class="rm-po-mat-name-input rm-po-name-search" data-idx="${idx}" value="${escapeHtml(resolvedName)}"
                placeholder="Type to search material name..."
                oninput="handleRMPONameSearch(this, ${idx})"
                autocomplete="off"
@@ -1945,11 +1945,11 @@ async function parseRawMaterialPOWithAI() {
 
       tbody.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
     <td style="padding:6px; width:140px;">${itemCodeCellContent}</td>
-    <td style="padding:6px; font-size:0.78rem; color:#64748b; word-break:break-word; width:260px;">${item.rawDescription || ""}</td>
+    <td style="padding:6px; font-size:0.78rem; color:#64748b; word-break:break-word; width:260px;">${escapeHtml(item.rawDescription || "")}</td>
     <td style="padding:6px; width:200px;">${nameSearchCell}</td>
     <td style="padding:6px; text-align:center; font-weight:700; font-family:monospace; width:80px;">${item.orderedQty || 0}</td>
     <td style="padding:6px; text-align:center; width:70px;">
-      <input type="text" class="rm-po-unit-input" data-idx="${idx}" value="${resolvedUnit}" readonly
+      <input type="text" class="rm-po-unit-input" data-idx="${idx}" value="${escapeHtml(resolvedUnit)}" readonly
         placeholder="—"
         style="font-size:0.78rem; font-weight:700; padding:4px 2px; text-align:center; width:100%; border-radius:3px; border:1px solid ${resolvedUnit ? '#86efac' : '#fca5a5'}; background:${resolvedUnit ? '#f0fdf4' : '#fff7f7'}; color:${resolvedUnit ? 'var(--brand)' : '#b91c1c'};" />
     </td>
@@ -2097,16 +2097,16 @@ function handleRMPONameSearch(inputEl, idx) {
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
       <span>No match found</span>
-      <a href="${window.location.pathname}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.75rem; white-space:nowrap; margin-left:8px;">+ Create Item Code →</a>
+      <a href="${escapeHtml(window.location.pathname)}?module=design-itemcode" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.75rem; white-space:nowrap; margin-left:8px;">+ Create Item Code →</a>
     </div>`;
     dropdown.style.display = "block";
     return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', '${(c.combinedName || c.productName || '').replace(/'/g, "\\'")}', '${(c.unit || '').replace(/'/g, "\\'")}')"
+    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName || '')}, ${jsArg(c.unit || '')})"
       style="padding:8px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";

@@ -339,7 +339,7 @@ function dtlRenderRow(it, isOverdueRow) {
   if (ctx) descParts.push(escapeHtml(ctx));
 
   const hue = PTL_COLORS[it.dept] || 'var(--brand)';
-  return `<div id="dtl-row-${escapeHtml(String(it.id))}" onclick="dtlOpenItemById('${escapeHtml(String(it.id)).replace(/'/g, "\\'")}')"
+  return `<div id="dtl-row-${escapeHtml(String(it.id))}" onclick="dtlOpenItemById(${jsArg(String(it.id))})"
       style="display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); cursor:pointer;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">
     <span style="flex:none; width:28px; height:28px; border-radius:50%; border:2.5px solid ${color}; background:${done ? color : '#fff'}; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:#fff; font-weight:800;">${done ? '&#10003;' : ''}</span>

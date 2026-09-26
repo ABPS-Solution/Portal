@@ -77,7 +77,7 @@ async function toggleBOQRevisionExpansion(updateId) {
           <textarea id="boqrev-desc-input-${updateId}" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-desc-input-${updateId}', 'boqrev-desc-dropdown-${updateId}', 'boqrev-description-id-${updateId}'); autoGrowTextField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${(reqItem.newDescriptionOfMaterial || '').toString().replace(/</g, '&lt;')}</textarea>
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${escapeHtml(reqItem.newDescriptionOfMaterial || '')}</textarea>
           <div id="boqrev-desc-dropdown-${updateId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="boqrev-description-id-${updateId}" value="${reqItem.newDescriptionId || ''}" />
         </div>
@@ -98,11 +98,11 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
-          <input type="text" value="${reqItem.department || ''}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${escapeHtml(reqItem.department || '')}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
-          <input type="text" value="${(reqItem.requestedBy || '').toString().replace(/"/g, '&quot;')}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${escapeHtml(reqItem.requestedBy || '')}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -218,7 +218,7 @@ function renderBOQRevisionRows(updateId) {
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" value="${row.unit || "—"}" readonly
+        <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
           style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px;">
@@ -239,7 +239,7 @@ function renderBOQRevisionRows(updateId) {
       <td></td>
       <td colspan="9" style="padding:4px 4px 8px 4px; position:relative;">
         <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
-        <input type="text" id="boqrev-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+        <input type="text" id="boqrev-row-desc-${idx}" value="${escapeHtml(row.descriptionOfMaterial || "")}" placeholder="Type to search or create a description..." autocomplete="off"
           oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'boqrev-row-desc-${idx}', 'boqrev-row-desc-dropdown-${idx}', 'boqrev-row-desc-id-${idx}', 'boqRowDescOnSelect', 'boqrev:${idx}'); uboqRevRows[${idx}].descriptionOfMaterial=this.value; uboqRevRows[${idx}].descriptionId=null;"
           style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
         <div id="boqrev-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
@@ -451,11 +451,11 @@ function renderUBOQForm() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
           <label class="field-label" style="margin-top:0;">Product Name (locked)</label>
-          <textarea id="uboq-product-name" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productName || '').toString().replace(/</g, '&lt;')}</textarea>
+          <textarea id="uboq-product-name" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${escapeHtml(draft.productName || '')}</textarea>
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Product Rating (locked)</label>
-          <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${(draft.productRating || '').toString().replace(/</g, '&lt;')}</textarea>
+          <textarea id="uboq-product-rating" readonly rows="1" style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1px solid var(--border); font-size:inherit;">${escapeHtml(draft.productRating || '')}</textarea>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
@@ -464,7 +464,7 @@ function renderUBOQForm() {
           <textarea id="uboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-desc-input', 'uboq-desc-dropdown', 'uboq-description-id'); autoGrowTextField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
-            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${(draft.descriptionOfMaterial || '').toString().replace(/</g, '&lt;')}</textarea>
+            style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:34px;">${escapeHtml(draft.descriptionOfMaterial || '')}</textarea>
           <div id="uboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           <input type="hidden" id="uboq-description-id" value="${draft.descriptionId || ''}" />
         </div>
@@ -484,11 +484,11 @@ function renderUBOQForm() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
-          <input type="text" id="uboq-department" value="${draft.department}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" id="uboq-department" value="${escapeHtml(draft.department)}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Prepared By (locked)</label>
-          <input type="text" value="${draft.preparedBy}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${escapeHtml(draft.preparedBy)}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />
         </div>
       </div>
     </div>
@@ -595,7 +595,7 @@ function renderUBOQMaterialRows() {
           style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="text" value="${row.unit || "—"}" readonly
+        <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
           style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px; text-align:center;">
@@ -622,9 +622,9 @@ function renderUBOQMaterialRows() {
         <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)${row.descriptionLocked ? ' — locked: this item already has its own Authorized BOQ' : ''}</label>
           ${row.descriptionLocked ? `
-          <input type="text" value="${row.descriptionOfMaterial || ""}" readonly title="Revise this item's own BOQ instead — this parent will auto-update." style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" />
+          <input type="text" value="${escapeHtml(row.descriptionOfMaterial || "")}" readonly title="Revise this item's own BOQ instead — this parent will auto-update." style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" />
           ` : `
-          <input type="text" id="uboq-row-desc-${idx}" value="${row.descriptionOfMaterial || ""}" placeholder="Type to search or create a description..." autocomplete="off"
+          <input type="text" id="uboq-row-desc-${idx}" value="${escapeHtml(row.descriptionOfMaterial || "")}" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'uboq-row-desc-${idx}', 'uboq-row-desc-dropdown-${idx}', 'uboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'uboq:${idx}'); uboqMaterialRows[${idx}].descriptionOfMaterial=this.value; uboqMaterialRows[${idx}].descriptionId=null;"
             style="padding:6px; font-size:0.82rem; width:60%; border:1px solid var(--border); border-radius:3px;" />
           <div id="uboq-row-desc-dropdown-${idx}" style="display:none; position:absolute; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:280px;"></div>
@@ -768,9 +768,9 @@ async function submitUpdateBOQ() {
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${_lastDraft?.boqId || ""}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Status</span><span style="font-weight:700;">Awaiting Authorization</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${_lastDraft?.customerName || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${_lastDraft?.productName || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${_lastDraft?.productRating || ""}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.customerName || "")}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.productName || "")}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.productRating || "")}</span></div>
           </div>
           <button onclick="const sz=document.getElementById('update-boq-selector-zone'); if(sz) sz.style.display='grid'; initializeUpdateBOQPanel().catch(()=>{});"
             style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">

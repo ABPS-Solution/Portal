@@ -321,7 +321,7 @@ function oppRenderTranches(projectId) {
           </div>
           <div style="flex:1.4; min-width:140px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Reference (optional)</label>
-            <input type="text" value="${(t.paymentReference || '').replace(/"/g, '&quot;')}" placeholder="UTR / Cheque No."
+            <input type="text" value="${escapeHtml(t.paymentReference || '')}" placeholder="UTR / Cheque No."
               oninput="oppUpdateTrancheField('${projectId}', ${i}, 'paymentReference', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>

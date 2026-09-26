@@ -55,7 +55,7 @@ function cpdiRenderFileList(type) {
   if (!list) return;
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.82rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
-      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
       <span onclick="cpdiRemoveFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
@@ -93,7 +93,7 @@ async function initializeCpdiWorkspace() {
     const data = await apFetch({ action: "fetchPartialInvoiceEligibleProjects" });
     if (!data.success) { select.innerHTML = '<option value="">Failed to load</option>'; return; }
     select.innerHTML = '<option value="">— Select Project ID —</option>' +
-      data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
+      data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${escapeHtml(p.companyName || '')}</option>`).join("");
     if (data.projects.length === 0) {
       select.innerHTML = '<option value="">No eligible Project IDs — at least one product\'s Job Cards must be QA-passed and not yet invoiced</option>';
     }
@@ -161,7 +161,7 @@ function cpdiRenderDetail() {
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
     const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px;">${escapeHtml(l.productName || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
       <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}${(hasBoq && (l.readySerials || []).length) ? `<div><a href="javascript:void(0)" onclick="showCpdiReadySerials(${idx})" style="font-size:0.72rem; font-weight:600; color:var(--brand);">View Job Cards / Serial Nos.</a></div>` : ''}</td>
@@ -362,7 +362,7 @@ function cpdiRenderInvoiceForm() {
 
       <div style="margin-top:14px;">
         <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updateCpdiField('declaration', this.value)">${s.declaration}</textarea>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updateCpdiField('declaration', this.value)">${escapeHtml(s.declaration)}</textarea>
       </div>
 
       <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="cpdi-words-display" style="color:var(--text);">—</strong></div>
@@ -565,14 +565,14 @@ async function initializeCpdiEditingTab() {
   cpdiEditExpandedInvoiceId = null;
   try {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoicesForEditing" });
-    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.invoices || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No pending drafts.</div>`; return; }
     feed.innerHTML = data.invoices.map(inv => `
       <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCpdiEditCard(${inv.invoiceId})">
           <div>
             <strong>${inv.invoiceType} Invoice draft #${inv.invoiceId}</strong> — ${inv.projectId}
-            <div style="font-size:0.8rem; color:var(--muted);">Created by ${inv.createdBy || '—'} · ${formatOrdinalDateTime ? formatOrdinalDateTime(inv.createdAt) : inv.createdAt}</div>
+            <div style="font-size:0.8rem; color:var(--muted);">Created by ${escapeHtml(inv.createdBy || '—')} · ${formatOrdinalDateTime ? formatOrdinalDateTime(inv.createdAt) : inv.createdAt}</div>
           </div>
           <div style="text-align:right;">
             ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Invoice Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No invoice draft yet</span>`}
@@ -602,7 +602,7 @@ async function toggleCpdiEditCard(invoiceId) {
   card.innerHTML = `<div style="text-align:center; padding:12px; color:var(--muted);">Loading...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectDispatchInvoiceDraftById", invoiceId });
-    if (!data.success) { card.innerHTML = `<div style="color:#b91c1c;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { card.innerHTML = `<div style="color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     cpdiCache = { projectId: data.projectId, lines: (data.invoiceDetails.lineItems || []).map(li => ({ ...li, boqId: li.boqId || null, orderedQuantity: li.quantity, readyToInvoiceQty: li.quantity, jcTotal: 0, jcQaPassed: 0, alreadyInvoicedQty: 0, pendingTicketsCount: 0, pendingBoqIncreaseCount: 0 })) };
     cpdiAllLines = cpdiCache.lines.slice();
     cpdiInvoiceState = { ...data.invoiceDetails, lineItems: (data.invoiceDetails.lineItems || []).map(li => ({ ...li })) };
@@ -658,7 +658,7 @@ async function saveCpdiEdit(invoiceId) {
   showBlockingOverlay("Saving changes...");
   try {
     const data = await apFetch({ action: "updateProjectDispatchInvoiceDraft", invoiceId, invoice: cpdiInvoiceState, operatorName: appActiveOperatorIdentityString || "Unknown" });
-    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`; return; }
+    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`; return; }
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
     return;
@@ -691,7 +691,7 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
     }
     fb.innerHTML = data.success
       ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the draft could not be generated. Click the button again to retry.</div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   } finally {
@@ -713,7 +713,7 @@ async function generateCpdiDcCheckingDraft(invoiceId, challanId) {
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
     fb.innerHTML = data.success
       ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   } finally {
@@ -737,7 +737,7 @@ async function generateCpdiDcCheckingDraftInline(containerId, challanId) {
     const data = await apFetch({ action: "generateDeliveryChallanCheckingDraft", challanId });
     if (el) el.innerHTML = data.success
       ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
     if (el) el.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   } finally {

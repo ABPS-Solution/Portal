@@ -15,7 +15,7 @@ async function initializeApdiWorkspace() {
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
   try {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoices" });
-    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.invoices || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No invoices awaiting authorization.</div>`; return; }
     feed.innerHTML = data.invoices.map(inv => `
       <div style="border:2px solid #94a3b8; border-radius:8px; margin-bottom:14px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,0.08);">
@@ -44,7 +44,7 @@ async function toggleApdiCard(invoiceId) {
   card.innerHTML = `<div style="text-align:center; padding:12px; color:var(--muted);">Loading...</div>`;
   try {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoiceDetail", invoiceId });
-    if (!data.success) { card.innerHTML = `<div style="color:#b91c1c;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { card.innerHTML = `<div style="color:#b91c1c;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     const details = data.invoiceDetails || {};
     apdiCardMeta[invoiceId] = { invoiceNo: data.invoiceNo, projectId: data.projectId, invoiceType: data.invoiceType, companyName: data.companyName };
     card.innerHTML = `
@@ -107,7 +107,7 @@ async function submitApdiAuthorize() {
       document.getElementById("apdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`apdi-card-feedback-${invoiceId}`);
-      if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
       else showBOQBanner("apdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {

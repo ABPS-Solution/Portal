@@ -178,7 +178,7 @@ function pdRenderDashboard(data) {
     ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
     : dueToday.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
           <td style="padding:4px;">${r.label}</td>
         </tr>`).join("");
 
@@ -187,7 +187,7 @@ function pdRenderDashboard(data) {
     ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
     : overdue.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+          <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
           <td style="padding:4px;">${r.label}</td>
           <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
         </tr>`).join("");
@@ -203,7 +203,7 @@ function pdRenderDashboard(data) {
         const overdueColor = po.daysOverdue<=3?"#b45309":"#b91c1c";
         return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem; font-weight:700;">${po.poId}</td>
-          <td style="padding:4px 5px; font-size:0.7rem;">${po.vendor}</td>
+          <td style="padding:4px 5px; font-size:0.7rem;">${escapeHtml(po.vendor)}</td>
           <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatOrdinalDate(po.deliveryDate)}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${overdueBg}; color:${overdueColor};">${po.daysOverdue}d</span></td>
           <td style="padding:4px 5px; text-align:right; font-family:monospace; font-size:0.7rem;">${fmtNum(po.grand)}</td>

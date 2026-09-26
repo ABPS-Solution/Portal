@@ -68,7 +68,7 @@ async function runProjectStatusSearch() {
     ]);
 
     if (!designData.success) {
-      lanesContainer.innerHTML = `<div class="pstat-empty-state" style="color:var(--warn);">${designData.error}</div>`;
+      lanesContainer.innerHTML = `<div class="pstat-empty-state" style="color:var(--warn);">${escapeHtml(designData.error)}</div>`;
       return;
     }
 
@@ -254,7 +254,7 @@ function renderPstatLane(lane) {
       ? `<a href="${driveLink(sd.data.primaryUrl)}" target="_blank" class="pstat-stage-primary pstat-stage-primary-link">${sd.data.primary}</a>`
       : `<div class="pstat-stage-primary">${sd.data.primary}</div>`;
     return `
-    <div class="pstat-stage" data-state="${sd.data.state}">
+    <div class="pstat-stage" data-state="${escapeHtml(sd.data.state)}">
       <div class="pstat-stage-label">${sd.label}</div>
       ${primaryHtml}
       <div class="pstat-stage-sub">${sd.data.sub}</div>
@@ -264,9 +264,9 @@ function renderPstatLane(lane) {
   return `
     <div class="pstat-lane" data-accent="${accent}">
       <div class="pstat-lane-top">
-        <div class="pstat-lane-title">${boq.productName || boq.department || boq.boqId}${boq.productRating ? `<span class="pstat-lane-rating">${boq.productRating}</span>` : ""}</div>
+        <div class="pstat-lane-title">${escapeHtml(boq.productName || boq.department || boq.boqId)}${boq.productRating ? `<span class="pstat-lane-rating">${escapeHtml(boq.productRating)}</span>` : ""}</div>
         <div class="pstat-lane-meta">
-          <span class="pstat-lane-meta-strong">${boq.department || "—"}</span>
+          <span class="pstat-lane-meta-strong">${escapeHtml(boq.department || "—")}</span>
           <span class="pstat-lane-meta-strong">${fmtQty(boq.orderQuantity)} sets</span>
           ${boq.pdfUrl ? `<a href="${driveLink(boq.pdfUrl)}" target="_blank">BOQ Link ↗</a>` : `<span style="font-family:monospace;">${boq.boqId}</span>`}
         </div>
@@ -307,7 +307,7 @@ function renderPstatLaneDetail(lane) {
             const recv = Number(m.receivedQty) || 0;
             const pct = buffered > 1e-9 ? Math.min(100, (recv / buffered) * 100) : 0;
             return `<tr>
-              <td>${m.materialName || m.itemCode}</td>
+              <td>${escapeHtml(m.materialName || m.itemCode)}</td>
               <td style="text-align:center;">${fmtQty(m.boqRequiredQty)}</td>
               <td style="text-align:center;">${fmtQty(m.onOrderQty)}</td>
               <td style="text-align:center;">${fmtQty(m.receivedQty)}</td>
@@ -334,7 +334,7 @@ function renderPstatLaneDetail(lane) {
             ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="font-weight:400;">${po.poNo} ↗</a>`
             : `<span style="font-weight:400;">${po.poNo}</span>`;
           return `<div class="pstat-po-card">
-            <div class="pstat-po-row1"><span>${poNoHtml} <span style="font-weight:600; color:var(--muted);">— ${po.vendorName || "—"}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
+            <div class="pstat-po-row1"><span>${poNoHtml} <span style="font-weight:600; color:var(--muted);">— ${escapeHtml(po.vendorName || "—")}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
             <div class="pstat-po-row2"><span>${info.delivered ? "" : info.nextDate ? `PPS: ${formatOrdinalDate(info.nextDate)}` : "PPS: not scheduled"}${po.actualDelivery ? ` · Delivered: ${formatOrdinalDate(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
           </div>`;
         }).join("")}

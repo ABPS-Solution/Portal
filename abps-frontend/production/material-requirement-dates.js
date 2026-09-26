@@ -76,7 +76,7 @@ async function loadMRDNeedQueue() {
     const rowHtml = item => `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;">
         <div style="min-width:0;">
-          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productName || "")} ${escapeHtml(item.productRating || "")}</div>
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
           onclick="jumpToMRDFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
@@ -168,7 +168,7 @@ async function loadMRDForPRN() {
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading materials…</div>`;
   try {
     const data = await apFetch({ action: "fetchMaterialRequirementDatesForPRN", prnId });
-    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     const lines = data.lines || [];
     if (lines.length === 0) { body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">This PRN has no material lines.</div>`; return; }
     body.innerHTML = mrdRenderLinesTable('mrd', prnId, lines, data.alreadySubmitted, 'submitMaterialRequirementDates');
@@ -502,7 +502,7 @@ async function loadRMRDQueueTab() {
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius);">
         <div style="min-width:0; padding:6px 0;">
           <span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:4px; margin-right:8px;">Revised</span>
-          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productName || "")} ${escapeHtml(item.productRating || "")}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">More material now has to be purchased than when dates were given (a PRN revision, or store stock moved to another product). Add dates for the extra quantity.</span>
@@ -541,7 +541,7 @@ async function jumpToRMRDDelta(prnId, btn) {
     const data = await apFetch({ action: "fetchMaterialRequirementDatesForPRN", prnId });
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     if (!data.success) {
-      deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${data.error || "Failed to load."}</div>`;
+      deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${escapeHtml(data.error || "Failed to load.")}</div>`;
       return;
     }
     const lines = data.lines || [];
@@ -640,7 +640,7 @@ async function loadReviseMRDForPRN() {
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading materials…</div>`;
   try {
     const data = await apFetch({ action: "fetchMaterialRequirementDatesForPRN", prnId });
-    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${data.error}</div>`; return; }
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     const lines = data.lines || [];
     if (lines.length === 0) { body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">This PRN has no material lines.</div>`; return; }
     body.innerHTML = mrdRenderLinesTable('rmrd', prnId, lines, false, 'submitReviseMRDOther');

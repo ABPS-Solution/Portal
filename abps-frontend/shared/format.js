@@ -49,6 +49,12 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+// A server string as a JS argument inside an inline on*="..." handler:
+// JSON gives a safe JS literal, escapeHtml keeps it inside the attribute.
+function jsArg(value) {
+  return escapeHtml(JSON.stringify(value === null || value === undefined ? "" : String(value)));
+}
+
 function cleanISTTimestamp(rawStr) {
   if (!rawStr) return "";
   let str = rawStr.toString().trim();

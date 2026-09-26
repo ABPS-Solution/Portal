@@ -123,7 +123,7 @@ function eibRender() {
     <div style="margin-top:12px; padding:10px 12px; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); font-size:0.82rem;">
       <strong>Mail arrived in the last 7 days on addresses not in this directory:</strong>
       ${eibUnlisted.map(u => `<span style="display:inline-flex; align-items:center; gap:6px; margin:4px 8px 0 0;">${escapeHtml(u.address)} (${u.last7Days.received})
-        <button class="nav-btn-styled" style="padding:2px 8px; font-size:0.72rem;" onclick="eibAddAddress('${escapeHtml(u.address)}')">Add</button></span>`).join("")}
+        <button class="nav-btn-styled" style="padding:2px 8px; font-size:0.72rem;" onclick="eibAddAddress(${jsArg(u.address)})">Add</button></span>`).join("")}
     </div>` : "";
 
   mount.innerHTML = `

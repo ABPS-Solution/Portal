@@ -388,7 +388,7 @@ async function executeTaskMatrixSearch() {
         // due today (amber), otherwise a neutral grey — same
         // `target_date < CURRENT_DATE` overdue definition the Overdue quick
         // filter above already uses, just evaluated client-side per card.
-        const todayStr = toDateInputValue(new Date().toISOString());
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
         const targetStr = toDateInputValue(t.targetDate);
         const dateChipStyle = !targetStr ? "background:#edf2f7; color:#64748b;"
           : targetStr < todayStr ? "background:#fee2e2; color:#b91c1c;"
@@ -412,9 +412,9 @@ async function executeTaskMatrixSearch() {
             <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Assigned to</span> <b style="color:#000; font-weight:600;">${escapeHtml(t.eng)}</b>
             <span style="color:var(--border);">|</span>
             <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">By</span> <b style="color:#000; font-weight:600;">${escapeHtml(t.assigner || "System")}</b>
-            <span style="color:var(--border);">·</span> ${t.companyName} (${t.personName})
+            <span style="color:var(--border);">·</span> ${escapeHtml(t.companyName)} (${escapeHtml(t.personName)})
           </div>
-          <div style="font-size:0.95rem; color:#000; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(t.desc || '').replace(/"/g, '&quot;')}">${escapeHtml(t.desc || 'None')}</div>
+          <div style="font-size:0.95rem; color:#000; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(t.desc || '')}">${escapeHtml(t.desc || 'None')}</div>
           <div id="matrix-task-form-mount-${t.id}" style="margin-top:10px; display:none;"></div>
           <div id="matrix-task-company-expand-${t.id}" style="display:none; margin-top:12px; border-top:2px solid var(--border); padding-top:10px;"></div>
         `;

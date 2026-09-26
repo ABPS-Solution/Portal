@@ -199,7 +199,7 @@ function edRenderEmployeeTable(ns, employees) {
       const actionsCell = cfg.editable ? `
         <td style="${cell} ${cb}; white-space:nowrap;">
           <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="edSubmitUpdateEmployee(${e.employeeId}, '${ns}')">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="edSubmitDeleteEmployee(${e.employeeId}, '${escapeHtml(e.employeeName).replace(/'/g, "\\'")}', '${ns}')">Delete</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="edSubmitDeleteEmployee(${e.employeeId}, ${jsArg(e.employeeName)}, '${ns}')">Delete</button>
         </td>` : '';
       return `
       <tr style="border-bottom:2px solid var(--border); opacity:${bothInactive ? '0.55' : '1'};" data-employee-id="${e.employeeId}">
@@ -329,8 +329,8 @@ async function loadExpenseLimitsTable() {
         <td style="padding:7px;"><input type="number" class="el-f-staff-limit" value="${g.staffLimit != null ? trimNum(g.staffLimit) : ''}" min="0" placeholder="—"
               style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"></td>
         <td style="padding:7px; white-space:nowrap;">
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateExpenseLimit('${escapeHtml(g.expenseType).replace(/'/g, "\\'")}')">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteExpenseLimit('${escapeHtml(g.expenseType).replace(/'/g, "\\'")}')">Delete</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="submitUpdateExpenseLimit(${jsArg(g.expenseType)})">Save</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="submitDeleteExpenseLimit(${jsArg(g.expenseType)})">Delete</button>
         </td>
       </tr>`).join("");
     wrap.innerHTML = `

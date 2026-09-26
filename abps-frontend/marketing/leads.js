@@ -213,7 +213,7 @@ async function loadCityStateFilterOptions() {
       globalLocationDatabaseCacheMap = data.tree;
       renderCountryCheckboxPillElements();
     } else {
-      if (countryMount) countryMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Failed to sync locations ledger: ${data.error}</p>`;
+      if (countryMount) countryMount.innerHTML = `<p style="font-size:0.75rem; color:var(--warn);">Failed to sync locations ledger: ${escapeHtml(data.error)}</p>`;
     }
   } catch (e) {
     console.error("Geographic dictionary fetch exception:", e);
@@ -729,7 +729,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
-            <strong id="card-lbl-company-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${companyLabelName}</strong>
+            <strong id="card-lbl-company-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(companyLabelName)}</strong>
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Status</span>
@@ -741,7 +741,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Position</span>
-            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${lead["Position"] || "Unspecified"}</strong>
+            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${escapeHtml(lead["Position"] || "Unspecified")}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block" style="display:flex; align-items:center; gap:8px; flex-shrink:0;" onclick="event.stopPropagation()">
@@ -1755,7 +1755,7 @@ function renderLeadMatrixEngineerCheckboxes() {
       const cleanId = `chk_lm_eng_${eng.personKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
       mountPoint.innerHTML += `
         <input type="checkbox" name="leadMatrixEngineerFilter" value="${eng.personKey}" id="${cleanId}">
-        <label for="${cleanId}">${eng.name}</label>
+        <label for="${cleanId}">${escapeHtml(eng.name)}</label>
       `;
     });
   }, 50);
@@ -2066,10 +2066,10 @@ function handleMatrixMaterialSearchInputSuggestions(query) {
   const matches = catalog.filter(it => (it.combinedName||it.productName||"").toLowerCase().includes(q) || (it.itemCode||"").toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectMatrixMaterialSuggestion(\`${(it.productName||'').replace(/\`/g,"'")}\`)"
+    <div onclick="selectMatrixMaterialSuggestion(${jsArg(it.productName||'')})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${it.itemCode}</span>${it.productName}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:8px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -2287,7 +2287,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
           <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
             <div style="flex:1; min-width:0;">
               <strong style="font-size:1rem;">Upload Successful!</strong><br/>
-              <span style="font-size:0.88rem;"><strong>${data.matchedCompany}</strong> status updated to <strong>${isDispatch ? 'Order Dispatched' : (opsFlagTypeString === 'PURCHASE_ORDER' ? 'Order Received' : 'Product Commissioned')}</strong>.</span>
+              <span style="font-size:0.88rem;"><strong>${escapeHtml(data.matchedCompany)}</strong> status updated to <strong>${isDispatch ? 'Order Dispatched' : (opsFlagTypeString === 'PURCHASE_ORDER' ? 'Order Received' : 'Product Commissioned')}</strong>.</span>
 
               ${isPO ? `
               <div style="margin-top:10px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:10px; font-size:0.82rem; color:#166534;">
@@ -2308,7 +2308,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               ${data.companyCrossCheckWarning ? `
               <div style="margin-top:10px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; padding:10px; font-size:0.82rem; color:#991b1b;">
                 <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:#b91c1c; margin-bottom:4px; letter-spacing:0.3px;">⚠ Company Mismatch Warning</div>
-                ${data.companyCrossCheckWarning}
+                ${escapeHtml(data.companyCrossCheckWarning)}
               </div>` : ''}
               ${data.partialWriteWarning ? `
               <div style="margin-top:10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:10px; font-size:0.82rem; color:#92400e;">
@@ -2349,7 +2349,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
           feedbackBanner.style.cssText = "display: block; background: #fffbeb; border-color: #b45309; color: #92400e; padding: 14px; margin-bottom: 14px; border-left: 4px solid #b45309;";
           feedbackBanner.innerHTML = `
             <strong>Company not found in your leads database.</strong><br/>
-            <span style="font-size:0.85rem;">The document appears to be from: <strong>${data.aiDetectedCompany}</strong></span><br/>
+            <span style="font-size:0.85rem;">The document appears to be from: <strong>${escapeHtml(data.aiDetectedCompany)}</strong></span><br/>
             <span style="font-size:0.82rem; margin-top:6px; display:block; color:#78350f;">${data.suggestion || 'Make sure this company exists in your leads with a matching name, then try again.'}</span>
             <div style="margin-top:10px; font-size:0.8rem; color:#92400e;">
               The file has <strong>NOT</strong> been saved. Fix the company name in your leads first, then re-upload this document.
@@ -2357,7 +2357,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
           `;
         } else {
           feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
-          feedbackBanner.innerHTML = `<strong>Failed:</strong> ${data.error}`;
+          feedbackBanner.innerHTML = `<strong>Failed:</strong> ${escapeHtml(data.error)}`;
         }
       }
       if (targetBtn) {
@@ -2804,7 +2804,7 @@ function renderPurchaseOrderReview() {
       <label style="font-size:0.72rem;">ABPS Owner of Order *</label>
       <select oninput="updatePoReviewField('_abpsOwnerOfOrder', this.value)" style="font-size:0.95rem; padding:7px 8px;">
         <option value="" ${!s._abpsOwnerOfOrder ? 'selected' : ''}>— Select —</option>
-        ${cachedEngineers.map(eng => `<option value="${eng.name.replace(/"/g, '&quot;')}" ${eng.name === s._abpsOwnerOfOrder ? 'selected' : ''}>${eng.name}</option>`).join('')}
+        ${cachedEngineers.map(eng => `<option value="${eng.name.replace(/"/g, '&quot;')}" ${eng.name === s._abpsOwnerOfOrder ? 'selected' : ''}>${escapeHtml(eng.name)}</option>`).join('')}
       </select>
     </div>`;
 

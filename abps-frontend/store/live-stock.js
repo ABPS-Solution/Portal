@@ -148,7 +148,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
       itemRowsHtml += `
         <tr>
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
-            ${item.materialName}
+            ${escapeHtml(item.materialName)}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
           </td>
           <td style="padding:6px; color:#111827; font-weight:600; font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
@@ -177,14 +177,14 @@ ${spareCellsHtml}
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
             <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
-            <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
-            ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${ticket.outwardPurpose}</strong>` : ""}
-            <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
+            <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "General Store")}</strong>
+            ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${escapeHtml(ticket.outwardPurpose)}</strong>` : ""}
+            <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             ${ticket.legacyCompanyName
-              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.legacyCompanyName}</strong>`
+              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
               : `<span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
@@ -295,7 +295,7 @@ function executeClientSideStoreTicketFilterSearch() {
       const mappedQty = (i.released !== undefined && i.released !== null) ? i.released : i.quantity;
       itemsTableRowsHtml += `
         <tr>
-          <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${i.materialName}</td>
+          <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${escapeHtml(i.materialName)}</td>
           <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
         </tr>`;
     });
@@ -318,7 +318,7 @@ function executeClientSideStoreTicketFilterSearch() {
             <div>
               <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
               <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
-              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${ticket.department || "General Store"}</strong>
+              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "General Store")}</strong>
               
             </div>
             <div>
@@ -328,7 +328,7 @@ function executeClientSideStoreTicketFilterSearch() {
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             ${ticket.legacyCompanyName
-              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.legacyCompanyName}</strong>`
+              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span> <strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
               : `<span>Project ID:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
@@ -336,7 +336,7 @@ function executeClientSideStoreTicketFilterSearch() {
       </div>
       <div id="matrix-card-body-${ticket.ticketId}" style="display:none; padding-top:8px; border-top:1px dashed var(--border); margin-top:6px;">
         <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
-          <strong>Requested By:</strong> ${ticket.requestedBy} | <strong>Actioned By:</strong> ${ticket.actionedBy || "Pending Review"}<br/>  
+          <strong>Requested By:</strong> ${escapeHtml(ticket.requestedBy)} | <strong>Actioned By:</strong> ${escapeHtml(ticket.actionedBy || "Pending Review")}<br/>  
           <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
         </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
@@ -523,7 +523,7 @@ function renderRawMaterialsStockGrid() {
           card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock, item.make);
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-              ${item.materialName}
+              ${escapeHtml(item.materialName)}
             </div>
             ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
             <div style="text-align:right;">
@@ -557,7 +557,7 @@ async function triggerLiveSpareStoreStockMetricsSync() {
 
   try {
     const data = await apFetch({ action: "getSpareStoreStock" });
-    if (!data.success) { mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ ${data.error || 'Could not load Spare Store.'}</div>`; return; }
+    if (!data.success) { mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ ${escapeHtml(data.error || 'Could not load Spare Store.')}</div>`; return; }
     window.cachedSpareStoreStockCollection = data.stock || [];
     renderSpareStoreStockGrid();
   } catch(e) {
@@ -645,7 +645,7 @@ function renderSpareStoreStockGrid() {
         card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-            ${item.materialName}
+            ${escapeHtml(item.materialName)}
           </div>
           ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
           <div style="text-align:right;">
@@ -1073,11 +1073,11 @@ function renderFinishedGoodsStoreStockTables() {
     container.innerHTML = groupArr.map(g => `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; font-weight:700; font-size:0.82rem;">${g.projectId}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.productName}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.productRating || "—"}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.descriptionOfMaterial || "—"}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.make || "—"}</td>
-        <td style="padding:8px; font-size:0.82rem;">${g.unit}</td>
+        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.productName)}</td>
+        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.productRating || "—")}</td>
+        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.descriptionOfMaterial || "—")}</td>
+        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.make || "—")}</td>
+        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.unit)}</td>
         <td style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${g.inStock > 0 ? "var(--accent)" : "#b91c1c"};">
           ${g.inStock}
           ${g.jobCards.length > 0 ? `<div style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-top:2px;">${g.jobCards.map(jc => (jc.match(/^JC_Set-\d+/) || [jc])[0]).join(", ")}</div>` : ""}
@@ -1514,7 +1514,7 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
   const body = document.getElementById("stock-assignment-breakdown-body");
   try {
     const data = await apFetch({ action: "fetchStockAssignmentBreakdown", itemCode, storeType });
-    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     const rows = data.breakdown || [];
     const rowsHtml = rows.length === 0
       ? `<tr><td colspan="2" style="padding:14px; text-align:center; color:var(--muted); font-size:0.85rem;">No stock currently claimed by a BOQ.</td></tr>`
@@ -1743,7 +1743,7 @@ function handleEiDelivPOInput(query) {
         <div onclick="document.getElementById('ei-deliv-po-input').value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('ei-deliv-po-dd').style.display='none';"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-          <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${r.vendorName || ''}
+          <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
         </div>`).join("");
       dd.style.display = "block";
     } catch(e) { dd.style.display = "none"; }
@@ -1759,10 +1759,10 @@ function handleEiDelivMaterialInput(query) {
   const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q) || (it.make||"").toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectEiDelivMaterial(\`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
+    <div onclick="selectEiDelivMaterial(${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -1804,7 +1804,7 @@ async function eiDelivRunSearch(params, label) {
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
     const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", todayOverride: localStorage.getItem("ptlTodayOverride") || "", ...params });
-    if (!data.success) { results.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+    if (!data.success) { results.innerHTML = `<div style="color:var(--warn); padding:12px;">${escapeHtml(data.error)}</div>`; return; }
     if (!data.delivered || data.delivered.length === 0) {
       results.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
       return;
@@ -1845,7 +1845,7 @@ async function loadExpectedInbounds() {
   try {
     const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode, todayOverride: localStorage.getItem("ptlTodayOverride") || "" });
     if (!data.success) {
-      zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
+      zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${escapeHtml(data.error)}</div>`;
       return;
     }
 
@@ -1969,8 +1969,8 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
     const displayQty = item.windowOrderedQty !== undefined ? formatQtyTrimmed(item.windowOrderedQty) : item.orderedQty;
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px; font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--brand); white-space:nowrap;">${item.itemCode || "—"}</td>
-      <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${item.materialName}</td>
-      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap;">${displayQty} ${item.unit}</td>
+      <td style="padding:6px 8px; font-size:0.8rem; font-weight:600; line-height:1.4;">${escapeHtml(item.materialName)}</td>
+      <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap;">${displayQty} ${escapeHtml(item.unit)}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#15803d;">${item.receivedQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b45309;">${item.repairQty}</td>
       <td style="padding:6px 8px; text-align:center; font-family:monospace; font-weight:700; font-size:1rem; white-space:nowrap; color:#b91c1c;">${item.returnMissingQty}</td>
@@ -1985,7 +1985,7 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
           <div style="display:flex; align-items:baseline; gap:8px;">
             <span id="${cardId}-chevron" style="font-size:0.75rem; color:var(--muted); flex:none;">${defaultExpanded ? "▾" : "▸"}</span>
             <span style="font-size:0.78rem; font-weight:700; color:var(--muted);">Purchase Order Number: <strong style="color:var(--text);">${po.poNumber || "—"}</strong></span>
-            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); margin-left:10px;">Vendor: <strong style="color:var(--text);">${po.vendorName}</strong></span>
+            <span style="font-size:0.78rem; font-weight:700; color:var(--muted); margin-left:10px;">Vendor: <strong style="color:var(--text);">${escapeHtml(po.vendorName)}</strong></span>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
             ${po.actualDeliveryDate ? `<span style="font-size:0.72rem; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px;">Delivered on ${formatOrdinalDate(po.actualDeliveryDate)}</span>` : daysLabel}

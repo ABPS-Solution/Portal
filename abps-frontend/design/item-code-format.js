@@ -233,7 +233,7 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
     mount.innerHTML = `
       ${rows.map((r, i) => `
         <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
-          <input type="number" min="0" step="any" value="${r.rating}" data-row="${i}" data-field="rating"
+          <input type="number" min="0" step="any" value="${escapeHtml(r.rating)}" data-row="${i}" data-field="rating"
             placeholder="kVAr" style="width:70px; padding:3px 4px; font-size:0.78rem; border:1px solid var(--border); border-radius:3px;">
           <span style="font-size:0.72rem; color:var(--muted);">kVAr x</span>
           <input type="number" min="1" step="1" value="${r.count}" data-row="${i}" data-field="count"

@@ -233,7 +233,7 @@ async function parseGateDocumentsWithAI() {
             placeholder="Not found" readonly
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; color:${codeColor}; border:${codeBorder}; background:${codeBg}; text-align:center; width:100%; border-radius:3px; cursor:not-allowed;">
         </td>
-        <td style="padding:8px; font-size:0.95rem; color:#000; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${item.rawDescriptionLine || item.materialName || "Line Item Description"}</td>
+        <td style="padding:8px; font-size:0.95rem; color:#000; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:400px;">${escapeHtml(item.rawDescriptionLine || item.materialName || "Line Item Description")}</td>
         <td style="width:90px; padding:6px; vertical-align:middle;">
           <input type="text" class="gate-row-unit-input" value="${item.unitType || 'NOS'}"
             readonly

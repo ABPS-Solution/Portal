@@ -163,7 +163,7 @@ function pd2RenderDashboard(data) {
       ? `<tr><td colspan="2" style="color:var(--muted); padding:6px;">Nothing due today.</td></tr>`
       : dueToday.map(r => `
           <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
             <td style="padding:4px;">${r.label}</td>
           </tr>`).join("");
   }
@@ -174,7 +174,7 @@ function pd2RenderDashboard(data) {
       ? `<tr><td colspan="3" style="color:var(--muted); padding:6px;">Nothing overdue — nice work.</td></tr>`
       : overdue.map(r => `
           <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${r.companyName}</span></td>
+            <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
             <td style="padding:4px;">${r.label}</td>
             <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
           </tr>`).join("");
@@ -220,7 +220,7 @@ function pd2RenderJCNTable() {
     const rowBg = i % 2 === 0 ? "var(--card)" : "#f8fafc";
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
       <td style="padding:7px 6px; font-family:monospace; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.jcn}</td>
-      <td style="padding:7px 6px; font-size:0.72rem;">${j.department}</td>
+      <td style="padding:7px 6px; font-size:0.72rem;">${escapeHtml(j.department)}</td>
       <td style="padding:7px 6px; text-align:center; font-size:0.72rem; font-weight:700; color:var(--brand);">${j.ticketCount}</td>
     </tr>`;
   }).join("");

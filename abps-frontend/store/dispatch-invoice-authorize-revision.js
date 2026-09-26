@@ -19,7 +19,7 @@ async function initializeArpdiWorkspace() {
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
   try {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoiceRevisions" });
-    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.requests || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No revision requests awaiting authorization.</div>`; return; }
     feed.innerHTML = data.requests.map(r => `
       <div style="border:2px solid #94a3b8; border-radius:8px; margin-bottom:14px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,0.08);">
@@ -104,7 +104,7 @@ function renderArpdiCard(r) {
   if (!r) return `<div style="color:#b91c1c;">Not found.</div>`;
   const cur = r.current || {};
   const prop = r.proposed || {};
-  if (prop.error) return `<div style="color:#b91c1c;">Cannot compute the proposed revision: ${prop.error}</div>`;
+  if (prop.error) return `<div style="color:#b91c1c;">Cannot compute the proposed revision: ${escapeHtml(prop.error)}</div>`;
 
   // Line Item Change Summary — old -> new quantity/rate per line, keyed
   // on lineId (= po_line_id, what the authorize route updates by).
@@ -196,7 +196,7 @@ async function submitArpdiAuthorize() {
       document.getElementById("arpdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       const fb = document.getElementById(`arpdi-card-feedback-${requestId}`);
-      if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      if (fb) fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
       else showBOQBanner("arpdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {

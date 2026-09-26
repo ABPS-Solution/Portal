@@ -63,7 +63,7 @@ function renderPinvFileList(type) {
   if (!list) return;
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.82rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
-      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
       <span onclick="removePinvFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
@@ -106,7 +106,7 @@ async function initializePinvWorkspace() {
     const data = await apFetch({ action: "fetchPartialInvoiceEligibleProjects" });
     if (!data.success) { select.innerHTML = '<option value="">Failed to load</option>'; return; }
     select.innerHTML = '<option value="">— Select Project ID —</option>' +
-      data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${p.companyName || ''}</option>`).join("");
+      data.projects.map(p => `<option value="${p.projectId}">${p.projectId} — ${escapeHtml(p.companyName || '')}</option>`).join("");
     if (data.projects.length === 0) {
       select.innerHTML = '<option value="">No eligible Project IDs — at least one product\'s Job Cards must be QA-passed and not yet invoiced</option>';
       return;
@@ -318,7 +318,7 @@ function renderPinvDetail() {
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
     const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${l.productName || l.description}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px;">${escapeHtml(l.productName || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.jcQaPassed : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
@@ -656,7 +656,7 @@ function renderPinvInvoiceForm() {
 
       <div style="margin-top:14px;">
         <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvField('declaration', this.value)">${s.declaration}</textarea>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvField('declaration', this.value)">${escapeHtml(s.declaration)}</textarea>
       </div>
 
       <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-words-display" style="color:var(--text);">—</strong></div>
@@ -1075,7 +1075,7 @@ async function handlePinvReviseTypeaheadInput(query) {
     return `<div onmousedown="event.preventDefault();" onclick="selectPinvReviseProject('${p.replace(/'/g,"\\'")}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.88rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
+      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}
     </div>`;
   }).join("");
   dd.style.display = "block";
@@ -1104,7 +1104,7 @@ async function loadPinvReviseHistory(projectId) {
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceHistory", projectId });
     if (!data.success || !(data.invoices || []).length) {
-      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "No invoices found for this project."}</div>`;
+      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${escapeHtml(data.error || "No invoices found for this project.")}</div>`;
       return;
     }
     historyZone.innerHTML = `
@@ -1147,7 +1147,7 @@ async function togglePinvDocuments(invoiceId) {
   zone.innerHTML = "Loading documents...";
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceDocuments", invoiceId });
-    if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${data.error || "Failed to load documents."}</span>`; return; }
+    if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error || "Failed to load documents.")}</span>`; return; }
     if (!(data.documents || []).length) { zone.innerHTML = "No documents attached to this invoice."; return; }
     zone.innerHTML = data.documents.map(d =>
       `<div style="margin-bottom:2px;">${d.docLabel}${d.fileName ? ` — ${d.fileName}` : ""}: <a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
@@ -1163,7 +1163,7 @@ async function loadPinvReviseForm(invoiceId) {
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId });
     if (!data.success) {
-      zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "Failed to load."}</div>`;
+      zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${escapeHtml(data.error || "Failed to load.")}</div>`;
       return;
     }
     pinvReviseCache = { invoiceId: data.invoiceId, projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
@@ -1335,7 +1335,7 @@ function renderPinvReviseInvoiceForm() {
 
       <div style="margin-top:14px;">
         <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvReviseField('declaration', this.value)">${s.declaration}</textarea>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updatePinvReviseField('declaration', this.value)">${escapeHtml(s.declaration)}</textarea>
       </div>
 
       <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="pinv-revise-words-display" style="color:var(--text);">—</strong></div>

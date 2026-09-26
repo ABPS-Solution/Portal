@@ -59,10 +59,10 @@ function handleStoreLedgerMaterialSearch(prefix, query) {
     return;
   }
   dropdown.innerHTML = matches.map(m => `
-    <div onclick="selectStoreLedgerMaterial('${prefix}', '${m.itemCode}', \`${(m.combinedName || m.productName).replace(/`/g, "'")}\`)"
+    <div onclick="selectStoreLedgerMaterial('${prefix}', '${m.itemCode}', ${jsArg(m.combinedName || m.productName)})"
       style="padding:7px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${m.combinedName || m.productName}</span>
+      <span style="font-weight:600;">${escapeHtml(m.combinedName || m.productName)}</span>
       <span style="font-size:0.68rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; margin-left:8px;">${m.itemCode}</span>
     </div>`).join('');
   dropdown.style.display = 'block';
@@ -168,9 +168,9 @@ function renderStoreLedgerTable(prefix, rows) {
   }
   bodyEl.innerHTML = rows.map(r => `
     <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px; font-weight:600;">${r.materialName || '—'}</td>
-      <td style="padding:8px; text-align:center;">${r.unit || '—'}</td>
-      <td style="padding:8px;">${r.typeOfMaterial || '—'}</td>
+      <td style="padding:8px; font-weight:600;">${escapeHtml(r.materialName || '—')}</td>
+      <td style="padding:8px; text-align:center;">${escapeHtml(r.unit || '—')}</td>
+      <td style="padding:8px;">${escapeHtml(r.typeOfMaterial || '—')}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem;">${trimNum(r.startingStock)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#15803d;">${trimNum(r.inwardQty)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#b91c1c;">${trimNum(r.issuedQty)}</td>

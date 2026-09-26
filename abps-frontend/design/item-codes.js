@@ -344,8 +344,8 @@ async function executeItemCodeSearch() {
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${match.itemCode}</span>
           </div>
-          <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${match.productName}</div>
-          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${match.typeOfMaterial}${_unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${_unit}</strong>` : ""}</div>
+          <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${escapeHtml(match.productName)}</div>
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${escapeHtml(match.typeOfMaterial)}${_unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${escapeHtml(_unit)}</strong>` : ""}</div>
         </div>
         <span style="color:var(--brand); font-size:0.78rem; font-weight:700; flex-shrink:0; margin-left:10px;">Clone →</span>
       `;
@@ -666,10 +666,10 @@ function handleIcfTypeTypeaheadInput(query, inputId, dropdownId) {
     .filter(t => t.typeOfMaterial.toLowerCase().includes(q)).slice(0, 15);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(t => `
-    <div onmousedown="event.preventDefault();" onclick="selectIcfTypeTypeahead('${t.typeOfMaterial.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
+    <div onmousedown="event.preventDefault();" onclick="selectIcfTypeTypeahead(${jsArg(t.typeOfMaterial)}, '${inputId}', '${dropdownId}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:700;">${t.typeOfMaterial}</span>
+      <span style="font-weight:700;">${escapeHtml(t.typeOfMaterial)}</span>
       <span style="font-size:0.7rem; color:var(--muted); margin-left:6px;">${t.entryMode}</span>
     </div>`).join("");
   dd.style.display = "block";
@@ -1055,10 +1055,10 @@ function handleSENameSearch(inputEl, gateNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}', '${c.unit || ""}')"
+    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.typeOfMaterial || "")}, ${jsArg(c.unit || "")})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";

@@ -7,7 +7,7 @@
 // functions anymore.
 async function renderPstatPurchase(data) {
   const zone = document.getElementById("pstat-purchase-zone");
-  if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${data.error}</div>`; return; }
+  if (!data.success) { zone.innerHTML = `<div style="color:var(--warn); padding:12px;">${escapeHtml(data.error)}</div>`; return; }
   if (!data.prns || data.prns.length === 0) { zone.innerHTML = `<div style="padding:14px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:4px;">No PRNs found for this project.</div>`; return; }
   zone.innerHTML = data.prns.map(p => `<div id="pstat-pps-${p.prnId.replace(/[^a-zA-Z0-9]/g,'_')}" style="margin-bottom:18px;"><div style="padding:14px; color:var(--muted);">Loading PPS...</div></div>`).join("");
 
@@ -40,7 +40,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     const pos = m.purchaseOrders || [];
     const poLines = pos.length === 0 ? `<div style="color:var(--muted); font-size:0.78rem;">No PO allocations yet.</div>` : pos.map(po => `
       <div style="font-size:0.78rem; padding:2px 0; border-top:1px dashed #f1f5f9;">
-        <strong>${po.poNo}</strong> | Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
+        <strong>${po.poNo}</strong> | Vendor: ${escapeHtml(po.vendorName || "—")} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
         | Next PPS Delivery: ${formatOrdinalDate(pstatPoDeliveryInfo(po).nextDate) || "Not scheduled"} | ${po.actualDelivery ? `Delivered: ${formatOrdinalDate(po.actualDelivery)}` : "Not delivered"}
         | Link Status: ${po.linkStatus || "—"}
         ${po.actionPlan ? `<div style="color:#0369a1; margin-top:2px;">Action Plan: ${po.actionPlan}</div>` : ""}
@@ -48,7 +48,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     return `
       <tr style="border-bottom:1px solid var(--border); vertical-align:top;">
         <td style="padding:8px; font-family:monospace;">${m.itemCode}</td>
-        <td style="padding:8px; font-size:0.92rem; font-weight:600;">${m.materialName}</td>
+        <td style="padding:8px; font-size:0.92rem; font-weight:600;">${escapeHtml(m.materialName)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.bufferedPurchaseQty)}</td>
         <td style="padding:8px; text-align:center;">${fmtQty(m.stillToOrder)}</td>
@@ -140,12 +140,12 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
   }
   const rowHtml = item => {
     const hint = (item.totalItems > 0)
-      ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
+      ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${escapeHtml(item.scheduledItems)} of ${item.totalItems} items scheduled</div>`
       : "";
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;">
         <div style="min-width:0;">
-          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productName || "")} ${escapeHtml(item.productRating || "")}</div>
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -261,7 +261,7 @@ async function loadPPSForPRN() {
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading PPS tracking...</div>`;
   try {
     const data = await apFetch({ action: "fetchPPSForPRN", prnId });
-    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     const materials = data.materials || [];
     if (materials.length === 0) {
       body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">This PRN has no material lines.</div>`;

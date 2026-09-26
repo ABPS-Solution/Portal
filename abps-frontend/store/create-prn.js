@@ -42,7 +42,7 @@ async function openCPOAllocationPicker(rowId) {
   const rowsHtml = prefilled.map((p) => `
     <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; font-size:0.85rem;">
       <div style="flex:1; min-width:0;">
-        <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${p.productName || ""}${p.productRating ? " " + p.productRating : ""}</div>
+        <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${escapeHtml(p.productName || "")}${p.productRating ? " " + p.productRating : ""}</div>
         <div style="font-size:0.72rem; color:var(--muted);">${p.projectId || ""}</div>
       </div>
       <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
@@ -73,7 +73,7 @@ async function openCPOAllocationPicker(rowId) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${row.unit || ""} of ${row.itemCode} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${escapeHtml(row.unit || "")} of ${row.itemCode} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -124,7 +124,7 @@ async function jumpToRPRNDelta(boqId, btn) {
     ]);
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     if (!previewData.success) {
-      deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${previewData.error || "Failed to load preview."}</div>`;
+      deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${escapeHtml(previewData.error || "Failed to load preview.")}</div>`;
       return;
     }
     window.rprnPendingCreate = {
@@ -220,7 +220,7 @@ async function loadPRNNeedQueue() {
     // the operator sees WHY a BOQ they expect can't get a PRN raised.
     const rowHtml = item => {
       const heldBadge = item.onHold
-        ? `<span title="${(item.holdReason || '').replace(/"/g,'&quot;')}" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">⏸ On Hold</span>`
+        ? `<span title="${escapeHtml(item.holdReason || '')}" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">⏸ On Hold</span>`
         : `<button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
               onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
               Create PRN →
@@ -378,7 +378,7 @@ async function startNewPRNCreation() {
     ]);
 
     if (!previewData.success) {
-      createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${previewData.error || "Failed to load preview."}</div>`;
+      createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">${escapeHtml(previewData.error || "Failed to load preview.")}</div>`;
       return;
     }
 
@@ -529,12 +529,12 @@ async function initializeAuthorizePRNPanel() {
         <div class="contact-summary-header-row" onclick="toggleAPRNExpansion('${p.prnId}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${p.customerName || ""}</strong>
+              <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${escapeHtml(p.customerName || "")}</strong>
               <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${p.projectId || ""}</span>
-              <span style="background:#edf2f7;">Created By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${p.storePerson || ""}</span>
+              <span style="background:#edf2f7;">Created By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${escapeHtml(p.storePerson || "")}</span>
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
-              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${p.productName || ""} ${p.productRating || ""}</strong>
+              <span style="background:#e2e8f0;">Product:</span><strong style="margin-right:15px;">${escapeHtml(p.productName || "")} ${escapeHtml(p.productRating || "")}</strong>
               <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;${isRevision ? " margin-right:15px;" : ""}">${formatOrdinalDate(p.createdDate)}</span>
               ${isRevision ? `<span style="background:#edf2f7;">Version:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">v${p.version}</span>` : ""}
             </div>
@@ -610,7 +610,7 @@ function renderAPRNRows(prnId) {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
         <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
         ${changedRows.map(r => `<div style="font-size:0.86rem; color:#334155; margin-bottom:4px;">
-          <strong>${r.materialName || ""}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(liveNewPurchase(r))}</strong>
+          <strong>${escapeHtml(r.materialName || "")}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(liveNewPurchase(r))}</strong>
         </div>`).join("")}
       </div>` : "";
     const rowsHtml = aprnRows.map((r, idx) => {
@@ -632,10 +632,10 @@ function renderAPRNRows(prnId) {
       return `
         <tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
-          <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-          <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${r.typeOfMaterial || "—"}</td>
+          <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(r.materialName || "")}</td>
+          <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(r.typeOfMaterial || "—")}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
-          <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
+          <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(r.unit || "—")}</td>
           <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(r.previousPurchaseQty)}</td>
           <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(r.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(r.onOrderQty)}</td>
@@ -686,12 +686,12 @@ function renderAPRNRows(prnId) {
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${r.itemCode || ""}</td>
-        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${r.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${r.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(r.materialName || "")}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(r.typeOfMaterial || "—")}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${trimNum(r.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; color:#b45309; font-weight:700;">${r.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${trimNum(buffered)}</td>
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${r.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(r.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           ${r.editable === false
@@ -776,8 +776,8 @@ async function authorizePRN(prnId) {
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.8rem; margin-bottom:14px;">
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">PRN ID</span><span style="font-family:monospace; font-weight:800; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prnId}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Project ID</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.projectId || ""}</span></div>
-            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Customer</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.customerName || ""}</span></div>
-            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Product</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${prn.productName || ""} ${prn.productRating || ""}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Customer</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${escapeHtml(prn.customerName || "")}</span></div>
+            <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Product</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${escapeHtml(prn.productName || "")} ${escapeHtml(prn.productRating || "")}</span></div>
             <div style="background:#fff; border:1px solid #bbf7d0; border-radius:6px; padding:8px 10px; min-width:0;"><span style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:3px;">Order Qty (Sets)</span><span style="font-weight:700; color:#111827; font-size:0.88rem; overflow-wrap:anywhere;">${Math.round(Number(prn.orderQuantity) || 0)}</span></div>
           </div>
           ${pdfNote}
@@ -847,8 +847,8 @@ function renderPRNCreateTable() {
   pending.lineItems.forEach((item, idx) => {
     const common = `
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
-        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${item.materialName || ""}</td>
-        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${item.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(item.materialName || "")}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(item.typeOfMaterial || "—")}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
@@ -868,7 +868,7 @@ function renderPRNCreateTable() {
       const initPurchase = item.isCountUnit ? Math.ceil(initPurchaseRaw - 1e-9) : initPurchaseRaw;
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9;">${common}
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
@@ -895,7 +895,7 @@ function renderPRNCreateTable() {
 
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${item.deferred ? "#fffbeb" : "#fef2f2"};">${common}
-        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${item.unit || "—"}</td>
+        <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="prn-create-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
           <input type="checkbox" class="prn-create-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
@@ -919,7 +919,7 @@ function renderPRNCreateTable() {
     <div style="margin-bottom:12px;">
       <div style="font-size:0.85rem; font-weight:700; color:#111827;">${isDelta ? "Revised" : "New"} Purchase Request Note for</div>
       <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-top:2px;">${pending.boqId} ${revBadge}</div>
-      <div style="font-size:0.82rem; margin-top:6px;"><span style="color:#111827; font-weight:700;">Company Name:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderMeta.customerName || "—"}</span></div>
+      <div style="font-size:0.82rem; margin-top:6px;"><span style="color:#111827; font-weight:700;">Company Name:</span> <span style="color:var(--brand); font-weight:600;">${escapeHtml(prnHeaderMeta.customerName || "—")}</span></div>
       <div style="font-size:0.82rem; margin-top:2px;"><span style="color:#111827; font-weight:700;">Product:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderProductLabel || "—"}</span></div>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
@@ -1165,8 +1165,8 @@ function renderAllPRNCards(prns, boqId) {
     (data.lineItems || []).forEach((li, liIdx) => {
       rowsHtml += `<tr style="border-bottom:1px solid #f1f5f9;">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${liIdx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
-        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${li.materialName}</td>
-        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${li.typeOfMaterial || "—"}</td>
+        <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(li.materialName)}</td>
+        <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(li.typeOfMaterial || "—")}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${fmtSmart(li.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtSmart(li.bufferPct)}%</td>
         <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${fmtSmart(li.bufferedPurchaseQty)}</td>
@@ -1181,15 +1181,15 @@ function renderAllPRNCards(prns, boqId) {
         ${isPending ? `<div style="font-size:0.72rem; font-weight:800; color:#b45309; margin-bottom:8px;">⏳ This PRN is waiting for authorization.</div>` : ""}
         <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.customerName || "—"}</div></div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${escapeHtml(data.customerName || "—")}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Name</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productName || "—"}</div></div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${escapeHtml(data.productName || "—")}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Product Rating</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.productRating || "—"}</div></div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${escapeHtml(data.productRating || "—")}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Order Quantity</div>
             <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${Math.round(Number(data.orderQuantity) || 0) + " Sets"}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Created By</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${data.storePerson || "—"}</div></div>
+            <div style="font-weight:700; color:var(--text); font-size:0.85rem;">${escapeHtml(data.storePerson || "—")}</div></div>
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">PRN PDF</div>
             <div style="font-size:0.82rem;" onclick="event.stopPropagation();">${pdfHtml}</div></div>
         </div>

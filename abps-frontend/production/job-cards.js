@@ -90,7 +90,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       const inStockCount = hasLiveFGCount ? (liveStockOverride.fgInStockCount || 0) : 0;
       let styleClassFG = !hasLiveFGCount ? "" : (inStockCount === 0 ? "pill-stock-empty" : inStockCount <= 2 ? "pill-stock-low" : "pill-stock-healthy");
       const countDisplay = hasLiveFGCount
-        ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${fmtQty(inStockCount)} ${unitTokenFG}</span>`
+        ? `<span class="live-counter-pill ${styleClassFG}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${fmtQty(inStockCount)} ${escapeHtml(unitTokenFG)}</span>`
         : `<span style="font-size:0.78rem; color:var(--muted); margin-left:4px;">🔄 checking live stock…</span>`;
 
       // Same reasoning as the Raw Materials Store branch above: Service
@@ -103,7 +103,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             ${countDisplay}
           </div>
           <div style="margin-top:6px;">
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatchFG.remainingQty)} ${escapeHtml(unitTokenFG)}</span>
           </div>
         </div>
       ` : `
@@ -113,9 +113,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             ${countDisplay}
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${unitTokenFG}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${unitTokenFG}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${unitTokenFG}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${escapeHtml(unitTokenFG)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${escapeHtml(unitTokenFG)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${escapeHtml(unitTokenFG)}</span>
           </div>
         </div>
       `;
@@ -198,13 +198,13 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             <div>
               Spare Store Total Stock Count:
               <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-                ${fmtQty(totalStockCountSpare)} ${unitTokenSpare}
+                ${fmtQty(totalStockCountSpare)} ${escapeHtml(unitTokenSpare)}
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-              <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${unitTokenSpare}</span>
-              <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${unitTokenSpare}</span>
-              <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${unitTokenSpare}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${escapeHtml(unitTokenSpare)}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${escapeHtml(unitTokenSpare)}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${escapeHtml(unitTokenSpare)}</span>
             </div>
           </div>
         `;
@@ -214,7 +214,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         let styleClassSpare = availableCountSpare === 0 ? "pill-stock-empty" : availableCountSpare <= 5 ? "pill-stock-low" : "pill-stock-healthy";
         counterZone.innerHTML = `
           <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
-            Spare Store: <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCountSpare} ${unitTokenSpare}</span>
+            Spare Store: <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCountSpare} ${escapeHtml(unitTokenSpare)}</span>
             <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
           </div>`;
       } else {
@@ -319,11 +319,11 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${fmtQty(totalStockCount)} ${unitToken}
+              ${fmtQty(totalStockCount)} ${escapeHtml(unitToken)}
             </span>
           </div>
           <div style="margin-top:6px;">
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">EXTRA AVAILABLE IN STOCK: ${fmtQty(jcmMatch.remainingQty)} ${escapeHtml(unitToken)}</span>
           </div>
         </div>
       ` : `
@@ -331,13 +331,13 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${fmtQty(totalStockCount)} ${unitToken}
+              ${fmtQty(totalStockCount)} ${escapeHtml(unitToken)}
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${unitToken}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${unitToken}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${unitToken}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${escapeHtml(unitToken)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${escapeHtml(unitToken)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${escapeHtml(unitToken)}</span>
           </div>
         </div>
       `;
@@ -347,7 +347,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       let styleClass = availableCount === 0 ? "pill-stock-empty" : availableCount <= 5 ? "pill-stock-low" : "pill-stock-healthy";
       counterZone.innerHTML = `
         <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
-          Raw Material Store: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${unitToken}</span>
+          Raw Material Store: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${escapeHtml(unitToken)}</span>
           <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
         </div>`;
     } else {
@@ -366,7 +366,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
           <div>
             Raw Material Store Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">
-              ${fmtQty(availableCount)} ${unitToken} Extra Unreserved
+              ${fmtQty(availableCount)} ${escapeHtml(unitToken)} Extra Unreserved
             </span>
           </div>
           <div style="margin-top:4px; font-size:0.72rem; color:var(--warn);">⚠️ BOQ data could not be loaded. Retry by reselecting the item.</div>

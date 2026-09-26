@@ -140,9 +140,9 @@ function sdRenderDashboard(data) {
         const daysColor = r.daysWaiting >= 3 ? "#b91c1c" : (r.daysWaiting >= 1 ? "#b45309" : "var(--muted)");
         return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
           <td style="padding:6px; font-size:0.68rem;"><span style="font-weight:700; padding:1px 6px; border-radius:6px; background:${stageBg}; color:${stageColor};">${r.stage}</span></td>
-          <td style="padding:6px; font-size:0.72rem;">${r.vendorName || "—"}</td>
+          <td style="padding:6px; font-size:0.72rem;">${escapeHtml(r.vendorName || "—")}</td>
           <td style="padding:6px; font-size:0.72rem; font-family:monospace;">${r.invoiceNumber || "—"}</td>
-          <td style="padding:6px; font-size:0.72rem;">${r.materialName || r.itemCode || "—"}</td>
+          <td style="padding:6px; font-size:0.72rem;">${escapeHtml(r.materialName || r.itemCode || "—")}</td>
           <td style="padding:6px; text-align:center; font-weight:700; color:${daysColor}; font-size:0.72rem;">${r.daysWaiting}d</td>
         </tr>`;
       }).join("");
@@ -201,12 +201,12 @@ function sdRenderHealthTable() {
     return `<tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
       <td style="padding:8px 6px; font-size:0.75rem;">
         <div style="font-weight:700; font-family:monospace;">${p.projId}</div>
-        <div style="font-size:0.65rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.customer}</div>
+        <div style="font-size:0.65rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.customer)}</div>
       </td>
       <td style="padding:8px 6px; text-align:center; font-size:0.75rem;">${p.totalTickets}</td>
       <td style="padding:8px 6px; text-align:center; color:#15803d; font-weight:700; font-size:0.75rem;">${p.approved}</td>
       <td style="padding:8px 6px; text-align:center; color:${p.pending > 0 ? "#b45309" : "var(--muted)"}; font-weight:${p.pending > 0 ? "700" : "400"}; font-size:0.75rem;">${p.pending}</td>
-      <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:0.75rem;">${p.itemsIssued}</td>
+      <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:0.75rem;">${escapeHtml(p.itemsIssued)}</td>
     </tr>`;
   }).join("");
 }

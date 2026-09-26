@@ -161,7 +161,7 @@ function laPersonButtonHtml(u, color) {
                box-shadow:0 1px 3px rgba(15,23,42,0.08); transition:transform 0.12s, box-shadow 0.12s;"
         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 14px rgba(15,23,42,0.14)';"
         onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px rgba(15,23,42,0.08)';">
-        ${u.first_name || ''} ${u.last_name || ''}
+        ${escapeHtml(u.first_name || '')} ${escapeHtml(u.last_name || '')}
       </button>
     </div>`;
 }
@@ -194,7 +194,7 @@ function renderSecurityAdminUsers() {
     return `
       <div style="margin-bottom:44px;">
         <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding-bottom:12px;">
-          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${dept.name}</span>
+          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${escapeHtml(dept.name)}</span>
           ${people.length > 0 ? `<span style="background:${dept.color}1a; color:${dept.color}; font-size:0.72rem; font-weight:800; padding:2px 9px; border-radius:999px;">${people.length}</span>` : ''}
         </div>
         <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
@@ -295,7 +295,7 @@ async function loadHolidays() {
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${formatDMYFromISO ? formatDMYFromISO(h.date) : h.date}</td>
         <td style="padding:8px;">${h.label}</td>
-        <td style="padding:8px; font-size:0.78rem; color:var(--muted);">${h.createdBy || '—'}</td>
+        <td style="padding:8px; font-size:0.78rem; color:var(--muted);">${escapeHtml(h.createdBy || '—')}</td>
         <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteHoliday('${h.date}')">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No holidays configured.</td></tr>`;
   } catch (e) { console.error("loadHolidays failed:", e); }
@@ -339,7 +339,7 @@ async function loadTrustedDevices() {
     const tbody = document.getElementById("sa-device-list-body");
     tbody.innerHTML = data.devices.map(d => `
       <tr style="border-top:1px solid var(--border);">
-        <td style="padding:8px;">${d.user_name || '—'}</td>
+        <td style="padding:8px;">${escapeHtml(d.user_name || '—')}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
         <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
         <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
@@ -378,7 +378,7 @@ function renderLoginLog() {
   tbody.innerHTML = filtered.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
         <td style="padding:8px; white-space:nowrap;">${formatOrdinalDateTime(l.created_at)}</td>
-        <td style="padding:8px;">${l.user_name || '—'}</td>
+        <td style="padding:8px;">${escapeHtml(l.user_name || '—')}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
         <td style="padding:8px;">${l.city ? `${l.city}, ` : ''}${l.country || '—'}</td>
@@ -666,17 +666,17 @@ function renderSecurityAdminPinUsers() {
     return `
       <div style="margin-bottom:44px;">
         <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding-bottom:12px;">
-          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${dept.name}</span>
+          <span style="font-weight:800; font-size:1.15rem; letter-spacing:0.3px; color:${dept.color};">${escapeHtml(dept.name)}</span>
           ${people.length > 0 ? `<span style="background:${dept.color}1a; color:${dept.color}; font-size:0.72rem; font-weight:800; padding:2px 9px; border-radius:999px;">${people.length}</span>` : ''}
         </div>
         <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
         ${saViewerIsSuperAdmin() ? (() => { const ds = dept.name.replace(/[^a-zA-Z0-9]/g, '_'); return `
           <div style="text-align:center; margin-top:8px;">
-            <a href="#" onclick="toggleSaAddPersonForm('${ds}'); return false;" style="font-size:0.78rem; font-weight:700; color:${dept.color}; text-decoration:none;">+ Add person to ${dept.name}</a>
+            <a href="#" onclick="toggleSaAddPersonForm('${ds}'); return false;" style="font-size:0.78rem; font-weight:700; color:${dept.color}; text-decoration:none;">+ Add person to ${escapeHtml(dept.name)}</a>
             <div id="sa-add-form-${ds}" style="display:none; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;">
               <input id="sa-add-first-${ds}" placeholder="First name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
               <input id="sa-add-last-${ds}" placeholder="Last name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
-              <button class="nav-btn-styled" style="width:auto; background:${dept.color}; padding:6px 14px;" onclick="submitAddUserToSystem('${ds}', '${dept.name}')">Add</button>
+              <button class="nav-btn-styled" style="width:auto; background:${dept.color}; padding:6px 14px;" onclick="submitAddUserToSystem('${ds}', ${jsArg(dept.name)})">Add</button>
             </div>
           </div>`; })() : ''}
         ${people.length === 0
@@ -1019,8 +1019,8 @@ function handlePermissionMatrixSearchInput(rawQuery) {
   box.innerHTML = matches.map(u => `
     <div onclick="selectPermissionMatrixUser('${u.personKey}')" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">
-      <strong>${u.first_name || ''} ${u.last_name || ''}</strong>
-      <span style="color:var(--muted); font-size:0.78rem;"> — ${u.department || 'No department'}</span>
+      <strong>${escapeHtml(u.first_name || '')} ${escapeHtml(u.last_name || '')}</strong>
+      <span style="color:var(--muted); font-size:0.78rem;"> — ${escapeHtml(u.department || 'No department')}</span>
     </div>`).join('');
 }
 
@@ -1033,7 +1033,7 @@ async function selectPermissionMatrixUser(personKey) {
   try {
     const data = await apFetch({ action: "fetchUserPermissionValues", personKey });
     if (!data.success) {
-      document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">${data.error || 'Failed to load permissions.'}</div>`;
+      document.getElementById("pm-matrix-root").innerHTML = `<div style="padding:14px; color:var(--warn);">${escapeHtml(data.error || 'Failed to load permissions.')}</div>`;
       return;
     }
     pmSelectedUser = user;
@@ -1115,8 +1115,8 @@ function renderPermissionMatrix() {
 
   root.innerHTML = `
     <div style="font-weight:700; font-size:1.1rem; margin-bottom:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <span>Editing access for: ${pmSelectedUser.first_name || ''} ${pmSelectedUser.last_name || ''}
-        <span style="color:var(--muted); font-weight:500; font-size:0.95rem;"> (${pmSelectedUser.department || 'No department'})</span>
+      <span>Editing access for: ${escapeHtml(pmSelectedUser.first_name || '')} ${escapeHtml(pmSelectedUser.last_name || '')}
+        <span style="color:var(--muted); font-weight:500; font-size:0.95rem;"> (${escapeHtml(pmSelectedUser.department || 'No department')})</span>
       </span>
       <span style="padding:3px 10px; border-radius:999px; background:${tierColor}1a; border:1.5px solid ${tierColor}; color:${tierColor}; font-weight:800; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.3px;">${tierLabel}</span>
       ${tierControlHtml}

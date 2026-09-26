@@ -67,9 +67,9 @@ async function loadManufacturingClearanceList() {
   try {
     const data = await apFetch({ action: "fetchProjectsByStatus", status: mcCurrentStatus });
     if (!data.success) {
-      const msg = `<div style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</div>`;
+      const msg = `<div style="padding:14px; text-align:center; color:#b91c1c;">${escapeHtml(data.error)}</div>`;
       if (mcCurrentStatus === "Active") cardsContainer.innerHTML = msg;
-      else body.innerHTML = `<tr><td colspan="5" style="padding:14px; text-align:center; color:#b91c1c;">${data.error}</td></tr>`;
+      else body.innerHTML = `<tr><td colspan="5" style="padding:14px; text-align:center; color:#b91c1c;">${escapeHtml(data.error)}</td></tr>`;
       return;
     }
     if (data.projects.length === 0) {
@@ -99,7 +99,7 @@ async function loadManufacturingClearanceList() {
     body.innerHTML = data.projects.map(p => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
-        <td style="padding:8px; word-break:break-word; font-size:0.95rem; font-weight:600;">${p.companyName}</td>
+        <td style="padding:8px; word-break:break-word; font-size:0.95rem; font-weight:600;">${escapeHtml(p.companyName)}</td>
         <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
         <td style="padding:8px; font-size:0.95rem; font-weight:600;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
@@ -143,7 +143,7 @@ function renderMcProjectCard(project) {
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
-          <strong style="color:#111827; font-size:0.9rem;">${project.companyName}</strong>
+          <strong style="color:#111827; font-size:0.9rem;">${escapeHtml(project.companyName)}</strong>
           <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
           <span style="margin-left:auto; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
           <span id="mc-caret-${safeId}" style="font-weight:700; color:var(--muted);">▸</span>
@@ -176,7 +176,7 @@ async function loadMcLineItems(projectId) {
   try {
     await loadItemCodeCatalogIntoCache().catch(() => {});
     const data = await apFetch({ action: "fetchProjectMfcLineItems", projectId });
-    if (!data.success) { contentEl.innerHTML = `<span style="color:#b91c1c;">${data.error}</span>`; return; }
+    if (!data.success) { contentEl.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error)}</span>`; return; }
     if (!data.lineItems || data.lineItems.length === 0) {
       contentEl.innerHTML = '<span style="color:var(--muted);">No PO product line items found for this project.</span>';
       return;
@@ -250,8 +250,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
     return `
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
         <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">
-          ${li.description}
-          ${isHeld ? `<div style="margin-top:4px;"><span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px;" title="${(state.holdReason || '').replace(/"/g,'&quot;')}">⏸ On Hold</span></div>` : ''}
+          ${escapeHtml(li.description)}
+          ${isHeld ? `<div style="margin-top:4px;"><span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px;" title="${escapeHtml(state.holdReason || '')}">⏸ On Hold</span></div>` : ''}
         </td>
         <td style="padding:8px; position:relative; vertical-align:middle;">
           <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${productSearchDisabledAttr}
@@ -269,8 +269,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
             placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;">${fmtQty(li.quantity)}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${li.unit || "—"}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${itemCodeUnitVal || "—"}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${escapeHtml(li.unit || "—")}</td>
+        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${escapeHtml(itemCodeUnitVal || "—")}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(li.mfcQuantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#b45309;">${fmtQty(Math.max(0, (Number(li.quantity) || 0) - (Number(li.mfcQuantity) || 0)))}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
@@ -506,7 +506,7 @@ function handleMcProductSearch(query, projectId, lineId) {
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
-      No matching product found. <a href="${window.location.pathname}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
+      No matching product found. <a href="${escapeHtml(window.location.pathname)}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a>
     </div>`;
     dropdown.style.display = "block";
     state.standardItemCode = ""; state.standardProductName = ""; state.standardProductRating = ""; state.make = ""; state.itemCodeUnit = "";
@@ -515,10 +515,10 @@ function handleMcProductSearch(query, projectId, lineId) {
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectMcProduct('${projectId}', ${lineId}, '${item.itemCode}', '${item.productName.replace(/'/g,"\\'")}', '${(item.rating||'').replace(/'/g,"\\'")}', '${(item.make||'').replace(/'/g,"\\'")}', '${(item.unit||'').replace(/'/g,"\\'")}')"
+    <div onclick="selectMcProduct('${projectId}', ${lineId}, '${item.itemCode}', ${jsArg(item.productName)}, ${jsArg(item.rating||'')}, ${jsArg(item.make||'')}, ${jsArg(item.unit||'')})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${item.productName}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${item.rating}</span>` : ""}
+      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }

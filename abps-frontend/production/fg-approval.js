@@ -18,7 +18,7 @@ async function initializeFGApprovalWorkspace() {
   try {
     const data = await apFetch({ action: "fetchPendingFGApprovals" });
     if (!data.success) {
-      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${escapeHtml(data.error)}</div>`;
       return;
     }
     if (!data.items || data.items.length === 0) {
@@ -47,12 +47,12 @@ function renderFGApprovalCard(item) {
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block">
           <strong style="color:var(--brand); font-size:0.9rem;">${item.projectId || "—"}</strong>
-          <span style="margin-left:10px;">Dept:</span> <strong style="color:#111827;">${item.department || "—"}</strong>
+          <span style="margin-left:10px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(item.department || "—")}</strong>
           <span id="fg-approval-caret-${item.fgId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
-          <span>Product:</span> <strong style="color:#111827;">${item.productName || "—"} ${item.productRating || ""}</strong>
-          <span style="margin-left:12px;">Created By:</span> <strong style="color:#111827;">${item.productionPerson || "—"}</strong>
+          <span>Product:</span> <strong style="color:#111827;">${escapeHtml(item.productName || "—")} ${escapeHtml(item.productRating || "")}</strong>
+          <span style="margin-left:12px;">Created By:</span> <strong style="color:#111827;">${escapeHtml(item.productionPerson || "—")}</strong>
         </div>
       </div>
     </div>
@@ -112,7 +112,7 @@ async function toggleFGApprovalCardBody(fgId) {
   body.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">Loading documents...</div>`;
   try {
     const data = await apFetch({ action: "fetchFGApprovalDetail", fgId });
-    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     window._fgApprovalState[fgId] = {
       fg: data.fg,
       docs: (data.documents || []).map(d => ({ ...d, qaChecked: false })),
@@ -131,7 +131,7 @@ function renderFGApprovalDetailBody(fgId) {
   const field = (label, val) => `
     <div>
       <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">${label}</div>
-      <div style="font-size:0.85rem; font-weight:600; color:#111827;">${val || "—"}</div>
+      <div style="font-size:0.85rem; font-weight:600; color:#111827;">${escapeHtml(val || "—")}</div>
     </div>`;
 
   return `
@@ -158,7 +158,7 @@ function renderFGApprovalDetailBody(fgId) {
     ${fg.additionalRemarks ? `
     <div style="margin-bottom:14px;">
       <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Additional Remarks</div>
-      <div style="font-size:0.85rem; color:#111827; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px;">${fg.additionalRemarks}</div>
+      <div style="font-size:0.85rem; color:#111827; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px;">${escapeHtml(fg.additionalRemarks)}</div>
     </div>` : ""}
 
     <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
@@ -556,9 +556,9 @@ async function submitFGApprovalDecision(fgId, action) {
           <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Finished Good Approved & Added to FG Store!</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Job Card Number</span><span style="font-weight:700;">${fg.jobCardNumber || "—"}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${fg.productName || "—"}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${fg.productRating || "—"}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Department</span><span style="font-weight:700;">${fg.department || "—"}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${escapeHtml(fg.productName || "—")}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${escapeHtml(fg.productRating || "—")}</span></div>
+            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Department</span><span style="font-weight:700;">${escapeHtml(fg.department || "—")}</span></div>
             <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Serial Number</span><span style="font-weight:700;">${escapeHtml(productSerialNumber || "—")}</span></div>
           </div>
           <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"

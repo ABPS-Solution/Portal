@@ -10,7 +10,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
   try {
     const data = await apFetch({ action: "fetchPendingBOQIncreaseTickets" });
     if (!data.success) {
-      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${data.error}</div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${escapeHtml(data.error)}</div>`;
       return;
     }
     if (!data.tickets || data.tickets.length === 0) {
@@ -45,7 +45,7 @@ function renderBOQIncreaseTicketCard(ticket) {
     const remQty = Number(item.boqRemainingQty) || 0;
     return `
       <tr>
-        <td style="border:1px solid var(--border); padding:8px; font-weight:600;">${item.itemDescription || ""}</td>
+        <td style="border:1px solid var(--border); padding:8px; font-weight:600;">${escapeHtml(item.itemDescription || "")}</td>
         <td style="border:1px solid var(--border); padding:8px; text-align:center; color:var(--muted); font-weight:600;">${item.unitType || "—"}</td>
         <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqAllottedQty)}</td>
         <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(item.boqUsedQty)}</td>
@@ -73,10 +73,10 @@ function renderBOQIncreaseTicketCard(ticket) {
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
           <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(ticket.projectId || "—")}</strong>
           <span style="margin-left:8px;">|</span>
-          <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${ticket.requestedBy}</strong>
+          <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
           <span style="margin-left:8px;">|</span>
           <strong style="color:#111827; margin-left:8px;">${formatOrdinalDateTime(ticket.dateCreated)}</strong>
-          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${ticket.department || "—"}</strong>
+          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "—")}</strong>
           <span style="margin-left:8px;">|</span>
           <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${ticket.storeType || "—"}</strong>
         </div>
@@ -84,7 +84,7 @@ function renderBOQIncreaseTicketCard(ticket) {
     </div>
     <div id="boq-increase-body-${ticket.ticketId}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
       <div style="font-size:0.85rem; color:#475569; background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 12px; margin-bottom:12px;">
-        <strong>Engineer's Justification:</strong> ${justificationText}
+        <strong>Engineer's Justification:</strong> ${escapeHtml(justificationText)}
       </div>
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
@@ -305,7 +305,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       hideBlockingOverlay();
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
-        feedbackBanner.innerHTML = `<strong>Action Rejected:</strong> ${result.error}`;
+        feedbackBanner.innerHTML = `<strong>Action Rejected:</strong> ${escapeHtml(result.error)}`;
       }
       // Restoration loop rollbacks button state styles elements layout flags if backend reports error checks failures
       if (approveBtn && rejectBtn) {

@@ -48,10 +48,10 @@ function handleSVCIMaterialInput(query) {
   const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectSVCIMaterial('${it.itemCode}', \`${(it.productName||'').replace(/\`/g,"'")}\`, \`${(it.rating||'').replace(/\`/g,"'")}\`)"
+    <div onclick="selectSVCIMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${it.productName}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${it.rating}</span>` : ''}
+      <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -77,10 +77,10 @@ function handleSVCIVendorInput(query) {
   const matches = vendors.filter(v => (v.vendorName||"").toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(v => `
-    <div onclick="selectSVCIVendor('${(v.vendorName||'').replace(/'/g,"\\'")}')"
+    <div onclick="selectSVCIVendor(${jsArg(v.vendorName||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${v.vendorName}${v.city ? `<span style="color:var(--muted); font-size:0.75rem;"> — ${v.city}${v.state ? ', ' + v.state : ''}</span>` : ''}
+      ${escapeHtml(v.vendorName)}${v.city ? `<span style="color:var(--muted); font-size:0.75rem;"> — ${escapeHtml(v.city)}${v.state ? ', ' + v.state : ''}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -199,8 +199,8 @@ function renderSVCIResultsTable() {
   const rows = list.map(r => `
     <tr style="border-bottom:1px solid #e2e8f0;">
       <td style="padding:8px; font-family:monospace; font-weight:700;">${r.poPdfUrl ? `<a href="${driveLink(r.poPdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${r.poNo}</a>` : `<span style="color:var(--brand);">${r.poNo}</span>`}</td>
-      <td style="padding:8px; font-weight:600;">${r.vendorName || "—"}</td>
-      <td style="padding:8px;">${r.city || "—"}${r.state ? ', ' + r.state : ''}</td>
+      <td style="padding:8px; font-weight:600;">${escapeHtml(r.vendorName || "—")}</td>
+      <td style="padding:8px;">${escapeHtml(r.city || "—")}${r.state ? ', ' + r.state : ''}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.poQuantity)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.ratePerQty)}</td>
       <td style="padding:8px; text-align:center; white-space:nowrap;">${formatOrdinalDate(r.orderDate) || "—"}</td>

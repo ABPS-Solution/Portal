@@ -74,7 +74,7 @@ async function handleRpdiTypeaheadInput(query) {
     return `<div onmousedown="event.preventDefault();" onclick="selectRpdiProject('${p.replace(/'/g,"\\'")}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.88rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${companyName}</span>` : ''}
+      <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}
     </div>`;
   }).join("");
   dd.style.display = "block";
@@ -98,7 +98,7 @@ async function loadRpdiHistory(projectId) {
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceHistory", projectId });
     if (!data.success || !(data.invoices || []).length) {
-      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "No authorized invoices found for this project."}</div>`;
+      historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${escapeHtml(data.error || "No authorized invoices found for this project.")}</div>`;
       return;
     }
     historyZone.innerHTML = `
@@ -264,7 +264,7 @@ async function loadRpdiForm(invoiceId) {
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted); font-size:0.9rem;">Loading current invoice details...</div>`;
   try {
     const data = await apFetch({ action: "fetchProjectInvoiceRevisionPrefillById", invoiceId });
-    if (!data.success) { zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${data.error || "Failed to load."}</div>`; return; }
+    if (!data.success) { zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">${escapeHtml(data.error || "Failed to load.")}</div>`; return; }
     rpdiCache = { invoiceId: data.invoiceId, invoiceNo: data.invoiceNo || "", projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
     const last = data.lastInvoiceDetails || {};
     rpdiState = {
@@ -423,7 +423,7 @@ function renderRpdiForm() {
 
       <div style="margin-top:14px;">
         <label class="field-label" style="margin-top:0; font-size:0.76rem;">Declaration</label>
-        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updateRpdiField('declaration', this.value)">${s.declaration}</textarea>
+        <textarea rows="4" style="width:100%; padding:8px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius);" oninput="updateRpdiField('declaration', this.value)">${escapeHtml(s.declaration)}</textarea>
       </div>
 
       <div style="margin-top:14px; font-size:0.87rem; color:var(--muted);">Total Invoice Amount in Words: <strong id="rpdi-words-display" style="color:var(--text);">—</strong></div>
@@ -531,14 +531,14 @@ async function initializeRpdiEditingTab() {
   rpdiEditExpandedRequestId = null;
   try {
     const data = await apFetch({ action: "fetchPendingProjectDispatchInvoiceRevisionsForEditing" });
-    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${data.error || 'Failed to load.'}</div>`; return; }
+    if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.requests || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No pending revision requests.</div>`; return; }
     feed.innerHTML = data.requests.map(r => `
       <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleRpdiEditCard(${r.requestId})">
           <div>
             <strong>Revision #${r.requestId}</strong> for ${r.invoiceType} Invoice ${r.invoiceNo} (${r.projectId})
-            <div style="font-size:0.8rem; color:var(--muted);">Requested by ${r.requestedBy || '—'}</div>
+            <div style="font-size:0.8rem; color:var(--muted);">Requested by ${escapeHtml(r.requestedBy || '—')}</div>
           </div>
           <div style="text-align:right;">
             ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
@@ -626,7 +626,7 @@ async function saveRpdiEdit(requestId) {
       revisedInvoiceDetails: buildRpdiRevisedDetailsPayload(), revisedLineItems: buildRpdiRevisedLineItemsPayload(),
       operatorName: appActiveOperatorIdentityString || "Unknown",
     });
-    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`; return; }
+    if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`; return; }
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
     return;
@@ -654,7 +654,7 @@ async function generateRpdiCheckingDraftOnly(requestId) {
     }
     fb.innerHTML = data.success
       ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the draft could not be generated. Click the button again to retry.</div>`
-      : `<div style="color:#b91c1c; font-weight:600;">${data.error || 'Failed.'}</div>`;
+      : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
     fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
   } finally {

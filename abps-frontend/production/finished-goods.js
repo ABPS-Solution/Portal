@@ -57,7 +57,7 @@ function renderFGFileList(type) {
   if (!list) return;
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
-      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
       <span onclick="removeFGFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
@@ -115,7 +115,7 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <strong>Added to ${department} Finished Goods Store.</strong><br/>
-            <span style="font-size:0.88rem; font-weight:600;">Project: <strong>${projectId}</strong> · Customer: ${customerName} · Qty: ${totalStock}</span>
+            <span style="font-size:0.88rem; font-weight:600;">Project: <strong>${projectId}</strong> · Customer: ${escapeHtml(customerName)} · Qty: ${totalStock}</span>
           </div>
           <button class="nav-btn-styled" onclick="initializeFinishedGoodsAddWorkspace('${department}', '${canvasId}')" style="background:#15803d; color:white; padding:10px 18px; font-weight:700;">
             + Add Another Item
@@ -433,7 +433,7 @@ async function triggerFGBOQValidation() {
     });
 
     if (!data.success) {
-      zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem; font-weight:600;">⚠️ ${data.error || "Validation failed."}</div>`;
+      zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem; font-weight:600;">⚠️ ${escapeHtml(data.error || "Validation failed.")}</div>`;
       window.fgBOQValidationPassed = false;
       window.fgBOQValidationRan = false;
       updateFGSubmitButtonState();
@@ -441,7 +441,7 @@ async function triggerFGBOQValidation() {
     }
 
     if (!data.details || data.details.length === 0) {
-      zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem; font-weight:600;">⚠️ No BOQ found for Product Name <strong>${productName}</strong> ${productRating}. Contact Design department to create/authorize the BOQ for this product.</div>`;
+      zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem; font-weight:600;">⚠️ No BOQ found for Product Name <strong>${escapeHtml(productName)}</strong> ${escapeHtml(productRating)}. Contact Design department to create/authorize the BOQ for this product.</div>`;
       window.fgBOQValidationPassed = false;
       window.fgBOQValidationRan = false;
       updateFGSubmitButtonState();
@@ -451,7 +451,7 @@ async function triggerFGBOQValidation() {
     const rowsHtml = data.details.map(d => {
       const statusColor = d.matched ? { bg: "#dcfce7", color: "#15803d", icon: "" } : { bg: "#fee2e2", color: "#b91c1c", icon: "❌" };
       return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${statusColor.bg}; border-radius:4px; margin-bottom:4px;">
-        <div style="font-size:0.8rem; font-weight:600; color:#1e293b;">${statusColor.icon} ${d.materialName} <span style="font-size:0.68rem; color:var(--muted); font-weight:400;">(${d.typeOfStore})</span></div>
+        <div style="font-size:0.8rem; font-weight:600; color:#1e293b;">${statusColor.icon} ${escapeHtml(d.materialName)} <span style="font-size:0.68rem; color:var(--muted); font-weight:400;">(${d.typeOfStore})</span></div>
         <div style="font-size:0.78rem; font-weight:700; color:${statusColor.color};">Required: ${fmtQty(d.required)} ${d.unitType} | Consumed: ${fmtQty(d.consumed)} ${d.unitType}</div>
       </div>`;
     }).join("");
@@ -472,7 +472,7 @@ async function triggerFGBOQValidation() {
         <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
     } else {
       zone.innerHTML = `
-        <div style="padding:10px 12px; background:#fffbeb; border:1.5px solid #fcd34d; border-radius:var(--radius) var(--radius) 0 0; color:#92400e; font-size:0.85rem; font-weight:700;">⚠️ Material consumption doesn't exactly match the BOQ for ${productName} ${productRating} — informational only, submission isn't blocked. Worth checking whether this BOQ's per-set quantities need correcting.</div>
+        <div style="padding:10px 12px; background:#fffbeb; border:1.5px solid #fcd34d; border-radius:var(--radius) var(--radius) 0 0; color:#92400e; font-size:0.85rem; font-weight:700;">⚠️ Material consumption doesn't exactly match the BOQ for ${escapeHtml(productName)} ${escapeHtml(productRating)} — informational only, submission isn't blocked. Worth checking whether this BOQ's per-set quantities need correcting.</div>
         <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
     }
 
@@ -635,7 +635,7 @@ async function submitFGAddItem() {
     if (data.success) {
       document.getElementById("fg-add-form").style.display = "none";
       showBOQBanner("fg-add-feedback",
-        `<strong>${productName} (${escapeHtml(jobCard)})</strong><br>submitted for ${department} Finished Goods Store, pending FG Approval by QA.
+        `<strong>${escapeHtml(productName)} (${escapeHtml(jobCard)})</strong><br>submitted for ${department} Finished Goods Store, pending FG Approval by QA.
          <div style="margin-top:10px;">
            <button class="nav-btn-styled" onclick="startAnotherFGAddEntry()" style="background:#15803d; color:#fff; font-weight:700; padding:8px 18px;">+ Add Another FG Material</button>
          </div>`,

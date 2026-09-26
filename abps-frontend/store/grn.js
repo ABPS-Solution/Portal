@@ -45,12 +45,12 @@ async function initializeStoreEntryWorkspaceQueue() {
           const pills = lineMatches.map((m) => {
             const c = confColors[m.confidence] || confColors.low;
             return `<div 
-              onclick="selectStoreEntryItemCodeMatch('${item.gateNumber}', ${idx}, '${m.itemCode}', \`${m.productName.replace(/`/g,"'")}\`, '${m.typeOfMaterial}', this)"
+              onclick="selectStoreEntryItemCodeMatch('${item.gateNumber}', ${idx}, '${m.itemCode}', ${jsArg(m.productName)}, ${jsArg(m.typeOfMaterial)}, this)"
               style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
               <div style="flex:1; min-width:0;">
                 <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.75rem;">${m.itemCode}</span>
-                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${m.productName}</span>
+                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${escapeHtml(m.productName)}</span>
               </div>
               <span style="font-size:0.63rem; font-weight:700; color:${c.color}; padding:1px 4px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:6px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
             </div>`;
@@ -99,10 +99,10 @@ async function initializeStoreEntryWorkspaceQueue() {
               onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
               title="Click to change"
               style="${isPreFilled ? 'display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer;' : 'display:none; cursor:pointer;'} font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
-              <span>${preFilledName}</span>
+              <span>${escapeHtml(preFilledName)}</span>
               <span style="font-size:0.65rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎ change</span>
             </div>
-            <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="${preFilledName}" />
+            <input type="hidden" class="se-mat-name-${item.gateNumber}" data-idx="${idx}" value="${escapeHtml(preFilledName)}" />
             <input type="hidden" class="se-material-type-${item.gateNumber}" data-idx="${idx}" value="${preFilledType}" />
             <div style="position:relative; margin-top:${isPreFilled ? '4px' : '0'};">
               <input type="text" id="${searchId}"
@@ -115,11 +115,11 @@ async function initializeStoreEntryWorkspaceQueue() {
             ${isPreFilled ? '' : suggestionHtml}
           </td>
           <td style="width:90px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
-            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${invoiceUnitVal}" readonly
+            <input type="text" class="se-invoice-unit-${item.gateNumber}" data-idx="${idx}" value="${escapeHtml(invoiceUnitVal)}" readonly
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
           <td style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
-            <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${preFilledUnit}" readonly
+            <input type="text" class="se-item-code-unit-${item.gateNumber}" data-idx="${idx}" value="${escapeHtml(preFilledUnit)}" readonly
               style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
           </td>
           <td style="width:100px; padding:6px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
@@ -157,7 +157,7 @@ async function initializeStoreEntryWorkspaceQueue() {
               <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
-              Vendor: <strong style="color:var(--text); font-weight:700;">${item.vendorName || "Designated ABPS Supplier Profile"}</strong>
+              Vendor: <strong style="color:var(--text); font-weight:700;">${escapeHtml(item.vendorName || "Designated ABPS Supplier Profile")}</strong>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             const typeOfMaterial = catHit ? (catHit.typeOfMaterial || "") : "";
             const unit = catHit ? (catHit.unit || "") : "";
             return `<div
-              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', \`${displayName.replace(/`/g,"'")}\`, '${typeOfMaterial}', this, '${unit}')"
+              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', ${jsArg(displayName)}, ${jsArg(typeOfMaterial)}, this, ${jsArg(unit)})"
               style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
               <div style="flex:1; min-width:0;">

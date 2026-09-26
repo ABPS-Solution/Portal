@@ -46,9 +46,9 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
       <tr style="border-bottom:2px solid var(--border);">
         <td style="width:10%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${formatFollowUpTimestamp(f.date, f.time)}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} overflow-wrap:anywhere; ${colBorder}">${f.eng}</td>
-        <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}">${f.outcome ? `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:1px 6px; border-radius:3px;">${f.outcome}</span>` : '—'}</td>
+        <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}">${f.outcome ? `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:1px 6px; border-radius:3px;">${escapeHtml(f.outcome)}</span>` : '—'}</td>
         <td style="width:5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${f.mode || "—"}</td>
-        <td style="width:42.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.notes || 'None'}</td>
+        <td style="width:42.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${escapeHtml(f.notes || 'None')}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${centered} ${colBorder}">${f.nextActionType || "—"}</td>
         <td style="width:12.5%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; ${colBorder}">${f.objectionRaised || "—"}</td>
         <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${colBorder}">
@@ -77,7 +77,7 @@ function renderIsolatedFollowUpTimeline(leadRef, list, scopeNode) {
       <div style="border:1px solid var(--border); border-left:4px solid ${outcomeColor}; border-radius:6px; padding:10px; margin-bottom:8px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
           <span style="font-weight:700; font-size:0.85rem; color:#000;">${formatFollowUpTimestamp(f.date, f.time)}</span>
-          ${f.outcome ? `<span style="flex-shrink:0; font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:2px 8px; border-radius:3px;">${f.outcome}</span>` : ''}
+          ${f.outcome ? `<span style="flex-shrink:0; font-size:0.72rem; font-weight:700; color:#fff; background:${outcomeColor}; padding:2px 8px; border-radius:3px;">${escapeHtml(f.outcome)}</span>` : ''}
         </div>
         <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">By ${escapeHtml(f.eng)}${f.mode ? ` · ${escapeHtml(f.mode)}` : ''}</div>
         <div style="font-size:0.85rem; color:#000; white-space:pre-wrap; margin-bottom:6px;">${escapeHtml(f.notes || 'None')}</div>
@@ -148,9 +148,9 @@ async function renderStoreEntryRejectionBanner(cardEl, gateNum, vendorName, line
 
     const rows = data.openRejections.map((r, idx) => `
       <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #fde68a;">
-        <input type="checkbox" id="se-rej-check-${gateNum}-${idx}" onchange="toggleGateRejectionLink('${r.rejectionId}', this.checked, '${r.itemCode}', '${(r.materialName||'').replace(/'/g,"\\'")}',  '${r.unitType}', ${r.outstandingQuantity}, '${gateNum}', ${idx})" />
+        <input type="checkbox" id="se-rej-check-${gateNum}-${idx}" onchange="toggleGateRejectionLink('${r.rejectionId}', this.checked, '${r.itemCode}', ${jsArg(r.materialName||'')},  ${jsArg(r.unitType)}, ${r.outstandingQuantity}, '${gateNum}', ${idx})" />
         <label for="se-rej-check-${gateNum}-${idx}" style="flex:1; font-size:0.85rem;">
-          <strong>${r.materialName}</strong> (${r.itemCode}) — ${r.action || "Pending action"} — Pending Qty: ${r.outstandingQuantity} ${r.unitType}
+          <strong>${escapeHtml(r.materialName)}</strong> (${r.itemCode}) — ${escapeHtml(r.action || "Pending action")} — Pending Qty: ${r.outstandingQuantity} ${r.unitType}
           ${lineItems.some(li => (li.itemCode||'').toUpperCase() === r.itemCode.toUpperCase()) ? '' : '<span style="color:#b91c1c; font-weight:700;"> (no matching item code on this delivery)</span>'}
         </label>
         <input type="number" min="0" max="${r.outstandingQuantity}" placeholder="Qty" style="width:80px;" disabled
@@ -232,7 +232,7 @@ async function checkVendorOpenRejections() {
 
     const rows = data.openRejections.map(r => `
       <div style="padding:4px 0; font-size:0.85rem;">
-        <strong>${r.materialName}</strong> (${r.itemCode}) — ${r.action || "Pending action"} — Pending Qty: ${r.outstandingQuantity} ${r.unitType}
+        <strong>${escapeHtml(r.materialName)}</strong> (${r.itemCode}) — ${escapeHtml(r.action || "Pending action")} — Pending Qty: ${r.outstandingQuantity} ${r.unitType}
       </div>`).join("");
 
     banner.style.cssText = "display:block; margin-bottom:16px; background:#fffbeb; border-left:4px solid #d97706; padding:14px; border-radius:var(--radius);";
@@ -269,17 +269,17 @@ async function runQARevisionSearch() {
       qaDateFrom: document.getElementById("qarev-date-from").value,
       qaDateTo: document.getElementById("qarev-date-to").value,
     });
-    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     if (!data.results.length) { zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No Q/A-completed GRNs match this search.</div>`; return; }
     zone.innerHTML = data.results.map(r => `
       <div class="contact-summary-card-parent" style="margin-bottom:10px;">
         <div onclick="openQARevisionDetail('${r.grnNumber}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px;">
           <div>
             <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${r.grnNumber}</span>
-            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${r.vendorName}</span>
+            <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${escapeHtml(r.vendorName)}</span>
             ${r.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700; padding:3px 8px;">PO: ${r.poNo}</span>` : ''}
           </div>
-          <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${r.qaPerson || '—'} · ${formatOrdinalDateTime(r.qaTimestamp)}</div>
+          <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${escapeHtml(r.qaPerson || '—')} · ${formatOrdinalDateTime(r.qaTimestamp)}</div>
         </div>
         <div id="qarev-detail-${r.grnNumber}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--border);"></div>
       </div>`).join("");
@@ -294,7 +294,7 @@ async function openQARevisionDetail(grnNumber) {
   zone.innerHTML = `<div style="text-align:center; padding:14px; color:var(--muted);">Loading...</div>`;
   try {
     const data = await apFetch({ action: "fetchQARevisionDetail", grnNumber });
-    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    if (!data.success) { zone.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     window[`qaRevData_${grnNumber}`] = data.lineItems;
     const blocked = (data.blockers || []).length > 0;
 
@@ -302,10 +302,10 @@ async function openQARevisionDetail(grnNumber) {
       const recvd = parseFloat(line.quantityReceived) || 0;
       return `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
         <td style="width:110px; padding:6px;"><input type="text" class="qarev-item-code-${grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"></td>
-        <td style="padding:8px; font-size:0.78rem; color:#64748b; min-width:180px; max-width:220px; line-height:1.4; word-break:break-word;">${(line.invoiceDescription || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}</td>
+        <td style="padding:8px; font-size:0.78rem; color:#64748b; min-width:180px; max-width:220px; line-height:1.4; word-break:break-word;">${escapeHtml(line.invoiceDescription || '') || "—"}</td>
         <td style="padding:6px; min-width:220px;">
-          <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch('${grnNumber}', ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${(line.materialName||'').replace(/</g,'&lt;')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
-          <input type="hidden" class="qarev-mat-name-${grnNumber}" data-idx="${idx}" value="${(line.materialName||'').replace(/"/g,'&quot;')}" />
+          <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch('${grnNumber}', ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${escapeHtml(line.materialName||'')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
+          <input type="hidden" class="qarev-mat-name-${grnNumber}" data-idx="${idx}" value="${escapeHtml(line.materialName||'')}" />
           <input type="hidden" class="qarev-unit-${grnNumber}" data-idx="${idx}" value="${line.unitType||'NOS'}" />
           <div style="position:relative; margin-top:4px;">
             <input type="text" id="qarev-search-${grnNumber}-${idx}" placeholder="Search to change..." oninput="handleQARevNameSearch(this, '${grnNumber}', ${idx})" autocomplete="off" style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
@@ -316,7 +316,7 @@ async function openQARevisionDetail(grnNumber) {
         <td style="width:70px; padding:6px; text-align:center; font-weight:700;">${recvd}</td>
         <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-ok-${grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${parseFloat(line.okQuantity)||0}" ${blocked?'disabled':''} oninput="autoBalanceQARevQuantities(this, '${grnNumber}', ${idx})" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;"></td>
         <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-notok-${grnNumber}" data-idx="${idx}" value="${parseFloat(line.notOkQuantity)||0}" readonly style="width:100%; border:1.5px solid #f59e0b; font-weight:700; text-align:center; padding:5px 2px; border-radius:3px; background:#fffbeb;"></td>
-        <td style="min-width:140px; padding:6px;"><input type="text" class="qarev-reason-${grnNumber}" data-idx="${idx}" value="${(line.reasonForNotOk||'').replace(/"/g,'&quot;')}" ${blocked?'disabled':''} placeholder="Reason..." style="width:100%; font-size:0.78rem; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
+        <td style="min-width:140px; padding:6px;"><input type="text" class="qarev-reason-${grnNumber}" data-idx="${idx}" value="${escapeHtml(line.reasonForNotOk||'')}" ${blocked?'disabled':''} placeholder="Reason..." style="width:100%; font-size:0.78rem; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
         <td style="min-width:170px; padding:6px;">
           <select class="qarev-action-${grnNumber}" data-idx="${idx}" ${blocked?'disabled':''} style="width:100%; font-size:0.76rem; padding:4px 2px;">
             <option value="">-- Select --</option>
@@ -387,10 +387,10 @@ function handleQARevNameSearch(inputEl, grnNum, idx) {
   const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
   if (!matches.length) { dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`; dropdown.style.display = "block"; return; }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectQARevNameMatch('${grnNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${(c.unit || 'NOS').replace(/'/g,"\\'")}')"
+    <div onclick="selectQARevNameMatch('${grnNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; gap:8px;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";
@@ -503,8 +503,8 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         item.lineItems.forEach((line, idx) => {
           trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
             <td style="width:9%; padding:8px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
-            <td style="width:26%; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-            <td style="width:18%; padding:8px 6px; font-size:0.78rem; color:#64748b;">${line.action}</td>
+            <td style="width:26%; padding:8px 6px; font-size:0.85rem;">${escapeHtml(line.materialName || "")}</td>
+            <td style="width:18%; padding:8px 6px; font-size:0.78rem; color:#64748b;">${escapeHtml(line.action)}</td>
             <td style="width:7%; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
             <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
             <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
@@ -523,7 +523,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
               <div>
                 <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
-                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${escapeHtml(item.vendorName)}</span>
               </div>
               ${repairDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${repairDateDisplay}</span>` : ''}
             </div>
@@ -561,7 +561,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
             <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
-              ${(line.invoiceDescription || "").replace(/</g,'&lt;').replace(/>/g,'&gt;') || "—"}
+              ${escapeHtml(line.invoiceDescription || "") || "—"}
             </td>
             <td style="padding:6px; min-width:220px; vertical-align:middle;">
               <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
@@ -620,7 +620,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
               <div>
                 <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
-                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+                <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${escapeHtml(item.vendorName)}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
               </div>
               ${qaDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${qaDateDisplay}</span>` : ''}
@@ -690,10 +690,10 @@ function handleQANameSearch(inputEl, grnNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectQANameMatch('${grnNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${(c.unit || 'NOS').replace(/'/g,"\\'")}')"
+    <div onclick="selectQANameMatch('${grnNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
       <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
     </div>`).join("");
   dropdown.style.display = "block";
@@ -854,11 +854,11 @@ async function initializeRejectedMaterialPanel(toggle) {
         if (isEditable) cardHasEditableLine = true;
         trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
           <td style="width:110px; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.itemCode}</td>
-          <td style="min-width:260px; padding:8px 6px; font-size:0.85rem;">${(line.materialName || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="min-width:260px; padding:8px 6px; font-size:0.85rem;">${escapeHtml(line.materialName || "")}</td>
           <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${Number(line.missingQuantity) || 0}</td>
           <td style="width:70px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.notOkQuantity}</td>
           <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.outstandingQuantity}</td>
-          <td style="width:130px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${(line.reasonForNotOk || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+          <td style="width:130px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${escapeHtml(line.reasonForNotOk || "")}</td>
           <td style="width:170px; padding:8px 6px;">
             ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
               isEditable ? `
@@ -868,7 +868,7 @@ async function initializeRejectedMaterialPanel(toggle) {
                 <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
                 <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
                 <option value="Under Deviation" ${line.actionForRejectedMaterial==='Under Deviation'?'selected':''}>Under Deviation</option>
-              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${line.actionForRejectedMaterial}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
           </td>
         </tr>`;
       });
@@ -882,7 +882,7 @@ async function initializeRejectedMaterialPanel(toggle) {
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
             <div>
               <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
-              <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${item.vendorName}</span>
+              <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${escapeHtml(item.vendorName)}</span>
               ${item.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700;">PO: ${item.poNo}</span>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
