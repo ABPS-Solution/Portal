@@ -21,6 +21,7 @@ on:
     paths:
       - 'abps-frontend/**'
       - '.github/workflows/deploy-frontend.yml'
+      - '.github/scripts/**'
   workflow_dispatch:   # lets you re-deploy by hand from the Actions tab
 
 permissions:
@@ -72,6 +73,18 @@ jobs:
             exit 1
           fi
           echo "CACHE_VERSION bumped ($OLD -> $NEW)."
+
+      # Loads the site in a headless browser and fails the deploy on a script
+      # that doesn't load, an uncaught JS error, or a button/field handler
+      # that calls a function that doesn't exist.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Smoke-test the frontend in a headless browser
+        run: |
+          npm i --no-save --prefix /tmp/smoke playwright@1
+          /tmp/smoke/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/smoke/node_modules node .github/scripts/smoke-frontend.js abps-frontend
 
       - uses: actions/configure-pages@v5
 
