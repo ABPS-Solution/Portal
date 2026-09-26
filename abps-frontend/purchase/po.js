@@ -991,9 +991,9 @@ function cpoRowMissing(row) {
   const missing = [];
   if (!row.itemCode) missing.push('material');
   if (!(parseFloat(row.quantity) > 0)) missing.push('quantity');
-  if (row.rate === '' || row.rate == null || isNaN(parseFloat(row.rate))) missing.push('rate');
-  if (!(row.additionalDescription || '').toString().trim()) missing.push('description');
   if (!row._allocationTouched) missing.push('PRN allocation');
+  if (row.rate === '' || row.rate == null || isNaN(parseFloat(row.rate))) missing.push('Rate / Qty');
+  if (!(row.additionalDescription || '').toString().trim()) missing.push('description');
   return missing;
 }
 function cpoRowStatusHtml(row) {
