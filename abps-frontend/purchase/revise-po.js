@@ -732,8 +732,9 @@ function updateRPOGrandTotal() {
   const symbol = isImport ? "$" : "";
   const stEl = document.getElementById("rpo-subtotal-disp");
   const gtEl = document.getElementById("rpo-grandtotal-disp");
-  if (stEl) stEl.textContent = symbol + fmt(taxableBase);
-  if (gtEl) gtEl.textContent = symbol + fmt(grandTotal);
+  const inrRef = (n) => (isImport && usdRate > 0) ? ` (₹${(n * usdRate).toLocaleString("en-IN", { maximumFractionDigits: 2 })})` : "";
+  if (stEl) stEl.textContent = symbol + fmt(taxableBase) + inrRef(taxableBase);
+  if (gtEl) gtEl.textContent = symbol + fmt(grandTotal) + inrRef(grandTotal);
 }
 
 // ── Allocate to PRNs modal — visually identical to Create PO's
@@ -1425,8 +1426,9 @@ function updateAPORGrandTotal(requestId) {
   const symbol = isImport ? "$" : "";
   const subEl = document.getElementById(`apor-subtotal-disp-${requestId}`);
   const gtEl = document.getElementById(`apor-grandtotal-disp-${requestId}`);
-  if (subEl) subEl.textContent = symbol + taxableBase.toLocaleString("en-IN",{maximumFractionDigits:2});
-  if (gtEl) gtEl.textContent = symbol + grandTotal.toLocaleString("en-IN",{maximumFractionDigits:2});
+  const inrRef = (n) => (isImport && usdRate > 0) ? ` (₹${(n * usdRate).toLocaleString("en-IN", { maximumFractionDigits: 2 })})` : "";
+  if (subEl) subEl.textContent = symbol + taxableBase.toLocaleString("en-IN",{maximumFractionDigits:2}) + inrRef(taxableBase);
+  if (gtEl) gtEl.textContent = symbol + grandTotal.toLocaleString("en-IN",{maximumFractionDigits:2}) + inrRef(grandTotal);
 }
 
 // ── Allocate to PRNs modal for Authorize PO Revision — same chrome as

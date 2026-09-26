@@ -1233,8 +1233,9 @@ function recalcCPOTotals() {
   const grandTotal = taxableBase + cgst + sgst + igst + conv(packing) + conv(freight) + conv(other) + roundOff;
   const fmt = (n) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const symbol = isImport ? "$" : "";
-  document.getElementById("cpo-subtotal-disp").textContent = symbol + fmt(taxableBase);
-  document.getElementById("cpo-grandtotal-disp").textContent = symbol + fmt(grandTotal);
+  const inrRef = (n) => (isImport && usdRate > 0) ? ` (₹${(n * usdRate).toLocaleString("en-IN", { maximumFractionDigits: 2 })})` : "";
+  document.getElementById("cpo-subtotal-disp").textContent = symbol + fmt(taxableBase) + inrRef(taxableBase);
+  document.getElementById("cpo-grandtotal-disp").textContent = symbol + fmt(grandTotal) + inrRef(grandTotal);
   persistCPODraft();
 }
 
