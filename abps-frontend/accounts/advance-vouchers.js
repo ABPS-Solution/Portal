@@ -8,6 +8,7 @@ let advCachedEmployees = [];
 let advSelectedEmployeeId = null;
 let advCachedCompanies = [];
 let advSelectedCompany = "";
+let advSelectedCompanies = [];
 
 async function initializeAdvanceVoucherPanel() {
   const panel = document.getElementById("te-panel-advance");
@@ -34,6 +35,7 @@ async function initializeAdvanceVoucherPanel() {
           <input type="text" id="adv-company-search" placeholder="Type to search or add a company..." autocomplete="off"
             style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;"
             oninput="advHandleCompanySearch(this.value)">
+          <div id="adv-company-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;"></div>
           <div id="adv-company-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
         <div style="flex:1;">
@@ -64,6 +66,7 @@ async function initializeAdvanceVoucherPanel() {
 
   advSelectedEmployeeId = null;
   advSelectedCompany = "";
+  advSelectedCompanies = [];
   try {
     const [empData, companyData] = await Promise.all([
       acFetch("searchTourEmployees", {}),
@@ -135,8 +138,26 @@ function advHandleCompanySearch(query) {
 function advSelectCompany(encodedCompanyName) {
   const companyName = decodeURIComponent(encodedCompanyName);
   advSelectedCompany = companyName;
-  document.getElementById("adv-company-search").value = companyName;
+  if (!advSelectedCompanies.some(c => c.toLowerCase() === companyName.trim().toLowerCase())) advSelectedCompanies.push(companyName.trim());
+  advSelectedCompany = "";
+  document.getElementById("adv-company-search").value = "";
   document.getElementById("adv-company-dropdown").style.display = "none";
+  advRenderCompanyChips();
+}
+
+// Company of Visit takes several companies, same as the public voucher form.
+function advRenderCompanyChips() {
+  const box = document.getElementById("adv-company-chips");
+  if (!box) return;
+  box.innerHTML = advSelectedCompanies.map((c, i) => `
+    <span style="display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:var(--brand); font-size:0.8rem; font-weight:700; padding:4px 8px; border-radius:4px;">
+      ${escapeHtml(c)}<a href="javascript:void(0)" onclick="advRemoveCompany(${i})" style="color:#b91c1c; text-decoration:none; font-weight:800;">×</a>
+    </span>`).join("");
+}
+
+function advRemoveCompany(idx) {
+  advSelectedCompanies.splice(idx, 1);
+  advRenderCompanyChips();
 }
 
 async function advAddNewCompany(encodedCompanyName) {
@@ -167,7 +188,8 @@ async function submitTourAdvance() {
   const purposeOfVisit = document.getElementById("adv-purpose").value;
   const remarks = document.getElementById("adv-remarks").value;
   if (!advSelectedEmployeeId) return showTourFeedback("Select an employee from the dropdown.", "error");
-  if (!advSelectedCompany.trim()) return showTourFeedback("Company of Visit is required.", "error");
+  if (advSelectedCompany.trim()) return showTourFeedback("Pick the typed company from the list (or add it as new) before submitting.", "error");
+  if (advSelectedCompanies.length === 0) return showTourFeedback("Add at least one Company of Visit.", "error");
   if (!purposeOfVisit) return showTourFeedback("Purpose of Visit is required.", "error");
   if (!startDate) return showTourFeedback("Start Date of Visit is required.", "error");
   if (!amount || amount <= 0) return showTourFeedback("A positive Advance Amount is required.", "error");
@@ -175,7 +197,7 @@ async function submitTourAdvance() {
   showBlockingOverlay("Recording advance...");
   try {
     const data = await acFetch("payTourAdvance", {
-      employeeId: advSelectedEmployeeId, placeOfVisit: advSelectedCompany.trim(), purposeOfVisit,
+      employeeId: advSelectedEmployeeId, placesOfVisit: advSelectedCompanies, placeOfVisit: advSelectedCompanies.join(", "), purposeOfVisit,
       startDate, estimatedDays: estimatedDays || null, amount, remarks: remarks.trim() || null,
     });
     hideBlockingOverlay();
