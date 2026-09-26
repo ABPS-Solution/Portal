@@ -41,7 +41,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     const poLines = pos.length === 0 ? `<div style="color:var(--muted); font-size:0.78rem;">No PO allocations yet.</div>` : pos.map(po => `
       <div style="font-size:0.78rem; padding:2px 0; border-top:1px dashed #f1f5f9;">
         <strong>${po.poNo}</strong> | Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
-        | Expected: ${formatOrdinalDate(po.expectedDelivery) || "—"} | ${po.actualDelivery ? `Delivered: ${formatOrdinalDate(po.actualDelivery)}` : "Not delivered"}
+        | Next PPS Delivery: ${formatOrdinalDate(pstatPoDeliveryInfo(po).nextDate) || "Not scheduled"} | ${po.actualDelivery ? `Delivered: ${formatOrdinalDate(po.actualDelivery)}` : "Not delivered"}
         | Link Status: ${po.linkStatus || "—"}
         ${po.actionPlan ? `<div style="color:#0369a1; margin-top:2px;">Action Plan: ${po.actionPlan}</div>` : ""}
       </div>`).join("");

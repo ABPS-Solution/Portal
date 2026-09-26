@@ -1,3 +1,18 @@
+// Delivery status from the PPS Tracking schedule, never the RM PO header
+// date: overdue only when a not-yet-received PPS delivery's date has passed.
+function pstatPoDeliveryInfo(po) {
+  const delivered = !!po.actualDelivery || (Number(po.orderedQty) > 0 && Number(po.receivedQty) >= Number(po.orderedQty));
+  const todayIst = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const pending = (po.schedule || []).filter(s => s.status !== 'Received' && s.plannedDate)
+    .map(s => String(s.plannedDate).slice(0, 10)).sort();
+  return {
+    delivered,
+    overdue: !delivered && pending.some(d => d < todayIst),
+    unscheduled: !delivered && pending.length === 0,
+    nextDate: pending[0] || null,
+  };
+}
+
 function handlePstatProjectInput(query) {
   const dd = document.getElementById("pstat-project-dropdown");
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
@@ -144,8 +159,7 @@ function derivePstatStages(lane) {
     else state = "pending";
 
     const anyAwaitingRevision = materials.some(m => m.awaitingPoRevision);
-    const anyOverdue = materials.some(m => (m.purchaseOrders || []).some(po =>
-      po.expectedDelivery && new Date(po.expectedDelivery) < today && !po.actualDelivery));
+    const anyOverdue = materials.some(m => (m.purchaseOrders || []).some(po => pstatPoDeliveryInfo(po).overdue));
     if (anyAwaitingRevision || anyOverdue) state = "attention";
 
     po = {
@@ -313,15 +327,15 @@ function renderPstatLaneDetail(lane) {
       const today = new Date();
       html += `<div class="pstat-detail-heading">PO Allocations</div><div class="pstat-po-list">
         ${allPos.map(po => {
-          const overdue = po.expectedDelivery && new Date(po.expectedDelivery) < today && !po.actualDelivery;
-          const chipClass = po.actualDelivery ? "pstat-po-chip-ontime" : overdue ? "pstat-po-chip-overdue" : "pstat-po-chip-pending";
-          const chipLabel = po.actualDelivery ? "Delivered" : overdue ? "Overdue" : "Pending";
+          const info = pstatPoDeliveryInfo(po);
+          const chipClass = info.delivered ? "pstat-po-chip-ontime" : info.overdue ? "pstat-po-chip-overdue" : "pstat-po-chip-pending";
+          const chipLabel = info.delivered ? "Delivered" : info.overdue ? "Overdue" : info.unscheduled ? "Not Scheduled" : "Pending";
           const poNoHtml = po.pdfUrl
             ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="font-weight:400;">${po.poNo} ↗</a>`
             : `<span style="font-weight:400;">${po.poNo}</span>`;
           return `<div class="pstat-po-card">
             <div class="pstat-po-row1"><span>${poNoHtml} <span style="font-weight:600; color:var(--muted);">— ${po.vendorName || "—"}</span></span><span>${fmtQty(po.receivedQty)} / ${fmtQty(po.orderedQty)} recv</span></div>
-            <div class="pstat-po-row2"><span>Exp: ${formatOrdinalDate(po.expectedDelivery) || "—"}${po.actualDelivery ? ` · Delivered: ${formatOrdinalDate(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
+            <div class="pstat-po-row2"><span>${info.delivered ? "" : info.nextDate ? `PPS: ${formatOrdinalDate(info.nextDate)}` : "PPS: not scheduled"}${po.actualDelivery ? ` · Delivered: ${formatOrdinalDate(po.actualDelivery)}` : ""}</span><span class="pstat-po-chip ${chipClass}">${chipLabel}</span></div>
           </div>`;
         }).join("")}
       </div>`;
