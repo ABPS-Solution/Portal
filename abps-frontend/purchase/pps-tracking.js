@@ -403,7 +403,7 @@ async function loadPPSForPRN() {
     const headFirstColBorder = "border-bottom:2px solid #94a3b8;";
     body.innerHTML = `
       <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
-        <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
+        <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
           <thead><tr style="background:#f8fafc;">
             <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:160px; ${headFirstColBorder}">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">BOQ Qty</th>
