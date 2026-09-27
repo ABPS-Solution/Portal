@@ -398,9 +398,9 @@ async function toggleSrchPOCard(poNo) {
 function renderRMPOViewOnlyDetail(po, lineItems) {
   const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
   const field = (label, val) => `
-    <div>
-      <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">${label}</div>
-      <div style="font-size:0.85rem; color:#0f172a;">${val || '—'}</div>
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">
+      <div style="font-size:0.66rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:3px;">${label}</div>
+      <div style="font-size:0.88rem; font-weight:600; color:#0f172a; word-break:break-word;">${val || '—'}</div>
     </div>`;
 
   const rowsHtml = lineItems.map((l) => {
@@ -417,18 +417,24 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px;">${escapeHtml(l.description || '')}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${escapeHtml(l.additionalDescription)}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
       <td style="padding:8px; text-align:center;">${escapeHtml(l.unit || '—')}</td>
-      <td style="padding:8px; text-align:right;">${fmt(l.quantity)}</td>
-      <td style="padding:8px; text-align:right;">${fmt(l.rate)}</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.quantity)}</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.rate)}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
-      <td style="padding:8px; text-align:right; font-weight:700;">${fmt(l.amount)}</td>
+      <td style="padding:8px; text-align:center; font-weight:700;">${fmt(l.amount)}</td>
       <td style="padding:8px;">${projectChips}</td>
     </tr>`;
   }).join("");
 
   return `
-    <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header (View Only)</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
+    <div class="po-section" style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--brand); border-radius:var(--radius); margin-bottom:16px; overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; background:#f5f9ff; border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.05em;">Purchase Order Header (View Only)</div>
+          <div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:var(--brand); margin-top:2px;">${escapeHtml(po.poNo || "")}</div>
+        </div>
+        <span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:${po.status === "Authorized" ? "#dcfce7" : "#fef3c7"}; color:${po.status === "Authorized" ? "#15803d" : "#92400e"};">${escapeHtml(po.status || "")}</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; padding:14px 16px;">
         ${field("Vendor Name", po.vendorName)}
         ${field("Supplier Offer No", po.supplierRef)}
         ${field("Order Date", formatOrdinalDate(po.orderDate))}
@@ -436,19 +442,18 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
         ${field("Prepared By", po.preparedBy)}
         ${field("Authorized By", po.authorizedBy)}
         ${field("Revision Number", po.revisionNumber || 0)}
-        ${field("Status", po.status)}
       </div>
     </div>
 
     <div style="margin-bottom:16px; overflow-x:auto;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Material Rows</div>
-      <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.82rem; table-layout:fixed;">
+      <table class="prn-view-table" style="width:100%; border-collapse:collapse; background:#fff; font-size:0.82rem; table-layout:fixed;">
         <colgroup>
-          <col style="width:23%;">
+          <col style="width:24.5%;">
           <col style="width:4%;">
           <col style="width:7%;">
           <col style="width:7%;">
-          <col style="width:5%;">
+          <col style="width:3.5%;">
           <col style="width:9%;">
           <col style="width:43%;">
         </colgroup>
@@ -456,10 +461,10 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           <tr style="background:#f1f5f9; text-align:left;">
             <th style="padding:8px;">Material Name</th>
             <th style="padding:8px; text-align:center;">Unit</th>
-            <th style="padding:8px; text-align:right;">Quantity</th>
-            <th style="padding:8px; text-align:right;">Rate/Qty</th>
+            <th style="padding:8px; text-align:center;">Quantity</th>
+            <th style="padding:8px; text-align:center;">Rate/Qty</th>
             <th style="padding:8px; text-align:center;">Disc %</th>
-            <th style="padding:8px; text-align:right;">Amount</th>
+            <th style="padding:8px; text-align:center;">Amount</th>
             <th style="padding:8px;">PRNs / Projects</th>
           </tr>
         </thead>

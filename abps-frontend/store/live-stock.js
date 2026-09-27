@@ -2007,7 +2007,7 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
         </div>
 
         <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
+          <table class="prn-view-table" style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
             <colgroup>
               <col style="width:8%;">
               <col style="width:37%;">

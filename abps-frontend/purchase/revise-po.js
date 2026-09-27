@@ -543,8 +543,8 @@ function renderPORevisionCard() {
     });
     if (bullets.length) {
       prnSummaryHtml = `
-      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">PRN Change Summary</div>
+      <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+        <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ PRN Change Summary</div>
         <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${bullets.join("")}</ul>
       </div>`;
     }
@@ -1123,8 +1123,8 @@ function renderAPORCard(r) {
     return `<li> <strong> ${escapeHtml(line.description || line.itemCode)}: </strong> ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
   }).filter(Boolean);
   const summaryHtml = summaryLines.length ? `
-      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Material Change Summary</div>
+      <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+        <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ Material Change Summary</div>
         <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${summaryLines.join("")}</ul>
       </div>` : "";
 
@@ -1186,8 +1186,8 @@ function renderAPORCard(r) {
   if (Math.abs(draftGrandTotal - oldGrandTotal) > 1e-9) generalBullets.push(`<li><strong>Grand Total</strong>: ${fmt(oldGrandTotal)} → <span style="font-weight:700; color:${draftGrandTotal > oldGrandTotal ? "#15803d" : "#b91c1c"};">${fmt(draftGrandTotal)}</span></li>`);
 
   const generalSummaryHtml = generalBullets.length ? `
-      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-        <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">General Change Summary</div>
+      <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+        <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ General Change Summary</div>
         <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${generalBullets.join("")}</ul>
       </div>` : "";
 
