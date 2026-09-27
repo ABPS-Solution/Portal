@@ -630,7 +630,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
               <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1250px; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
-                  <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
+                  <th style="width:95px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">Item Code Unit</th>
