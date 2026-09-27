@@ -156,7 +156,7 @@ function handleSrchPOPoInput(query) {
       if (!dd) return;
       if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
       dd.innerHTML = data.results.map(r => `
-        <div onclick="document.getElementById('srchpo-po-input').value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('srchpo-po-dd').style.display='none';"
+        <div onmousedown="event.preventDefault(); const i=document.getElementById('srchpo-po-input'); i.value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('srchpo-po-dd').style.display='none'; srchpoLockField('srchpo-po-input','srchpo-po-locked', i.value);"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
           <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
@@ -415,12 +415,12 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
           : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>');
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${escapeHtml(l.description || '')}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${escapeHtml(l.additionalDescription)}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
-      <td style="padding:8px; text-align:center;">${escapeHtml(l.unit || '—')}</td>
-      <td style="padding:8px; text-align:center;">${fmt(l.quantity)}</td>
-      <td style="padding:8px; text-align:center;">${fmt(l.rate)}</td>
+      <td style="padding:8px; font-size:0.9rem;">${escapeHtml(l.description || '')}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${escapeHtml(l.additionalDescription)}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
+      <td style="padding:8px; text-align:center; font-size:0.9rem;">${escapeHtml(l.unit || '—')}</td>
+      <td style="padding:8px; text-align:center; font-size:1rem;">${fmt(l.quantity)}</td>
+      <td style="padding:8px; text-align:center; font-size:1rem;">${fmt(l.rate)}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
-      <td style="padding:8px; text-align:center; font-weight:700;">${fmt(l.amount)}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; font-size:1rem;">${fmt(l.amount)}</td>
       <td style="padding:8px;">${projectChips}</td>
     </tr>`;
   }).join("");
@@ -453,9 +453,9 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           <col style="width:4%;">
           <col style="width:7%;">
           <col style="width:7%;">
-          <col style="width:3.5%;">
+          <col style="width:4.5%;">
           <col style="width:9%;">
-          <col style="width:43%;">
+          <col style="width:42%;">
         </colgroup>
         <thead>
           <tr style="background:#f1f5f9; text-align:left;">
