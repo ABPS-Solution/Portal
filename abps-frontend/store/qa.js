@@ -503,13 +503,13 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         item.lineItems.forEach((line, idx) => {
           trs += `<tr style="border-bottom:1px solid #f1f5f9; vertical-align:middle;">
             <td style="width:9%; padding:8px 6px; text-align:center; font-weight:700; font-family:monospace;">${line.itemCode}</td>
-            <td style="width:26%; padding:8px 6px; font-size:0.85rem;">${escapeHtml(line.materialName || "")}</td>
-            <td style="width:18%; padding:8px 6px; font-size:0.78rem; color:#64748b;">${escapeHtml(line.action)}</td>
+            <td style="width:33%; padding:8px 6px; font-size:0.85rem;">${escapeHtml(line.materialName || "")}</td>
+            <td style="width:18%; padding:8px 6px; font-size:0.82rem; color:#0f172a;">${escapeHtml(line.action)}</td>
             <td style="width:7%; padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
-            <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700;">${line.notOkQuantity}</td>
-            <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700;">${line.outstandingQty}</td>
-            <td style="width:20%; padding:8px 6px; text-align:center;">
-              <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--brand); padding:5px; border-radius:3px;">
+            <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700; font-size:1.05rem;">${line.notOkQuantity}</td>
+            <td style="width:10%; padding:8px 6px; text-align:center; font-weight:700; font-size:1.05rem;">${line.outstandingQty}</td>
+            <td style="width:13%; padding:8px 6px; text-align:center;">
+              <input type="number" min="0" max="${line.outstandingQty}" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; font-weight:700; font-size:1.05rem; border:1.5px solid var(--brand); padding:5px; border-radius:3px;">
             </td>
           </tr>`;
         });
@@ -533,12 +533,12 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; border-collapse:collapse;">
                 <thead><tr style="background:#f8fafc;">
                   <th style="width:9%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
-                  <th style="width:26%; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
+                  <th style="width:33%; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
                   <th style="width:18%; text-align:left; font-size:0.72rem; padding:8px 6px;">Action Selected</th>
                   <th style="width:9%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
                   <th style="width:10%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Total Not OK Qty</th>
                   <th style="width:10%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Pending Qty</th>
-                  <th style="width:20%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Repaired Qty (assumed OK)</th>
+                  <th style="width:13%; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">Repaired Qty (assumed OK)</th>
                 </tr></thead>
                 <tbody>${trs}</tbody>
               </table>
