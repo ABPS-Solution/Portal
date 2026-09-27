@@ -41,7 +41,7 @@ function pdLoadCustom() {
 // identical comment (design-dashboard.js) for the full rationale.
 async function pdLoadDashboard(customVal) {
   ["pd-s-noassign","pd-s-partassign","pd-s-unsched","pd-s-partsched","pd-s-grns",
-   "pd-s-pendingpo","pd-s-pendingporev","pd-s-pos","pd-s-matcov","pd-s-ontime"].forEach(id => {
+   "pd-s-pendingpo","pd-s-pendingporev","pd-s-pos","pd-s-actioninprogress","pd-s-ontime"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {

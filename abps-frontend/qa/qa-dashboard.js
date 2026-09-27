@@ -57,7 +57,8 @@ async function qadLoadDashboard(customVal) {
     const data = await apFetch({
       action:      "fetchQaDashboardData",
       periodType:  qadCurrentPeriod,
-      periodValue: customVal || ""
+      periodValue: customVal || "",
+      todayOverride: localStorage.getItem("ptlTodayOverride") || ""
     });
     if (!data.success) { alert("QA Dashboard load failed: " + data.error); return; }
     qadRenderDashboard(data);
