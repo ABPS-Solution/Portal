@@ -536,7 +536,7 @@ function renderRawMaterialsStockGrid() {
               ${escapeHtml(item.materialName)}
             </div>
             ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
-            <div style="text-align:right;">
+            <div style="text-align:right; margin-top:auto;">
               <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "PCS").toUpperCase()}</span>
             </div>
             <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
@@ -658,7 +658,7 @@ function renderSpareStoreStockGrid() {
             ${escapeHtml(item.materialName)}
           </div>
           ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
-          <div style="text-align:right;">
+          <div style="text-align:right; margin-top:auto;">
             <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
           </div>
           <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
@@ -1663,6 +1663,8 @@ function handleAssReservedInputChange() {
 
 function showAssReservationSuccess(materialName) {
   document.getElementById("ass-results-zone").style.display = "none";
+  const searchWrap = document.getElementById("ass-search-wrap");
+  if (searchWrap) searchWrap.style.display = "none";
   const feedback = document.getElementById("ass-feedback");
   feedback.style.display = "block";
   feedback.innerHTML = `<div style="padding:12px; border-left:4px solid #22c55e; background:#f0fdf4; border-radius:var(--radius); color:#15803d; font-weight:600;">Reservation changed Successfully for ${materialName}</div>
@@ -1670,6 +1672,8 @@ function showAssReservationSuccess(materialName) {
 }
 
 function resetAssReservationPanel() {
+  const searchWrap = document.getElementById("ass-search-wrap");
+  if (searchWrap) searchWrap.style.display = "";
   document.getElementById("ass-feedback").style.display = "none";
   document.getElementById("ass-feedback").innerHTML = "";
   document.getElementById("ass-results-zone").style.display = "none";
@@ -1679,6 +1683,8 @@ function resetAssReservationPanel() {
 }
 
 async function initializeAssignCurrentStockPanel() {
+  const searchWrap = document.getElementById("ass-search-wrap");
+  if (searchWrap) searchWrap.style.display = "";
   document.getElementById("ass-feedback").style.display = "none";
   document.getElementById("ass-results-zone").style.display = "none";
   document.getElementById("ass-material-search").value = "";

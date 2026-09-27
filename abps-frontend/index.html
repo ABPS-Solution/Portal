@@ -2686,7 +2686,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px; background:#fff;">
         <thead><tr style="text-align:left;">
-          <th style="padding:9px 8px; width:120px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a;">Item Code</th><th style="padding:9px 8px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a;">Material Name</th>
+          <th style="padding:9px 8px; width:120px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; text-align:center;">Item Code</th><th style="padding:9px 8px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a;">Material Name</th>
+          <th style="padding:9px 8px; width:120px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; text-align:center;">Current RM Stock</th>
+          <th style="padding:9px 8px; width:120px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; text-align:center;">Current Spare Stock</th>
           <th style="padding:9px 8px; width:90px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; text-align:center;">Unit</th><th style="padding:9px 8px; width:120px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; text-align:center;">Quantity *</th><th style="padding:9px 8px; width:48px; border:1.5px solid #64748b; background:#e0e7ff;"></th>
         </tr></thead>
         <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted); border:1.5px solid #64748b;">No items added yet.</td></tr></tbody>
@@ -2698,11 +2700,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Reserve Store Stock</h2>
       <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div id="ass-search-wrap">
       <label class="field-label" style="margin-top:0;">Search Material Name</label>
       <div style="position:relative; margin-bottom:16px;">
         <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
                style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
         <div id="ass-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+      </div>
       </div>
       <div id="ass-results-zone" style="display:none;">
         <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>

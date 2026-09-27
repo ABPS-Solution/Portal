@@ -86,7 +86,7 @@ function qadRenderDashboard(data) {
   document.getElementById("qad-s-rejrate").textContent = stats.qaRejectionRate === null ? "—" : `${stats.qaRejectionRate.toFixed(1)}%`;
   document.getElementById("qad-s-fgapproved").textContent = stats.fgUnitsApproved;
   document.getElementById("qad-s-repairresolved").textContent = stats.repairQaResolved;
-  document.getElementById("qad-s-turnaround").textContent = stats.avgQaTurnaroundHours === null ? "—" : `${trimNum(stats.avgQaTurnaroundHours / 24)}d`;
+  document.getElementById("qad-s-turnaround").textContent = stats.avgQaTurnaroundHours === null ? "—" : `${trimNum(Math.round(stats.avgQaTurnaroundHours * 10) / 10)}h`;
 
   // Chart 1 -- QA Rejection Rate Trend (line)
   if (qadChartRejTrend) qadChartRejTrend.destroy();
