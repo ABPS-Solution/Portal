@@ -904,6 +904,13 @@
 #cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 .prn-view-table, .prn-view-table th, .prn-view-table td { border:2px solid #94a3b8 !important; }
+.rpo-mode-pill { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border:1.5px solid var(--border); border-radius:999px; background:#fff; font-size:0.82rem; font-weight:700; color:#475569; cursor:pointer; white-space:nowrap; }
+.rpo-mode-pill:has(input:checked) { border-color:var(--brand); background:#eff6ff; color:var(--brand); }
+.rpo-mode-pill input { margin:0; width:auto; accent-color:var(--brand); }
+.rpo-po-card { background:#fff; border:1px solid var(--border); border-left:4px solid var(--rpo-accent, var(--brand)); border-radius:var(--radius); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; transition:box-shadow .15s; }
+.rpo-po-card:hover { box-shadow:0 2px 8px rgba(15,23,42,0.08); }
+.rpo-po-card.rpo-selected { border-color:var(--brand); border-left-color:var(--brand); background:#f5f9ff; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
+.rpo-chip { display:inline-block; font-size:0.72rem; font-weight:600; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 9px; border-radius:999px; }
 input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 .row-lined-table > tbody > tr > td { border-bottom:1px solid #cbd5e1 !important; }
@@ -3978,24 +3985,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
 
       <div id="rpo-other-section" style="display:none;">
-        <div style="display:flex; gap:20px; margin-bottom:10px; flex-wrap:nowrap;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px;">
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+          <label class="rpo-mode-pill">
             <input type="radio" name="rpo-other-search-mode" value="po" checked onchange="switchRPOOtherSearchMode('po')"> Search by PO Number
           </label>
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+          <label class="rpo-mode-pill">
             <input type="radio" name="rpo-other-search-mode" value="vendor" onchange="switchRPOOtherSearchMode('vendor')"> Search by Vendor Name
           </label>
         </div>
-        <div style="display:flex; gap:10px; align-items:end; margin-bottom:12px;">
+        <div style="display:flex; gap:10px; align-items:flex-end;">
           <div style="flex:1; position:relative;">
             <label class="field-label" id="rpo-other-search-label-field" style="margin-top:0; color:var(--brand);">PO Number</label>
             <input type="text" id="rpo-other-search-input" placeholder="e.g. PO_26-27_00001" autocomplete="off"
               oninput="handleRPOOtherSearchInput(this.value)"
               onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()"
-              style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+              style="height:42px; padding:0 12px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; background:#fff;">
             <div id="rpo-other-search-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
-          <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
+          <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="width:auto; height:42px; background:var(--accent); color:#fff; font-weight:700; padding:0 26px;">Search</button>
+        </div>
         </div>
         <div id="rpo-other-search-label" style="display:none; font-weight:700; margin-bottom:12px; font-size:0.85rem; line-height:1.7;"></div>
         <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>

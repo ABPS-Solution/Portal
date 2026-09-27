@@ -318,19 +318,9 @@ async function initializeRevisePOPanel() {
     }
     feed.innerHTML = queue.map(po => {
       return `
-        <div style="background:#fff; border:1px solid var(--border); border-left:3px solid #f59e0b; border-radius:var(--radius); padding:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
-            <div style="flex:1; min-width:240px;">
-              <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
-              <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${escapeHtml(po.vendorName || "")}</div>
-              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
-            </div>
-            <div style="display:flex; gap:8px; flex-shrink:0;">
+${rpoPoCardHtml(po, `
               <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
-              <button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', true)" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Revise →</button>
-            </div>
-          </div>
-        </div>`;
+              <button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', true)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "#f59e0b")}`;
     }).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
@@ -401,6 +391,30 @@ function selectRPOOtherSearchSuggestion(value) {
   if (dd) dd.style.display = "none";
 }
 
+// Shared PO card for the PRN-revision queue and the Other PO Revisions search.
+function rpoPoCardHtml(po, actionsHtml, accent) {
+  const fmtD = (d) => (d ? formatOrdinalDate(d) : "Not set");
+  return `
+    <div class="rpo-po-card" id="rpo-card-${po.poNo}" style="--rpo-accent:${accent};">
+      <div style="flex:1; min-width:240px;">
+        <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
+          <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1rem;">${po.poNo}</span>
+          ${po.revisionNumber > 1 ? `<span class="rpo-chip">V${po.revisionNumber}</span>` : ""}
+        </div>
+        <div style="font-size:0.88rem; font-weight:700; color:#1e293b; margin-top:3px;">${escapeHtml(po.vendorName || "")}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:7px;">
+          <span class="rpo-chip">Ordered: ${fmtD(po.orderDate)}</span>
+          <span class="rpo-chip">Delivery: ${fmtD(po.deliveryDate)}</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-shrink:0; align-items:center;">${actionsHtml}</div>
+    </div>`;
+}
+
+function rpoMarkSelectedCard(poNo) {
+  document.querySelectorAll(".rpo-po-card").forEach(c => c.classList.toggle("rpo-selected", c.id === "rpo-card-" + poNo));
+}
+
 async function searchPOsForRevisionUI() {
   const query = document.getElementById("rpo-other-search-input").value.trim();
   const feed = document.getElementById("rpo-search-feed");
@@ -414,7 +428,7 @@ async function searchPOsForRevisionUI() {
   const lbl = document.getElementById("rpo-other-search-label");
   if (lbl) {
     lbl.style.display = "block";
-    lbl.innerHTML = `<span style="color:#000;">Searching for ${modeLabel} :</span> <span style="color:var(--brand);">${esc(query)}</span>`;
+    lbl.innerHTML = `<span style="color:#64748b; font-weight:600;">Results for ${modeLabel}:</span> <span style="color:var(--brand);">${esc(query)}</span>`;
   }
 
   feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching…</div>`;
@@ -425,23 +439,16 @@ async function searchPOsForRevisionUI() {
     const data = await apFetch({ action: "searchPOsForRevision", query });
     const results = (data.success ? (data.results || []) : []);
     if (results.length === 0) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No authorized PO matched.</div>`; return; }
-    feed.innerHTML = results.map(po => `
-      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
-        <div>
-          <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
-          <div style="font-size:0.8rem; font-weight:600;">${escapeHtml(po.vendorName || "")}</div>
-          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
-        </div>
-        ${po.revisionPending
-          ? `<span style="font-size:0.72rem; font-weight:700; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:4px;">Revision already pending</span>`
-          : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Revise →</button>`}
-      </div>`).join("");
+    feed.innerHTML = results.map(po => rpoPoCardHtml(po, po.revisionPending
+          ? `<span style="font-size:0.74rem; font-weight:700; color:#b45309; background:#fef3c7; padding:5px 12px; border-radius:999px;">Revision already pending</span>`
+          : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "var(--brand)")).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
   }
 }
 
 async function openPORevision(poNo, changedOnly) {
+  rpoMarkSelectedCard(poNo);
   const zone = document.getElementById("rpo-detail-zone");
   zone.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted);">Loading PO…</div>`;
   try {
@@ -545,7 +552,12 @@ function renderPORevisionCard() {
 
   document.getElementById("rpo-detail-zone").innerHTML = `
     <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
-      <div style="display:flex; justify-content:flex-end; align-items:flex-start; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed var(--border);">
+        <div>
+          <div style="font-size:0.7rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Revising</div>
+          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:1.05rem;">${escapeHtml(po.poNo || "")}</div>
+          <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${escapeHtml(po.vendorName || "")}</div>
+        </div>
         <span style="font-size:0.7rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${kind === "PRN Driven" ? "#fef3c7" : "#e0f2fe"}; color:${kind === "PRN Driven" ? "#78350f" : "#075985"};">${kind === "PRN Driven" ? "PRN-DRIVEN REVISION" : "STANDALONE REVISION"}</span>
       </div>
 
