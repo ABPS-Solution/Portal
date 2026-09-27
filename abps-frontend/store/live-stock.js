@@ -1620,12 +1620,12 @@ function renderAssStockRows() {
     <tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px; word-break:break-word; white-space:normal;">${a.boqId}</td>
       <td style="padding:8px; text-align:center; vertical-align:middle;">${unit}</td>
-      <td style="padding:8px; text-align:center; vertical-align:middle;">${a.numberOfJobCards != null ? trimNum(a.numberOfJobCards) : '—'}</td>
-      <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700;">${trimNum(a.assignedQty)}</td>
+      <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1.02rem;">${a.numberOfJobCards != null ? trimNum(a.numberOfJobCards) : '—'}</td>
+      <td style="padding:8px; text-align:center; vertical-align:middle; font-weight:700; font-size:1.02rem;">${trimNum(a.assignedQty)}</td>
       <td style="padding:8px; text-align:center; vertical-align:middle;">
         <input type="number" min="0" step="any" data-row="${i}" value="${trimNum(a.assignedQty)}"
           oninput="handleAssReservedInputChange()"
-          style="width:100px; padding:5px; border:1.5px solid var(--brand); border-radius:3px; text-align:center;" />
+          style="width:110px; padding:6px; border:1.5px solid var(--brand); border-radius:3px; text-align:center; font-size:1.02rem; font-weight:700;" />
       </td>
     </tr>`).join("");
 }

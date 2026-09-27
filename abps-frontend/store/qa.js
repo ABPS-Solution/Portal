@@ -560,7 +560,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="text" class="qa-item-code-${item.grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly
                 style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;">
             </td>
-            <td style="padding:8px; font-size:0.78rem; color:#64748b; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
+            <td style="padding:8px; font-size:0.78rem; color:#0f172a; white-space:normal; word-wrap:break-word; overflow-wrap:break-word; min-width:180px; max-width:220px; line-height:1.4; vertical-align:middle;">
               ${escapeHtml(line.invoiceDescription || "") || "—"}
             </td>
             <td style="padding:6px; min-width:220px; vertical-align:middle;">
@@ -593,7 +593,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
             </td>
             <td style="width:150px; padding:6px; vertical-align:middle;">
-              <input type="text" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." style="font-size:0.78rem; padding:6px; width:100%; border:1px solid var(--border); border-radius:3px;">
+              <textarea rows="1" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." oninput="autoGrowTextField(this)" style="display:block; font-size:0.78rem; padding:6px; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.35; white-space:pre-wrap; overflow-wrap:break-word;"></textarea>
             </td>
             <td style="width:170px; padding:6px; vertical-align:middle;">
               <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:5px 2px; border-radius:3px;">
@@ -633,12 +633,12 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                   <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code</th>
                   <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Invoice Material Description</th>
                   <th style="width:220px; text-align:left; font-size:0.72rem; padding:8px 6px;">Standard Material Name</th>
-                  <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Item Code Unit</th>
-                  <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Received Qty</th>
-                  <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">OK Qty</th>
-                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Not OK</th>
+                  <th style="width:80px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">Item Code Unit</th>
+                  <th style="width:72px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">Received Qty</th>
+                  <th style="width:65px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">OK Qty</th>
+                  <th style="width:55px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:normal; line-height:1.25;">Not OK</th>
                   <th style="width:150px; text-align:left; font-size:0.72rem; padding:8px 6px;">Reason for Not OK</th>
-                  <th style="width:170px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected *</th>
+                  <th style="width:180px; text-align:left; font-size:0.72rem; padding:8px 6px;">Action for Rejected *</th>
                   <th style="width:60px; text-align:center; font-size:0.72rem; padding:8px 6px; white-space:nowrap;">Q/A Done</th>
                 </tr></thead>
                 <tbody>${trs}</tbody>
