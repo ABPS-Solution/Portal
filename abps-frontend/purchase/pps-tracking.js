@@ -330,7 +330,7 @@ async function loadPPSForPRN() {
         ? (Number(m.stillToOrder) > 0
             ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
             : `<span style="color:var(--muted); font-size:0.75rem;">—</span>`)
-        : pos.map((po, i) => `<div style="${ppsPoBlockStyle(i, pos.length)} font-family:monospace; font-size:0.95rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:700; font-size:0.98rem;">(${fmt(po.orderedQty)})</span></div>`).join("");
+        : pos.map((po, i) => `<div style="${ppsPoBlockStyle(i, pos.length)} font-family:monospace; font-size:0.85rem; font-weight:700;">${po.pdfUrl ? `<a href="${driveLink(po.pdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${esc(po.poNo)}</a>` : `<span style="color:var(--brand);">${esc(po.poNo)}</span>`} <span style="color:var(--muted); font-weight:700; font-size:0.98rem;">(${fmt(po.orderedQty)})</span></div>`).join("");
 
       // Expected Delivery is now an editable, per-tranche delivery
       // schedule (migration 112) — a single PO allocation can be split
@@ -405,14 +405,14 @@ async function loadPPSForPRN() {
       <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
         <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1200px;">
           <thead><tr style="background:#f8fafc;">
-            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:200px; ${headFirstColBorder}">Material Name</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:160px; ${headFirstColBorder}">Material Name</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:#b45309; ${headColBorder}">Buffer %</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; color:var(--brand); ${headColBorder}">Buffered BOQ Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}" title="Once a PO exists for this line, this is the remainder of the buffered requirement not covered by what was ordered (Buffered BOQ Qty minus Purchase Qty) — not a live current-stock figure.">Store Qty</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}" title="Once a PO exists for this line, this matches the total already ordered (same total as Received / PO Qty's denominator).">Purchase Qty</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px; ${headColBorder}">Purchase Order(s)</th>
-            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:130px; ${headColBorder}">Production Requirement Date</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:150px; ${headColBorder}">Purchase Order(s)</th>
+            <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:160px; ${headColBorder}">Production Requirement Date</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; min-width:120px; ${headColBorder}">Expected Delivery Date</th>
             <th style="padding:8px; font-size:0.7rem; text-align:center; ${headColBorder}">Received / PO Qty</th>
           </tr></thead>
