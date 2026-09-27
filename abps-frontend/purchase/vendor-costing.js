@@ -209,7 +209,7 @@ function renderSVCIResultsTable() {
 
   results.innerHTML = `
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-      <table style="width:100%; border-collapse:collapse; min-width:760px;">
+      <table class="prn-view-table" style="width:100%; border-collapse:collapse; min-width:760px;">
         <thead><tr style="background:#f8fafc;">
           <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">PO No</th>
           <th style="padding:8px; font-size:0.7rem; text-align:left; text-transform:uppercase; color:var(--muted);">Vendor Name</th>

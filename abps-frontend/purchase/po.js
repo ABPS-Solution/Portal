@@ -415,7 +415,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
           : '<span style="color:var(--muted); font-size:0.75rem;">No allocation on record</span>');
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px; font-size:0.9rem;">${escapeHtml(l.description || '')}${l.additionalDescription ? `<div style="font-size:0.75rem; color:#475569; margin-top:2px;">${escapeHtml(l.additionalDescription)}</div>` : ''}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
+      <td style="padding:8px; font-size:0.9rem;">${escapeHtml(l.description || '')}<div style="font-family:monospace; color:var(--brand); font-size:0.75rem;">${l.itemCode || ''}</div></td>
       <td style="padding:8px; text-align:center; font-size:0.9rem;">${escapeHtml(l.unit || '—')}</td>
       <td style="padding:8px; text-align:center; font-size:1rem;">${fmt(l.quantity)}</td>
       <td style="padding:8px; text-align:center; font-size:1rem;">${fmt(l.rate)}</td>
