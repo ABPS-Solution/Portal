@@ -430,8 +430,8 @@ async function commitQARevisionToBackend(grnNumber, btn) {
       quantityReceived: parseFloat(line.quantityReceived) || 0,
       okQuantity: parseFloat(g('qarev-ok').value) || 0,
       notOkQuantity: parseFloat(g('qarev-notok').value) || 0,
-      reasonForNotOk: g('qarev-reason').value.trim(),
-      actionForRejectedMaterial: g('qarev-action').value,
+      reasonForNotOk: (parseFloat(g('qarev-notok').value) || 0) > 0 ? g('qarev-reason').value.trim() : "",
+      actionForRejectedMaterial: (parseFloat(g('qarev-notok').value) || 0) > 0 ? g('qarev-action').value : "",
     };
   });
 
@@ -593,10 +593,10 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
             </td>
             <td style="width:150px; padding:6px; vertical-align:middle;">
-              <textarea rows="1" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." oninput="autoGrowTextField(this)" style="display:block; font-size:0.78rem; padding:6px; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.35; white-space:pre-wrap; overflow-wrap:break-word;"></textarea>
+              <textarea rows="1" disabled class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." oninput="autoGrowTextField(this)" style="display:block; font-size:0.78rem; padding:6px; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.35; white-space:pre-wrap; overflow-wrap:break-word;"></textarea>
             </td>
             <td style="width:170px; padding:6px; vertical-align:middle;">
-              <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:5px 2px; border-radius:3px;">
+              <select disabled class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; font-size:0.76rem; padding:5px 2px; border-radius:3px;">
                 <option value="">— N/A —</option>
                 <option value="Return to Vendor for Replacement">Return to Vendor for Replacement</option>
                 <option value="Return to Vendor for Repair">Return to Vendor for Repair</option>
@@ -732,6 +732,20 @@ function autoBalanceQaQuantities(okInput, grnNum, idx) {
   if (okVal < 0) { okVal = 0; okInput.value = 0; }
   const notOkInput = document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`);
   if (notOkInput) notOkInput.value = max - okVal;
+  qaSyncRejectFields(grnNum, idx, max - okVal);
+}
+
+// Reason for Not OK and Action for Rejected only mean something when there
+// are Not OK units; with none, they are cleared and locked.
+function qaSyncRejectFields(grnNum, idx, notOk) {
+  const reason = document.querySelector(`.qa-reason-${grnNum}[data-idx="${idx}"]`);
+  const action = document.querySelector(`.qa-action-${grnNum}[data-idx="${idx}"]`);
+  const on = notOk > 0;
+  [reason, action].forEach(el => {
+    if (!el) return;
+    el.disabled = !on;
+    if (!on) { el.value = ""; if (el.tagName === "TEXTAREA") el.style.height = ""; }
+  });
 }
 
 function handleRejVendorSearch(query) {

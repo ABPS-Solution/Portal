@@ -866,8 +866,8 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
 
     line.okQuantity              = ok;
     line.notOkQuantity           = notOk;
-    line.reasonForNotOk          = reason;
-    line.actionForRejectedMaterial = action;
+    line.reasonForNotOk          = notOk > 0 ? reason : "";
+    line.actionForRejectedMaterial = notOk > 0 ? action : "";
     // Pick up any correction made against the original invoice description
     line.itemCode      = itemCode;
     line.materialName   = matName;
