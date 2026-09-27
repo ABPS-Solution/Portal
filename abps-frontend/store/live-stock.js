@@ -397,6 +397,16 @@ async function triggerLiveWarehouseStockMetricsSync() {
 // already-fetched cache client-side, same "type to narrow, no re-fetch"
 // shape as the other typeaheads in the app, but this one just filters
 // visible cards rather than resolving to a single selection.
+// Live stock search: punctuation and spacing are ignored and every typed
+// word must appear somewhere, so a pasted "Name - Rating - Make: X" still
+// matches the card that shows those parts separately.
+function liveStockSearchMatches(parts, query) {
+  const norm = (t) => (t || "").toString().toLowerCase().replace(/[^a-z0-9.]+/g, " ").trim();
+  const hay = " " + norm(parts.join(" ")) + " ";
+  const words = norm(query).split(" ").filter(Boolean);
+  return words.every(w => hay.includes(w));
+}
+
 window.rawStockSearchQuery = "";
 function handleRawStockSearchInput(query) {
   window.rawStockSearchQuery = (query || "").trim().toLowerCase();
@@ -411,7 +421,7 @@ function renderRawMaterialsStockGrid() {
   const q = window.rawStockSearchQuery || "";
   const filteredCollection = !q ? (cachedInventoryStockCollection || []) :
     (cachedInventoryStockCollection || []).filter(item =>
-      `${item.materialName || ""} ${item.itemCode || ""} ${item.make || ""}`.toLowerCase().includes(q));
+      liveStockSearchMatches([item.materialName, item.itemCode, "make", item.make], q));
 
   if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
     mountZone.innerHTML = `
@@ -585,7 +595,7 @@ function renderSpareStoreStockGrid() {
 
   const q = window.spareStockSearchQuery || "";
   const filteredStock = !q ? fullStock : fullStock.filter(item =>
-    `${item.materialName || ""} ${item.itemCode || ""} ${item.make || ""}`.toLowerCase().includes(q));
+    liveStockSearchMatches([item.materialName, item.itemCode, "make", item.make], q));
 
   if (filteredStock.length === 0) {
     mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div></div>`;
@@ -1019,7 +1029,7 @@ function renderFinishedGoodsStoreStockTables() {
 
   const q = window.fgStockSearchQuery || "";
   const filteredCached = !q ? cached : cached.filter(row =>
-    `${row.productName || ""} ${row.productRating || ""} ${row.descriptionOfMaterial || ""} ${row.make || ""}`.toLowerCase().includes(q));
+    liveStockSearchMatches([row.productName, row.productRating, row.descriptionOfMaterial, "make", row.make, row.projectId], q));
 
   const depts = [
     { key: "reactor",   label: "Reactor",   containerId: "fg-stock-reactor-rows"   },
