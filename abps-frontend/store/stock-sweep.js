@@ -33,7 +33,7 @@ async function loadSweepCurrentStock() {
 function sweepStockCell(kind, itemCode) {
   const map = (window.sweepStockByItem || {})[kind];
   const v = map ? (map[itemCode] || 0) : null;
-  return `<td style="padding:8px; border:1.5px solid #64748b; text-align:center; font-family:monospace; font-weight:700;">${v == null ? "—" : fmtQty(v)}</td>`;
+  return `<td style="padding:8px; border:1.5px solid #64748b; text-align:center; font-family:monospace; font-weight:700; font-size:1rem;">${v == null ? "—" : fmtQty(v)}</td>`;
 }
 
 function handleSweepTypeChange() {
@@ -147,16 +147,16 @@ function renderSweepBasket() {
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; text-align:center;">${b.itemCode}</td>
         <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
         ${sweepStockCell("rm", b.itemCode)}${sweepStockCell("spare", b.itemCode)}
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted); text-align:center;">—</td>
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; font-weight:700; text-align:center;">${fmtQty(b.quantity)}</td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:#334155; text-align:center; font-size:1rem;">—</td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; font-weight:700; text-align:center; font-size:1rem;">${fmtQty(b.quantity)}</td>
         <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>` : `
       <tr>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; text-align:center;">${b.itemCode}</td>
         <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(b.rating)}</span>` : ""}</td>
         ${sweepStockCell("rm", b.itemCode)}${sweepStockCell("spare", b.itemCode)}
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:var(--muted); text-align:center;">${b.unitType || "NOS"}</td>
-        <td style="padding:8px; border:1.5px solid #64748b; text-align:center;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center;"></td>
+        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:#334155; text-align:center; font-size:1rem;">${b.unitType || "NOS"}</td>
+        <td style="padding:8px; border:1.5px solid #64748b; text-align:center;"><input type="number" min="0.01" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center; font-size:1rem; font-weight:700;"></td>
         <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>`).join("");
   }
