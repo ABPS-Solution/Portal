@@ -57,7 +57,7 @@ function sdRenderDashboard(data) {
   // Row 2 stat cards — period throughput / rates
   document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
   document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
-  document.getElementById("sd-s-rejrate").textContent   = stats.avgGrnTurnaroundHours === null ? "—" : `${trimNum(stats.avgGrnTurnaroundHours / 24)}d`;
+  document.getElementById("sd-s-rejrate").textContent   = stats.avgGrnTurnaroundHours === null ? "—" : `${Math.round(stats.avgGrnTurnaroundHours * 60)} min`;
   document.getElementById("sd-s-sweeps").textContent    = stats.stockSweeps;
   document.getElementById("sd-s-challans").textContent  = stats.challansIssued;
 
