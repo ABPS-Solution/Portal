@@ -616,6 +616,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-marketing-dashboard-wrapper":   userPermissionsObject.viewMarketingDashboard,
     "mod-accounts-dashboard-wrapper":    userPermissionsObject.viewAccountsDashboard,
     "mod-qa-dashboard-wrapper":          userPermissionsObject.viewQaDashboard,
+    "mod-project-dashboard-wrapper":     userPermissionsObject.viewProjectDashboard,
     "mod-admin-dashboard-wrapper":       userPermissionsObject.viewAdminDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
@@ -648,7 +649,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       const canCustomerQueryManagement = userPermissionsObject.customerQueryManagement === true;
       if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = canCustomerQueryManagement ? "block" : "none";
       const projectHeaderBlock = document.getElementById("dashboard-project-department-header-block");
-      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || canCustomerQueryManagement) ? "block" : "none";
+      if (projectHeaderBlock) projectHeaderBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || canCustomerQueryManagement || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
 
       // Admin Department block visibility (16 Sep 2026) — Security & Login
       // Access and Admin Dashboard moved out from under Project into their
