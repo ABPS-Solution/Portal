@@ -99,8 +99,15 @@ function ptlHighlightRow(el) {
   if (ptlLastHighlightEl && ptlLastHighlightEl !== el) {
     ptlLastHighlightEl.style.border = "";
     ptlLastHighlightEl.style.borderRadius = "";
+    ptlLastHighlightEl.style.outline = "";
+    ptlLastHighlightEl.style.background = "";
   }
-  if (el) {
+  if (el && el.tagName === "TR") {
+    // A table row's own border doesn't paint under border-collapse.
+    el.style.outline = "3px solid #16a34a";
+    el.style.outlineOffset = "-3px";
+    el.style.background = "#f0fdf4";
+  } else if (el) {
     el.style.border = "2px solid #16a34a";
     el.style.borderRadius = "8px";
   }
@@ -628,7 +635,7 @@ function ptlRenderLaneSteps(lane, c) {
 
     const colBorder = "border-left:1px solid var(--border);";
     return `
-      <tr style="border-bottom:1px solid var(--border);">
+      <tr id="ptl-step-${escapeHtml(lane.boqId)}-${s.id}" style="border-bottom:1px solid var(--border);">
         <td style="width:28%; padding:5px 8px; font-size:0.98rem; font-weight:600; color:${late ? 'var(--warn)' : 'var(--text)'}; text-align:center;">
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
