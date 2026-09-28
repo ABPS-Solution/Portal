@@ -2289,11 +2289,14 @@ function cmitDraftSaveSoon() {
   clearTimeout(cmitDraftTimer);
   cmitDraftTimer = setTimeout(() => {
     const snap = cmitDraftSnapshot();
-    if (!snap.projectId && !snap.legacyName && !snap.basket.length) { abpsDraftClear(CMIT_DRAFT_KEY); return; }
+    // Never overwrite a saved ticket with an empty form (opening the
+    // screen resets it, which would otherwise wipe the draft on offer).
+    if (!snap.projectId && !snap.legacyName && !snap.basket.length) return;
     abpsDraftSave(CMIT_DRAFT_KEY, snap);
   }, 600);
 }
 function cmitDraftClearAll() {
+  window._cmitOfferedDraft = null;
   if (typeof abpsDraftClear === "function") abpsDraftClear(CMIT_DRAFT_KEY);
   const slot = document.getElementById("cmit-draft-bar-slot");
   if (slot) slot.innerHTML = "";
@@ -2352,6 +2355,7 @@ function cmitDraftOffer() {
   const draft = typeof abpsDraftRead === "function" ? abpsDraftRead(CMIT_DRAFT_KEY) : null;
   if (!draft || !draft.payload) return;
   const d = draft.payload;
+  window._cmitOfferedDraft = draft;
   const when = typeof formatOrdinalDateTime === "function" ? formatOrdinalDateTime(new Date(draft.ts)) : new Date(draft.ts).toLocaleString();
   const items = (d.basket || []).length;
   slot.innerHTML = `<div style="background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:10px 14px; border-radius:6px; font-size:0.84rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -2361,7 +2365,8 @@ function cmitDraftOffer() {
     </div>`;
 }
 async function cmitDraftRestoreClick() {
-  const draft = abpsDraftRead(CMIT_DRAFT_KEY);
+  const draft = window._cmitOfferedDraft || abpsDraftRead(CMIT_DRAFT_KEY);
+  window._cmitOfferedDraft = null;
   const slot = document.getElementById("cmit-draft-bar-slot");
   if (slot) slot.innerHTML = `<div style="padding:10px 14px; margin-bottom:14px; color:var(--muted); font-size:0.84rem; font-weight:600;">Restoring your ticket...</div>`;
   if (draft && draft.payload) await cmitDraftRestore(draft.payload);
