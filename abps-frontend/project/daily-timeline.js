@@ -491,6 +491,17 @@ function dtlOpenItem(it) {
           return;
         }
         break;
+      case 'revision': {
+        const go = {
+          boqAuthRevision: () => switchActiveDashboardModule('design-auth-boq-upd'),
+          revisePrn: () => navigateToPurchaseWorkspacePanel('purchase-revise-prn'),
+          authorizePrnRevision: () => openAuthorizePRNPanel('Revision'),
+          revisePo: () => navigateToPurchaseWorkspacePanel('purchase-revise-po'),
+          authorizePoRevision: () => navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision'),
+        }[it.link];
+        if (go) { go(); return; }
+        break;
+      }
       case 'poTranche':
         // PPS Tracking isn't a canvas-module screen either (it lives under
         // Purchase's workspace enclosure) — no stable direct-open id known
