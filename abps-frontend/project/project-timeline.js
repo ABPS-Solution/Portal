@@ -1330,7 +1330,14 @@ function ptlRenderCanvas(containerId) {
         // group's lanes (represented once by the summary row instead).
         return summaryYByGroupKey[laneGroupKey(l)] ?? (RULER_H + TRUNK_BAND_H + ROW_PITCH / 2);
       })
-    : lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
+    // No product row may sit on the project's own line (Stage 5 milestones
+    // got lost among production steps): with an odd count, the middle row
+    // moves half a gap below and the rows beyond it step out to match.
+    : lanes.map((_, i) => {
+        const k = i - (laneCount - 1) / 2;
+        const off = laneCount % 2 === 1 ? (k < 0 ? k - 0.5 : k + 0.5) : k;
+        return spineY + off * (laneCount % 2 === 1 ? gap * 0.8 : gap);
+      });
 
   // Every date within ptlBuildDayRange's from/to span is now in the index
   // (Sundays/holidays included, 31 Aug 2026) - this fallback is purely
