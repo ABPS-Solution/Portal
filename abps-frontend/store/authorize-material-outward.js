@@ -52,14 +52,16 @@ function amoRenderCard(c) {
   const returns = tickets.flatMap(t => t.expectedReturnItems || []);
   const cell = "padding:7px 8px; border:1px solid var(--border);";
   const head = "padding:7px 8px; border:1px solid var(--border); background:var(--highlight-bg); font-size:0.72rem; text-transform:uppercase; color:var(--muted);";
-  const field = (label, value) => `<div style="background:#fff; border:1px solid #cbd5e1; border-radius:var(--radius); padding:8px 10px; min-width:0;"><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); margin-bottom:3px;">${label}</div><div style="font-weight:600; word-break:break-word;">${escapeHtml(value || "—")}</div></div>`;
+  const field = (label, value, big, mono) => `<div style="background:#fff; border:2px solid #94a3b8; border-radius:var(--radius); padding:9px 12px; min-width:0;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted); margin-bottom:4px;">${label}</div><div style="font-weight:${big ? 800 : 600}; ${big ? "font-size:1.1rem;" : ""} ${mono ? "font-family:monospace; color:var(--brand);" : ""} word-break:break-word;">${escapeHtml(value || "—")}</div></div>`;
+  const ticketBoxes = tickets.map(t => `<div style="padding:9px 12px; border:2px solid #94a3b8; border-left:5px solid var(--brand); border-radius:var(--radius); margin-bottom:8px; background:#fff; font-size:0.88rem; line-height:1.45;">${typeof mowTicketSummaryLine === "function" ? mowTicketSummaryLine(t) : escapeHtml(t.ticketId || "")}</div>`).join("");
 
   const body = !open ? "" : `
     <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px; padding:12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius);">
-        ${field("Purpose", c.outward_type)}
-        ${field("Status", c.returnable_status)}
-        ${field("Challan No", c.challan_number)}
+      ${ticketBoxes}
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:6px 0 14px;">
+        ${field("Purpose", c.outward_type, true)}
+        ${field("Status", c.returnable_status, true)}
+        ${field("Challan No", c.challan_number, true, true)}
         ${field("Tickets", tickets.map(t => t.ticketId).join(", "))}
         ${field(amoConsigneeLabel(c), c.consignee_name)}
         ${field("Contact Name", c.contact_person_name)}
@@ -71,17 +73,18 @@ function amoRenderCard(c) {
         ${field("Freight", c.freight)}
         <div style="grid-column:span 4;">${field("Note", c.challan_remarks)}</div>
       </div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
+      <div style="font-weight:800; color:var(--brand); margin-bottom:6px;">Materials List</div>
+      <table class="prn-view-table" style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
         <colgroup><col style="width:7%"><col style="width:53%"><col style="width:14%"><col style="width:13%"><col style="width:13%"></colgroup>
         <thead><tr><th style="${head}">Sr</th><th style="${head} text-align:left;">Description of Material</th><th style="${head}">HSN Code</th><th style="${head}">Qty</th><th style="${head}">Unit</th></tr></thead>
-        <tbody>${items.map((it, i) => `<tr><td style="${cell} text-align:center;">${i + 1}</td><td style="${cell}">${escapeHtml(it.description || "")}</td><td style="${cell} text-align:center;">${escapeHtml(it.hsnCode || "")}</td><td style="${cell} text-align:center; font-weight:700;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td><td style="${cell} text-align:center;">${escapeHtml(it.unit || "")}</td></tr>`).join("")}</tbody>
+        <tbody>${items.map((it, i) => `<tr><td style="${cell} text-align:center;">${i + 1}</td><td style="${cell}">${escapeHtml(it.description || "")}</td><td style="${cell} text-align:center;">${escapeHtml(it.hsnCode || "")}</td><td style="${cell} text-align:center; font-weight:800; font-size:1.1rem; font-family:monospace;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td><td style="${cell} text-align:center;">${escapeHtml(it.unit || "")}</td></tr>`).join("")}</tbody>
       </table>
       ${returns.length ? `
       <div style="font-weight:800; color:var(--brand); margin-bottom:6px;">Expected Processing Material Return</div>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
+      <table class="prn-view-table" style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px;">
         <colgroup><col style="width:7%"><col style="width:67%"><col style="width:13%"><col style="width:13%"></colgroup>
         <thead><tr><th style="${head}">Sr</th><th style="${head} text-align:left;">Material</th><th style="${head}">Qty</th><th style="${head}">Unit</th></tr></thead>
-        <tbody>${returns.map((r, i) => `<tr><td style="${cell} text-align:center;">${i + 1}</td><td style="${cell}">${escapeHtml(r.materialName || r.itemCode || "")}</td><td style="${cell} text-align:center; font-weight:700;">${escapeHtml(String(fmtQty(r.quantity ?? 0)))}</td><td style="${cell} text-align:center;">${escapeHtml(r.unit || "")}</td></tr>`).join("")}</tbody>
+        <tbody>${returns.map((r, i) => `<tr><td style="${cell} text-align:center;">${i + 1}</td><td style="${cell}">${escapeHtml(r.materialName || r.itemCode || "")}</td><td style="${cell} text-align:center; font-weight:800; font-size:1.1rem; font-family:monospace;">${escapeHtml(String(fmtQty(r.quantity ?? 0)))}</td><td style="${cell} text-align:center;">${escapeHtml(r.unit || "")}</td></tr>`).join("")}</tbody>
       </table>` : ""}
       ${own ? `<div style="padding:9px 12px; margin-bottom:10px; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; border-radius:var(--radius); font-size:0.85rem; font-weight:600;">You prepared this challan, so someone else has to authorize it.</div>` : ""}
       <div id="amo-inline-${id}" style="display:none; margin-bottom:10px; padding:10px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius);"></div>
