@@ -285,6 +285,10 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
 
       // Remove visual panel node block smoothly out of sight matching flow constraints
       if (cardNode) cardNode.remove();
+      // Hide the rest of the queue until "+ Approve Another Ticket" reloads it.
+      const queueFeed = document.getElementById("store-manager-approvals-queue-cards-feed");
+      if (queueFeed) queueFeed.style.display = "none";
+      if (typeof stopPendingTicketsQueuePolling === "function") stopPendingTicketsQueuePolling();
 
       hideBlockingOverlay();
 

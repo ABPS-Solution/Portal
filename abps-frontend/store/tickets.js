@@ -882,6 +882,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
   const feedbackBanner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
   
   feedbackBanner.style.display = "none";
+  cardsFeedZone.style.display = "";
   cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Un-Actioned Material Issue Tickets...</div>`;
 
   try {
