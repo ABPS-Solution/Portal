@@ -915,8 +915,8 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     let summaryHtml = "";
     if (mode === "authorize-update") {
       summaryHtml = `
-        <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-          <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Change Summary</div>
+        <div id="auth-boq-upd-summary-${safeBoqId}" style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+          <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ Change Summary</div>
           <ul id="auth-boq-upd-summary-text-${safeBoqId}" style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;"><li>Generating change summary...</li></ul>
         </div>`;
     }

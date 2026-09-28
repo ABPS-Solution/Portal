@@ -45,8 +45,8 @@ async function toggleBOQRevisionExpansion(updateId) {
   let summaryText = "Generating change summary...";
   bodyEl.style.display = "block";
   bodyEl.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px;">
-      <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Change Summary</div>
+    <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+      <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ Change Summary</div>
       <ul id="boqrev-summary-text-${updateId}" style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;"><li>${summaryText}</li></ul>
     </div>
     <div class="boq-header-box" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
