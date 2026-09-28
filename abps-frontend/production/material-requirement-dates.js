@@ -287,8 +287,12 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     // fix as PPS Tracking, 16 Sep 2026).
     const colBorder = "border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);";
     const firstColBorder = "border-bottom:1.5px solid var(--border);";
+    // Revise queue: a line whose saved dates no longer cover what still has
+    // to be purchased is the one needing attention.
+    const datedQty = (line.tranches || []).reduce((s, t) => s + (Number(t.requiredQty) || 0), 0);
+    const needsAttention = ns === 'rmrd' && purchaseQty > 1e-9 && Math.abs(datedQty - purchaseQty) > 1e-9;
     return `
-      <tr>
+      <tr${needsAttention ? ' style="outline:3px solid #f59e0b; outline-offset:-3px; background:#fffbeb;" title="Requirement dates need revising for this material"' : ''}>
         <td style="padding:8px; text-align:center; font-size:0.9rem; font-weight:700; color:#64748b; width:44px; ${firstColBorder}">${lineIdx + 1}</td>
         <td style="padding:8px; font-size:0.9rem; font-weight:600; ${colBorder}">${esc(line.materialName)}</td>
         <td style="padding:8px; text-align:center; font-size:0.9rem; font-weight:600; color:#1e293b; ${colBorder}">${esc(line.typeOfMaterial || "—")}</td>
