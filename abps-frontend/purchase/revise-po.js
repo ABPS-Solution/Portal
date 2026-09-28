@@ -286,8 +286,6 @@ async function rpoGenerateDraftAfterSubmit(poNo, requestId) {
   const btnCss = "display:inline-block; margin:14px 8px 0 0; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer; text-decoration:none;";
   const actions = `
     <div>
-      <button onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision');" style="${btnCss} background:var(--brand); color:#fff; border:none;">Go to Authorize PO Revision →</button>
-      <button onclick="document.getElementById('rpo-feedback').style.display='none'; document.getElementById('rpo-tabs-and-lists').style.display=''; switchRevisePOTab('editing');" style="${btnCss} background:#fff; color:var(--brand); border:1.5px solid var(--brand);">Edit in Pending Revisions (Editing)</button>
       <button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="${btnCss} background:var(--accent); color:#fff; border:none;">+ Revise Another PO</button>
     </div>`;
   let data = null;
@@ -1133,7 +1131,7 @@ function lockAPORCardForAuthorize(expandDiv) {
     const note = document.createElement("div");
     note.className = "apor-auth-note";
     note.style.cssText = "padding:10px 12px; margin-bottom:12px; border-left:4px solid #0ea5e9; background:#f0f9ff; color:#0c4a6e; border-radius:var(--radius); font-size:0.82rem; font-weight:600;";
-    note.textContent = "Authorizing approves the latest signed draft exactly as printed. Everything here is view only. To change anything, the person who drafted it edits it in Pending Revisions (Editing) and prints a new draft.";
+    note.textContent = "Authorizing approves the latest signed draft exactly as printed (a PO cancellation has no draft; it only needs this authorization). Everything here is view only. To change anything, the person who drafted it edits it in Pending Revisions (Editing) and prints a new draft.";
     expandDiv.insertBefore(note, expandDiv.firstChild);
   }
 }
