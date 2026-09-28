@@ -559,7 +559,7 @@ async function addItemToShoppingBasketRow() {
         allottedRemainingLimit: availableQty
       });
     }
-    qtyInput.value = "";
+    qtyInput.value = ""; ticketItemTaClear();
     restoreAddBtn();
     renderDraftBasketTableViewportRows();
     return;
@@ -619,7 +619,7 @@ async function addItemToShoppingBasketRow() {
         jcmRowIdx: jcmMatchFGAdd.jcmRowIdx
       });
     }
-    qtyInput.value = "";
+    qtyInput.value = ""; ticketItemTaClear();
     restoreAddBtn();
     renderDraftBasketTableViewportRows();
     return;
@@ -714,7 +714,7 @@ async function addItemToShoppingBasketRow() {
     });
   }
   
-  qtyInput.value = "";
+  qtyInput.value = ""; ticketItemTaClear();
   restoreAddBtn();
   renderDraftBasketTableViewportRows();
 }
@@ -2244,3 +2244,13 @@ setInterval(() => {
   const want = opt ? opt.textContent : "";
   if (input.value !== want) input.value = want;
 }, 400);
+
+// After an item is added: clear the material search for the next one.
+function ticketItemTaClear() {
+  const sel = ticketItemTaSelect();
+  const input = document.getElementById("ticket-item-ta-input");
+  if (sel) sel.value = "";
+  if (input) { input.value = ""; input.focus(); }
+  const dd = document.getElementById("ticket-item-ta-dd");
+  if (dd) dd.style.display = "none";
+}
