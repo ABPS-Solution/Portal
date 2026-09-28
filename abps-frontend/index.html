@@ -2680,8 +2680,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         </div>
         <div id="sweep-material-search-wrapper" style="position:relative;">
           <label class="field-label">Select Material *</label>
-          <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
-                 autocomplete="off" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <textarea id="sweep-material-search" rows="1" placeholder="Search material to add to this sweep..." oninput="autoGrowTextField(this); handleSweepSearch(this.value)"
+                 onkeydown="if(event.key==='Enter')event.preventDefault()"
+                 autocomplete="off" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font:inherit; line-height:1.35; box-sizing:border-box; display:block;"></textarea>
           <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
         </div>
         <div id="sweep-allocation-picker-wrapper" style="display:none; position:relative;">
