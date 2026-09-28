@@ -811,6 +811,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:var(--text); background:var(--highlight-bg); padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
+          ${(n.revisionWarnings || []).length ? `<div style="margin-top:6px; background:#fffbeb; border:1px solid #f59e0b; border-left:4px solid #d97706; border-radius:4px; padding:5px 9px; font-size:0.76rem; color:#92400e; font-weight:600; line-height:1.5;">${n.revisionWarnings.map(w => '⚠ ' + escapeHtml(w)).join('<br>')}</div>` : ''}
           ${hasDetail ? `<div style="font-size:0.72rem; color:var(--brand); margin-top:5px; font-weight:600;">${expanded ? '▾ Hide' : '▸ Show'} what's left</div>` : ''}
           ${isEmptyDetailArray ? (n.blocked
             ? `<div style="font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:5px;">${escapeHtml(n.blocked)}</div>`
@@ -1910,6 +1911,13 @@ function ptlBuildFlags() {
     sev: "due", nodeId: n.id, boqId: n.laneBoqId,
     title: `${n.label} is due today`,
     msg: `Due ${ptlFmtFull(ptlEff(n))}.`,
+    owner: ownerOf(n),
+  }));
+
+  nodes.filter(n => (n.revisionWarnings || []).length).forEach(n => out.push({
+    sev: "normal", nodeId: n.id,
+    title: `${n.label}: revision in progress`,
+    msg: n.revisionWarnings.join(". ") + ".",
     owner: ownerOf(n),
   }));
 
