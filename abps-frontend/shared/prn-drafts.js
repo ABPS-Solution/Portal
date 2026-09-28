@@ -34,9 +34,23 @@ function prnDraftCapture(zone) {
   return out;
 }
 
-function prnDraftApply(zone, fields) {
+// Wait until the zone's live "Store Available Stock" cells have loaded, so
+// each screen's own free-stock cap sees real numbers when values go back in.
+async function prnDraftWaitLiveStock(zone) {
+  if (!zone) return;
+  const t0 = Date.now();
+  while (Date.now() - t0 < 8000) {
+    const pending = Array.from(zone.querySelectorAll('[class*="livestock"]')).some(el => /loading/i.test(el.textContent || ""));
+    if (!pending) return;
+    await new Promise(r => setTimeout(r, 200));
+  }
+}
+
+async function prnDraftApply(zone, fields) {
   if (!zone || !fields) return 0;
+  await prnDraftWaitLiveStock(zone);
   let applied = 0;
+  const restoredNumbers = [];
   const find = (key) => {
     if (!key.includes("|")) return zone.querySelector(`#${CSS.escape(key)}`);
     const [cls, idx] = key.split("|");
@@ -51,7 +65,28 @@ function prnDraftApply(zone, fields) {
     else { if (el.value === val.v) return; el.value = val.v; }
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
+    if (el.type === "number" && val.v !== "" && !isNaN(parseFloat(val.v))) restoredNumbers.push({ el, v: parseFloat(val.v) });
     applied++;
+  });
+  // Flag any restored quantity the screen had to lower: stock the saved
+  // progress counted on has since been taken (e.g. by another PRN).
+  restoredNumbers.forEach(({ el, v }) => {
+    const now = parseFloat(el.value) || 0;
+    const max = el.max !== "" ? parseFloat(el.max) : NaN;
+    let fixed = now;
+    if (!isNaN(max) && fixed > max) { fixed = max; el.value = String(max); el.dispatchEvent(new Event("input", { bubbles: true })); }
+    if (v - fixed > 1e-9) {
+      el.style.border = "2px solid #d97706";
+      el.style.background = "#fffbeb";
+      const cell = el.closest("td") || el.parentElement;
+      if (cell && !cell.querySelector(".prn-draft-capped-note")) {
+        const note = document.createElement("div");
+        note.className = "prn-draft-capped-note";
+        note.style.cssText = "margin-top:4px; font-size:0.7rem; font-weight:700; color:#92400e; background:#fef3c7; border-radius:4px; padding:3px 6px; line-height:1.35;";
+        note.textContent = `Restored ${trimNum(v)}, but only ${trimNum(fixed)} is free now (another PRN took it). Adjusted to ${trimNum(fixed)}.`;
+        cell.appendChild(note);
+      }
+    }
   });
   return applied;
 }
@@ -138,7 +173,7 @@ async function prnDraftRestoreCreate() {
     await jumpToPRNFromQueue(d.payload.projectId, d.payload.boqId, null);
     const zone = document.getElementById("prn-create-zone");
     if (!prnDraftVisible(zone) || !zone.querySelector("table")) { abpsDraftClear(PRN_DRAFT_KEYS.create); return; }
-    if (prnDraftApply(zone, d.payload.fields)) prnDraftNotice("prn-feedback");
+    if (await prnDraftApply(zone, d.payload.fields)) prnDraftNotice("prn-feedback");
   });
 }
 
@@ -150,7 +185,7 @@ async function prnDraftRestoreAuthorize() {
   await prnDraftRestore(async () => {
     toggleAPRNExpansion(d.payload.prnId);
     const mount = document.getElementById(`aprn-rows-mount-${d.payload.prnId}`);
-    if (prnDraftApply(mount, d.payload.fields)) prnDraftNotice("aprn-feedback");
+    if (await prnDraftApply(mount, d.payload.fields)) prnDraftNotice("aprn-feedback");
   });
 }
 
@@ -161,7 +196,7 @@ async function prnDraftRestoreReviseDelta() {
   prnDraftRestoring = true;
   await prnDraftRestore(async () => {
     await jumpToRPRNDelta(d.payload.boqId, null);
-    if (prnDraftApply(document.getElementById("rprn-delta-zone"), d.payload.fields)) prnDraftNotice("rprn-delta-feedback");
+    if (await prnDraftApply(document.getElementById("rprn-delta-zone"), d.payload.fields)) prnDraftNotice("rprn-delta-feedback");
   });
 }
 
@@ -179,7 +214,7 @@ async function prnDraftRestoreReviseOther() {
     genericDropdownSelect("rprn-prn-select", d.payload.prnId,
       `${meta.productName || ""}${meta.productRating ? " " + meta.productRating : ""}`, null);
     await loadPRNForRevision();
-    if (prnDraftApply(document.getElementById("rprn-body"), d.payload.fields)) prnDraftNotice("rprn-feedback");
+    if (await prnDraftApply(document.getElementById("rprn-body"), d.payload.fields)) prnDraftNotice("rprn-feedback");
   });
 }
 
