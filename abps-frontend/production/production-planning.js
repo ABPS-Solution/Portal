@@ -471,6 +471,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
 
   const colBorder = "border-left:1px solid var(--border);";
   return `
+    ${!canWrite ? `<div style="font-size:0.95rem; font-weight:700; color:#000; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; margin-bottom:10px;">View only. Only ${escapeHtml(lane.ownerDept)} Production or Project can mark completion or revise this plan.</div>` : ''}
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
