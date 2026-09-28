@@ -842,6 +842,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
     const result = await apFetch(flatServerRequestPayload);
     
     if (result.success) {
+      cmitDraftClearAll();
       dynamicTicketShoppingBasketArray = [];
       materialRequestPanelContainer.style.padding = "20px";
       materialRequestPanelContainer.innerHTML = `
