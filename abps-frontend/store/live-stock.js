@@ -717,8 +717,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   // against that document instead, each with its own PO Number and
   // corrected Invoice Qty.
   const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
-  const processingTicketId = (document.getElementById(`se-processing-ticket-${gateNum}`)?.value || "").trim();
-  const headerPoNo = processingTicketId ? "" : (poNoInput ? poNoInput.value.trim() : "");
+  const processingChallanNo = (document.getElementById(`se-processing-dc-${gateNum}`)?.value || "").trim();
+  const headerPoNo = poNoInput ? poNoInput.value.trim() : "";
 
   const builtLineItems = [];
   document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(codeEl => {
@@ -747,7 +747,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
     const line = {
       ledgerId: src.ledgerId, itemCode, materialName, materialType, unitType, itemCodeUnit, unitConverter,
-      poNo: headerPoNo, processingTicketId: processingTicketId || undefined, gateQuantity, verifiedPhysicalQuantity,
+      poNo: headerPoNo, gateQuantity, verifiedPhysicalQuantity,
       ratePerQuantity: src.ratePerQuantity, gstPercent: src.gstPercent,
     };
 
@@ -764,10 +764,24 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     builtLineItems.push(line);
   });
 
-  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo };
+  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo, processingChallanNo: processingChallanNo || undefined };
 
-  if (!headerPoNo && !processingTicketId) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above (or pick the Processing ticket this material is returning from) before submitting.", "error");
+  if (headerPoNo && processingChallanNo) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter either a PO Number or a Delivery Challan No, not both.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    btn.disabled = false;
+    btn.textContent = "Submit Store Entry and GRN";
+    return;
+  }
+  if (processingChallanNo && !((window.grnOpenProcessingChallans || {})[gateNum] || {})[processingChallanNo]) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Pick a Delivery Challan No from the list — it must be an ABPS challan with material still due back.", "error");
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+    btn.disabled = false;
+    btn.textContent = "Submit Store Entry and GRN";
+    return;
+  }
+  if (!headerPoNo && !processingChallanNo) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above (or the Delivery Challan No this material is returning against) before submitting.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";

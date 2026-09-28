@@ -170,13 +170,16 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="max-width:620px; margin:-6px 0 14px;">
-            <label class="field-label">Or: returning from a Processing ticket</label>
-            <select id="se-processing-ticket-${item.gateNumber}" onfocus="grnLoadProcessingTickets('${item.gateNumber}')"
-              onchange="grnProcessingTicketChanged('${item.gateNumber}')"
-              style="width:100%; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
-              <option value="">— No, this delivery is against a PO —</option>
-            </select>
-            <div id="se-processing-msg-${item.gateNumber}" style="font-size:0.72rem; color:var(--muted); margin-top:3px;">Pick the ticket when this is processed material coming back from a job worker. It is then held for that ticket's Job Card; no PO is needed.</div>
+            <label class="field-label">Or: Delivery Challan No (returning material)</label>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <input type="text" id="se-processing-dc-${item.gateNumber}" list="se-processing-dc-list-${item.gateNumber}" autocomplete="off"
+                placeholder="Type the ABPS Delivery Challan No..."
+                onfocus="grnLoadProcessingChallans('${item.gateNumber}')" oninput="grnProcessingChallanChanged('${item.gateNumber}')"
+                style="flex:1; min-width:260px; max-width:360px; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
+              <datalist id="se-processing-dc-list-${item.gateNumber}"></datalist>
+              <span style="font-size:0.75rem; font-weight:700; color:#b45309;">Only for Processing or Service return material.</span>
+            </div>
+            <div id="se-processing-msg-${item.gateNumber}" style="font-size:0.72rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
             <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
@@ -205,73 +208,7 @@ async function initializeStoreEntryWorkspaceQueue() {
       feed.appendChild(card);
     });
 
-    // ── PASS 2: Gemini matching in background — inject pills when ready ───
-    const allLineItemsFlat = [];
-    data.queue.forEach((item, cardIdx) => {
-      item.lineItems.forEach((line, lineIdx) => {
-        allLineItemsFlat.push({ cardIdx, lineIdx, gateNumber: item.gateNumber, rawDescription: line.materialName || line.rawDescriptionLine || "" });
-      });
-    });
-    const lineItemsWithCandidates = allLineItemsFlat.map(li => ({
-      ...li,
-      candidatesTop60: fuzzyPreFilterCatalog(li.rawDescription, catalog, 60)
-    }));
-    try {
-      const matchData = await apFetch({
-        action: "matchStoreEntryItemCodes",
-        lineItems: lineItemsWithCandidates.map(li => ({ rawDescription: li.rawDescription, candidatesTop60: li.candidatesTop60 }))
-      });
-      if (matchData.success) {
-        const confColors = {
-          high:   { bg:"#dcfce7", color:"#15803d", border:"#86efac" },
-          medium: { bg:"#fef3c7", color:"#b45309", border:"#fcd34d" },
-          low:    { bg:"#f1f5f9", color:"#64748b", border:"#cbd5e1" }
-        };
-        matchData.matches.forEach((result, flatIdx) => {
-          const li = lineItemsWithCandidates[flatIdx];
-          if (!li || !result.matches || result.matches.length === 0) return;
-          // Only inject into rows that are NOT already pre-filled
-          const codeInput = document.querySelector(`.se-item-code-${li.gateNumber}[data-idx="${li.lineIdx}"]`);
-          if (codeInput && codeInput.value.trim()) return; // already has a code
-          // Find the suggestion slot in the rendered card
-          const searchInput = document.getElementById(`se-search-${li.gateNumber}-${li.lineIdx}`);
-          if (!searchInput) return;
-          const nameCell = searchInput.closest("td");
-          if (!nameCell) return;
-          // Remove any existing suggestion block first
-          const existing = nameCell.querySelector(".se-suggestion-block");
-          if (existing) existing.remove();
-          const pills = result.matches.map((m) => {
-            const c = confColors[m.confidence] || confColors.low;
-            // Gemini's match result only ever carries {itemCode, confidence}
-            // (see lib/gemini.js's matchStoreEntryItemCodes prompt schema) —
-            // productName/typeOfMaterial/unit have to be resolved locally
-            // against the catalog cache already loaded for this screen.
-            const catHit = catalog.find(cc => (cc.itemCode || "").toUpperCase() === (m.itemCode || "").toUpperCase());
-            const displayName = catHit ? (catHit.combinedName || catHit.productName) : m.itemCode;
-            const typeOfMaterial = catHit ? (catHit.typeOfMaterial || "") : "";
-            const unit = catHit ? (catHit.unit || "") : "";
-            return `<div
-              onclick="selectStoreEntryItemCodeMatch('${li.gateNumber}', ${li.lineIdx}, '${m.itemCode}', ${jsArg(displayName)}, ${jsArg(typeOfMaterial)}, this, ${jsArg(unit)})"
-              style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
-              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-              <div style="flex:1; min-width:0;">
-                <span style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.75rem;">${m.itemCode}</span>
-                <span style="font-size:0.75rem; font-weight:600; color:#1e293b; margin-left:6px; word-break:break-word;">${displayName}</span>
-              </div>
-              <span style="font-size:0.63rem; font-weight:700; color:${c.color}; padding:1px 4px; background:#fff; border-radius:3px; border:1px solid ${c.border}; white-space:nowrap; margin-left:6px; flex-shrink:0;">${(m.confidence||"low").toUpperCase()}</span>
-            </div>`;
-          }).join("");
-          const suggBlock = document.createElement("div");
-          suggBlock.className = "se-suggestion-block";
-          suggBlock.style.cssText = "margin-top:5px;";
-          suggBlock.innerHTML = `<div style="font-size:0.6rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:3px; letter-spacing:0.4px;">Suggested matches:</div>${pills}`;
-          nameCell.appendChild(suggBlock);
-        });
-      }
-    } catch(e) {
-      console.error("Store Entry ItemCode background matching failed:", e);
-    }
+    // "Suggested matches" (AI item-code pills) removed 29 Sep 2026 — operators pick the material themselves.
 
   } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
@@ -286,26 +223,40 @@ async function initializeStoreEntryWorkspaceQueue() {
 
 
 
-// Processing returns: the GRN can be against a Processing ticket instead of a PO.
-async function grnLoadProcessingTickets(gateNum) {
-  const sel = document.getElementById(`se-processing-ticket-${gateNum}`);
-  if (!sel || sel.dataset.loaded === "1") return;
-  sel.dataset.loaded = "1";
+// Returning material: the GRN can be against an ABPS Delivery Challan
+// (Processing sent out) instead of a PO. The server splits each line
+// across that challan's tickets.
+window.grnOpenProcessingChallans = window.grnOpenProcessingChallans || {};
+async function grnLoadProcessingChallans(gateNum) {
+  const input = document.getElementById(`se-processing-dc-${gateNum}`);
+  const list = document.getElementById(`se-processing-dc-list-${gateNum}`);
+  if (!input || !list || input.dataset.loaded === "1") return;
+  input.dataset.loaded = "1";
   try {
     const data = await apFetch({ action: "fetchOpenProcessingReturns" });
-    const byTicket = {};
+    const byDc = {};
     (data.rows || []).forEach(r => {
-      (byTicket[r.ticketId] = byTicket[r.ticketId] || { vendor: r.vendorName, items: [] }).items.push(`${r.materialName || r.itemCode}: ${trimNum(r.receivedQty)}/${trimNum(r.expectedQty)}`);
+      if (!r.challanNumber) return;
+      const e = (byDc[r.challanNumber] = byDc[r.challanNumber] || { vendor: r.vendorName, items: {} });
+      const k = r.materialName || r.itemCode;
+      const it = (e.items[k] = e.items[k] || { rec: 0, exp: 0 });
+      it.rec += Number(r.receivedQty) || 0; it.exp += Number(r.expectedQty) || 0;
     });
-    const current = sel.value;
-    sel.innerHTML = `<option value="">— No, this delivery is against a PO —</option>` + Object.entries(byTicket).map(([t, v]) =>
-      `<option value="${escapeHtml(t)}">${escapeHtml(t)}${v.vendor ? " · " + escapeHtml(v.vendor) : ""} · ${escapeHtml(v.items.join(", "))}</option>`).join("");
-    sel.value = current;
-  } catch (e) { sel.dataset.loaded = ""; }
+    window.grnOpenProcessingChallans[gateNum] = byDc;
+    list.innerHTML = Object.entries(byDc).map(([dc, v]) =>
+      `<option value="${escapeHtml(dc)}">${escapeHtml(v.vendor || "")}</option>`).join("");
+    grnProcessingChallanChanged(gateNum);
+  } catch (e) { input.dataset.loaded = ""; }
 }
-function grnProcessingTicketChanged(gateNum) {
-  const sel = document.getElementById(`se-processing-ticket-${gateNum}`);
-  const po = document.getElementById(`se-po-number-${gateNum}`);
-  const on = !!(sel && sel.value);
-  if (po) { po.disabled = on; if (on) po.value = ""; po.style.opacity = on ? "0.5" : "1"; }
+function grnProcessingChallanChanged(gateNum) {
+  const input = document.getElementById(`se-processing-dc-${gateNum}`);
+  const msg = document.getElementById(`se-processing-msg-${gateNum}`);
+  if (!input || !msg) return;
+  const v = input.value.trim();
+  const byDc = window.grnOpenProcessingChallans[gateNum] || {};
+  if (!v) { msg.textContent = ""; return; }
+  const hit = byDc[v];
+  if (!hit) { msg.style.color = "#b91c1c"; msg.textContent = "No open Delivery Challan with material due back matches this number."; return; }
+  msg.style.color = "#15803d";
+  msg.textContent = `${hit.vendor ? hit.vendor + " · " : ""}` + Object.entries(hit.items).map(([k, x]) => `${k}: ${trimNum(x.rec)}/${trimNum(x.exp)}`).join(", ");
 }
