@@ -1656,12 +1656,21 @@ function ptlRenderCanvas(containerId) {
     P.push(`<circle cx="${x}" cy="${y}" r="${R}" fill="${done ? c : 'var(--card)'}" stroke="${isFinalDelivery && !late && !done ? '#d97706' : ring}" stroke-width="${(late || isFinalDelivery ? 2.6 : 2.2) * ptlFS}"/>`);
     if (done) P.push(`<path d="M${x - R * 0.43} ${y} l${R * 0.31} ${R * 0.32} l${R * 0.55} -${R * 0.61}" fill="none" stroke="var(--card)" stroke-width="${1.8 * ptlFS}" stroke-linecap="round" stroke-linejoin="round"/>`);
 
+    const revWarn = n.revisionWarnings || [];
+    if (revWarn.length) {
+      P.push(`<circle cx="${x}" cy="${y}" r="${R * 1.6}" fill="none" stroke="#d97706" stroke-width="${2 * ptlFS}" stroke-dasharray="${3 * ptlFS} ${2.5 * ptlFS}"/>`);
+      const bx = x + R * 1.05, by = y - R * 1.05, br = R * 0.62;
+      P.push(`<circle cx="${bx}" cy="${by}" r="${br}" fill="#f59e0b" stroke="var(--card)" stroke-width="${1.2 * ptlFS}"/>`);
+      P.push(`<text x="${bx}" y="${by + br * 0.42}" text-anchor="middle" font-size="${br * 1.25}" font-weight="900" fill="#fff">!</text>`);
+    }
+
     const anchorId = boqId ? `ptl-step-${boqId}-${n.id}` : `ptl-row-${n.id}`;
     const idx = clickMap.length;
     clickMap.push({
       label: n.label, owner: ownerLabel || (PTL_DEPT_NAME[n.dept] || n.dept),
       planned: n.planned, eff, actual: n.actual, late: bd, stage: boqId ? 4 : n.stage,
       allJobCards: n.allJobCards || null, doneJobCards: n.doneJobCards || null,
+      revisionWarnings: revWarn,
     });
     P.push(`<circle cx="${x}" cy="${y}" r="${R * 2.2}" fill="transparent" class="ptl-hit" data-anchor="${anchorId}" data-idx="${idx}"/>`);
   });
@@ -2092,6 +2101,9 @@ function ptlTipHtml(info) {
   // Which specific Job Cards this Stage 4 step is done for (11 Sep 2026) -
   // a hover was previously the only place on the whole map that couldn't
   // answer "which sets" for a step showing e.g. "1/2 done".
+  if ((info.revisionWarnings || []).length) {
+    h += `<div style="margin-top:6px; font-size:0.72rem; font-weight:600; color:#92400e; background:#fffbeb; border-left:3px solid #d97706; padding:4px 6px; line-height:1.45;">${info.revisionWarnings.map(w => '⚠ ' + escapeHtml(w)).join('<br>')}</div>`;
+  }
   if (Array.isArray(info.allJobCards) && info.allJobCards.length > 0) {
     const doneSet = new Set(info.doneJobCards || []);
     h += `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${info.allJobCards.map(jc => {
