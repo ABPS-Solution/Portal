@@ -579,6 +579,11 @@ async function mowDiscardDraft(challanId, skipConfirm) {
 // tells the operator to raise a fresh ticket instead of trying to patch
 // this one.
 async function rejectMaterialOutwardRequest(ticketId) {
+  if (!confirm(`Reject ${ticketId}?
+
+Its material is returned to the store and the ticket cannot be used again. Raise a new Material Issue Ticket if it is still needed.
+
+Click OK to reject.`)) return;
   try {
     showBlockingOverlay("Rejecting ticket...");
     const data = await apFetch({ action: "rejectMaterialOutwardRequest", ticketId, operatorName: appActiveOperatorIdentityString || "Unknown" });
