@@ -2158,3 +2158,89 @@ document.addEventListener("click", (e) => {
   if (e.target.closest && (e.target.closest('[id^="ter-dd-"]') || e.target.closest('[id^="ter-mat-"]'))) return;
   document.querySelectorAll('[id^="ter-dd-"]').forEach(d => { d.style.display = "none"; });
 });
+
+
+// Material Description type-and-select. The hidden <select> stays the
+// source of truth (every other function reads/fills it); this input just
+// searches its options and picks one, same feel as Stock Sweep's picker.
+function ticketItemTaSelect() { return document.getElementById("ticket-item-selection-dropdown"); }
+function ticketItemTaDropdown() {
+  let dd = document.getElementById("ticket-item-ta-dd");
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = "ticket-item-ta-dd";
+    dd.style.cssText = "position:fixed; z-index:9000; display:none; background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,0.15); max-height:320px; overflow-y:auto;";
+    document.body.appendChild(dd);
+    document.addEventListener("mousedown", e => {
+      if (e.target.id !== "ticket-item-ta-input" && !dd.contains(e.target)) dd.style.display = "none";
+    });
+    window.addEventListener("scroll", () => { dd.style.display = "none"; }, true);
+  }
+  return dd;
+}
+function ticketItemTaFilter() {
+  const input = document.getElementById("ticket-item-ta-input");
+  const sel = ticketItemTaSelect();
+  if (!input || !sel || sel.disabled) return;
+  const words = input.value.toLowerCase().replace(/[^a-z0-9. ]/g, " ").split(/\s+/).filter(Boolean);
+  const opts = Array.from(sel.options).filter(o => o.value !== "" && !o.disabled);
+  const hits = opts.filter(o => {
+    const t = o.textContent.toLowerCase().replace(/[^a-z0-9. ]/g, " ");
+    return words.every(w => t.includes(w));
+  }).slice(0, 80);
+  const dd = ticketItemTaDropdown();
+  window._ticketItemTaHits = hits.map(o => o.value);
+  window._ticketItemTaActive = -1;
+  dd.innerHTML = hits.length
+    ? hits.map((o, i) => `<div data-i="${i}" onmousedown="ticketItemTaPick(${i})" style="padding:8px 12px; cursor:pointer; font-size:0.86rem; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(o.textContent)}</div>`).join("")
+    : `<div style="padding:10px 12px; color:var(--muted); font-size:0.84rem;">No matching material.</div>`;
+  const r = input.getBoundingClientRect();
+  dd.style.left = r.left + "px";
+  dd.style.width = r.width + "px";
+  const below = window.innerHeight - r.bottom;
+  if (below < 200 && r.top > below) { dd.style.top = ""; dd.style.bottom = (window.innerHeight - r.top + 2) + "px"; }
+  else { dd.style.bottom = ""; dd.style.top = (r.bottom + 2) + "px"; }
+  dd.style.display = "block";
+}
+function ticketItemTaPick(i) {
+  const sel = ticketItemTaSelect();
+  const value = (window._ticketItemTaHits || [])[i];
+  if (!sel || value === undefined) return;
+  sel.value = value;
+  const opt = sel.options[sel.selectedIndex];
+  const input = document.getElementById("ticket-item-ta-input");
+  if (input) input.value = opt ? opt.textContent : "";
+  ticketItemTaDropdown().style.display = "none";
+  sel.dispatchEvent(new Event("change"));
+}
+function ticketItemTaKey(e) {
+  const dd = document.getElementById("ticket-item-ta-dd");
+  if (!dd || dd.style.display === "none") return;
+  const n = (window._ticketItemTaHits || []).length;
+  if (!n) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    let a = window._ticketItemTaActive + (e.key === "ArrowDown" ? 1 : -1);
+    a = Math.max(0, Math.min(n - 1, a));
+    window._ticketItemTaActive = a;
+    dd.querySelectorAll("[data-i]").forEach(el => { el.style.background = Number(el.dataset.i) === a ? "var(--highlight-bg)" : "#fff"; });
+    const el = dd.querySelector(`[data-i="${a}"]`); if (el) el.scrollIntoView({ block: "nearest" });
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    ticketItemTaPick(window._ticketItemTaActive >= 0 ? window._ticketItemTaActive : 0);
+  } else if (e.key === "Escape") {
+    dd.style.display = "none";
+  }
+}
+// Keep the input in step with the hidden select: enabled/disabled with it,
+// and showing whatever it currently holds (cleared on reset/repopulate).
+setInterval(() => {
+  const sel = ticketItemTaSelect();
+  const input = document.getElementById("ticket-item-ta-input");
+  if (!sel || !input) return;
+  if (input.disabled !== sel.disabled) input.disabled = sel.disabled;
+  if (document.activeElement === input) return;
+  const opt = sel.value !== "" ? sel.options[sel.selectedIndex] : null;
+  const want = opt ? opt.textContent : "";
+  if (input.value !== want) input.value = want;
+}, 400);

@@ -1522,7 +1522,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex: 1 1 auto; min-width: 0;">
               <label class="field-label" style="margin-top:0;">Material Description</label>
-              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling(); checkSpareStoreSuggestion();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
+              <input type="text" id="ticket-item-ta-input" autocomplete="off" placeholder="Type to search material..." oninput="ticketItemTaFilter()" onfocus="ticketItemTaFilter()" onkeydown="ticketItemTaKey(event)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling(); checkSpareStoreSuggestion();" style="display:none;" disabled></select>
             </div>
             <div style="flex: 0 0 120px;">
               <label class="field-label" style="margin-top:0;">Quantity</label>
