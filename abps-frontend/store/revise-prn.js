@@ -94,7 +94,7 @@ function renderRPRNDeltaTable() {
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(item.materialName || "")}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${trimNum(item.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.82rem; color:#b45309; font-weight:700;">${item.bufferPct || 0}%</td>
-        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(item.bufferedRequirement)}</td>`;
 
     if (item.editable !== false) {
       const isIncrease = item.changeKind === "increase";
@@ -109,7 +109,7 @@ function renderRPRNDeltaTable() {
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${rprnRowBg};">${common}
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:var(--brand);">${trimNum(qty)}${changeBadge}</td>
-        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:#475569;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-delta-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -135,7 +135,7 @@ function renderRPRNDeltaTable() {
       rowsHtml += `
       <tr style="border-bottom:1px solid #f1f5f9; background:${removed ? '#fef2f2' : '#fffbeb'};">${common}
         <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#b91c1c;">${trimNum(changeVal)}${changeBadge}</td>
-        <td style="padding:8px; text-align:center; font-weight:600; font-family:monospace; font-size:0.85rem; color:#64748b;">${trimNum(item.previousStoreQty)}</td>
+        <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace; font-size:0.95rem; color:#475569;">${trimNum(item.previousStoreQty)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(item.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="rprn-delta-livestock" data-itemcode="${item.itemCode}">loading…</span></td>
         <td style="padding:8px; text-align:center;">
@@ -398,7 +398,7 @@ function renderRevisePRNTable() {
       <tr style="border-bottom:1px solid #f1f5f9; ${blocked ? "background:#fffbeb;" : ""}">
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.76rem; font-weight:700; color:var(--brand);">${li.itemCode}</td>
         <td style="padding:8px; font-size:0.8rem; font-weight:600;">${escapeHtml(li.materialName || "")}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:0.95rem; color:var(--brand);">${fmt(li.bufferedRequirement)}</td>
         <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(li.unit || "—")}</td>
         <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(li.storeQty)}</td>
         <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(li.purchaseQty)}</td>
