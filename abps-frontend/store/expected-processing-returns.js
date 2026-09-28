@@ -49,8 +49,8 @@ function epmrRender() {
     feed.innerHTML = `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No Processing material sent to a vendor matches.</div>`;
     return;
   }
-  const th = "padding:9px 10px; border:1.5px solid #64748b; background:#e0e7ff; color:#1e3a8a; font-size:0.74rem; font-weight:800; text-transform:uppercase;";
-  const td = "padding:8px 10px; border:1.5px solid #64748b; font-size:0.87rem; vertical-align:top;";
+  const th = "padding:9px 10px; border:2px solid #94a3b8; background:#e0e7ff; color:#1e3a8a; font-size:0.74rem; font-weight:800; text-transform:uppercase;";
+  const td = "padding:8px 10px; border:2px solid #94a3b8; font-size:0.87rem; vertical-align:top;";
   const table = (title, body) => `<div style="min-width:0;">
     <div style="font-weight:800; font-size:0.84rem; color:var(--brand); margin-bottom:6px;">${title}</div>
     <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#fff;">
