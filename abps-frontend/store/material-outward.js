@@ -644,8 +644,8 @@ async function runMaterialOutwardSearch() {
     // line WITHIN the same cell (not a separate row per material), so a
     // multi-material, multi-ticket challan still reads as one register
     // entry.
-    const th = (t, first) => `<th style="padding:8px; text-align:left; font-size:0.8rem; ${first ? '' : 'border-left:1.5px solid var(--border); '}border-bottom:2px solid #94a3b8;">${t}</th>`;
-    const td = (first) => `padding:8px; vertical-align:middle; word-wrap:break-word; ${first ? '' : 'border-left:1.5px solid var(--border); '}border-bottom:2px solid #94a3b8;`;
+    const th = (t, first) => `<th style="padding:8px; text-align:left; font-size:0.8rem; ${first ? '' : 'border-left:2px solid #94a3b8; '}border-bottom:2px solid #94a3b8;">${t}</th>`;
+    const td = (first) => `padding:8px; vertical-align:middle; word-wrap:break-word; ${first ? '' : 'border-left:2px solid #94a3b8; '}border-bottom:2px solid #94a3b8;`;
     results.innerHTML = `
       <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
@@ -657,7 +657,7 @@ async function runMaterialOutwardSearch() {
           ${challans.map(c => {
             const materials = Array.isArray(c.line_items) ? c.line_items : [];
             const materialsHtml = materials.length
-              ? materials.map((it, i) => `<div style="padding:4px 0;${i ? ' border-top:1px solid var(--border);' : ''}">${escapeHtml(it.description || it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}</div>`).join('')
+              ? materials.map((it, i) => `<div style="padding:4px 0;${i ? ' border-top:1px solid var(--border);' : ''}">${escapeHtml(it.description || it.materialName || '')} — <b>${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}</b></div>`).join('')
               : '—';
             const ticketsHtml = (c.ticket_ids || []).map(escapeHtml).join('<br>') || '—';
             const challanNo = escapeHtml(c.challan_number || '');
