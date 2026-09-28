@@ -292,16 +292,16 @@ function renderDraftChallanCard(draft, collapsible) {
           ${mowFieldFor(challanId, 'Note (optional)', 'note', draft.challan_remarks, false)}
         </div>
 
-        <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials List</h4>
+        <h4 style="margin:0 0 6px; font-size:1.15rem; font-weight:800; color:var(--brand);">Materials List</h4>
         <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Description, Qty and Unit come from the linked tickets' approved release — not editable here. HSN Code is required for every row.</p>
         <table class="prn-view-table" style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
           <colgroup><col style="width:7%;" /><col style="width:47%;" /><col style="width:16%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
-            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Sr</th>
-            <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Description of Material</th>
-            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">HSN Code *</th>
-            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Qty</th>
-            <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Unit</th>
+            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Sr</th>
+            <th style="padding:9px 8px; border:1px solid var(--border); text-align:left; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Description of Material</th>
+            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">HSN Code *</th>
+            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Qty</th>
+            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Unit</th>
           </tr></thead>
           <tbody>${materialRowsHtml || '<tr><td colspan="5" style="padding:8px; text-align:center; color:var(--muted);">No items on this challan.</td></tr>'}</tbody>
         </table>
