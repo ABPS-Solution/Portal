@@ -574,14 +574,14 @@ function ptlRenderLane(lane) {
   const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" - ");
   return `
     <div id="ptl-lane-${lane.boqId}" style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
-      <div onclick="ptlToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer;">
-        <div>
+      <div onclick="ptlToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:nowrap; gap:16px; cursor:pointer;">
+        <div style="flex:1; min-width:0;">
           <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
           <span style="color:var(--text); font-size:0.82rem;"> - ${escapeHtml(title)}</span>
           <span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:${c}; margin-left:6px;">${escapeHtml(lane.ownerDept)} Production</span>
         </div>
-        <span style="font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(ptlLaneStageLabel(lane))}</span>
+        <span style="flex:none; white-space:nowrap; font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(pplanLaneStageLabel(lane))}</span>
       </div>
       ${expanded ? `<div style="padding:12px 14px;">
         ${lane.planInitialized ? ptlRenderLaneSteps(lane, c) : `<div style="font-size:0.82rem; color:var(--muted); background:var(--highlight-bg); border:1px dashed var(--border); border-radius:var(--radius); padding:10px 12px;">Not planned yet — managed in Production Planning (${escapeHtml(lane.ownerDept)} Production).</div>`}
