@@ -190,10 +190,10 @@ async function openPORevisionForEdit(requestId, poNo) {
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     const lineItems = (data.lineItems || []).map(li => ({
       ...li,
-      quantity: li.orderedQty, // already overlaid with the drafted value server-side
+      quantity: li.draftQty != null ? li.draftQty : li.orderedQty,
       _workingAllocations: (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.allocatedQty) || 0 })),
-      _allocationTouched: (li.allocations || []).length > 0,
-      _allocatedForQty: Number(li.orderedQty) || 0,
+      _allocationTouched: li.draftQty != null || (li.allocations || []).length > 0,
+      _allocatedForQty: Number(li.draftQty != null ? li.draftQty : li.orderedQty) || 0,
     }));
     window.rpoActive = {
       po: data.po, lineItems, kind: data.editingRevisionKind || "Standalone",
@@ -489,7 +489,7 @@ function renderPORevisionCard() {
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
     const chipsHtml = (workingAllocs.length || li._allocationTouched)
-      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
+      ? workingAllocs.filter(a => (Number(a.quantity) || 0) > 1e-9).map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
@@ -722,7 +722,9 @@ function updateRPOGrandTotal() {
     } else {
       // Unchanged line, not rendered in PRN-driven mode — still part of
       // the PO, so its stored amount still counts toward the total.
-      subTotal += Number(li.amount) || ((Number(li.orderedQty)||0) * (Number(li.rate)||0) * (100 - (Number(li.discountPercent)||0)) / 100);
+      subTotal += (window.rpoActive?.editMode || !Number(li.amount))
+        ? (parseFloat(li.quantity) || 0) * (parseFloat(li.rate) || 0) * (100 - (parseFloat(li.discountPercent) || 0)) / 100
+        : Number(li.amount);
     }
   });
   const isImport = document.getElementById("rpo-trade-type")?.value === "Import";
@@ -1035,7 +1037,7 @@ async function initializeAuthorizePORevisionPanel() {
     revs.forEach(r => {
       (r.revisedLineItems || []).forEach(li => {
         li._workingAllocations = (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 }));
-        li._allocationTouched = (li.allocations || []).length > 0;
+        li._allocationTouched = true;
         li._allocatedForQty = Number(li.quantity) || 0;
       });
     });
@@ -1201,14 +1203,14 @@ function renderAPORCard(r) {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0;
     const received = Number(cur.received) || 0;
-    const newQty = Number(line.quantity) || 0;
+    const newQty = cur.requiredQty != null ? Number(cur.requiredQty) || 0 : Number(line.quantity) || 0;
 
     const workingAllocs = line._workingAllocations || [];
     const vdqNow = parseFloat(line.quantity) || 0;
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
     const chipsHtml = (workingAllocs.length || line._allocationTouched)
-      ? workingAllocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
+      ? workingAllocs.filter(a => (Number(a.quantity) || 0) > 1e-9).map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
       : '<span style="color:#b91c1c; font-size:0.75rem; font-weight:600;">No PRNs allocated</span>';
 
@@ -1224,12 +1226,12 @@ function renderAPORCard(r) {
     const effectiveRate = rateNow * (100 - discNow) / 100;
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
 
-    const _changedQty = Math.abs(newQty - oldQty) >= 1e-9;
+    const _changedQty = Math.abs(vdqNow - oldQty) >= 1e-9;
     return poRevRowHtml({
       idx, itemCode: line.itemCode, description: line.description, unit: line.unit,
       oldQty, newQty, received, vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
-      headBg: !_changedQty ? '#e0f2fe' : (newQty > oldQty ? '#dcfce7' : '#fef3c7'), headColor: !_changedQty ? 'var(--brand)' : (newQty > oldQty ? '#166534' : '#78350f'),
-      changeNote: !_changedQty ? '' : (newQty > oldQty ? 'Quantity going up' : 'Quantity going down'),
+      headBg: !_changedQty ? '#e0f2fe' : (vdqNow > oldQty ? '#dcfce7' : '#fef3c7'), headColor: !_changedQty ? 'var(--brand)' : (vdqNow > oldQty ? '#166534' : '#78350f'),
+      changeNote: !_changedQty ? '' : (vdqNow > oldQty ? 'Quantity going up' : 'Quantity going down'),
       vdqAttrs: `min="${received}" class="apor-vdq" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.quantity)}" oninput="updateAPORRowField(${rid},${idx},'quantity',this.value)" onblur="handleAPORQtyBlur(${rid},${idx})"`,
       rateAttrs: `class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.rate)}" oninput="updateAPORRowField(${rid},${idx},'rate',this.value)"`,
       discAttrs: `class="apor-disc" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.discountPercent)}" oninput="updateAPORRowField(${rid},${idx},'discountPercent',this.value)"`,
