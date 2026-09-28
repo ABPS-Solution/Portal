@@ -614,10 +614,10 @@ function renderAPRNRows(prnId) {
     const csMove = (from, to) => {
       const a = Number(from) || 0, b = Number(to) || 0;
       if (Math.abs(a - b) < 1e-9) return `<span style="color:var(--muted);">${fmt(a)}</span>`;
-      return `<span style="color:var(--muted); text-decoration:line-through;">${fmt(a)}</span> <span style="color:#92400e;">→</span> <strong style="color:#92400e; font-size:0.92rem;">${fmt(b)}</strong>`;
+      return `<span style="color:var(--muted);">${fmt(a)}</span> <span style="color:#92400e;">→</span> <strong style="color:#92400e; font-size:0.92rem;">${fmt(b)}</strong>`;
     };
-    const csTh = 'padding:7px 10px; border:1px solid #fcd34d; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#92400e; background:#fef3c7;';
-    const csTd = 'padding:7px 10px; border:1px solid #fde68a; font-size:0.84rem; color:#334155; background:#fff;';
+    const csTh = 'padding:7px 10px; border:1px solid #000; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#92400e; background:#fef3c7;';
+    const csTd = 'padding:7px 10px; border:1px solid #000; font-size:0.84rem; color:#334155; background:#fff;';
     const changeSummary = changedRows.length > 0 ? `
       <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
         <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:8px; letter-spacing:0.03em;">⚠ Change Summary <span style="font-weight:600; text-transform:none; letter-spacing:0;">(${changedRows.length} material${changedRows.length === 1 ? '' : 's'})</span></div>
