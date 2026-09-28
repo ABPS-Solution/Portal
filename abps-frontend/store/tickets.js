@@ -2289,7 +2289,7 @@ function cmitDraftSaveSoon() {
   clearTimeout(cmitDraftTimer);
   cmitDraftTimer = setTimeout(() => {
     const snap = cmitDraftSnapshot();
-    if (!snap.dept && !snap.basket.length) return;
+    if (!snap.projectId && !snap.legacyName && !snap.basket.length) { abpsDraftClear(CMIT_DRAFT_KEY); return; }
     abpsDraftSave(CMIT_DRAFT_KEY, snap);
   }, 600);
 }
