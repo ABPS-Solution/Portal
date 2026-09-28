@@ -466,7 +466,9 @@ async function searchPOsForRevisionUI() {
     const data = await apFetch({ action: "searchPOsForRevision", query });
     const results = (data.success ? (data.results || []) : []);
     if (results.length === 0) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No authorized PO matched.</div>`; return; }
-    feed.innerHTML = results.map(po => rpoPoCardHtml(po, po.revisionPending
+    feed.innerHTML = results.map(po => rpoPoCardHtml(po, po.fullyDelivered
+          ? `<span style="font-size:0.74rem; font-weight:700; color:#15803d; background:#dcfce7; padding:5px 12px; border-radius:999px;" title="Raise a new PO for any further requirement">Fully delivered · cannot be revised</span>`
+          : po.revisionPending
           ? `<span style="font-size:0.74rem; font-weight:700; color:#b45309; background:#fef3c7; padding:5px 12px; border-radius:999px;">Revision already pending</span>`
           : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "var(--brand)")).join("");
   } catch (e) {
