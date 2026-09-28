@@ -659,9 +659,9 @@ function renderAPRNRows(prnId) {
           <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(r.typeOfMaterial || "—")}</td>
           <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--brand);">${fmt(buffered)}${changeBadge}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#94a3b8; font-weight:700; background:#f8fafc;">${escapeHtml(r.unit || "—")}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace;">${fmt(r.previousStoreQty)}</td>
-          <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700;">${fmt(r.previousPurchaseQty)}</td>
-          <td style="padding:8px; text-align:center; font-size:0.74rem; color:${Number(r.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(r.onOrderQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.95rem; font-weight:700;">${fmt(r.previousStoreQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.95rem; font-weight:700;">${fmt(r.previousPurchaseQty)}</td>
+          <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.95rem; color:${Number(r.onOrderQty) > 0 ? "#b45309" : "var(--muted)"}; font-weight:700;">${fmt(r.onOrderQty)}</td>
           <td style="padding:8px; text-align:center; font-size:0.78rem; color:#6b7a8d; font-weight:600;"><span class="aprn-livestock" data-itemcode="${r.itemCode}">loading…</span></td>
           <td style="padding:8px; text-align:center;">
             <input type="number" min="${minStore}" max="${storeCap}" value="${Number(r.newStoreTotal) || 0}"
