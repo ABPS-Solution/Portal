@@ -106,12 +106,11 @@ function mowBuildDisplayLineItems(ticket) {
 
 function mowTicketSummaryLine(t) {
   const tid = t.ticket_id || t.ticketId || "";
-  const boq = t.boq_id || t.boqId || "";
-  // The BOQ ID already names the project and customer; show the company
-  // only when there is no BOQ (a pre-system ticket).
-  return `${escapeHtml(tid)}` +
-    (boq ? " — " + escapeHtml(boq) : ((t.company_name || t.companyName) ? " — " + escapeHtml(t.company_name || t.companyName) : "")) +
-    `${(t.job_card_number || t.jobCardNumber) ? " · Job Card " + escapeHtml(t.job_card_number || t.jobCardNumber) : ""}`;
+  const company = t.company_name || t.companyName || t.legacy_company_name || t.legacyCompanyName || "";
+  const jc = t.job_card_number || t.jobCardNumber || "";
+  return `<span style="display:inline-block; font-family:monospace; font-weight:800; font-size:0.9rem; background:var(--brand); color:#fff; padding:2px 8px; border-radius:4px; margin-right:8px;">${escapeHtml(tid)}</span>` +
+    (company ? `<strong style="font-size:0.95rem; color:var(--text);">${escapeHtml(company)}</strong>` : "") +
+    (jc ? `<div style="margin-top:4px; font-size:0.82rem; color:#475569;"><span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.04em;">Job Card</span> <span style="font-family:monospace; font-weight:600;">${escapeHtml(jc)}</span></div>` : "");
 }
 
 // renderTicketPoolSection — every approved ticket not yet linked to any
