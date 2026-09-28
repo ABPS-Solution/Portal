@@ -65,25 +65,52 @@ function epmrRender() {
     <td style="${td} text-align:center;">${escapeHtml(unitOf(i) || "")}</td></tr>`).join("");
   const cell = (label, value) => `<div style="min-width:0;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted);">${label}</div><div style="font-weight:700; font-size:0.87rem; word-break:break-word;">${value}</div></div>`;
 
-  feed.innerHTML = rows.map(r => {
-    const open = epmrExpandedTicketId === r.ticketId;
+  // One card per Delivery Challan (29 Sep 2026); a challan can carry
+  // several tickets, so ticket fields list every value and materials merge
+  // by item code + unit.
+  const uniqJoin = (arr) => [...new Set(arr.filter(Boolean))].join(", ");
+  const mergeLines = (list, qtyOf, unitOf) => {
+    const m = new Map();
+    list.forEach(i => {
+      const unit = unitOf(i) || "";
+      const key = (i.itemCode || i.materialName || "") + "|" + unit;
+      const e = m.get(key) || { itemCode: i.itemCode, materialName: i.materialName, unit, qty: 0 };
+      e.qty += parseFloat(qtyOf(i)) || 0;
+      m.set(key, e);
+    });
+    return [...m.values()];
+  };
+  const groups = new Map();
+  rows.forEach(r => {
+    const key = r.challanNumber || ("ticket:" + r.ticketId);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
+
+  feed.innerHTML = [...groups.entries()].map(([key, tickets]) => {
+    const r = tickets[0];
+    const open = epmrExpandedTicketId === key;
+    const sent = mergeLines(tickets.flatMap(t => t.items || []), i => i.released ?? i.quantity ?? 0, i => i.unitType);
+    const expected = mergeLines(tickets.flatMap(t => t.expectedReturnItems || []), i => i.quantity ?? 0, i => i.unit);
+    const receivedByCode = {};
+    tickets.forEach(t => (t.returnProgress || []).forEach(p => { receivedByCode[p.itemCode] = (receivedByCode[p.itemCode] || 0) + (parseFloat(p.receivedQty) || 0); }));
+    const tickets_ = tickets.map(t => t.ticketId);
     const challan = r.challanNumber
       ? (r.challanUrl ? `<a href="${driveLink(r.challanUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand);">${escapeHtml(r.challanNumber)} ↗</a>` : escapeHtml(r.challanNumber))
       : "—";
-    const tid = escapeHtml(r.ticketId).replace(/'/g, "&#39;");
     return `<div style="border:1px solid ${open ? "var(--brand)" : "var(--border)"}; border-left:4px solid #15803d; border-radius:var(--radius); background:#fff;">
-      <div onclick="epmrToggle('${tid}')" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
-        ${cell("Project / Company", escapeHtml(r.companyName || r.projectId || "—"))}
-        ${cell("Ticket ID", `<span style="font-family:monospace;">${escapeHtml(r.ticketId)}</span>`)}
+      <div onclick="epmrToggle(${jsArg(key)})" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
+        ${cell("Project", escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
+        ${cell("Ticket ID", `<span style="font-family:monospace;">${escapeHtml(tickets_.join(", "))}</span>`)}
         ${cell("Vendor Name", escapeHtml(r.vendorName || "—"))}
         ${cell("Delivery Challan", challan)}
-        ${cell("Raised On", escapeHtml(r.dateCreated ? formatOrdinalDate(r.dateCreated) : "—"))}
-        ${cell("Raised By", escapeHtml(r.requestedBy || "—"))}
+        ${cell("Ticket Raised On", escapeHtml(uniqJoin(tickets.map(t => t.dateCreated ? formatOrdinalDate(t.dateCreated) : "")) || "—"))}
+        ${cell("Ticket Raised By", escapeHtml(uniqJoin(tickets.map(t => t.requestedBy)) || "—"))}
         <div style="font-size:1rem; color:var(--muted); text-align:right;">${open ? "▲" : "▼"}</div>
       </div>
       ${open ? `<div class="epmr-tables" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 14px 14px; border-top:1px solid var(--border); padding-top:12px;">
-        ${table("Materials Sent for Processing", rowsOf(r.items || [], i => i.released ?? i.quantity ?? 0, i => i.unitType))}
-        ${table("Expected Processing Material Return (received / expected)", rowsOf(r.expectedReturnItems || [], i => { const p = (r.returnProgress || []).find(x => x.itemCode === i.itemCode); return p ? `${fmtQty(p.receivedQty)} / ${fmtQty(i.quantity ?? 0)}` : `0 / ${fmtQty(i.quantity ?? 0)}`; }, i => i.unit))}
+        ${table("Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
+        ${table("Expected Processing Material Return (received / expected)", rowsOf(expected, i => `${fmtQty(receivedByCode[i.itemCode] || 0)} / ${fmtQty(i.qty)}`, i => i.unit))}
       </div>` : ""}
     </div>`;
   }).join("");
