@@ -2250,6 +2250,9 @@ function ticketItemTaClear() {
   const sel = ticketItemTaSelect();
   const input = document.getElementById("ticket-item-ta-input");
   if (sel) sel.value = "";
+  if (typeof stopLiveStockPolling === "function") stopLiveStockPolling();
+  const pill = document.getElementById("ticket-live-counter-pill-zone");
+  if (pill) pill.innerHTML = "";
   if (input) { input.value = ""; input.focus(); }
   const dd = document.getElementById("ticket-item-ta-dd");
   if (dd) dd.style.display = "none";
