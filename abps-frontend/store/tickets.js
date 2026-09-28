@@ -121,7 +121,10 @@ async function submitMaterialRequestTicketToBackend() {
 
   // Processing is its own Outgoing Use / department (24 Sep 2026); the
   // ticket's Purpose (outward_purpose) is the department itself.
-  const isServiceSubmit = departmentVal === "Service" || departmentVal === "Processing";
+  // Processing is a Job Card issue sent to an outside vendor (29 Sep 2026):
+  // it keeps its Purpose, but picks a Job Card like Reactor/Capacitor/Panel.
+  const isServiceSubmit = departmentVal === "Service";
+  const hasPurposeSubmit = departmentVal === "Service" || departmentVal === "Processing";
   const departmentSubmitVal = departmentVal;
   // Legacy/pre-system ticket is available under any Outgoing Use as of
   // go-live (was Service-only) — a pre-system project still in production,
@@ -173,7 +176,7 @@ async function submitMaterialRequestTicketToBackend() {
   // Purpose (Service/Processing, migration 213 retired Replacement) is
   // required for a Service ticket — it feeds outward_purpose, which is what puts
   // the ticket in the Material Outward / Delivery Challan queue.
-  const outwardPurposeVal = isServiceSubmit ? departmentVal : "";
+  const outwardPurposeVal = hasPurposeSubmit ? departmentVal : "";
 
   const expectedReturnError = departmentVal === "Processing" ? ticketExpectedReturnError() : "";
   if (expectedReturnError) {
@@ -829,6 +832,9 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       projectId: projectId,
       jobCardNumber: document.getElementById("ticket-job-card-dropdown")?.value || "",
       departmentOutgoing: departmentVal,
+      expectedReturnItems: departmentVal === "Processing"
+        ? (window.ticketExpectedReturnRows || []).map(r => ({ itemCode: r.itemCode, quantity: Number(r.quantity) }))
+        : [],
       justificationNotesText: notesField.value.trim(),
       itemsClusterArray: dynamicTicketShoppingBasketArray
     };
@@ -1472,7 +1478,8 @@ function applyCmitDepartmentLock(lock) {
 }
 
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
-  const isService = chosenDepartmentVal === "Service" || chosenDepartmentVal === "Processing";
+  const isService = chosenDepartmentVal === "Service";
+  const hasPurpose = isService || chosenDepartmentVal === "Processing";
 
   // Purpose (Service/Processing, migration 213 retired Replacement) is
   // Service-only-visible — it feeds outward_purpose, which is what makes
@@ -1487,7 +1494,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   const purposeDrop = document.getElementById("ticket-outward-purpose-dropdown");
   if (purposeWrapper) purposeWrapper.style.display = "none"; // purpose now comes from Outgoing Use itself
   ticketSetExpectedReturnVisible(chosenDepartmentVal === "Processing");
-  if (purposeDrop) purposeDrop.value = isService ? chosenDepartmentVal : "";
+  if (purposeDrop) purposeDrop.value = hasPurpose ? chosenDepartmentVal : "";
 
   // Reset Project field + legacy state
   const projectInput = document.getElementById("ticket-project-id-dropdown-ta-input");
@@ -1636,7 +1643,7 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
 
 function handleCreateTicketBOQChange(chosenBoqId) {
   const jobCardLabel = document.getElementById("lbl-job-card-title");
-  const isService = ["Service", "Processing"].includes(document.getElementById("ticket-department-outgoing-dropdown")?.value);
+  const isService = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
 
   // Clear BOQ cache — different BOQ means different material allocations
   window._ticketBOQCache = null;
@@ -1693,7 +1700,7 @@ function handleCreateTicketBOQChange(chosenBoqId) {
 // "free pool, no Job Card", not literally "Service".
 function ticketIsServiceItemMode_() {
   const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value;
-  return dept === "Service" || dept === "Processing" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  return dept === "Service" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
 }
 function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
   return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
@@ -2016,7 +2023,7 @@ function handleTicketJobCardChange(chosenJobCard) {
     storeScopeDrop.disabled = false;
     storeScopeDrop.style.opacity = "1";
     storeScopeDrop.style.cursor = "pointer";
-    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service" || chosenDepartmentVal === "Processing");
+    storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", chosenDepartmentVal === "Service");
   }
   if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
 }

@@ -61,7 +61,7 @@ function epmrRender() {
   const rowsOf = (list, qtyOf, unitOf) => list.map((i, n) => `<tr>
     <td style="${td} text-align:center; font-weight:700;">${n + 1}</td>
     <td style="${td} word-break:break-word;">${escapeHtml(i.materialName || i.itemCode || "")}</td>
-    <td style="${td} text-align:center; font-weight:700;">${escapeHtml(String(fmtQty(qtyOf(i))))}</td>
+    <td style="${td} text-align:center; font-weight:700;">${escapeHtml(typeof qtyOf(i) === "string" ? qtyOf(i) : String(fmtQty(qtyOf(i))))}</td>
     <td style="${td} text-align:center;">${escapeHtml(unitOf(i) || "")}</td></tr>`).join("");
   const cell = (label, value) => `<div style="min-width:0;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted);">${label}</div><div style="font-weight:700; font-size:0.87rem; word-break:break-word;">${value}</div></div>`;
 
@@ -83,7 +83,7 @@ function epmrRender() {
       </div>
       ${open ? `<div class="epmr-tables" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 14px 14px; border-top:1px solid var(--border); padding-top:12px;">
         ${table("Materials Sent for Processing", rowsOf(r.items || [], i => i.released ?? i.quantity ?? 0, i => i.unitType))}
-        ${table("Expected Processing Material Return", rowsOf(r.expectedReturnItems || [], i => i.quantity ?? 0, i => i.unit))}
+        ${table("Expected Processing Material Return (received / expected)", rowsOf(r.expectedReturnItems || [], i => { const p = (r.returnProgress || []).find(x => x.itemCode === i.itemCode); return p ? `${fmtQty(p.receivedQty)} / ${fmtQty(i.quantity ?? 0)}` : `0 / ${fmtQty(i.quantity ?? 0)}`; }, i => i.unit))}
       </div>` : ""}
     </div>`;
   }).join("");

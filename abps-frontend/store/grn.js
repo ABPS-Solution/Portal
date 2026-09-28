@@ -169,6 +169,15 @@ async function initializeStoreEntryWorkspaceQueue() {
               onblur="checkStoreEntryPONumber('${item.gateNumber}');">
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
+          <div style="max-width:620px; margin:-6px 0 14px;">
+            <label class="field-label">Or: returning from a Processing ticket</label>
+            <select id="se-processing-ticket-${item.gateNumber}" onfocus="grnLoadProcessingTickets('${item.gateNumber}')"
+              onchange="grnProcessingTicketChanged('${item.gateNumber}')"
+              style="width:100%; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
+              <option value="">— No, this delivery is against a PO —</option>
+            </select>
+            <div id="se-processing-msg-${item.gateNumber}" style="font-size:0.72rem; color:var(--muted); margin-top:3px;">Pick the ticket when this is processed material coming back from a job worker. It is then held for that ticket's Job Card; no PO is needed.</div>
+          </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
             <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
               <thead>
@@ -275,3 +284,28 @@ async function initializeStoreEntryWorkspaceQueue() {
 // document instead (adjusting Invoice Qty and PO Number on each), so
 // one Gate Entry/GRN never needs to span more than one PO.
 
+
+
+// Processing returns: the GRN can be against a Processing ticket instead of a PO.
+async function grnLoadProcessingTickets(gateNum) {
+  const sel = document.getElementById(`se-processing-ticket-${gateNum}`);
+  if (!sel || sel.dataset.loaded === "1") return;
+  sel.dataset.loaded = "1";
+  try {
+    const data = await apFetch({ action: "fetchOpenProcessingReturns" });
+    const byTicket = {};
+    (data.rows || []).forEach(r => {
+      (byTicket[r.ticketId] = byTicket[r.ticketId] || { vendor: r.vendorName, items: [] }).items.push(`${r.materialName || r.itemCode}: ${trimNum(r.receivedQty)}/${trimNum(r.expectedQty)}`);
+    });
+    const current = sel.value;
+    sel.innerHTML = `<option value="">— No, this delivery is against a PO —</option>` + Object.entries(byTicket).map(([t, v]) =>
+      `<option value="${escapeHtml(t)}">${escapeHtml(t)}${v.vendor ? " · " + escapeHtml(v.vendor) : ""} · ${escapeHtml(v.items.join(", "))}</option>`).join("");
+    sel.value = current;
+  } catch (e) { sel.dataset.loaded = ""; }
+}
+function grnProcessingTicketChanged(gateNum) {
+  const sel = document.getElementById(`se-processing-ticket-${gateNum}`);
+  const po = document.getElementById(`se-po-number-${gateNum}`);
+  const on = !!(sel && sel.value);
+  if (po) { po.disabled = on; if (on) po.value = ""; po.style.opacity = on ? "0.5" : "1"; }
+}

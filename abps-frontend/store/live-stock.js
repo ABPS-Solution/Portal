@@ -717,7 +717,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   // against that document instead, each with its own PO Number and
   // corrected Invoice Qty.
   const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
-  const headerPoNo = poNoInput ? poNoInput.value.trim() : "";
+  const processingTicketId = (document.getElementById(`se-processing-ticket-${gateNum}`)?.value || "").trim();
+  const headerPoNo = processingTicketId ? "" : (poNoInput ? poNoInput.value.trim() : "");
 
   const builtLineItems = [];
   document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(codeEl => {
@@ -746,7 +747,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
     const line = {
       ledgerId: src.ledgerId, itemCode, materialName, materialType, unitType, itemCodeUnit, unitConverter,
-      poNo: headerPoNo, gateQuantity, verifiedPhysicalQuantity,
+      poNo: headerPoNo, processingTicketId: processingTicketId || undefined, gateQuantity, verifiedPhysicalQuantity,
       ratePerQuantity: src.ratePerQuantity, gstPercent: src.gstPercent,
     };
 
@@ -765,8 +766,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
 
   const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo };
 
-  if (!headerPoNo) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above before submitting.", "error");
+  if (!headerPoNo && !processingTicketId) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above (or pick the Processing ticket this material is returning from) before submitting.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";

@@ -425,15 +425,23 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
     // Cards not yet in Finished Goods, so a BOQ with none left is hidden.
     const allJobCards = data.jobCards || [];
     let scopedJobCards;
-    if (!outgoingUse || outgoingUse === "Service") {
+    if (!outgoingUse) {
       scopedJobCards = allJobCards;
+    } else if (outgoingUse === "Service") {
+      // Service: only BOQs with at least one dispatched unit.
+      let eligible = [];
+      try {
+        const r = await apFetch({ action: "fetchServiceEligibleBoqs", projectId: chosenProjectVal });
+        eligible = (r && r.success && r.boqIds) || [];
+      } catch (e) { eligible = []; }
+      scopedJobCards = allJobCards.filter(jc => eligible.includes(jc.boqId));
     } else if (outgoingUse === "Processing") {
       const dept = localStorage.getItem("userDepartment") || localStorage.getItem("erpUserDepartment") || "";
       const isAdmin = (localStorage.getItem("isUserAdminGlobal") || localStorage.getItem("erpIsUserAdminGlobal")) === "true";
       const subDepts = (localStorage.getItem("userProductionSubDept") || localStorage.getItem("erpUserProductionSubDept") || "").split(",").filter(Boolean);
-      scopedJobCards = (dept === "Production" && !isAdmin)
+      scopedJobCards = ((dept === "Production" && !isAdmin)
         ? allJobCards.filter(jc => subDepts.includes(jc.department))
-        : allJobCards;
+        : allJobCards).filter(jc => !jc.hasFgEntry);
     } else {
       scopedJobCards = allJobCards.filter(jc => jc.department === outgoingUse && !jc.hasFgEntry);
     }
