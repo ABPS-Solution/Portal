@@ -1192,9 +1192,9 @@ function renderAllPRNCards(prns, boqId) {
         <td style="padding:8px; font-size:0.84rem; font-weight:600; color:#1e293b; text-align:center;">${escapeHtml(li.typeOfMaterial || "—")}</td>
         <td style="padding:8px; text-align:center; font-weight:700; font-family:monospace;">${fmtSmart(li.boqRequiredQty)}</td>
         <td style="padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtSmart(li.bufferPct)}%</td>
-        <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace;">${fmtSmart(li.bufferedPurchaseQty)}</td>
-        <td style="padding:8px; text-align:center; font-family:monospace; font-size:0.92rem; font-weight:700;">${li.currentUnassignedStoreQty !== "" ? fmtSmart(li.currentUnassignedStoreQty) : "0"}</td>
-        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:0.95rem; color:#15803d;">${li.purchaseQty !== "" ? fmtSmart(li.purchaseQty) : "—"}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; color:var(--brand); font-family:monospace; font-size:1.05rem;">${fmtSmart(li.bufferedPurchaseQty)}</td>
+        <td style="padding:8px; text-align:center; font-family:monospace; font-size:1.05rem; font-weight:800;">${li.currentUnassignedStoreQty !== "" ? fmtSmart(li.currentUnassignedStoreQty) : "0"}</td>
+        <td style="padding:8px; text-align:center; font-weight:800; font-family:monospace; font-size:1.05rem; color:#15803d;">${li.purchaseQty !== "" ? fmtSmart(li.purchaseQty) : "—"}</td>
       </tr>`;
     });
 
