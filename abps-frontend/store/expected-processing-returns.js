@@ -87,8 +87,25 @@ function epmrRender() {
     groups.get(key).push(r);
   });
 
-  feed.innerHTML = [...groups.entries()].map(([key, tickets]) => {
+  const statusOf = (tickets) => {
+    let exp = 0, rec = 0;
+    tickets.forEach(t => (t.returnProgress || []).forEach(p => { exp += Number(p.expectedQty) || 0; rec += Math.min(Number(p.receivedQty) || 0, Number(p.expectedQty) || 0); }));
+    if (exp > 0 && rec >= exp - 1e-9) return "Delivered";
+    return rec > 1e-9 ? "Partially Delivered" : "Pending";
+  };
+  const shown = [...groups.entries()].filter(([, tickets]) => q || statusOf(tickets) !== "Delivered");
+  if (!shown.length) {
+    feed.innerHTML = `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No Processing material is due back. Search to see delivered challans.</div>`;
+    return;
+  }
+  const statusBadge = (st) => {
+    const c = st === "Delivered" ? ["#15803d", "#dcfce7"] : st === "Partially Delivered" ? ["#b45309", "#fef3c7"] : ["#475569", "#f1f5f9"];
+    return `<span style="color:${c[0]}; background:${c[1]}; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${st}</span>`;
+  };
+
+  feed.innerHTML = shown.map(([key, tickets]) => {
     const r = tickets[0];
+    const status = statusOf(tickets);
     const open = epmrExpandedTicketId === key;
     const sent = mergeLines(tickets.flatMap(t => t.items || []), i => i.released ?? i.quantity ?? 0, i => i.unitType);
     const expected = mergeLines(tickets.flatMap(t => t.expectedReturnItems || []), i => i.quantity ?? 0, i => i.unit);
@@ -99,18 +116,19 @@ function epmrRender() {
       ? (r.challanUrl ? `<a href="${driveLink(r.challanUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand);">${escapeHtml(r.challanNumber)} ↗</a>` : escapeHtml(r.challanNumber))
       : "—";
     return `<div style="border:1px solid ${open ? "var(--brand)" : "var(--border)"}; border-left:4px solid #15803d; border-radius:var(--radius); background:#fff;">
-      <div onclick="epmrToggle(${jsArg(key)})" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
+      <div onclick="epmrToggle(${jsArg(key)})" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
         ${cell("Project", escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
         ${cell("Ticket ID", `<span style="font-family:monospace;">${escapeHtml(tickets_.join(", "))}</span>`)}
         ${cell("Vendor Name", escapeHtml(r.vendorName || "—"))}
         ${cell("Delivery Challan", challan)}
         ${cell("Ticket Raised On", escapeHtml(uniqJoin(tickets.map(t => t.dateCreated ? formatOrdinalDate(t.dateCreated) : "")) || "—"))}
         ${cell("Ticket Raised By", escapeHtml(uniqJoin(tickets.map(t => t.requestedBy)) || "—"))}
+        ${cell("Status", statusBadge(status))}
         <div style="font-size:1rem; color:var(--muted); text-align:right;">${open ? "▲" : "▼"}</div>
       </div>
       ${open ? `<div class="epmr-tables" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 14px 14px; border-top:1px solid var(--border); padding-top:12px;">
         ${table("Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
-        ${table("Expected Processing Material Return (received / expected)", rowsOf(expected, i => `${fmtQty(receivedByCode[i.itemCode] || 0)} / ${fmtQty(i.qty)}`, i => i.unit))}
+        ${table("Expected Processing Material Return (received / expected, left)", rowsOf(expected, i => { const rc = receivedByCode[i.itemCode] || 0; const left = Math.max(0, i.qty - rc); return `${fmtQty(rc)} / ${fmtQty(i.qty)}${left > 1e-9 ? ` · ${fmtQty(left)} left` : " · done"}`; }, i => i.unit))}
       </div>` : ""}
     </div>`;
   }).join("");
