@@ -1434,8 +1434,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <div class="section" id="cmit-main-section" style="background: var(--card); border: none; padding: 0; border-radius: var(--radius);">
 
+        <div id="cmit-draft-bar-slot"></div>
         <div class="cmit-box">
-        <div class="cmit-box-title">Ticket Details</div>
+        <div class="cmit-box-title" style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><span>Ticket Details</span><button type="button" class="nav-btn-styled" onclick="cmitClearEntireTicket()" style="width:auto; background:#fff; color:#b91c1c; border:1.5px solid #b91c1c; padding:4px 12px; font-size:0.74rem; font-weight:700; text-transform:none; letter-spacing:0;">Clear Entire Ticket</button></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; align-items:end;">
           <div id="wrapper-ticket-department-outgoing-field">
             <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0;">Production Department / Outgoing Use *</label>

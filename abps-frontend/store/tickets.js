@@ -235,6 +235,7 @@ async function submitMaterialRequestTicketToBackend() {
     hideBlockingOverlay();
     
     if (result.success) {
+      cmitDraftClearAll();
       // Clear current memory shopping draft arrays parameters instantly
       dynamicTicketShoppingBasketArray = [];
       window.ticketExpectedReturnRows = [];
@@ -2257,3 +2258,134 @@ function ticketItemTaClear() {
   const dd = document.getElementById("ticket-item-ta-dd");
   if (dd) dd.style.display = "none";
 }
+
+
+// ── Create Material Issue Ticket: saved progress (restore after refresh,
+// session expiry or going offline) + Clear Entire Ticket. The selections
+// cascade through server look-ups, so restore replays them in order,
+// waiting for each next control to unlock, rather than just writing values.
+const CMIT_DRAFT_KEY = "createTicket";
+let cmitDraftRestoring = false;
+let cmitDraftTimer = null;
+function cmitDraftSnapshot() {
+  const val = id => { const el = document.getElementById(id); return el ? el.value : ""; };
+  const legacy = document.getElementById("ticket-legacy-project-toggle");
+  return {
+    dept: val("ticket-department-outgoing-dropdown"),
+    legacy: !!(legacy && legacy.checked),
+    legacyName: val("ticket-legacy-company-name"),
+    projectId: val("ticket-project-id-dropdown-ta-input"),
+    boqId: val("ticket-boq-dropdown"),
+    boqLabel: (document.getElementById("ticket-boq-display-text") || {}).textContent || "",
+    jobCard: val("ticket-job-card-dropdown"),
+    jobCardLabel: (document.getElementById("ticket-job-card-display-text") || {}).textContent || "",
+    store: val("ticket-selected-store-scope-toggle"),
+    basket: dynamicTicketShoppingBasketArray || [],
+    expectedReturns: window.ticketExpectedReturnRows || [],
+  };
+}
+function cmitDraftSaveSoon() {
+  if (cmitDraftRestoring || typeof abpsDraftSave !== "function") return;
+  clearTimeout(cmitDraftTimer);
+  cmitDraftTimer = setTimeout(() => {
+    const snap = cmitDraftSnapshot();
+    if (!snap.dept && !snap.basket.length) return;
+    abpsDraftSave(CMIT_DRAFT_KEY, snap);
+  }, 600);
+}
+function cmitDraftClearAll() {
+  if (typeof abpsDraftClear === "function") abpsDraftClear(CMIT_DRAFT_KEY);
+  const slot = document.getElementById("cmit-draft-bar-slot");
+  if (slot) slot.innerHTML = "";
+}
+function cmitWaitFor(test, ms) {
+  return new Promise(resolve => {
+    const t0 = Date.now();
+    const tick = () => { if (test()) return resolve(true); if (Date.now() - t0 > (ms || 10000)) return resolve(false); setTimeout(tick, 150); };
+    tick();
+  });
+}
+async function cmitDraftRestore(d) {
+  cmitDraftRestoring = true;
+  try {
+    const dept = document.getElementById("ticket-department-outgoing-dropdown");
+    if (d.dept && dept) { dept.value = d.dept; await handleCreateTicketDepartmentChange(d.dept); }
+    if (d.legacy) {
+      const t = document.getElementById("ticket-legacy-project-toggle");
+      if (t && !t.checked) { t.checked = true; await handleTicketLegacyToggleChange(true); }
+      const nm = document.getElementById("ticket-legacy-company-name");
+      if (nm) { nm.value = d.legacyName || ""; handleTicketLegacyCompanyNameInput(nm.value); }
+    } else if (d.projectId) {
+      const p = document.getElementById("ticket-project-id-dropdown-ta-input");
+      await cmitWaitFor(() => p && !p.disabled);
+      if (p) { p.value = d.projectId; await handleCreateTicketProjectChange(d.projectId); }
+      if (d.boqId) {
+        await cmitWaitFor(() => (document.getElementById("ticket-boq-display") || {}).dataset?.disabled === "0");
+        selectTicketBOQ(d.boqId, d.boqLabel || d.boqId);
+      }
+      if (d.jobCard) {
+        await cmitWaitFor(() => (document.getElementById("ticket-job-card-display") || {}).dataset?.disabled === "0");
+        selectTicketJobCard(d.jobCard, d.jobCardLabel || d.jobCard);
+      }
+    }
+    if (d.store) {
+      const st = document.getElementById("ticket-selected-store-scope-toggle");
+      await cmitWaitFor(() => st && !st.disabled);
+      if (st) { st.value = d.store; handleTicketStoreScopeSelectionChange(d.store); }
+      await cmitWaitFor(() => { const it = document.getElementById("ticket-item-selection-dropdown"); return it && !it.disabled; });
+    }
+    dynamicTicketShoppingBasketArray = Array.isArray(d.basket) ? d.basket : [];
+    window.ticketExpectedReturnRows = Array.isArray(d.expectedReturns) ? d.expectedReturns : [];
+    renderDraftBasketTableViewportRows();
+    if (typeof renderTicketExpectedReturns === "function") { try { renderTicketExpectedReturns(); } catch (_) {} }
+  } catch (e) {
+    console.error("Create Material Issue Ticket restore failed:", e);
+  } finally {
+    cmitDraftRestoring = false;
+    cmitDraftSaveSoon();
+  }
+}
+function cmitDraftOffer() {
+  const slot = document.getElementById("cmit-draft-bar-slot");
+  if (!slot) return;
+  slot.innerHTML = "";
+  const draft = typeof abpsDraftRead === "function" ? abpsDraftRead(CMIT_DRAFT_KEY) : null;
+  if (!draft || !draft.payload) return;
+  const d = draft.payload;
+  const when = typeof formatOrdinalDateTime === "function" ? formatOrdinalDateTime(new Date(draft.ts)) : new Date(draft.ts).toLocaleString();
+  const items = (d.basket || []).length;
+  slot.innerHTML = `<div style="background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:10px 14px; border-radius:6px; font-size:0.84rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="flex:1; min-width:220px;">You have an unsaved ticket from ${escapeHtml(when)}${d.dept ? ' (' + escapeHtml(d.dept) + ')' : ''}${items ? ', ' + items + ' item' + (items === 1 ? '' : 's') + ' in the basket' : ''}.</span>
+      <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:6px 16px; font-size:0.8rem;" onclick="cmitDraftRestoreClick()">Restore</button>
+      <button type="button" class="nav-btn-styled" style="width:auto; background:#6b7280; padding:6px 16px; font-size:0.8rem;" onclick="cmitDraftClearAll()">Discard</button>
+    </div>`;
+}
+async function cmitDraftRestoreClick() {
+  const draft = abpsDraftRead(CMIT_DRAFT_KEY);
+  const slot = document.getElementById("cmit-draft-bar-slot");
+  if (slot) slot.innerHTML = `<div style="padding:10px 14px; margin-bottom:14px; color:var(--muted); font-size:0.84rem; font-weight:600;">Restoring your ticket...</div>`;
+  if (draft && draft.payload) await cmitDraftRestore(draft.payload);
+  if (slot) slot.innerHTML = "";
+}
+async function cmitClearEntireTicket() {
+  if (!confirm("Clear the entire ticket? Everything entered here, including the basket and saved progress, will be removed.")) return;
+  cmitDraftClearAll();
+  const fb = document.getElementById("store-ticket-runtime-inline-feedback-banner");
+  if (fb) fb.style.display = "none";
+  cmitDraftRestoring = true;
+  try { await initializeMaterialRequestWorkspace(true); } finally { cmitDraftRestoring = false; }
+  cmitDraftClearAll();
+}
+initializeMaterialRequestWorkspace = (orig => async function (skipOffer) {
+  const r = await orig.apply(this, arguments);
+  if (skipOffer !== true) cmitDraftOffer();
+  return r;
+})(initializeMaterialRequestWorkspace);
+renderDraftBasketTableViewportRows = (orig => function () {
+  const r = orig.apply(this, arguments);
+  cmitDraftSaveSoon();
+  return r;
+})(renderDraftBasketTableViewportRows);
+document.addEventListener("change", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
+document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
+document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-dropdown-list"))) cmitDraftSaveSoon(); });
