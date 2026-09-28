@@ -280,6 +280,32 @@ async function updatePORevisionUI() {
   }
 }
 
+// Right after a revision is submitted: generate Draft #1 straight away so it
+// can be printed, signed and authorized without a trip to the Editing tab.
+async function rpoGenerateDraftAfterSubmit(poNo, requestId) {
+  const btnCss = "display:inline-block; margin:14px 8px 0 0; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer; text-decoration:none;";
+  const actions = `
+    <div>
+      <button onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision');" style="${btnCss} background:var(--brand); color:#fff; border:none;">Go to Authorize PO Revision →</button>
+      <button onclick="document.getElementById('rpo-feedback').style.display='none'; document.getElementById('rpo-tabs-and-lists').style.display=''; switchRevisePOTab('editing');" style="${btnCss} background:#fff; color:var(--brand); border:1.5px solid var(--brand);">Edit in Pending Revisions (Editing)</button>
+      <button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="${btnCss} background:var(--accent); color:#fff; border:none;">+ Revise Another PO</button>
+    </div>`;
+  let data = null;
+  if (requestId) {
+    showBlockingOverlay("Revision submitted. Generating draft...");
+    try {
+      data = await apFetch({ action: "regenerateRevisionCheckingDraft", requestId, operatorName: appActiveOperatorIdentityString });
+    } catch (e) { data = null; }
+    hideBlockingOverlay();
+  }
+  const head = `Revision for <strong>${escapeHtml(poNo)}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.`;
+  if (data && data.success && data.checkingDocUrl) {
+    showPurchaseFeedback("rpo-feedback", `${head}<div style="margin-top:10px;"><strong>Draft #${data.checkingDraftNumber} generated.</strong> <a href="${driveLink(data.checkingDocUrl)}" target="_blank" style="display:inline-block; margin-left:10px; background:#fff; color:#0ea5e9; border:1.5px solid #0ea5e9; padding:6px 14px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">Open Draft #${data.checkingDraftNumber} ↗</a></div>${actions}`, "success", true);
+  } else {
+    showPurchaseFeedback("rpo-feedback", `${head}<div style="margin-top:10px; color:#b45309; font-weight:700;">The draft could not be generated just now. Open it in Pending Revisions (Editing) and click Generate Draft.</div>${actions}`, "success", true);
+  }
+}
+
 async function generateRevisionCheckingDraftUI() {
   const st = window.rpoActive;
   if (!st || !st.requestId) return;
@@ -970,7 +996,7 @@ async function submitPORevisionUI() {
       window.rpoActive = null;
       const tabsZone = document.getElementById("rpo-tabs-and-lists");
       if (tabsZone) tabsZone.style.display = "none";
-      showPurchaseFeedback("rpo-feedback", `Revision for <strong>${st.po.poNo}</strong> submitted and is pending authorization. The PO is unchanged until it is authorized.<br><button onclick="document.getElementById('rpo-feedback').style.display='none'; initializeRevisePOPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PO</button>`, "success", true);
+      await rpoGenerateDraftAfterSubmit(st.po.poNo, data.requestId);
     } else {
       btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
       showPurchaseFeedback("rpo-feedback", data.error || "Submission failed.", "error");
