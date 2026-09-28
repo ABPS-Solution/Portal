@@ -1604,6 +1604,7 @@ let assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, r
 
 async function loadAssStockForItem(itemCode, materialName) {
   document.getElementById("ass-material-search").value = materialName;
+  autoGrowTextField(document.getElementById("ass-material-search"));
   document.getElementById("ass-material-dropdown").style.display = "none";
   document.getElementById("ass-results-zone").style.display = "block";
   document.getElementById("ass-material-title").textContent = itemCode + ": " + materialName;
@@ -1678,6 +1679,7 @@ function resetAssReservationPanel() {
   document.getElementById("ass-feedback").innerHTML = "";
   document.getElementById("ass-results-zone").style.display = "none";
   document.getElementById("ass-material-search").value = "";
+  document.getElementById("ass-material-search").style.height = "";
   document.getElementById("ass-material-title").textContent = "";
   assStockCache = { itemCode: "", materialName: "", totals: { totalStock: 0, reservedStock: 0, availableStock: 0, unitType: '' }, assignments: [] };
 }

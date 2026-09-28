@@ -2710,8 +2710,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="ass-search-wrap">
       <label class="field-label" style="margin-top:0;">Search Material Name</label>
       <div style="position:relative; margin-bottom:16px;">
-        <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
-               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+        <textarea id="ass-material-search" rows="1" placeholder="Search material name..." oninput="autoGrowTextField(this); handleAssStockSearch(this.value)" onkeydown="if(event.key==='Enter')event.preventDefault()"
+               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius); resize:none; overflow:hidden; font:inherit; line-height:1.35; box-sizing:border-box; display:block;"></textarea>
         <div id="ass-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
       </div>
       </div>
@@ -2725,11 +2725,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px; width:40%;">BOQ ID</th>
+            <th style="padding:8px; width:50%;">BOQ ID</th>
             <th style="padding:8px; width:10%; text-align:center;">Unit</th>
             <th style="padding:8px; width:10%; text-align:center;">Number of Current MFC Job Cards</th>
-            <th style="padding:8px; width:20%; text-align:center;">Current Total Reserved Qty</th>
-            <th style="padding:8px; width:20%; text-align:center;">New Total Reserved Qty</th>
+            <th style="padding:8px; width:15%; text-align:center;">Current Total Reserved Qty</th>
+            <th style="padding:8px; width:15%; text-align:center;">New Total Reserved Qty</th>
           </tr></thead>
           <tbody id="ass-results-body"></tbody>
         </table>
