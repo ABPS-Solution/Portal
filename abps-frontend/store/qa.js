@@ -585,12 +585,12 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <input type="text" class="qa-unit-${item.grnNumber}" data-idx="${idx}" value="${line.unitType}" readonly
                 style="width:100%; text-align:center; font-family:monospace; font-weight:700; border:none; background:transparent; color:#1e293b;">
             </td>
-            <td style="width:70px; padding:6px; text-align:center; font-weight:700; vertical-align:middle;">${recvd}</td>
+            <td style="width:70px; padding:6px; text-align:center; font-weight:700; font-size:1.1rem; vertical-align:middle;">${recvd}</td>
             <td style="width:70px; padding:6px; vertical-align:middle;">
-              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; font-size:1.1rem; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
             </td>
             <td style="width:55px; padding:6px; vertical-align:middle;">
-              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
+              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; font-size:1.1rem; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
             </td>
             <td style="width:150px; padding:6px; vertical-align:middle;">
               <textarea rows="1" disabled class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." oninput="autoGrowTextField(this)" style="display:block; font-size:0.78rem; padding:6px; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.35; white-space:pre-wrap; overflow-wrap:break-word;"></textarea>

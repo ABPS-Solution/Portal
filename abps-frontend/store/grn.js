@@ -257,6 +257,5 @@ function grnProcessingChallanChanged(gateNum) {
   if (!v) { msg.textContent = ""; return; }
   const hit = byDc[v];
   if (!hit) { msg.style.color = "#b91c1c"; msg.textContent = "No open Delivery Challan with material due back matches this number."; return; }
-  msg.style.color = "#15803d";
-  msg.textContent = `${hit.vendor ? hit.vendor + " · " : ""}` + Object.entries(hit.items).map(([k, x]) => `${k}: ${trimNum(x.rec)}/${trimNum(x.exp)}`).join(", ");
+  msg.textContent = "";
 }
