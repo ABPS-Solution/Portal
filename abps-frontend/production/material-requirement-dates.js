@@ -192,7 +192,7 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
       if (zone) zone.style.display = "none";
       const selRow = document.getElementById("mrd-selector-row");
       if (selRow) selRow.style.display = "none";
-      showSuccessWithReset("mrd-feedback", `Production requirement dates submitted for PRN ${prnId}.`, "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
+      mrdShowSuccess("mrd-feedback", "Production Requirement Dates Submitted", prnId, "Assign Another PRN", "initializeAssignMaterialRequirementDatePanel()");
     } else {
       btn.disabled = false; btn.textContent = originalText;
       showPurchaseFeedback("mrd-feedback", data.error || "Failed to save.", "error");
@@ -535,6 +535,22 @@ async function loadRMRDQueueTab() {
   }
 }
 
+function mrdShowSuccess(elId, title, prnId, btnLabel, onclickJs) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.cssText = "display:block; background:#f0fdf4; border:1.5px solid #86efac; border-left:6px solid #16a34a; border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; box-shadow:0 2px 8px rgba(22,163,74,0.12);";
+  el.innerHTML = `
+    <div style="display:flex; align-items:flex-start; gap:14px;">
+      <div style="flex:none; width:34px; height:34px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1rem;">✓</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:1.02rem; font-weight:800; color:#15803d;">${escapeHtml(title)}</div>
+        <div style="margin-top:8px; font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">PRN</div>
+        <div style="margin-top:2px; font-family:monospace; font-size:0.84rem; font-weight:700; color:var(--brand); overflow-wrap:anywhere;">${escapeHtml(prnId)}</div>
+        <button class="nav-btn-styled" style="background:var(--accent); color:#fff; margin-top:14px; padding:8px 20px; font-weight:700; font-size:0.84rem; width:auto;" onclick="${onclickJs}">+ ${escapeHtml(btnLabel)}</button>
+      </div>
+    </div>`;
+}
+
 async function jumpToRMRDDelta(prnId, btn) {
   const deltaZone = document.getElementById("rmrd-delta-zone");
   const originalHtml = btn ? btn.innerHTML : "";
@@ -577,10 +593,9 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
       // wrapper rather than the bare tab-load call the button used before.
       const tabsBar = document.getElementById("rmrd-tabs-bar");
       if (tabsBar) tabsBar.style.display = "none";
-      showPurchaseFeedback("rmrd-delta-feedback",
-        `Requirement dates for <strong>${prnId}</strong> revised.<br>` +
-        `<button onclick="document.getElementById('rmrd-delta-feedback').style.display='none'; const tb=document.getElementById('rmrd-tabs-bar'); if(tb) tb.style.display='flex'; loadRMRDQueueTab();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button>`,
-        "success", true);
+      mrdShowSuccess("rmrd-delta-feedback", "Production Requirement Dates Revised", prnId, "Revise Another PRN",
+        "document.getElementById('rmrd-delta-feedback').style.display='none'; const tb=document.getElementById('rmrd-tabs-bar'); if(tb) tb.style.display='flex'; loadRMRDQueueTab();");
+      document.getElementById("rmrd-delta-feedback").scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       btn.disabled = false; btn.textContent = originalText;
       showPurchaseFeedback("rmrd-delta-feedback", data.error || "Failed to save.", "error");
@@ -668,10 +683,7 @@ async function submitReviseMRDOther(ns, prnId, btn) {
       // initializeReviseMRDPanel(), which re-shows it.
       const tabsBar = document.getElementById("rmrd-tabs-bar");
       if (tabsBar) tabsBar.style.display = "none";
-      const fb = document.getElementById("rmrd-feedback");
-      fb.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:12px; margin-bottom:12px; border-radius:var(--radius);";
-      fb.innerHTML = `Requirement dates revised for <strong>${prnId}</strong>.
-        <div><button onclick="initializeReviseMRDPanel();" style="margin-top:14px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">+ Revise Another PRN</button></div>`;
+      mrdShowSuccess("rmrd-feedback", "Production Requirement Dates Revised", prnId, "Revise Another PRN", "initializeReviseMRDPanel();");
     } else {
       btn.disabled = false; btn.textContent = originalText;
       showPurchaseFeedback("rmrd-feedback", data.error || "Failed to save.", "error");
