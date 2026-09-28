@@ -651,7 +651,7 @@ function ptlRenderLaneSteps(lane, c) {
   return `
     <div style="font-size:0.76rem; color:var(--muted); margin-bottom:8px; font-style:italic;">Managed in Production Planning (Production department) — view only here.</div>
     <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <table class="prn-view-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead><tr style="background:${c}14; border-bottom:1px solid var(--border);">
           <th style="width:28%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center;">Process Name</th>
           <th style="width:16%; padding:6px 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); text-align:center; ${colBorder}">Initial Planning Completion Date</th>
