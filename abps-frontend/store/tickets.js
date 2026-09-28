@@ -2175,7 +2175,8 @@ function ticketItemTaDropdown() {
     document.addEventListener("mousedown", e => {
       if (e.target.id !== "ticket-item-ta-input" && !dd.contains(e.target)) dd.style.display = "none";
     });
-    window.addEventListener("scroll", () => { dd.style.display = "none"; }, true);
+    // Close on page scroll, but not when the list itself is being scrolled.
+    window.addEventListener("scroll", e => { if (e.target === dd || (e.target.nodeType === 1 && dd.contains(e.target))) return; dd.style.display = "none"; }, true);
   }
   return dd;
 }
