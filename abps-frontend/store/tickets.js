@@ -2220,11 +2220,12 @@ function ticketItemTaPick(i) {
   sel.value = value;
   const opt = sel.options[sel.selectedIndex];
   const input = document.getElementById("ticket-item-ta-input");
-  if (input) input.value = opt ? opt.textContent : "";
+  if (input) { input.value = opt ? opt.textContent : ""; autoGrowTextField(input); }
   ticketItemTaDropdown().style.display = "none";
   sel.dispatchEvent(new Event("change"));
 }
 function ticketItemTaKey(e) {
+  if (e.key === "Enter" && !e.isComposing) e.preventDefault(); // single-line search, just wraps
   const dd = document.getElementById("ticket-item-ta-dd");
   if (!dd || dd.style.display === "none") return;
   const n = (window._ticketItemTaHits || []).length;
@@ -2253,7 +2254,7 @@ setInterval(() => {
   if (document.activeElement === input) return;
   const opt = sel.value !== "" ? sel.options[sel.selectedIndex] : null;
   const want = opt ? opt.textContent : "";
-  if (input.value !== want) input.value = want;
+  if (input.value !== want) { input.value = want; if (want) autoGrowTextField(input); else input.style.height = ""; }
 }, 400);
 
 // After an item is added: clear the material search for the next one.
@@ -2264,7 +2265,7 @@ function ticketItemTaClear() {
   if (typeof stopLiveStockPolling === "function") stopLiveStockPolling();
   const pill = document.getElementById("ticket-live-counter-pill-zone");
   if (pill) pill.innerHTML = "";
-  if (input) { input.value = ""; input.focus(); }
+  if (input) { input.value = ""; input.style.height = ""; input.focus(); }
   const dd = document.getElementById("ticket-item-ta-dd");
   if (dd) dd.style.display = "none";
 }

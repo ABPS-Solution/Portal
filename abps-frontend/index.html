@@ -1524,7 +1524,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display: flex; gap: 10px; align-items: flex-end;">
             <div style="flex: 1 1 auto; min-width: 0;">
               <label class="field-label" style="margin-top:0;">Material Description</label>
-              <input type="text" id="ticket-item-ta-input" autocomplete="off" placeholder="Type to search material..." oninput="ticketItemTaFilter()" onfocus="ticketItemTaFilter()" onkeydown="ticketItemTaKey(event)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+              <textarea id="ticket-item-ta-input" rows="1" autocomplete="off" placeholder="Type to search material..." oninput="autoGrowTextField(this); ticketItemTaFilter()" onfocus="ticketItemTaFilter()" onkeydown="ticketItemTaKey(event)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); resize:none; overflow:hidden; font:inherit; line-height:1.35; box-sizing:border-box; display:block; min-height:36px;" disabled></textarea>
               <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling(); checkSpareStoreSuggestion();" style="display:none;" disabled></select>
             </div>
             <div style="flex: 0 0 120px;">
