@@ -9,7 +9,7 @@ async function checkStorePRNRevisionReminder() {
   if (!banners.length) return;
   try {
     const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
-    const onExcludedPanel = ["canvas-module-expected-inbounds", "canvas-module-authorize-material-outward", "canvas-module-purchase-revise-prn"]
+    const onExcludedPanel = ["canvas-module-expected-inbounds", "canvas-module-authorize-material-outward", "canvas-module-purchase-revise-prn", "canvas-module-assign-material-requirement-date", "canvas-module-revise-material-requirement-date"]
       .some(id => { const p = document.getElementById(id); return p && p.style.display === "block"; });
     const show = data.success && data.count > 0 && !onExcludedPanel;
     banners.forEach(b => { b.style.display = show ? "block" : "none"; });
