@@ -301,7 +301,7 @@ const ptlDeliveryLabel = p => p.actualDelivery ? "Final Delivery" : "Tentative D
 const ptlDeliveryValue = p => p.actualDelivery || p.tentativeDelivery;
 
 const ptlEff = n => n.actual || n.target || n.planned;
-const ptlLate = n => !n.actual && !n.done && ptlEff(n) && ptlEff(n) < ptlToday();
+const ptlLate = n => !n.actual && !n.done && !n.waitingOnMrd && ptlEff(n) && ptlEff(n) < ptlToday();
 const ptlNodeDone = n => !!n.actual || n.done === true;
 
 // Per-stage fractions - used for the "Stage N of 5" label, the segmented
@@ -811,6 +811,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
           </div>
           <div style="font-size:0.8rem; color:${late ? 'var(--warn)' : 'var(--muted)'}; margin-top:2px;">${escapeHtml(dateTxt)}${late ? ` · ${Math.abs(ptlBdBetween(eff, today))} business days late` : ''}</div>
           ${n.chip ? `<span style="display:inline-block; margin-top:5px; font-size:0.72rem; font-family:monospace; font-weight:700; color:var(--text); background:var(--highlight-bg); padding:2px 8px; border-radius:10px;">${escapeHtml(n.chip)}</span>` : ''}
+          ${n.waitingOnMrd && !done ? `<div style="margin-top:6px; font-size:0.76rem; color:var(--muted); font-style:italic;">Not due yet: waiting on Production Requirement Dates.</div>` : ''}
           ${(n.revisionWarnings || []).length ? `<div style="margin-top:6px; background:#fffbeb; border:1px solid #f59e0b; border-left:4px solid #d97706; border-radius:4px; padding:5px 9px; font-size:0.76rem; color:#92400e; font-weight:600; line-height:1.5;">${n.revisionWarnings.map(w => '⚠ ' + escapeHtml(w)).join('<br>')}</div>` : ''}
           ${hasDetail ? `<div style="font-size:0.72rem; color:var(--brand); margin-top:5px; font-weight:600;">${expanded ? '▾ Hide' : '▸ Show'} what's left</div>` : ''}
           ${isEmptyDetailArray ? (n.blocked
@@ -1584,7 +1585,7 @@ function ptlRenderCanvas(containerId) {
     const c = n.partial ? PTL_PARTIAL_ORANGE : 'var(--accent)';
     const eff = n.actual || n.target || n.planned;
     const done = !!n.actual || n.done === true;
-    const late = !done && eff && eff < today;
+    const late = !done && !n.waitingOnMrd && eff && eff < today;
     const bd = late ? Math.abs(ptlBdBetween(eff, today) || 0) : null;
     const ring = late ? '#e84545' : (done ? c : PTL_SCHEDULED_GREY);
 
@@ -1916,7 +1917,7 @@ function ptlBuildFlags() {
       });
     });
   });
-  nodes.filter(n => !n.actual && !n.done && ptlEff(n) === today).forEach(n => out.push({
+  nodes.filter(n => !n.actual && !n.done && !n.waitingOnMrd && ptlEff(n) === today).forEach(n => out.push({
     sev: "due", nodeId: n.id, boqId: n.laneBoqId,
     title: `${n.label} is due today`,
     msg: `Due ${ptlFmtFull(ptlEff(n))}.`,
