@@ -644,38 +644,39 @@ async function runMaterialOutwardSearch() {
     // line WITHIN the same cell (not a separate row per material), so a
     // multi-material, multi-ticket challan still reads as one register
     // entry.
+    const th = (t, first) => `<th style="padding:8px; text-align:left; font-size:0.8rem; ${first ? '' : 'border-left:1.5px solid var(--border); '}border-bottom:2px solid #94a3b8;">${t}</th>`;
+    const td = (first) => `padding:8px; vertical-align:middle; word-wrap:break-word; ${first ? '' : 'border-left:1.5px solid var(--border); '}border-bottom:2px solid #94a3b8;`;
     results.innerHTML = `
+      <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-        <colgroup><col style="width:9%;" /><col style="width:14%;" /><col style="width:11%;" /><col style="width:27%;" /><col style="width:9%;" /><col style="width:15%;" /><col style="width:13%;" /></colgroup>
+        <colgroup><col style="width:10%;" /><col style="width:15%;" /><col style="width:11%;" /><col style="width:43%;" /><col style="width:9%;" /><col style="width:12%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg);">
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Date</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Project / Company</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Tickets</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan Materials</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Returnable</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Challan No.</th>
-          <th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">Document</th>
+          ${th('Date', true)}${th('Project')}${th('Store Tickets')}${th('Challan Materials')}${th('Returnable')}${th('Challan No.')}
         </tr></thead>
         <tbody>
           ${challans.map(c => {
             const materials = Array.isArray(c.line_items) ? c.line_items : [];
             const materialsHtml = materials.length
-              ? materials.map(it => `${escapeHtml(it.description || it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}`).join('<br>')
+              ? materials.map((it, i) => `<div style="padding:4px 0;${i ? ' border-top:1px solid var(--border);' : ''}">${escapeHtml(it.description || it.materialName || '')} — ${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}</div>`).join('')
               : '—';
             const ticketsHtml = (c.ticket_ids || []).map(escapeHtml).join('<br>') || '—';
+            const challanNo = escapeHtml(c.challan_number || '');
+            const challanHtml = c.document_url
+              ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${challanNo} ↗</a>`
+              : (challanNo || '—');
             return `
             <tr>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(formatOrdinalDate(c.challan_date) || c.challan_date || '')}</td>
-              <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${escapeHtml(c.project_id || 'Legacy')}${c.company_name ? ' — ' + escapeHtml(c.company_name) : ''}</td>
-              <td style="padding:8px; border:1px solid var(--border); font-size:0.78rem;">${ticketsHtml}</td>
-              <td style="padding:8px; border:1px solid var(--border); word-wrap:break-word;">${materialsHtml}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${escapeHtml(c.returnable_status || '—')}</td>
-              <td style="padding:8px; border:1px solid var(--border); font-family:monospace; font-size:0.8rem;">${escapeHtml(c.challan_number || '')}</td>
-              <td style="padding:8px; border:1px solid var(--border);">${c.document_url ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">View ↗</a>` : '—'}</td>
+              <td style="${td(true)}">${escapeHtml(formatOrdinalDate(c.challan_date) || c.challan_date || '')}</td>
+              <td style="${td()}">${escapeHtml(c.project_id || c.company_name || 'Legacy')}</td>
+              <td style="${td()} font-size:0.78rem;">${ticketsHtml}</td>
+              <td style="${td()} padding-top:4px; padding-bottom:4px;">${materialsHtml}</td>
+              <td style="${td()}">${escapeHtml(c.returnable_status || '—')}</td>
+              <td style="${td()} font-family:monospace; font-size:0.8rem;">${challanHtml}</td>
             </tr>`;
           }).join("")}
         </tbody>
-      </table>`;
+      </table>
+      </div>`;
   } catch (err) {
     results.innerHTML = `<div style="color:var(--danger); padding:16px; text-align:center;">${escapeHtml(err.message)}</div>`;
   }
