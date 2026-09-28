@@ -606,12 +606,35 @@ function renderAPRNRows(prnId) {
       const purchaseChanged = Math.abs(liveNewPurchase(r) - (Number(r.previousPurchaseQty) || 0)) > 1e-9;
       return storeChanged || purchaseChanged;
     });
+    const csDelta = (d) => {
+      const n = Number(d) || 0;
+      if (Math.abs(n) < 1e-9) return '<span style="color:var(--muted);">No change</span>';
+      return `<span style="font-weight:800; color:${n > 0 ? '#15803d' : '#b91c1c'};">${n > 0 ? '+' : ''}${fmt(n)}</span>`;
+    };
+    const csMove = (from, to) => {
+      const a = Number(from) || 0, b = Number(to) || 0;
+      if (Math.abs(a - b) < 1e-9) return `<span style="color:var(--muted);">${fmt(a)}</span>`;
+      return `<span style="color:var(--muted); text-decoration:line-through;">${fmt(a)}</span> <span style="color:#92400e;">→</span> <strong style="color:#92400e; font-size:0.92rem;">${fmt(b)}</strong>`;
+    };
+    const csTh = 'padding:7px 10px; border:1px solid #fcd34d; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#92400e; background:#fef3c7;';
+    const csTd = 'padding:7px 10px; border:1px solid #fde68a; font-size:0.84rem; color:#334155; background:#fff;';
     const changeSummary = changedRows.length > 0 ? `
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:10px;">
-        <div style="font-size:0.82rem; font-weight:1000; color:var(--brand); margin-bottom:6px;">Change Summary</div>
-        ${changedRows.map(r => `<div style="font-size:0.86rem; color:#334155; margin-bottom:4px;">
-          <strong>${escapeHtml(r.materialName || "")}:</strong> ${r.deltaRequirement !== undefined ? `Change in BOQ Qty: <strong> ${fmt(r.deltaRequirement)}` : ""} </strong>  |  Store QTY: <strong> ${fmt(r.previousStoreQty)} → ${fmt(r.newStoreTotal)} </strong>  |  Purchase QTY: <strong>${fmt(r.previousPurchaseQty)} → ${fmt(liveNewPurchase(r))}</strong>
-        </div>`).join("")}
+      <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+        <div style="font-size:0.86rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:8px; letter-spacing:0.03em;">⚠ Change Summary <span style="font-weight:600; text-transform:none; letter-spacing:0;">(${changedRows.length} material${changedRows.length === 1 ? '' : 's'})</span></div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead><tr>
+            <th style="${csTh} text-align:left;">Material</th>
+            <th style="${csTh} text-align:center; width:14%;">Change in BOQ Qty</th>
+            <th style="${csTh} text-align:center; width:17%;">Store Qty</th>
+            <th style="${csTh} text-align:center; width:17%;">Purchase Qty</th>
+          </tr></thead>
+          <tbody>${changedRows.map(r => `<tr>
+            <td style="${csTd} font-weight:600;">${escapeHtml(r.materialName || "")}</td>
+            <td style="${csTd} text-align:center;">${r.deltaRequirement !== undefined ? csDelta(r.deltaRequirement) : '<span style="color:var(--muted);">-</span>'}</td>
+            <td style="${csTd} text-align:center;">${csMove(r.previousStoreQty, r.newStoreTotal)}</td>
+            <td style="${csTd} text-align:center;">${csMove(r.previousPurchaseQty, liveNewPurchase(r))}</td>
+          </tr>`).join("")}</tbody>
+        </table>
       </div>` : "";
     const rowsHtml = aprnRows.map((r, idx) => {
       const isDecreaseOrRemoved = r.changeKind === 'decrease' || r.changeKind === 'removed';
