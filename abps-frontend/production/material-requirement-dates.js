@@ -260,8 +260,11 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
     // to the live purchaseQty exactly as saveMaterialRequirementDates
     // validates server-side; only what's shown in the Purchase Qty
     // COLUMN and Store Qty column changed.
-    const displayPurchaseQty = pos.length > 0 ? orderedOnPO : purchaseQty;
-    const displayStoreQty = pos.length > 0 ? Math.max(0, (Number(line.bufferedPurchaseQty) || 0) - orderedOnPO) : (Number(line.storeQty) || 0);
+    // Live split, identical to the PRN itself: Store = what the PRN holds from
+    // store (including receipts), Purchase = what is still to arrive. The PO
+    // cover is shown separately in the "Already Ordered" block.
+    const displayPurchaseQty = Number(line.purchaseQty) || 0;
+    const displayStoreQty = Number(line.storeQty) || 0;
 
     // "Already Ordered (locked)" — every PO already covering part of this
     // line (whether its material has arrived yet or not) has nothing left
