@@ -57,7 +57,7 @@ function renderBOQIncreaseTicketCard(ticket) {
             id="boq-final-qty-${ticket.ticketId}-${safeCode}"
             value="${reqQty}" min="${remQty}" max="${reqQty}" step="any"
             onblur="clampBOQFinalTicketQty(this)"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" />
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;" />
         </td>
       </tr>`;
   }).join("");
@@ -68,7 +68,6 @@ function renderBOQIncreaseTicketCard(ticket) {
         <div class="meta-row-line-block">
           <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.85rem; border-radius:3px;">${ticket.ticketId}</span>
           <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${ticket.jobCardNumber || "—"}</strong>
-          <span id="boq-increase-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
           <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(ticket.projectId || "—")}</strong>
@@ -87,7 +86,8 @@ function renderBOQIncreaseTicketCard(ticket) {
         <strong>Engineer's Justification:</strong> ${escapeHtml(justificationText)}
       </div>
       <div style="overflow-x:auto; margin-bottom:14px;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+          <colgroup><col style="width:35%"><col style="width:5%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"></colgroup>
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
               <th style="border:1px solid var(--border); padding:8px;">Material Name</th>
