@@ -106,10 +106,11 @@ function mowBuildDisplayLineItems(ticket) {
 
 function mowTicketSummaryLine(t) {
   const tid = t.ticket_id || t.ticketId || "";
-  const proj = t.project_id || t.projectId || "";
-  return `${escapeHtml(tid)}${proj ? " — " + escapeHtml(proj) : ""}` +
-    `${(t.company_name || t.companyName) ? " — " + escapeHtml(t.company_name || t.companyName) : ""}` +
-    `${(t.boq_id || t.boqId) ? " · BOQ " + escapeHtml(t.boq_id || t.boqId) : ""}` +
+  const boq = t.boq_id || t.boqId || "";
+  // The BOQ ID already names the project and customer; show the company
+  // only when there is no BOQ (a pre-system ticket).
+  return `${escapeHtml(tid)}` +
+    (boq ? " — " + escapeHtml(boq) : ((t.company_name || t.companyName) ? " — " + escapeHtml(t.company_name || t.companyName) : "")) +
     `${(t.job_card_number || t.jobCardNumber) ? " · Job Card " + escapeHtml(t.job_card_number || t.jobCardNumber) : ""}`;
 }
 
