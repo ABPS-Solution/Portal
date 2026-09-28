@@ -454,7 +454,21 @@ function dtlOpenItem(it) {
       case 'planStep':
         if (it.projectId && typeof switchActiveDashboardModule === 'function') {
           switchActiveDashboardModule('project-timeline');
-          setTimeout(() => { if (typeof selectPtlProject === 'function') selectPtlProject(it.projectId); }, 60);
+          // Land on the exact step / milestone row in the Steps view.
+          let anchor = null;
+          if (it.kind === 'planStep') {
+            const rest = String(it.id).replace(/^planStep:/, '');
+            const cut = rest.lastIndexOf(':');
+            if (cut > 0) anchor = `ptl-step-${rest.slice(0, cut)}-${rest.slice(cut + 1)}`;
+          } else {
+            const parts = String(it.id).split(':');
+            if (parts.length >= 4) anchor = `ptl-row-${parts[parts.length - 1]}`;
+          }
+          setTimeout(async () => {
+            if (typeof selectPtlProject !== 'function') return;
+            await selectPtlProject(it.projectId);
+            if (anchor && typeof ptlSetViewMode === 'function') ptlSetViewMode('steps', anchor);
+          }, 60);
           return;
         }
         break;
