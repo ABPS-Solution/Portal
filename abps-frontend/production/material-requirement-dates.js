@@ -566,7 +566,18 @@ async function jumpToRMRDDelta(prnId, btn) {
       return;
     }
     const lines = data.lines || [];
-    deltaZone.innerHTML = mrdRenderLinesTable('rmrd', prnId, lines, false, 'submitReviseMRDQueue');
+    const meta = (window.rmrdQueueMeta || {})[prnId] || {};
+    const product = [meta.productName, meta.productRating].filter(Boolean).join(" ");
+    const header = `<div style="margin:6px 0 12px; padding:12px 14px; background:#f8fafc; border:1px solid var(--border); border-left:5px solid var(--brand); border-radius:var(--radius);">
+        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Revising requirement dates for</div>
+        ${product ? `<div style="font-size:1rem; font-weight:800; color:var(--text); margin-top:3px;">${escapeHtml(product)}</div>` : ""}
+        <div style="font-size:0.84rem; margin-top:4px; color:#334155;">
+          ${meta.projectId ? `Project: <strong style="font-family:monospace;">${escapeHtml(meta.projectId)}</strong>` : ""}
+          ${meta.customerName ? ` &nbsp;·&nbsp; Customer: <strong>${escapeHtml(meta.customerName)}</strong>` : ""}
+        </div>
+        <div style="font-size:0.74rem; margin-top:4px; font-family:monospace; color:var(--brand); overflow-wrap:anywhere;">${escapeHtml(prnId)}</div>
+      </div>`;
+    deltaZone.innerHTML = header + mrdRenderLinesTable('rmrd', prnId, lines, false, 'submitReviseMRDQueue');
     deltaZone.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
