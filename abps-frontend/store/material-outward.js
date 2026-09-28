@@ -236,8 +236,8 @@ function renderDraftChallanCard(draft, collapsible) {
     `<option value="${v}" ${(draft.returnable_status || '') === v ? 'selected' : ''}>${v || '— Select —'}</option>`).join("");
 
   const linkedTicketsHtml = linkedTickets.map(t => `
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:6px; background:#f8fafc;">
-      <span style="font-size:0.85rem;">${mowTicketSummaryLine(t)}</span>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border:2px solid #94a3b8; border-left:5px solid var(--brand); border-radius:var(--radius); margin-bottom:8px; background:#fff;">
+      <span style="font-size:0.88rem; line-height:1.45;">${mowTicketSummaryLine(t)}</span>
       <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:2px 8px; font-size:0.75rem;" onclick="mowRemoveTicketFromDraft(${challanId}, '${t.ticketId}')">Remove</button>
     </div>`).join("");
 
@@ -250,7 +250,7 @@ function renderDraftChallanCard(draft, collapsible) {
                value="${escapeHtml(it.hsnCode || '')}" oninput="mowValidateDraftCard(${challanId})"
                style="width:100%; max-width:140px; text-align:center; padding:6px; border:1.5px solid ${(it.hsnCode || '').trim() ? '#94a3b8' : '#dc2626'}; background:#fff; border-radius:var(--radius);" />
       </td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:700;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
+      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:800; font-size:1.1rem;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
       <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unit || "—")}</td>
     </tr>`).join("");
 
@@ -265,11 +265,11 @@ function renderDraftChallanCard(draft, collapsible) {
       ${collapsible ? mowEditAddTicketsSection(draft) : ''}
 
       <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
-          <div><label class="field-label" style="margin-top:0;">Purpose</label><div style="padding:8px; font-weight:700;">${escapeHtml(draft.outward_type || '—')}</div></div>
-          <div><label class="field-label" style="margin-top:0;">Status *</label><select id="mow-status-${challanId}" oninput="mowValidateDraftCard(${challanId})" onchange="mowValidateDraftCard(${challanId})" style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius);">${returnableOptions}</select></div>
-          <div><label class="field-label" style="margin-top:0;">Challan No</label><div style="padding:8px; font-weight:700; font-family:monospace;">${escapeHtml(draft.challan_number || '—')}</div></div>
-          <div><label class="field-label" style="margin-top:0;">Challan Date</label><div style="padding:8px;">${escapeHtml(todayStr)}</div></div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px;">
+          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Purpose</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; color:var(--text);">${escapeHtml(draft.outward_type || '—')}</div></div>
+          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Status *</div><select id="mow-status-${challanId}" oninput="mowValidateDraftCard(${challanId})" onchange="mowValidateDraftCard(${challanId})" style="width:100%; margin-top:4px; padding:7px; border:2px solid #94a3b8; background:#fff; border-radius:var(--radius); font-weight:700;">${returnableOptions}</select></div>
+          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Challan No</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; font-family:monospace; color:var(--brand);">${escapeHtml(draft.challan_number || '—')}</div></div>
+          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Challan Date</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; color:var(--text);">${escapeHtml(todayStr)}</div></div>
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
@@ -292,9 +292,9 @@ function renderDraftChallanCard(draft, collapsible) {
           ${mowFieldFor(challanId, 'Note (optional)', 'note', draft.challan_remarks, false)}
         </div>
 
-        <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials</h4>
+        <h4 style="margin:0 0 6px; font-size:0.95rem; font-weight:800; color:var(--brand);">Materials List</h4>
         <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Description, Qty and Unit come from the linked tickets' approved release — not editable here. HSN Code is required for every row.</p>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
+        <table class="prn-view-table" style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
           <colgroup><col style="width:7%;" /><col style="width:47%;" /><col style="width:16%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
             <th style="padding:8px; border:1px solid var(--border); font-size:0.75rem; text-transform:uppercase; color:var(--muted);">Sr</th>
