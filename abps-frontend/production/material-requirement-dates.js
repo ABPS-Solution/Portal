@@ -77,6 +77,7 @@ async function loadMRDNeedQueue() {
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;">
         <div style="min-width:0;">
           <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productName || "")} ${escapeHtml(item.productRating || "")}</div>
+          ${(item.staleLines || []).length ? `<ul style="margin:6px 0 0; padding-left:18px; font-size:0.8rem; color:#78350f; line-height:1.55;">${item.staleLines.map(l => `<li><strong>${escapeHtml(l.materialName || l.itemCode)}</strong>: ${l.neverDated ? `never dated, needs ${trimNum(l.needNow)} ${escapeHtml(l.unit || "")}` : `dated for ${trimNum(l.datedFor)}, now needs ${trimNum(l.needNow)} ${escapeHtml(l.unit || "")}${l.datedAt ? ` (dates saved ${escapeHtml(formatOrdinalDateTime(l.datedAt))})` : ""}`}</li>`).join("")}</ul>` : ""}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
           onclick="jumpToMRDFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
