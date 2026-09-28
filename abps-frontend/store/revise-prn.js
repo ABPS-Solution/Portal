@@ -153,7 +153,7 @@ function renderRPRNDeltaTable() {
   });
 
   zone.innerHTML = `
-    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">Revised Purchase Request Note for ${pending.boqId}${revBadge}</div>
+    <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-bottom:12px;">Revised Purchase Request Note for<div style="margin-top:4px;">${pending.boqId}${revBadge}</div></div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1150px;">
         <thead>

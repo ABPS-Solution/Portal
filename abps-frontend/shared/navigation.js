@@ -9,7 +9,9 @@ async function checkStorePRNRevisionReminder() {
   if (!banners.length) return;
   try {
     const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
-    const show = data.success && data.count > 0;
+    const onExcludedPanel = ["canvas-module-expected-inbounds", "canvas-module-authorize-material-outward", "canvas-module-purchase-revise-prn"]
+      .some(id => { const p = document.getElementById(id); return p && p.style.display === "block"; });
+    const show = data.success && data.count > 0 && !onExcludedPanel;
     banners.forEach(b => { b.style.display = show ? "block" : "none"; });
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
