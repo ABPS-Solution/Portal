@@ -240,8 +240,8 @@ async function parseGateDocumentsWithAI() {
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
         </td>
         <td style="width:140px; padding:6px; vertical-align:middle;">
-          <input type="number" class="gate-row-qty-input" value="${item.gateQuantity ?? ''}" step="any" min="0"
-            style="font-size:1.05rem; padding:5px 4px; font-weight:700; color:#000; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px;">
+          <input type="number" class="gate-row-qty-input" value="${item.gateQuantity ?? ''}" step="any" min="0" readonly tabindex="-1" title="Invoice Qty is corrected at Store Entry and GRN"
+            style="font-size:1.05rem; padding:5px 4px; font-weight:700; color:#000; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
         </td>
       </tr>`;
     });
@@ -283,13 +283,7 @@ async function commitGateEntryRecordsToBackend() {
     // Invoice Unit is read-only here (not operator-editable) — this just
     // reads back whatever the AI extraction/default already set.
     item.unitType = unitInputs[idx] ? (unitInputs[idx].value.trim() || 'NOS') : (item.unitType || 'NOS');
-    // Invoice Qty is editable — a vendor sometimes combines a previous
-    // PO's missing/shortfall units with a new PO's delivery in one
-    // document; splitting that into two Gate Entries against the same
-    // document (adjusting Qty and Default PO on each) is simpler than
-    // splitting one line across multiple POs, so the operator needs to
-    // be able to correct the AI-read quantity down to just the portion
-    // this particular Gate Entry is actually for.
+    // Invoice Qty is read-only at Gate Entry; it is corrected at Store Entry and GRN.
     item.gateQuantity = qtyInputs[idx] && qtyInputs[idx].value !== '' ? Number(qtyInputs[idx].value) : item.gateQuantity;
     if (!item.rawDescriptionLine && tableRows[idx]) {
       item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
