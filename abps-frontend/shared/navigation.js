@@ -10,7 +10,7 @@ async function checkStorePRNRevisionReminder() {
   try {
     const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
     // Only where a PRN revision can actually be acted on.
-    const onRelevantPanel = ["canvas-module-purchase-prn", "canvas-module-purchase-authorize-prn", "canvas-module-assign-current-stock"]
+    const onRelevantPanel = ["canvas-module-purchase-prn", "canvas-module-purchase-authorize-prn", "canvas-module-assign-current-stock", "canvas-module-store-entry", "canvas-module-stock-sweep", "canvas-module-store-manager-approvals", "canvas-module-store-history-matrix"]
       .some(id => { const p = document.getElementById(id); return p && p.style.display === "block"; });
     const show = data.success && data.count > 0 && onRelevantPanel;
     banners.forEach(b => { b.style.display = show ? "block" : "none"; });
@@ -54,7 +54,9 @@ async function checkPurchasePORevisionReminder() {
   if (!banner) return;
   try {
     const data = await apFetch({ action: "checkPRNsNeedingPORevisionCount" });
-    banner.style.display = (data.success && data.count > 0) ? "block" : "none";
+    const onRelevantPanel = ["canvas-module-purchase-material-list", "canvas-module-purchase-create-po", "canvas-module-purchase-pps-tracking", "canvas-module-purchase-search-po", "canvas-module-purchase-rejected-material"]
+      .some(id => { const p = document.getElementById(id); return p && p.style.display === "block"; });
+    banner.style.display = (data.success && data.count > 0 && onRelevantPanel) ? "block" : "none";
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
 async function navigateToModule(key) { 
