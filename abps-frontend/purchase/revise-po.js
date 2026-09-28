@@ -220,6 +220,9 @@ async function updatePORevisionUI() {
     if (l.vendorDiscussedQty < l._received - 1e-9) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received, cannot revise below that.`, "error");
     }
+    if (!l._allocationTouched) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: click Allocate to PRNs and confirm how the ${l.vendorDiscussedQty} is split (anything not allocated becomes Extra).`, "error");
+    }
     const sum = l.allocations.reduce((s, a) => s + a.quantity, 0);
     if (sum > l.vendorDiscussedQty + 1e-9) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: allocated ${sum} but the revised line is ${l.vendorDiscussedQty}.`, "error");
@@ -904,6 +907,9 @@ async function submitPORevisionUI() {
     }
     if (l.vendorDiscussedQty < l._received - 1e-9) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: ${l._received} already received, cannot revise below that.`, "error");
+    }
+    if (!l._allocationTouched) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: click Allocate to PRNs and confirm how the ${l.vendorDiscussedQty} is split (anything not allocated becomes Extra).`, "error");
     }
     const sum = l.allocations.reduce((s, a) => s + a.quantity, 0);
     if (sum > l.vendorDiscussedQty + 1e-9) {
