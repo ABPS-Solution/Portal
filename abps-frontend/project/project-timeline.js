@@ -640,9 +640,9 @@ function ptlRenderLaneSteps(lane, c) {
           <span style="display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:${done ? c : '#fff'}; border:2px solid ${late ? 'var(--warn)' : c}; vertical-align:middle;"></span>
           ${escapeHtml(s.label)}${s.terminal ? ' <span style="font-weight:400; color:var(--muted); font-size:0.78rem;">(automatic)</span>' : ''}
         </td>
-        <td style="width:16%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
-        <td style="width:16%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${s.startDate ? ptlFmt(s.startDate) : '-'}</td>
-        <td style="width:18%; padding:5px 8px; font-size:0.95rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
+        <td style="width:16%; padding:5px 8px; font-size:1.08rem; font-weight:700; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(s.planned)}</td>
+        <td style="width:16%; padding:5px 8px; font-size:1.08rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${s.startDate ? ptlFmt(s.startDate) : '-'}</td>
+        <td style="width:18%; padding:5px 8px; font-size:1.08rem; font-weight:700; color:var(--text); font-family:monospace; text-align:center; ${colBorder}">${ptlFmt(currentTarget)}</td>
         <td style="width:22%; padding:5px 8px; text-align:center; ${colBorder}">${statusCell}</td>
       </tr>`;
   }).join("");
@@ -1039,7 +1039,9 @@ function ptlCanvasNodes() {
   // 2026) so it renders as its own point without implying it's just
   // another step in the same sequence; the two dates can legitimately
   // diverge and that divergence is the point of showing both.
-  const tailIds = ['inspCall', 'customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'predictedDelivery'];
+  // Inspection Call Release is not drawn on the map (it crowded Stage 4's
+  // production steps); it stays in the Steps list and in Flags.
+  const tailIds = ['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'predictedDelivery'];
   const standaloneIds = ['delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
   const dated = id => { const n = byId(id); return n && ptlEff(n) ? n : null; };
@@ -1330,14 +1332,7 @@ function ptlRenderCanvas(containerId) {
         // group's lanes (represented once by the summary row instead).
         return summaryYByGroupKey[laneGroupKey(l)] ?? (RULER_H + TRUNK_BAND_H + ROW_PITCH / 2);
       })
-    // No product row may sit on the project's own line (Stage 5 milestones
-    // got lost among production steps): with an odd count, the middle row
-    // moves half a gap below and the rows beyond it step out to match.
-    : lanes.map((_, i) => {
-        const k = i - (laneCount - 1) / 2;
-        const off = laneCount % 2 === 1 ? (k < 0 ? k - 0.5 : k + 0.5) : k;
-        return spineY + off * (laneCount % 2 === 1 ? gap * 0.8 : gap);
-      });
+    : lanes.map((_, i) => spineY + (i - (laneCount - 1) / 2) * gap);
 
   // Every date within ptlBuildDayRange's from/to span is now in the index
   // (Sundays/holidays included, 31 Aug 2026) - this fallback is purely
