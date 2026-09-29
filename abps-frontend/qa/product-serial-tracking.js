@@ -332,54 +332,72 @@ function psnRenderMaterialSources(trace) {
     return `<span style="color:var(--muted);">No material source data recorded for this unit.</span>`;
   }
   const lines = typeof trace.materialSources === 'string' ? JSON.parse(trace.materialSources) : trace.materialSources;
-  return lines.map(m => {
-    const issued = Number(m.issuedQuantity) || 0;
-    const unattributed = Number(m.unattributedQuantity) || 0;
-    const attributedPct = issued > 0 ? Math.max(0, Math.min(100, Math.round(((issued - unattributed) / issued) * 100))) : 100;
+  const mono = "font-family:ui-monospace, 'SF Mono', Consolas, monospace;";
+  const na = '<span style="color:var(--muted);">N/A</span>';
+  let anyUnattributed = false;
 
-    const poRows = (m.poLines || []).map(pl => {
+  const body = lines.map((m, mi) => {
+    const unit = escapeHtml(m.unitType || '');
+    const unattributed = Number(m.unattributedQuantity) || 0;
+    if (unattributed > 0) anyUnattributed = true;
+    const src = (m.poLines || []).length ? m.poLines : [null];
+    const rej = m.rejections || [];
+    const span = src.length + (rej.length ? 1 : 0);
+    const stripe = mi % 2 ? 'background:#f8fafc;' : '';
+
+    const rows = src.map((pl, i) => {
+      const first = i === 0 ? `
+        <td rowspan="${span}" style="${stripe}"><div style="font-weight:800; ${mono}">${escapeHtml(m.itemCode || '')}</div><div style="margin-top:2px;">${escapeHtml(m.materialName || '')}</div></td>
+        <td rowspan="${span}" style="text-align:center; ${stripe}">${trimNum(m.allottedQuantity || 0)}</td>
+        <td rowspan="${span}" style="text-align:center; ${stripe}">${trimNum(m.usedQuantity || 0)}</td>
+        <td rowspan="${span}" style="text-align:center; font-weight:700; ${stripe}">${trimNum(m.issuedQuantity || 0)} ${unit}</td>` : '';
+      if (!pl) return `<tr>${first}<td colspan="7" style="text-align:center; color:var(--muted);">No source receipts recorded.</td></tr>`;
+      const missing = !pl.poNo && !pl.grnNumber;
+      if (missing) {
+        return `<tr>${first}<td colspan="6" style="background:#fee2e2; color:#991b1b; font-weight:700;">No matching receipt found (see note below)</td>
+          <td style="text-align:center; background:#fee2e2; color:#991b1b; font-weight:800;">${trimNum(pl.attributedQuantity || 0)}</td></tr>`;
+      }
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
-      const chip = `<span class="psn-tier-chip" style="color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span>`;
-      const evidence = pl.grnNumber
-        ? `${escapeHtml(pl.grnNumber)}${pl.invoiceNumber ? ' · Invoice ' + escapeHtml(pl.invoiceNumber) : ''}${pl.qaPerson ? ' · QA by ' + escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? ' on ' + formatOrdinalDate(pl.qaPassDate) : ''}`
-        : (pl.poNo ? '' : '<span style="color:var(--muted);">No receipt could be matched for this quantity.</span>');
-      const okNotOk = (pl.okQuantity != null || pl.notOkQuantity != null || pl.missingQuantity != null)
-        ? ` <span style="color:var(--muted);">(OK ${trimNum(pl.okQuantity || 0)} / Not-OK ${trimNum(pl.notOkQuantity || 0)} / Missing ${trimNum(pl.missingQuantity || 0)})</span>` : '';
-      const meta = [pl.poDate ? formatOrdinalDate(pl.poDate) : '', pl.vendorName ? escapeHtml(pl.vendorName) : ''].filter(Boolean).join(' · ');
-      return `<div class="psn-po-row">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span>${chip} <strong style="margin-left:6px; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${pl.poNo ? escapeHtml(pl.poNo) : '<span style="color:var(--muted); font-family:inherit;">No PO</span>'}</strong>
-            ${meta ? ' <span style="color:var(--muted);">· ' + meta + '</span>' : ''}</span>
-            <span style="font-weight:700;">${trimNum(pl.attributedQuantity || 0)}</span>
-          </div>
-          <div style="font-size:0.88rem; color:var(--text); margin-top:5px;">${evidence}${okNotOk}</div>
-        </div>`;
+      const qa = pl.qaPerson || pl.qaPassDate
+        ? `${pl.qaPerson ? escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? '<div style="color:var(--muted); font-size:0.78rem;">' + formatOrdinalDate(pl.qaPassDate) + '</div>' : ''}` : na;
+      const okNot = (pl.okQuantity != null || pl.notOkQuantity != null || pl.missingQuantity != null)
+        ? `${trimNum(pl.okQuantity || 0)} / ${trimNum(pl.notOkQuantity || 0)} / ${trimNum(pl.missingQuantity || 0)}` : na;
+      return `<tr>${first}
+        <td style="text-align:center;"><span class="psn-tier-chip" style="color:${tier.color}; background:${tier.bg};">${escapeHtml(tier.label)}</span></td>
+        <td><div style="font-weight:700; ${mono}">${pl.poNo ? escapeHtml(pl.poNo) : na}</div>${pl.poDate ? '<div style="color:var(--muted); font-size:0.78rem;">' + formatOrdinalDate(pl.poDate) + '</div>' : ''}</td>
+        <td>${pl.vendorName ? escapeHtml(pl.vendorName) : na}</td>
+        <td><div style="${mono}">${pl.grnNumber ? escapeHtml(pl.grnNumber) : na}</div>${pl.invoiceNumber ? '<div style="color:var(--muted); font-size:0.78rem;">Invoice ' + escapeHtml(pl.invoiceNumber) + '</div>' : ''}</td>
+        <td>${qa}</td>
+        <td style="text-align:center;">${okNot}</td>
+        <td style="text-align:center; font-weight:800;">${trimNum(pl.attributedQuantity || 0)}</td>
+      </tr>`;
     }).join('');
 
-    const warn = unattributed > 0
-      ? `<div style="margin-top:8px; padding:8px 10px; background:#fee2e2; border-left:4px solid #b91c1c; border-radius:var(--radius); font-size:0.82rem;">${trimNum(unattributed)} ${escapeHtml(m.unitType || '')} could not be attributed to any receipt.</div>`
-      : '';
-
-    const rejectionsHtml = (m.rejections || []).length
-      ? `<div style="margin-top:8px;"><div style="font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Rejection / repair history</div>
-          ${m.rejections.map(r => `<div style="font-size:0.8rem; padding:6px 0; border-top:1px solid var(--border);">
-              ${escapeHtml(r.status || '')}: Not-OK ${trimNum(r.notOkQuantity || 0)} / Missing ${trimNum(r.missingQuantity || 0)}
-              ${r.reasonForNotOk ? ' · ' + escapeHtml(r.reasonForNotOk) : ''} ${r.setDate ? ' (' + formatOrdinalDate(r.setDate) + ')' : ''}
-            </div>`).join('')}
-        </div>`
-      : '';
-
-    return `<div class="psn-material-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
-          <div style="flex:1; min-width:0;"><strong>${escapeHtml(m.itemCode || '')}</strong> <span style="color:var(--text);">${escapeHtml(m.materialName || '')}</span></div>
-          <span style="font-size:0.95rem; font-weight:600; color:var(--text); white-space:nowrap; flex-shrink:0;">Allotted ${trimNum(m.allottedQuantity || 0)} / Used ${trimNum(m.usedQuantity || 0)} / Issued ${trimNum(m.issuedQuantity || 0)} ${escapeHtml(m.unitType || '')}</span>
-        </div>
-        <div class="psn-qty-bar-track"><div class="psn-qty-bar-fill" style="width:${attributedPct}%; ${unattributed > 0 ? 'background:#dc2626;' : ''}"></div></div>
-        ${poRows || '<div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No source receipts recorded.</div>'}
-        ${warn}
-        ${rejectionsHtml}
-      </div>`;
+    const rejRow = rej.length ? `<tr><td colspan="7" style="background:#fff7ed; font-size:0.8rem;">
+        <strong style="color:#9a3412;">Rejection / repair history:</strong>
+        ${rej.map(r => `${escapeHtml(r.status || '')}: Not-OK ${trimNum(r.notOkQuantity || 0)} / Missing ${trimNum(r.missingQuantity || 0)}${r.reasonForNotOk ? ' (' + escapeHtml(r.reasonForNotOk) + ')' : ''}${r.setDate ? ' on ' + formatOrdinalDate(r.setDate) : ''}`).join('; ')}
+      </td></tr>` : '';
+    return rows + rejRow;
   }).join('');
+
+  const th = (t, w, align) => `<th style="width:${w}; text-align:${align || 'left'}; white-space:normal;">${t}</th>`;
+  const note = anyUnattributed
+    ? `<div style="margin-top:10px; padding:9px 12px; background:#fee2e2; border:2px solid #fca5a5; border-radius:var(--radius); font-size:0.82rem; color:#7f1d1d;">
+        <strong>No matching receipt found:</strong> the system could not link this quantity to a specific Gate Entry / GRN / Q/A receipt,
+        usually because the stock was already in the store before the system went live (opening stock or a stock sweep) or was issued before its receipt was recorded.
+        The material was genuinely issued to this Job Card; only its purchase history is unknown.
+      </div>` : '';
+
+  return `<div style="overflow-x:auto;">
+    <table class="psn-bordered psn-material-table">
+      <thead><tr>
+        ${th('Material', '19%')}${th('Allotted', '6%', 'center')}${th('Used', '6%', 'center')}${th('Issued', '7%', 'center')}
+        ${th('Source', '9%', 'center')}${th('PO No / Date', '13%')}${th('Vendor', '11%')}${th('GRN / Invoice', '11%')}
+        ${th('Q/A By / On', '9%')}${th('OK / Not-OK / Missing', '6%', 'center')}${th('Qty', '5%', 'center')}
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>${note}
+    <div style="margin-top:8px; font-size:0.76rem; color:var(--muted);">Source: <strong>Exact</strong> = received on this PRN's own PO. <strong>Auto-assigned</strong> = stock the system reserved for this PRN on arrival. <strong>FIFO-inferred</strong> = best guess, oldest matching receipt first.</div>`;
 }
 
 // No longer called: the Source Attribution section was removed from the
