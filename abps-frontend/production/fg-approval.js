@@ -135,30 +135,32 @@ async function toggleFGApprovalCardBody(fgId) {
 function renderFGApprovalDetailBody(fgId) {
   const st = window._fgApprovalState[fgId];
   const fg = st.fg;
-  const field = (label, val) => `
-    <div>
-      <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">${label}</div>
-      <div style="font-size:0.85rem; font-weight:600; color:#111827;">${escapeHtml(val || "—")}</div>
+  const B = "2px solid #94a3b8";
+  const field = (label, val, left) => `
+    <div style="padding:10px 14px; ${left ? "border-left:" + B + ";" : ""}">
+      <div style="font-size:0.68rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">${label}</div>
+      <div style="font-size:0.88rem; font-weight:600; color:#111827; word-break:break-word;">${escapeHtml(val || "—")}</div>
     </div>`;
 
   return `
-    <div style="border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:14px;">
-      <div style="display:grid; grid-template-columns:2fr 1fr 0.6fr 1fr; gap:14px;">
+    <div style="border:${B}; border-radius:var(--radius); background:#fff; margin-bottom:16px; overflow:hidden;">
+      <div style="padding:8px 14px; background:#e0e7ff; border-bottom:${B}; font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; letter-spacing:0.5px;">Finished Goods Details</div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 0.6fr 1.4fr; border-bottom:${B};">
         ${field("Project ID", fg.projectId)}
-        ${field("Department", fg.department)}
-        ${field("Unit", fg.unit)}
-        <div>
-          <div style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Product Serial Number *</div>
+        ${field("Department", fg.department, true)}
+        ${field("Unit", fg.unit, true)}
+        <div style="padding:10px 14px; border-left:${B}; background:#fffbeb;">
+          <div style="font-size:0.68rem; font-weight:800; color:#b45309; text-transform:uppercase; margin-bottom:4px;">Product Serial Number *</div>
           <input type="text" id="fg-approval-serial-${fgId}" value="${escapeHtml(fgApprovalSerialValue(fgId))}"
             oninput="window._fgApprovalState[${fgId}].serial = this.value; updateFGApprovalSubmitState(${fgId});"
-            placeholder="Enter product serial number..." style="padding:7px 9px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; font-weight:600;" />
+            placeholder="Enter product serial number..." style="padding:7px 9px; border:2px solid #94a3b8; border-radius:var(--radius); font-size:0.88rem; font-weight:600; background:#fff;" />
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+      <div style="display:grid; grid-template-columns:1fr 2fr; border-bottom:${B};">
         ${field("Product Name", fg.productName)}
-        ${field("Product Rating", fg.productRating)}
+        ${field("Product Rating", fg.productRating, true)}
       </div>
-      ${field("Job Card Number", fg.jobCardNumber)}
+      <div style="${fg.descriptionOfMaterial ? "border-bottom:" + B + ";" : ""}">${field("Job Card Number", fg.jobCardNumber)}</div>
       ${fg.descriptionOfMaterial ? field("Description of Material", fg.descriptionOfMaterial) : ""}
     </div>
 
