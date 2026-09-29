@@ -194,6 +194,7 @@ async function openPORevisionForEdit(requestId, poNo) {
       _workingAllocations: (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.allocatedQty) || 0 })),
       _allocationTouched: li.draftQty != null || (li.allocations || []).length > 0,
       _allocatedForQty: Number(li.draftQty != null ? li.draftQty : li.orderedQty) || 0,
+      _removed: !li.isNew && li.draftQty != null && Number(li.draftQty) <= 0 && Number(li.orderedQty) > 0,
     }));
     window.rpoActive = {
       po: data.po, lineItems, kind: data.editingRevisionKind || "Standalone",
@@ -211,6 +212,16 @@ async function updatePORevisionUI() {
   const lines = collectRPOLines();
 
   for (const l of lines) {
+    if (l._removed) continue;
+    if (l._isNew && !(l.vendorDiscussedQty > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: enter the Vendor Discussed Qty for the new row, or remove it.`, "error");
+    }
+    if (l._isNew && !(l.rate > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: enter the Rate / Qty for the new row.`, "error");
+    }
+    if (l._isNew && !l.allocations.some(a => a.quantity > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: a new row must be allocated to at least one PRN.`, "error");
+    }
     if (!(l.additionalDescription || "").trim()) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Description of Material is required.`, "error");
     }
@@ -507,7 +518,18 @@ function renderPORevisionCard() {
   const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 
   const rowsHtml = lineItems.map((li, idx) => {
-    if (kind === "PRN Driven" && !li.changed) return ""; // unchanged — not shown, but still counted in the totals below
+    if (kind === "PRN Driven" && !li.changed && !li._removed && !li.isNew) return ""; // unchanged — not shown, but still counted in the totals below
+
+    if (li._removed) {
+      return `
+    <div data-lineidx="${idx}" style="background:#fef2f2; border:1.5px dashed #f87171; border-radius:8px; margin-bottom:12px; padding:10px 12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="font-weight:800; font-size:0.85rem; color:#991b1b;">Row ${idx + 1} removed</span>
+      <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:#991b1b;">${escapeHtml(li.itemCode || "")}</span>
+      <span style="font-size:0.85rem; color:#7f1d1d; flex:1; min-width:200px;">${escapeHtml(li.description || "")} (was ${formatQtyTrimmed(li.orderedQty)} ${escapeHtml(li.unit || "")})</span>
+      <span id="rpo-amount-${idx}" style="display:none;">0</span>
+      <button onclick="rpoUndoRemoveRow(${idx})" style="font-size:0.75rem; padding:5px 12px; background:#fff; color:#991b1b; border:1.5px solid #f87171; border-radius:4px; cursor:pointer; font-weight:700;">Undo</button>
+    </div>`;
+    }
 
     // Chips below the row — same "Allocate to PRNs" button + chip-list
     // pattern as Create PO, sourced from li._workingAllocations (edited
@@ -541,8 +563,11 @@ function renderPORevisionCard() {
       idx, itemCode: li.itemCode, description: li.description, unit: li.unit,
       oldQty: Number(li.orderedQty) || 0, newQty: Number(li.newRequiredQty) || 0, received: Number(li.receivedQty) || 0,
       vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
-      headBg: li.changed ? (_grow ? '#dcfce7' : '#fef3c7') : '#e0f2fe', headColor: li.changed ? (_grow ? '#166534' : '#78350f') : 'var(--brand)',
-      changeNote: li.changed ? (_grow ? 'Quantity going up' : 'Quantity going down') : '',
+      headBg: li.isNew ? '#dbeafe' : (li.changed ? (_grow ? '#dcfce7' : '#fef3c7') : '#e0f2fe'), headColor: li.isNew ? '#1e3a8a' : (li.changed ? (_grow ? '#166534' : '#78350f') : 'var(--brand)'),
+      changeNote: li.isNew ? 'New row added in this revision' : (li.changed ? (_grow ? 'Quantity going up' : 'Quantity going down') : ''),
+      headExtraHtml: (Number(li.receivedQty) || 0) > 0
+        ? `<span style="font-size:0.72rem; color:#64748b;" title="Material has been received on this row, so it cannot be removed">Cannot remove: received</span>`
+        : `<button onclick="rpoRemoveRow(${idx})" style="font-size:0.72rem; padding:3px 10px; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; cursor:pointer; font-weight:700;">Remove row</button>`,
       vdqAttrs: `min="${Number(li.receivedQty)||0}" class="rpo-vdq" data-idx="${idx}" value="${formatQtyTrimmed(li.quantity)}" oninput="updateRPORowField(${idx},'quantity',this.value)" onblur="handleRPOQtyBlur(${idx})"`,
       rateAttrs: `class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)"`,
       discAttrs: `class="rpo-disc" data-idx="${idx}" value="${formatQtyTrimmed(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)"`,
@@ -609,6 +634,10 @@ function renderPORevisionCard() {
 
       ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed and not every material in this PO.</div>` : ""}
       <div id="rpo-lines-wrap">${rowsHtml}</div>
+      <div style="margin:4px 0 6px;">
+        <button onclick="openRPOAddMaterialModal()" style="font-size:0.8rem; padding:7px 16px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); border-radius:6px; cursor:pointer; font-weight:700;">+ Add Material</button>
+        <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">Adds a material still to be ordered on an authorized PRN to this PO.</span>
+      </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
         <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
@@ -915,7 +944,8 @@ function collectRPOLines() {
       return { itemCode: li.itemCode, srNo: li.srNo, description: li.description, additionalDescription: li.additionalDescription || "", unit: li.unit,
                vendorDiscussedQty: vdq, rate, discountPercent,
                deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx,
-               _designRate: li.designRatePerQuantity, _sourceAllocations: li.allocations || [], _allocationTouched: li._allocationTouched };
+               _designRate: li.designRatePerQuantity, _sourceAllocations: li.allocations || [], _allocationTouched: li._allocationTouched,
+               _removed: !!li._removed, _isNew: !!li.isNew };
     });
 }
 
@@ -925,6 +955,16 @@ async function submitPORevisionUI() {
   const lines = collectRPOLines();
 
   for (const l of lines) {
+    if (l._removed) continue;
+    if (l._isNew && !(l.vendorDiscussedQty > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: enter the Vendor Discussed Qty for the new row, or remove it.`, "error");
+    }
+    if (l._isNew && !(l.rate > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: enter the Rate / Qty for the new row.`, "error");
+    }
+    if (l._isNew && !l.allocations.some(a => a.quantity > 0)) {
+      return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: a new row must be allocated to at least one PRN.`, "error");
+    }
     if (!(l.additionalDescription || "").trim()) {
       return showPurchaseFeedback("rpo-feedback", `⚠️ ${l.itemCode}: Description of Material is required.`, "error");
     }
@@ -1154,6 +1194,8 @@ function renderAPORCard(r) {
     const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
     if (Math.abs(newQty - oldQty) < 1e-9 && Math.abs(newRate - oldRate) < 1e-9) return "";
     const qtyColor = newQty > oldQty ? "#15803d" : "#b91c1c";
+    if (!currentByItem[line.itemCode]) return `<li><span style="font-weight:800; color:#1e3a8a;">New row:</span> <strong>${escapeHtml(line.description || line.itemCode)}</strong>, ${fmt(newQty)} at ${fmt(newRate)}</li>`;
+    if (newQty <= 1e-9) return `<li><span style="font-weight:800; color:#991b1b;">Row removed:</span> <strong>${escapeHtml(line.description || line.itemCode)}</strong> (was ${fmt(oldQty)})</li>`;
     return `<li> <strong> ${escapeHtml(line.description || line.itemCode)}: </strong> ${fmt(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${fmt(newQty)}</span>${Math.abs(newRate-oldRate) > 1e-9 ? `, rate ${fmt(oldRate)} → <span style="font-weight:700; color:#b45309;">${fmt(newRate)}</span>` : ""}</li>`;
   }).filter(Boolean);
   const summaryHtml = summaryLines.length ? `
@@ -1259,11 +1301,14 @@ function renderAPORCard(r) {
     const costingDiff = (hasRateValue && hasDesignRate) ? (effectiveRate - Number(designRate)) * vdqNow : null;
 
     const _changedQty = Math.abs(vdqNow - oldQty) >= 1e-9;
+    const _isNewRow = !currentByItem[line.itemCode];
+    const _isRemovedRow = !_isNewRow && vdqNow <= 1e-9;
     return poRevRowHtml({
       idx, itemCode: line.itemCode, description: line.description, unit: line.unit,
       oldQty, newQty, received, vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
-      headBg: !_changedQty ? '#e0f2fe' : (vdqNow > oldQty ? '#dcfce7' : '#fef3c7'), headColor: !_changedQty ? 'var(--brand)' : (vdqNow > oldQty ? '#166534' : '#78350f'),
-      changeNote: !_changedQty ? '' : (vdqNow > oldQty ? 'Quantity going up' : 'Quantity going down'),
+      headBg: _isNewRow ? '#dbeafe' : (_isRemovedRow ? '#fee2e2' : (!_changedQty ? '#e0f2fe' : (vdqNow > oldQty ? '#dcfce7' : '#fef3c7'))),
+      headColor: _isNewRow ? '#1e3a8a' : (_isRemovedRow ? '#991b1b' : (!_changedQty ? 'var(--brand)' : (vdqNow > oldQty ? '#166534' : '#78350f'))),
+      changeNote: _isNewRow ? 'New row added in this revision' : (_isRemovedRow ? 'Row removed in this revision' : (!_changedQty ? '' : (vdqNow > oldQty ? 'Quantity going up' : 'Quantity going down'))),
       vdqAttrs: `min="${received}" class="apor-vdq" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.quantity)}" oninput="updateAPORRowField(${rid},${idx},'quantity',this.value)" onblur="handleAPORQtyBlur(${rid},${idx})"`,
       rateAttrs: `class="apor-rate" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.rate)}" oninput="updateAPORRowField(${rid},${idx},'rate',this.value)"`,
       discAttrs: `class="apor-disc" data-idx="${idx}" data-requestid="${rid}" value="${formatQtyTrimmed(line.discountPercent)}" oninput="updateAPORRowField(${rid},${idx},'discountPercent',this.value)"`,
@@ -1738,6 +1783,7 @@ function poRevRowHtml(o) {
         <span style="font-family:monospace; font-weight:700; font-size:0.8rem;">${o.itemCode || ''}</span>
         <span style="font-size:0.78rem; font-weight:700;">${escapeHtml(o.changeNote)}</span>
         <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span id="${o.amountId}">0</span></strong></span>
+        ${o.headExtraHtml || ''}
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
@@ -1767,4 +1813,101 @@ function poRevRowHtml(o) {
         </div>
       </div>
     </div>`;
+}
+
+
+// ── Add / remove rows (29 Sep 2026) ─────────────────────────────────────
+function rpoRemoveRow(idx) {
+  const st = window.rpoActive;
+  const li = st?.lineItems[idx];
+  if (!li) return;
+  if (li.isNew) { st.lineItems.splice(idx, 1); renderPORevisionCard(); return; }
+  if ((Number(li.receivedQty) || 0) > 0) return;
+  if (!confirm(`Remove ${li.itemCode} from this PO? Its PRN allocations go back to the PRNs and its delivery schedule is cancelled once the revision is authorized.`)) return;
+  li._removed = true;
+  li._prevQuantity = li.quantity;
+  li.quantity = 0;
+  li._workingAllocations = [];
+  li._allocationTouched = true;
+  li._allocatedForQty = 0;
+  renderPORevisionCard();
+}
+
+function rpoUndoRemoveRow(idx) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  li._removed = false;
+  li.quantity = li._prevQuantity != null ? li._prevQuantity : li.orderedQty;
+  li._workingAllocations = (li.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.allocatedQty) || 0 }));
+  li._allocationTouched = li._workingAllocations.length > 0;
+  li._allocatedForQty = Number(li.quantity) || 0;
+  renderPORevisionCard();
+}
+
+async function openRPOAddMaterialModal() {
+  const st = window.rpoActive;
+  if (!st) return;
+  const existing = document.getElementById("rpo-add-modal");
+  if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "rpo-add-modal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:980px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
+        <div style="font-weight:800; font-size:1rem; color:var(--brand); margin-bottom:10px;">Add a material to ${escapeHtml(st.po.poNo || "")}</div>
+        <input type="text" id="rpo-add-search" placeholder="Search material or item code..." oninput="renderRPOAddMaterialList()" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:6px;">
+      </div>
+      <div id="rpo-add-list" style="overflow-y:auto; flex:1; padding:14px 20px;"><div style="color:var(--muted); text-align:center; padding:20px;">Loading materials still to order...</div></div>
+      <div style="display:flex; justify-content:flex-end; padding:12px 20px; border-top:1px solid var(--border); background:#f8fafc;">
+        <button onclick="document.getElementById('rpo-add-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  try {
+    const data = await apFetch({ action: "fetchPOAddableMaterials", poNo: st.po.poNo });
+    if (!data.success) throw new Error(data.error || "Could not load materials.");
+    window.rpoAddableMaterials = data.materials || [];
+    renderRPOAddMaterialList();
+  } catch (e) {
+    const list = document.getElementById("rpo-add-list");
+    if (list) list.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderRPOAddMaterialList() {
+  const list = document.getElementById("rpo-add-list");
+  if (!list) return;
+  const q = (document.getElementById("rpo-add-search")?.value || "").trim().toLowerCase();
+  const onPo = new Set((window.rpoActive?.lineItems || []).map(li => li.itemCode));
+  const items = (window.rpoAddableMaterials || []).filter(m => !onPo.has(m.itemCode)
+    && (!q || (m.description + " " + m.itemCode).toLowerCase().includes(q)));
+  if (!items.length) {
+    list.innerHTML = `<div style="color:var(--muted); text-align:center; padding:20px;">No material still to be ordered matches.</div>`;
+    return;
+  }
+  list.innerHTML = items.slice(0, 200).map(m => `
+    <div onclick="rpoAddMaterialRow(${jsArg(m.itemCode)})" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; cursor:pointer;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand); white-space:nowrap;">${escapeHtml(m.itemCode)}</span>
+      <span style="flex:1; min-width:0; font-size:0.86rem; font-weight:600; color:#111827;">${escapeHtml(m.description)}</span>
+      <span style="font-size:0.8rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Still to order ${formatQtyTrimmed(m.totalNeed)} ${escapeHtml(m.unit || "")}</span>
+    </div>`).join("");
+}
+
+function rpoAddMaterialRow(itemCode) {
+  const st = window.rpoActive;
+  const m = (window.rpoAddableMaterials || []).find(x => x.itemCode === itemCode);
+  if (!st || !m) return;
+  if (st.lineItems.some(li => li.itemCode === itemCode)) return;
+  st.lineItems.push({
+    itemCode: m.itemCode, description: m.description, additionalDescription: m.description, unit: m.unit,
+    orderedQty: 0, newRequiredQty: m.totalNeed, receivedQty: 0, amount: 0,
+    quantity: "", rate: "", discountPercent: 0, deliveryDate: null,
+    designRatePerQuantity: m.designRatePerQuantity, allocations: m.allocations || [],
+    isNew: true, changed: true,
+    _workingAllocations: [], _allocationTouched: false, _allocatedForQty: 0,
+  });
+  const modal = document.getElementById("rpo-add-modal");
+  if (modal) modal.remove();
+  renderPORevisionCard();
 }
