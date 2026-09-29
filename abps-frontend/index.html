@@ -817,7 +817,7 @@
   .psn-field-grid.psn-grid-6 { grid-template-columns: 22.5% 37.5% 11% 6% 11% 12%; }
   .psn-field-grid > .psn-field { min-width: 0; overflow-wrap: anywhere; }
   .psn-bordered { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
-  .psn-bordered th, .psn-bordered td { border: 2px solid var(--border); padding: 7px 9px; text-align: left; vertical-align: top; word-break: break-word; }
+  .psn-bordered th, .psn-bordered td { border: 2px solid #94a3b8; padding: 7px 9px; text-align: left; vertical-align: middle; word-break: break-word; }
   .psn-bordered th { background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
   #canvas-module-qa-inspection-timeline table, #canvas-module-product-serial-tracking table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
   #canvas-module-qa-inspection-timeline th, #canvas-module-qa-inspection-timeline td,
@@ -833,8 +833,10 @@
   .qait-section > table tbody tr:last-child > * { border-bottom: none !important; }
   .psn-doc-type { background: var(--brand); color: #fff; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
   .psn-doc-name { color: var(--text); }
-  .psn-field-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .psn-field-grid > .psn-field { padding: 9px 12px; border-right: 2px solid var(--border); }
+  .psn-field-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 2px solid #94a3b8; border-radius: var(--radius); overflow: hidden; }
+  .psn-field-grid > .psn-field { padding: 9px 12px; border-right: 2px solid #94a3b8; }
+  .psn-field-grid + .psn-field-grid { border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; }
+  .psn-section-card .psn-doc-chip { border: 2px solid #94a3b8 !important; }
   .psn-field-grid > .psn-field:last-child { border-right: none; }
   .psn-field-label { font-size: 0.78rem; color: #111827; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; margin-bottom: 3px; }
   .psn-field-value { font-size: 0.92rem; color: var(--text); word-break: break-word; }
