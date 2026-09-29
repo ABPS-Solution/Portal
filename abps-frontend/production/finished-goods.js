@@ -458,9 +458,9 @@ async function triggerFGBOQValidation() {
         <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#fff;">
           <colgroup><col style="width:7%;"/><col style="width:53%;"/><col style="width:10%;"/><col style="width:15%;"/><col style="width:15%;"/></colgroup>
           <thead><tr>${fgTh("Sr No", true)}${fgTh("Material Name", false, "left")}${fgTh("Unit")}${fgTh("BOQ Allotted Qty")}${fgTh("Ticket Consumed Qty")}</tr></thead>
-          <tbody>${shownDetails.map((d, i) => `<tr style="background:${d.matched ? "#fff" : "#fef2f2"};">
+          <tbody>${shownDetails.map((d, i) => `<tr style="background:${d.matched ? "#fff" : "#fecaca"};">
             <td style="${fgTd(true)} font-weight:700;">${i + 1}</td>
-            <td style="${fgTd(false, "left")} word-break:break-word;">${escapeHtml(d.materialName)} <span style="font-size:0.72rem; color:var(--muted);">(${escapeHtml(d.typeOfStore || "")})</span></td>
+            <td style="${fgTd(false, "left")} word-break:break-word;">${escapeHtml(d.materialName)}</td>
             <td style="${fgTd()}">${escapeHtml(d.unitType || "")}</td>
             <td style="${fgTd()} font-weight:700;">${fmtQty(d.required)}</td>
             <td style="${fgTd()} font-weight:700; color:${d.matched ? "#15803d" : "#b91c1c"};">${fmtQty(d.consumed)}</td>
@@ -645,9 +645,16 @@ async function submitFGAddItem() {
     hideBlockingOverlay();
     if (data.success) {
       document.getElementById("fg-add-form").style.display = "none";
+      const jcSet = (String(jobCard).match(/^JC_(Set-\d+)/) || [])[1];
       showBOQBanner("fg-add-feedback",
-        `<strong>${escapeHtml(productName)} (${escapeHtml(jobCard)})</strong><br>submitted for ${department} Finished Goods Store, pending FG Approval by QA.
-         <div style="margin-top:10px;">
+        `<div style="font-size:1rem; font-weight:800; margin-bottom:10px;">Added to Finished Goods Store</div>` +
+        prnSuccessGrid([
+          prnSuccessTile("Product", escapeHtml([productName, rating].filter(Boolean).join(" - "))),
+          prnSuccessTile("Job Card", `<span title="${escapeHtml(jobCard)}">${escapeHtml(jcSet ? jcSet.replace("-", " ") : jobCard)}</span>`),
+          prnSuccessTile("Department", escapeHtml(department)),
+          prnSuccessTile("Status", "Pending FG Approval by QA"),
+        ]) +
+        `<div style="margin-top:12px;">
            <button class="nav-btn-styled" onclick="startAnotherFGAddEntry()" style="background:#15803d; color:#fff; font-weight:700; padding:8px 18px;">+ Add Another FG Material</button>
          </div>`,
         "success", true);
