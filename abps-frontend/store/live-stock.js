@@ -340,7 +340,7 @@ function executeClientSideStoreTicketFilterSearch() {
           <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
         </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-          <table class="prn-bordered-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
+          <table class="prn-bordered-table mit-pps-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
                 <th style="text-align:left; padding:4px;">Material Description</th>
