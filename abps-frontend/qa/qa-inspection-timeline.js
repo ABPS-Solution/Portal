@@ -230,7 +230,7 @@ function qaitRenderDetail(projectId, d) {
 
   const call = d.call;
   const callBlock = `
-    <div class="qait-section"><div class="qait-section-title">Inspection Call</div><div class="qait-section-body"><div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Record the date the inspection call was placed, i.e. the date ABPS informed the customer the goods are ready and asked them to come and inspect. The date the customer actually inspects is entered separately, in the <strong>Customer Inspection</strong> step above.</div>
+    <div class="qait-section"><div class="qait-section-title">Inspection Call</div><div class="qait-section-body"><div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Record the date the inspection call was placed, i.e. the date ABPS informed the customer the goods are ready and asked them to come and inspect. The date the customer actually inspects is entered separately, in the <strong>Customer Inspection</strong> step in the Stage 5 Chain below.</div>
       ${call
         ? `<div style="font-size:0.85rem; color:var(--text); padding:8px 10px; background:#f0fdf4; border:2px solid #bbf7d0; border-radius:var(--radius);">Placed on ${qaitFmt(call.callPlacedOn)}${call.customerContact ? ' · Contact: ' + escapeHtml(call.customerContact) : ''}${call.notes ? '<div style="color:var(--muted); margin-top:2px;">' + escapeHtml(call.notes) + '</div>' : ''}</div>
            ${qaitIsAdmin() ? qaitCallFormHtml(projectId, call) : ''}`
@@ -256,8 +256,8 @@ function qaitRenderDetail(projectId, d) {
 
   return `
     <div class="qait-section"><div class="qait-section-title">Stage 4: In-Scope Lanes</div>${laneRows}</div>
-    <div class="qait-section"><div class="qait-section-title">Stage 5 Chain</div>${chainTable}</div>
     ${callBlock}
+    <div class="qait-section"><div class="qait-section-title">Stage 5 Chain</div>${chainTable}</div>
     ${docsBlock}
   `;
 }
