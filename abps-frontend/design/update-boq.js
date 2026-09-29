@@ -185,15 +185,29 @@ function renderBOQRevisionRows(updateId) {
   const orderQty = parseInt(orderQtyEl?.value) || 0;
   const totalCost = totalPerSet * orderQty;
 
+  // Rows new or changed against the live BOQ are highlighted like Revise MRD (29 Sep 2026).
+  const revReq = (typeof uboqRevList !== "undefined" ? uboqRevList : []).find(r => String(r.updateId) === String(updateId));
+  const baseRows = (revReq && revReq.oldMaterialRows) || [];
+  const rowChangeTag = (row) => {
+    const key = boqCostingRowKey(row);
+    if (!key) return "";
+    const base = baseRows.find(b => boqCostingRowKey(b) === key);
+    if (!base) return "New";
+    return boqRevisionRowNeedsTick(baseRows, row) ? "Changed" : "";
+  };
+  const newKeys = new Set(uboqRevRows.map(boqCostingRowKey).filter(Boolean));
+  const removedRows = baseRows.filter(b => boqCostingRowKey(b) && !newKeys.has(boqCostingRowKey(b)));
+
   const rowsHtml = uboqRevRows.length === 0
     ? `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
     : uboqRevRows.map((row, idx) => {
         const isRawMaterial = row.typeOfStore !== "Spare Store";
         const isFgRow = row.typeOfStore === "Finished Goods Store";
         const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
+        const changeTag = rowChangeTag(row);
         return `
-    <tr style="border-bottom:1px solid #f1f5f9;">
-      <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
+    <tr style="border-bottom:1px solid #f1f5f9;${changeTag ? ' outline:3px solid #f59e0b; outline-offset:-3px; background:#fffbeb;' : ''}"${changeTag ? ` title="${changeTag} in this revision"` : ''}>
+      <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}${changeTag ? `<div style="margin-top:3px; font-size:0.62rem; font-weight:800; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px;">${changeTag}</div>` : ''}</td>
       <td style="padding:4px;">
         <select onchange="uboqRevRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') uboqRevRows[${idx}].designRatePerQuantity=''; uboqRevRows[${idx}].costingVerified=false; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
@@ -252,6 +266,7 @@ function renderBOQRevisionRows(updateId) {
     <div style="margin-bottom:8px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
     </div>
+    ${removedRows.length ? `<div style="margin-bottom:8px; padding:8px 12px; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:var(--radius); font-size:0.82rem; color:#991b1b;"><strong>Removed in this revision:</strong> ${removedRows.map(r => escapeHtml(boqRowMaterialDisplayText(r)) + ' (' + formatQtyTrimmed(r.quantityFor1Set) + ' ' + escapeHtml(r.unit || '') + ' / set)').join('; ')}</div>` : ''}
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table boq-material-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
         <thead>
