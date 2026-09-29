@@ -210,7 +210,7 @@ function renderFGDedicatedDocZone(fgId, docType, required) {
     <div>
       <label class="field-label" style="margin-top:0;">${label}${required ? ' * <span style="color:#b91c1c;">(required)</span>' : ''}</label>
       <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, '${docType}')" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-        📎 Click to attach ${label}
+        📎 Click to attach ${label} (you can select several files)
       </div>
       ${fileListHtml}
     </div>`;
@@ -233,10 +233,26 @@ function refreshFGApprovalDedicatedZones(fgId) {
 }
 
 async function triggerFGDedicatedUpload(fgId, docType) {
-  const file = await pickFGFile();
-  if (!file) return;
+  const files = await pickFGFiles();
+  if (!files.length) return;
   const dz = document.getElementById(`fg-approval-dz-${fgId}-${docType}`);
+  const dzLabel = dz ? dz.innerHTML : "";
   if (dz) { dz.style.pointerEvents = "none"; dz.style.opacity = "0.6"; }
+  const failed = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      if (dz) dz.textContent = `Uploading ${i + 1} of ${files.length}...`;
+      const err = await uploadFGDedicatedFile(fgId, docType, files[i]);
+      if (err) failed.push(`${files[i].name}: ${err}`);
+    }
+    if (failed.length) alert("Some files were not uploaded:\n" + failed.join("\n"));
+  } finally {
+    if (dz) { dz.innerHTML = dzLabel; dz.style.pointerEvents = ""; dz.style.opacity = ""; }
+    refreshFGDocTable(fgId);
+  }
+}
+
+async function uploadFGDedicatedFile(fgId, docType, file) {
   try {
     const base64Data = await fileToBase64(file);
     const data = await apFetch({
@@ -245,14 +261,13 @@ async function triggerFGDedicatedUpload(fgId, docType) {
       file: { fileName: file.name, base64Data, mimeType: file.type || "application/octet-stream" },
       operatorName: appActiveOperatorIdentityString,
     });
-    if (!data.success) { alert(data.error || "Upload failed."); return; }
+    if (!data.success) return data.error || "Upload failed.";
     const st = window._fgApprovalState[fgId];
     st.docs.push({ documentId: data.documentId, docType, docLabel: data.docLabel, fileName: data.fileName, url: data.url, createdAt: data.createdAt, qaChecked: false });
-    refreshFGDocTable(fgId);
+    return null;
   } catch(e) {
-    alert("Network error: " + e.message);
-  } finally {
-    if (dz) { dz.style.pointerEvents = ""; dz.style.opacity = ""; }
+    if (e.message === "SESSION_EXPIRED") throw e;
+    return "Network error: " + e.message;
   }
 }
 
@@ -419,6 +434,17 @@ function pickFGFile() {
     input.type = "file";
     input.style.display = "none";
     input.onchange = () => { resolve(input.files[0] || null); document.body.removeChild(input); };
+    document.body.appendChild(input);
+    input.click();
+  });
+}
+function pickFGFiles() {
+  return new Promise(resolve => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.style.display = "none";
+    input.onchange = () => { resolve(Array.from(input.files || [])); document.body.removeChild(input); };
     document.body.appendChild(input);
     input.click();
   });
