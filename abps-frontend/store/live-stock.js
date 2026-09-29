@@ -1137,9 +1137,13 @@ async function refreshRPRNDeltaLiveStock() {
       const isIncreaseInp = inp && inp.classList.contains("rprn-delta-increase-storeqty");
       const idxForItem = inp ? Number(inp.dataset.idx) : null;
       const itemForSpan = (idxForItem !== null && !isNaN(idxForItem)) ? pending.lineItems[idxForItem] : null;
-      const addBackOwn = (isDecreaseInp || isIncreaseInp) && itemForSpan;
+      const addBackOwn = isDecreaseInp && itemForSpan;
+      // An increased row's typed value is absolute; the server lets it grow
+      // only by free stock above Current PRN Store Qty (what the PRN still
+      // holds), never above storeFrom* (ever claimed) (29 Sep 2026).
+      const addBackHeld = isIncreaseInp && itemForSpan ? (Number(itemForSpan.previousStoreQty) || 0) : 0;
       const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
-      const baseSpare = addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare;
+      const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
       const effectiveTotal = baseRaw + baseSpare;
 
       // Overwriting these with the ADD-BACK-INCLUSIVE numbers, not the
@@ -1404,9 +1408,13 @@ async function refreshPRNCreateLiveStock() {
       const isIncreaseInp = inp && inp.classList.contains("prn-create-increase-storeqty");
       const idxForItem = inp ? Number(inp.dataset.idx) : null;
       const itemForSpan = (idxForItem !== null && !isNaN(idxForItem)) ? pending.lineItems[idxForItem] : null;
-      const addBackOwn = (isDecreaseInp || isIncreaseInp) && itemForSpan;
+      const addBackOwn = isDecreaseInp && itemForSpan;
+      // An increased row's typed value is absolute; the server lets it grow
+      // only by free stock above Current PRN Store Qty (what the PRN still
+      // holds), never above storeFrom* (ever claimed) (29 Sep 2026).
+      const addBackHeld = isIncreaseInp && itemForSpan ? (Number(itemForSpan.previousStoreQty) || 0) : 0;
       const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
-      const baseSpare = addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare;
+      const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
       const effectiveTotal = baseRaw + baseSpare;
       // Overwriting with the ADD-BACK-INCLUSIVE numbers — the dataset
       // values were set above from s.raw/s.spare/total (live-pool-only,
