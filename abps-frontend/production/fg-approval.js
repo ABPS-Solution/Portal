@@ -43,20 +43,27 @@ function renderFGApprovalCard(item) {
   card.style.borderLeft = "4px solid #f59e0b";
 
   card.innerHTML = `
-    <div class="contact-summary-header-row" onclick="toggleFGApprovalCardBody(${item.fgId})" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
-      <div class="contact-summary-title-info" style="width:100%;">
-        <div class="meta-row-line-block">
-          <strong style="color:var(--brand); font-size:0.9rem;">${item.projectId || "—"}</strong>
-          <span style="margin-left:10px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(item.department || "—")}</strong>
-          <span id="fg-approval-caret-${item.fgId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
+    <div onclick="toggleFGApprovalCardBody(${item.fgId})" style="cursor:pointer; border:2px solid #94a3b8; border-radius:var(--radius); background:#f1f5f9; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 14px; border-bottom:2px solid #94a3b8; background:#e0e7ff;">
+        <strong style="color:var(--brand); font-size:0.98rem;">${escapeHtml(item.projectId || "—")}</strong>
+        <span style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border:1.5px solid #94a3b8; border-radius:999px; background:#fff; font-size:0.8rem;">
+          <span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.7rem;">Dept</span>
+          <strong style="color:#111827;">${escapeHtml(item.department || "—")}</strong>
+        </span>
+        <span id="fg-approval-caret-${item.fgId}" style="margin-left:auto; font-weight:700; color:var(--brand); font-size:1rem;">▸</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr auto; font-size:0.86rem;">
+        <div style="padding:9px 14px;">
+          <div style="font-size:0.68rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Product</div>
+          <strong style="color:#111827;">${escapeHtml(item.productName || "—")} ${escapeHtml(item.productRating || "")}</strong>
         </div>
-        <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
-          <span>Product:</span> <strong style="color:#111827;">${escapeHtml(item.productName || "—")} ${escapeHtml(item.productRating || "")}</strong>
-          <span style="margin-left:12px;">Created By:</span> <strong style="color:#111827;">${escapeHtml(item.productionPerson || "—")}</strong>
+        <div style="padding:9px 14px; border-left:2px solid #94a3b8; min-width:180px;">
+          <div style="font-size:0.68rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:3px;">Created By</div>
+          <strong style="color:#111827;">${escapeHtml(item.productionPerson || "—")}</strong>
         </div>
       </div>
     </div>
-    <div id="fg-approval-body-${item.fgId}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;"></div>
+    <div id="fg-approval-body-${item.fgId}" style="display:none; padding-top:14px;"></div>
   `;
   return card;
 }
@@ -161,10 +168,12 @@ function renderFGApprovalDetailBody(fgId) {
       <div style="font-size:0.85rem; color:#111827; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px;">${escapeHtml(fg.additionalRemarks)}</div>
     </div>` : ""}
 
-    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:8px;">Quality Assurance Documents</div>
+    <hr style="border:none; border-top:2px solid #94a3b8; margin:4px 0 16px;" />
+    <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:10px;">Quality Assurance Documents</div>
     <div id="fg-approval-dedicated-zones-${fgId}">${renderFGDedicatedDocZones(fgId)}</div>
 
-    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px; margin-bottom:8px;">FG Documents</div>
+    <hr style="border:none; border-top:2px solid #94a3b8; margin:4px 0 16px;" />
+    <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px; margin-bottom:10px;">FG Documents</div>
     <div id="fg-doc-table-wrap-${fgId}" style="overflow-x:auto; margin-bottom:8px; position:relative;">
       ${renderFGDocTable(fgId)}
     </div>
@@ -198,7 +207,7 @@ function renderFGDedicatedDocZone(fgId, docType, required) {
   return `
     <div>
       <label class="field-label" style="margin-top:0;">${label}${required ? ' * <span style="color:#b91c1c;">(required)</span>' : ''}</label>
-      <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, '${docType}')" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, '${docType}')" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
         📎 Click to attach ${label}
       </div>
       ${fileListHtml}
@@ -249,14 +258,14 @@ function renderFGDocTable(fgId) {
   const st = window._fgApprovalState[fgId];
 
   const existingRows = st.docs.map(d => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${d.docLabel}</td>
-      <td style="padding:8px;"><a href="${driveLink(d.url)}" target="_blank" style="color:var(--brand); font-weight:600;">${d.fileName || d.docLabel}</a></td>
-      <td style="padding:8px; font-size:0.78rem; color:var(--muted); white-space:nowrap;">${formatFGUploadTime(d.createdAt)}</td>
-      <td style="padding:8px; text-align:center;">
+    <tr>
+      <td style="padding:8px; border-bottom:2px solid #94a3b8;">${d.docLabel}</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8;"><a href="${driveLink(d.url)}" target="_blank" style="color:var(--brand); font-weight:600;">${d.fileName || d.docLabel}</a></td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.78rem; color:var(--muted); white-space:nowrap;">${formatFGUploadTime(d.createdAt)}</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center;">
         <input type="checkbox" class="fg-approval-doc-check" data-fgid="${fgId}" ${d.qaChecked ? "checked" : ""} style="width:18px; height:18px; cursor:pointer;" onchange="handleFGDocCheckChange(${fgId}, ${d.documentId}, this.checked)" />
       </td>
-      <td style="padding:8px; text-align:center; white-space:nowrap;">
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center; white-space:nowrap;">
         <button onclick="triggerFGReplaceUpload(${fgId}, ${d.documentId})" style="font-size:0.72rem; font-weight:700; padding:5px 10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); border-radius:4px; cursor:pointer;">Replace</button>
         <button onclick="removeFGDocRow(${fgId}, ${d.documentId})" title="Remove this document" style="margin-left:6px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:26px; height:26px; border-radius:4px; vertical-align:middle;">✕</button>
       </td>
@@ -269,12 +278,12 @@ function renderFGDocTable(fgId) {
           <span>— Select Type —</span><span>▾</span>
         </div>`;
     return `
-    <tr id="fg-doc-newrow-${r.tempId}" style="border-bottom:1px solid var(--border); background:#fffbeb;">
-      <td style="padding:8px;">${typeCell}</td>
-      <td style="padding:8px; color:var(--muted);">—</td>
-      <td style="padding:8px; color:var(--muted);">—</td>
-      <td style="padding:8px; text-align:center; color:var(--muted);">—</td>
-      <td style="padding:8px; text-align:center; white-space:nowrap;">
+    <tr id="fg-doc-newrow-${r.tempId}" style="background:#fffbeb;">
+      <td style="padding:8px; border-bottom:2px solid #94a3b8;">${typeCell}</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:var(--muted);">—</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:var(--muted);">—</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center; color:var(--muted);">—</td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center; white-space:nowrap;">
         <button onclick="triggerFGNewRowUpload(${fgId}, ${r.tempId})" ${r.docType ? "" : "disabled"} style="font-size:0.72rem; font-weight:700; padding:5px 10px; background:${r.docType ? "var(--accent)" : "#cbd5e1"}; color:#fff; border:none; border-radius:4px; cursor:${r.docType ? "pointer" : "not-allowed"};">Upload</button>
         <button onclick="removeFGDocRow(${fgId}, null, ${r.tempId})" title="Remove this row" style="margin-left:6px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:26px; height:26px; border-radius:4px; vertical-align:middle;">✕</button>
       </td>
@@ -284,14 +293,14 @@ function renderFGDocTable(fgId) {
   const rows = existingRows + newRows;
 
   return `
-    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; border:2px solid #94a3b8; background:#fff;">
       <thead>
-        <tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:8px;">Type of Document</th>
-          <th style="padding:8px;">Uploaded Document</th>
-          <th style="padding:8px;">Uploaded Time</th>
-          <th style="padding:8px; text-align:center;">QA Document Check</th>
-          <th style="padding:8px; text-align:center;">Action</th>
+        <tr style="background:#e0e7ff; text-align:left;">
+          <th style="padding:9px 8px; border-bottom:2px solid #94a3b8; color:#1e3a8a;">Type of Document</th>
+          <th style="padding:9px 8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:#1e3a8a;">Uploaded Document</th>
+          <th style="padding:9px 8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:#1e3a8a;">Uploaded Time</th>
+          <th style="padding:9px 8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:#1e3a8a; text-align:center;">QA Document Check</th>
+          <th style="padding:9px 8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; color:#1e3a8a; text-align:center;">Action</th>
         </tr>
       </thead>
       <tbody>${rows || `<tr><td colspan="5" style="padding:12px; text-align:center; color:var(--muted);">No documents found.</td></tr>`}</tbody>
