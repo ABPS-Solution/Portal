@@ -448,13 +448,24 @@ async function triggerFGBOQValidation() {
       return;
     }
 
-    const rowsHtml = data.details.map(d => {
-      const statusColor = d.matched ? { bg: "#dcfce7", color: "#15803d", icon: "" } : { bg: "#fee2e2", color: "#b91c1c", icon: "❌" };
-      return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${statusColor.bg}; border-radius:4px; margin-bottom:4px;">
-        <div style="font-size:0.8rem; font-weight:600; color:#1e293b;">${statusColor.icon} ${escapeHtml(d.materialName)} <span style="font-size:0.68rem; color:var(--muted); font-weight:400;">(${d.typeOfStore})</span></div>
-        <div style="font-size:0.78rem; font-weight:700; color:${statusColor.color};">Required: ${fmtQty(d.required)} ${d.unitType} | Consumed: ${fmtQty(d.consumed)} ${d.unitType}</div>
-      </div>`;
-    }).join("");
+    // PPS-style table (29 Sep 2026); materials with nothing allotted are left out.
+    const shownDetails = data.details.filter(d => (Number(d.required) || 0) > 1e-9);
+    const fgTh = (t, first, align) => `<th style="padding:9px 10px; font-size:0.74rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; background:#e0e7ff; text-align:${align || "center"}; ${first ? "" : "border-left:2px solid #94a3b8; "}border-bottom:2px solid #94a3b8;">${t}</th>`;
+    const fgTd = (first, align) => `padding:8px 10px; font-size:0.85rem; vertical-align:middle; text-align:${align || "center"}; ${first ? "" : "border-left:2px solid #94a3b8; "}border-bottom:2px solid #94a3b8;`;
+    const rowsHtml = shownDetails.length === 0
+      ? `<div style="padding:12px; color:var(--muted); font-size:0.85rem;">No materials are allotted to this Job Card.</div>`
+      : `<div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#fff;">
+          <colgroup><col style="width:7%;"/><col style="width:53%;"/><col style="width:10%;"/><col style="width:15%;"/><col style="width:15%;"/></colgroup>
+          <thead><tr>${fgTh("Sr No", true)}${fgTh("Material Name", false, "left")}${fgTh("Unit")}${fgTh("BOQ Allotted Qty")}${fgTh("Ticket Consumed Qty")}</tr></thead>
+          <tbody>${shownDetails.map((d, i) => `<tr style="background:${d.matched ? "#fff" : "#fef2f2"};">
+            <td style="${fgTd(true)} font-weight:700;">${i + 1}</td>
+            <td style="${fgTd(false, "left")} word-break:break-word;">${escapeHtml(d.materialName)} <span style="font-size:0.72rem; color:var(--muted);">(${escapeHtml(d.typeOfStore || "")})</span></td>
+            <td style="${fgTd()}">${escapeHtml(d.unitType || "")}</td>
+            <td style="${fgTd()} font-weight:700;">${fmtQty(d.required)}</td>
+            <td style="${fgTd()} font-weight:700; color:${d.matched ? "#15803d" : "#b91c1c"};">${fmtQty(d.consumed)}</td>
+          </tr>`).join("")}</tbody>
+        </table></div>`;
 
     // Informational only — no longer blocks submission. Since Return
     // Tickets were removed (Stock Sweep handles leftover material now,
@@ -469,11 +480,11 @@ async function triggerFGBOQValidation() {
     if (data.matched) {
       zone.innerHTML = `
         <div style="padding:10px 12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius) var(--radius) 0 0; color:#15803d; font-size:0.85rem; font-weight:700;">Bill of Quantity material consumption matches for this Job Card.</div>
-        <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
+        <div style="padding-top:8px;">${rowsHtml}</div>`;
     } else {
       zone.innerHTML = `
         <div style="padding:10px 12px; background:#fffbeb; border:1.5px solid #fcd34d; border-radius:var(--radius) var(--radius) 0 0; color:#92400e; font-size:0.85rem; font-weight:700;">⚠️ Material consumption doesn't exactly match the BOQ for ${escapeHtml(productName)} ${escapeHtml(productRating)} — informational only, submission isn't blocked. Worth checking whether this BOQ's per-set quantities need correcting.</div>
-        <div style="border:1px solid var(--border); border-top:none; padding:10px; border-radius:0 0 var(--radius) var(--radius);">${rowsHtml}</div>`;
+        <div style="padding-top:8px;">${rowsHtml}</div>`;
     }
 
     updateFGSubmitButtonState();

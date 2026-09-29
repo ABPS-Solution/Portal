@@ -490,7 +490,10 @@
      a clearly different look (blue dashed + tint) from the solid value boxes. */
   #workspace-purchaseOrder .card-box:not(.done),
   #workspace-cardDetails .card-box:not(.done),
-  #upload-drawings-upload-zone .card-box:not(.done) { border: 2px dashed var(--brand); background: #eff6ff; color: var(--brand); font-weight: 600; }
+  #upload-drawings-upload-zone .card-box:not(.done),
+  #canvas-module-fg-add .card-box:not(.done) { border: 2px dashed var(--brand); background: #eff6ff; color: var(--brand); font-weight: 600; }
+  #canvas-module-fg-add input:not([type="hidden"]):not([type="file"]), #canvas-module-fg-add select, #canvas-module-fg-add textarea,
+  #fg-add-boq-display, #fg-add-jobcard-display { border: 2px solid #94a3b8 !important; }
   #workspace-purchaseOrder .card-box.done,
   #workspace-cardDetails .card-box.done,
   #upload-drawings-upload-zone .card-box.done { border-style: solid; background: #f0fdf4; }
@@ -2235,7 +2238,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Job Card Sheet * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="fg-add-jobcard-sheet-dropzone" onclick="document.getElementById('fg-add-jobcard-sheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="fg-add-jobcard-sheet-dropzone" onclick="document.getElementById('fg-add-jobcard-sheet-input').click()">
                 📎 Click to attach Job Card Sheet
               </div>
               <input type="file" id="fg-add-jobcard-sheet-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'jobCardSheet')" />
@@ -2243,7 +2246,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Packed Products Images * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="fg-add-packed-images-dropzone" onclick="document.getElementById('fg-add-packed-images-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="fg-add-packed-images-dropzone" onclick="document.getElementById('fg-add-packed-images-input').click()">
                 📎 Click to attach Packed Products Images
               </div>
               <input type="file" id="fg-add-packed-images-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'packedProductsImages')" />
@@ -2254,7 +2257,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Other Documents</label>
-              <div class="card-box" id="fg-add-otherdocs-dropzone" onclick="document.getElementById('fg-add-otherdocs-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="fg-add-otherdocs-dropzone" onclick="document.getElementById('fg-add-otherdocs-input').click()">
                 📎 Click to attach Other Documents
               </div>
               <input type="file" id="fg-add-otherdocs-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'otherDocuments')" />
