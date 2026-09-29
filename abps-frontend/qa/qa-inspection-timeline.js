@@ -190,7 +190,7 @@ function qaitRenderDetail(projectId, d) {
     ? `<table style="width:100%; border-collapse:collapse; font-size:0.84rem;">
          <thead><tr style="background:var(--highlight-bg);">
            <th style="text-align:left; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border);">Product Name</th>
-           <th style="text-align:right; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border); white-space:nowrap; width:240px;">Packing / Add to FG Date</th>
+           <th style="text-align:center; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border); white-space:nowrap; width:240px;">Packing / Add to FG Date</th>
          </tr></thead>
          <tbody>${d.laneTerminals.map(l => `
            <tr style="border-bottom:1px solid var(--border);">
@@ -230,7 +230,7 @@ function qaitRenderDetail(projectId, d) {
 
   const call = d.call;
   const callBlock = `
-    <div class="qait-section"><div class="qait-section-title">Inspection Call</div><div class="qait-section-body">
+    <div class="qait-section"><div class="qait-section-title">Inspection Call</div><div class="qait-section-body"><div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Record the date the inspection call was placed, i.e. the date ABPS informed the customer the goods are ready and asked them to come and inspect. The date the customer actually inspects is entered separately, in the <strong>Customer Inspection</strong> step above.</div>
       ${call
         ? `<div style="font-size:0.85rem; color:var(--text); padding:8px 10px; background:#f0fdf4; border:2px solid #bbf7d0; border-radius:var(--radius);">Placed on ${qaitFmt(call.callPlacedOn)}${call.customerContact ? ' · Contact: ' + escapeHtml(call.customerContact) : ''}${call.notes ? '<div style="color:var(--muted); margin-top:2px;">' + escapeHtml(call.notes) + '</div>' : ''}</div>
            ${qaitIsAdmin() ? qaitCallFormHtml(projectId, call) : ''}`
