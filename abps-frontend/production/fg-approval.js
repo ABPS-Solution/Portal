@@ -588,20 +588,37 @@ async function submitFGApprovalDecision(fgId, action) {
       // when "+ Approve Another FG Store Product" is clicked below.
       if (action === "approve") {
         if (feed) feed.style.display = "none";
-        feedback.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#f0fff4; color:#276749; border-radius:var(--radius);";
+        feedback.style.cssText = "display:block; margin-bottom:12px; border:2px solid #86efac; border-radius:var(--radius); background:#fff; overflow:hidden;";
+        const G = "2px solid #bbf7d0";
+        const okCell = (label, val, left) => `
+          <div style="padding:10px 14px; ${left ? "border-left:" + G + ";" : ""}">
+            <div style="font-size:0.68rem; font-weight:800; color:#15803d; text-transform:uppercase; margin-bottom:4px;">${label}</div>
+            <div style="font-size:0.9rem; font-weight:700; color:#111827; word-break:break-word;">${escapeHtml(val || "—")}</div>
+          </div>`;
         feedback.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Finished Good Approved & Added to FG Store!</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Job Card Number</span><span style="font-weight:700;">${fg.jobCardNumber || "—"}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${escapeHtml(fg.productName || "—")}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${escapeHtml(fg.productRating || "—")}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Department</span><span style="font-weight:700;">${escapeHtml(fg.department || "—")}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Serial Number</span><span style="font-weight:700;">${escapeHtml(productSerialNumber || "—")}</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:#dcfce7; border-bottom:2px solid #86efac;">
+            <div style="width:34px; height:34px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex:none;">✓</div>
+            <div>
+              <div style="font-size:1.05rem; font-weight:800; color:#14532d;">Finished Good Approved & Added to FG Store</div>
+              <div style="font-size:0.8rem; color:#166534; margin-top:2px;">This unit is now available in the Finished Goods Store.</div>
+            </div>
+            <div style="margin-left:auto; text-align:right; padding:6px 14px; border:2px solid #16a34a; border-radius:var(--radius); background:#fff;">
+              <div style="font-size:0.65rem; font-weight:800; color:#15803d; text-transform:uppercase;">Product Serial Number</div>
+              <div style="font-size:1.1rem; font-weight:800; color:#14532d;">${escapeHtml(productSerialNumber || "—")}</div>
+            </div>
           </div>
+          <div style="display:grid; grid-template-columns:1.2fr 1fr 0.6fr; border-bottom:${G};">
+            ${okCell("Product Name", fg.productName)}
+            ${okCell("Product Rating", fg.productRating, true)}
+            ${okCell("Department", fg.department, true)}
+          </div>
+          <div style="border-bottom:${G};">${okCell("Job Card Number", fg.jobCardNumber)}</div>
+          <div style="padding:12px 16px;">
           <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"
-            style="margin-top:4px; background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
+            style="background:var(--accent); color:#fff; border:none; padding:9px 20px; border-radius:var(--radius); font-weight:700; font-size:0.86rem; cursor:pointer;">
             + Approve Another FG Store Product
-          </button>`;
+          </button>
+          </div>`;
         feedback.scrollIntoView({ behavior:"smooth", block:"center" });
       } else if (feed && feed.children.length === 0) {
         feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;">
