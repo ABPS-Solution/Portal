@@ -1223,7 +1223,10 @@ async function refreshRevisePRNLiveStock() {
 
       if (inp && li) {
         const requirementCap = Number(li.bufferedRequirement) || 0;
-        const cap = Math.min(requirementCap, total);
+        // The server lets a re-split grow only by free stock above Current
+        // Store Qty; store_qty_from_* can run higher (29 Sep 2026).
+        const serverCap = s.raw + s.spare + (Number(li.storeQty) || 0);
+        const cap = Math.min(requirementCap, total, serverCap);
         inp.max = cap;
         if (currentTyped > cap) { inp.value = Math.round(cap * 100) / 100; updateRevisePRNRow(idx); }
       }
@@ -1285,18 +1288,20 @@ async function refreshAPRNLiveStock() {
       // ITSELF — otherwise the screen would show almost nothing free and
       // force the input down to whatever tiny amount happens to still be
       // genuinely unclaimed, even though the full claim is still
-      // legitimately this PRN's to keep or edit. For a Delta PRN's
-      // new/increase rows, that claim hasn't been applied to the live
-      // pool yet (it only lands at authorize), so the DELTA is what's
-      // missing and gets added back. For a resplit revision row, the
+      // legitimately this PRN's to keep or edit. For a Delta PRN's rows
+      // that is what the line already held (previousStoreQty) plus any
+      // claim taken at submit (a positive delta); a pending release is not
+      // applied yet. Never store_qty_from_*, which counts issued stock
+      // too (29 Sep 2026). For a resplit revision row, the
       // opposite is true — its claim/release already executed immediately
       // at submission, so the live pool already reflects it; adding the
       // delta back again would double-count a claim or double-release a
       // release. Resplit rows carry the ABSOLUTE current split
       // (newStoreFromRaw/newStoreFromSpare) for exactly this reason.
       const isResplitRow = row && row.changeKind === 'resplit';
-      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : (Number(row.storeFromRaw) || 0)) : 0;
-      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0) : (Number(row.storeFromSpare) || 0)) : 0;
+      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : Math.max(0, Number(row.storeFromRawDelta) || 0)) : 0;
+      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0)
+        : Math.max(0, Number(row.storeFromSpareDelta) || 0) + (Number(row.previousStoreQty) || 0)) : 0;
       const baseRaw = s.raw + ownRaw;
       const baseSpare = s.spare + ownSpare;
       const total = baseRaw + baseSpare;

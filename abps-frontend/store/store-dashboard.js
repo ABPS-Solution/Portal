@@ -228,5 +228,5 @@ function navigateToProductionDashboard() {
 let pd2CurrentPeriod     = "today";
 let pd2CurrentCustomType = "customday";
 let pd2JCNData = [], pd2JCNFiltered = [], pd2JCNCurrentPage = 1;
-const PD2_JCN_PAGE_SIZE = 8;
+const PD2_JCN_PAGE_SIZE = 3;
 
