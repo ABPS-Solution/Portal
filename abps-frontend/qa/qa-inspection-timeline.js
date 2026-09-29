@@ -189,13 +189,13 @@ function qaitRenderDetail(projectId, d) {
   const laneRows = (d.laneTerminals || []).length
     ? `<table style="width:100%; border-collapse:collapse; font-size:0.84rem;">
          <thead><tr style="background:var(--highlight-bg);">
-           <th style="text-align:left; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border);">Product</th>
-           <th style="text-align:right; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border); white-space:nowrap; width:220px;">Packing / Add to FG</th>
+           <th style="text-align:left; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border);">Product Name</th>
+           <th style="text-align:right; padding:8px 14px; font-weight:700; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border); white-space:nowrap; width:240px;">Packing / Add to FG Date</th>
          </tr></thead>
          <tbody>${d.laneTerminals.map(l => `
            <tr style="border-bottom:1px solid var(--border);">
-             <td style="padding:10px 14px; font-weight:700; vertical-align:top;">${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</td>
-             <td style="padding:10px 14px; text-align:right; white-space:nowrap; vertical-align:top; ${l.actual ? '' : 'color:var(--muted);'}">${l.actual ? qaitDoneDate(l.actual) : (l.effective ? 'Estimated ' + qaitFmt(l.effective) : 'Not yet scheduled')}</td>
+             <td style="padding:10px 14px; font-weight:700; vertical-align:middle;">${escapeHtml(l.productName || '')}${l.productRating ? ' ' + escapeHtml(l.productRating) : ''}</td>
+             <td style="padding:10px 14px; text-align:center; white-space:nowrap; vertical-align:middle; color:#111827; font-weight:600;">${l.actual ? qaitDoneDate(l.actual) : (l.effective ? 'Estimated ' + qaitFmt(l.effective) : 'Not yet scheduled')}</td>
            </tr>`).join("")}</tbody>
        </table>`
     : `<div style="color:var(--muted); font-size:0.78rem; padding:10px 14px;">No in-scope lanes.</div>`;
@@ -215,7 +215,7 @@ function qaitRenderDetail(projectId, d) {
             <span style="font-weight:700; font-size:0.88rem;">${escapeHtml(QAIT_MILESTONE_LABELS[key])}</span>
           </div>
         </td>
-        <td style="padding:10px 14px; text-align:center; vertical-align:middle; font-size:0.84rem; ${actual ? 'color:#15803d; font-weight:700;' : 'color:var(--muted);'}">${actual ? 'Done ' + qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable')}</td>
+        <td style="padding:10px 14px; text-align:center; vertical-align:middle; font-size:0.84rem; ${actual ? 'color:#15803d; font-weight:700;' : 'color:#111827; font-weight:600;'}">${actual ? 'Done ' + qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable')}</td>
         <td style="padding:8px 14px; vertical-align:middle;">
           ${canWrite ? `<div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
             <span style="display:inline-block; width:150px;"><input type="date" id="qait-date-${projectId}-${key}" value="${actual || ''}" style="padding:6px; border:2px solid #94a3b8; border-radius:4px; font-size:0.82rem; width:100%;" /></span>
@@ -225,7 +225,7 @@ function qaitRenderDetail(projectId, d) {
       </tr>`;
   }).join("");
   const chainTable = `<table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-    <thead><tr>${chainTh('Milestone', 'left', '36%')}${chainTh('Date', 'center', '28%')}${chainTh('Action', 'right', '36%')}</tr></thead>
+    <thead><tr>${chainTh('Step', 'left', '36%')}${chainTh('Date', 'center', '28%')}${chainTh('Action', 'right', '36%')}</tr></thead>
     <tbody>${chainRows}</tbody></table>`;
 
   const call = d.call;
@@ -239,9 +239,11 @@ function qaitRenderDetail(projectId, d) {
 
   const docsBlock = `
     <div class="qait-section"><div class="qait-section-title">Documents</div><div class="qait-section-body">
-      ${(d.documents || []).map(doc => `<div style="font-size:0.84rem; padding:6px 10px; margin-bottom:6px; border:2px solid #94a3b8; border-radius:var(--radius); background:#f8fafc;">
+      ${(d.documents || []).map(doc => `<div style="font-size:0.84rem; padding:6px 10px; margin-bottom:6px; border:2px solid #94a3b8; border-radius:var(--radius); background:#f8fafc; display:flex; align-items:center; gap:6px;">
+        <span style="flex:1; min-width:0;">
         <a href="#" onclick="event.preventDefault(); driveLink('${doc.fileUrl}');" style="color:var(--brand); font-weight:600;">${escapeHtml(doc.documentType)}</a>
-        <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span>
+        <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span></span>
+        <button type="button" title="Remove this document" onclick="qaitDeleteDocument('${projectId}', ${Number(doc.documentId)})" style="flex:none; width:26px; height:26px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; cursor:pointer; font-size:0.85rem;">✕</button>
       </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; margin-bottom:6px;">No documents uploaded yet.</div>`}
       <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <select id="qait-doc-type-${projectId}" style="padding:6px 8px; border:2px solid #94a3b8; border-radius:4px; font-size:0.78rem; flex:1 1 240px; min-width:200px;">
@@ -304,13 +306,16 @@ async function qaitRecordCall(projectId) {
   const contact = document.getElementById(`qait-call-contact-${projectId}`)?.value || "";
   const notes = document.getElementById(`qait-call-notes-${projectId}`)?.value || "";
   if (!date) { alert("Pick a call date first."); return; }
+  showBlockingOverlay("Recording inspection call...");
   try {
     const data = await apFetch({ action: "recordInspectionCall", operatorName: appActiveOperatorIdentityString, projectId, callPlacedOn: date, customerContact: contact, notes });
-    if (!data.success) { alert(data.error || "Could not record this call."); return; }
+    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not record this call."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    alert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
   }
 }
 
@@ -320,6 +325,7 @@ async function qaitUploadDocument(projectId) {
   const documentType = typeEl ? typeEl.value : "";
   const file = fileEl && fileEl.files && fileEl.files[0];
   if (!file) { alert("Choose a file first."); return; }
+  showBlockingOverlay("Uploading document...");
   try {
     const base64Data = await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -332,10 +338,27 @@ async function qaitUploadDocument(projectId) {
       projectId, documentType,
       file: { fileName: file.name, mimeType: file.type, base64Data },
     });
-    if (!data.success) { alert(data.error || "Upload failed."); return; }
+    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Upload failed."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    alert("Upload error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") alert("Upload error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
+async function qaitDeleteDocument(projectId, documentId) {
+  if (!confirm("Remove this document?")) return;
+  showBlockingOverlay("Removing document...");
+  try {
+    const data = await apFetch({ action: "deleteQaInspectionDocument", projectId, documentId });
+    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not remove this document."); return; }
+    qaitDetailCache.delete(projectId);
+    await qaitFetchDetail(projectId);
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
   }
 }

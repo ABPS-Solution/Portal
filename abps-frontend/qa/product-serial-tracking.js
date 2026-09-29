@@ -354,7 +354,7 @@ function psnRenderMaterialSources(trace) {
       if (!pl) return `<tr>${first}<td colspan="7" style="text-align:center; color:var(--muted);">No source receipts recorded.</td></tr>`;
       const missing = !pl.poNo && !pl.grnNumber;
       if (missing) {
-        return `<tr>${first}<td colspan="6" style="background:#fee2e2; color:#991b1b; font-weight:700;">No matching receipt found (see note below)</td>
+        return `<tr>${first}<td colspan="6" style="background:#fee2e2; color:#991b1b; font-weight:700;">Purchase record not found for this quantity (see note below)</td>
           <td style="text-align:center; background:#fee2e2; color:#991b1b; font-weight:800;">${trimNum(pl.attributedQuantity || 0)}</td></tr>`;
       }
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
@@ -383,9 +383,9 @@ function psnRenderMaterialSources(trace) {
   const th = (t, w, align) => `<th style="width:${w}; text-align:${align || 'left'}; white-space:normal;">${t}</th>`;
   const note = anyUnattributed
     ? `<div style="margin-top:10px; padding:9px 12px; background:#fee2e2; border:2px solid #fca5a5; border-radius:var(--radius); font-size:0.82rem; color:#7f1d1d;">
-        <strong>No matching receipt found:</strong> the system could not link this quantity to a specific Gate Entry / GRN / Q/A receipt,
-        usually because the stock was already in the store before the system went live (opening stock or a stock sweep) or was issued before its receipt was recorded.
-        The material was genuinely issued to this Job Card; only its purchase history is unknown.
+        <strong>Purchase record not found:</strong> this material was really issued to this unit's Job Card, but the system cannot tell which Purchase Order and delivery it came from.
+        This usually means the material was already in the store before the system started being used (opening stock or a Stock Sweep),
+        or it was issued before its delivery was entered at Gate Entry / GRN / Q/A. Nothing is wrong with the unit; only the purchase history of this quantity is unknown.
       </div>` : '';
 
   return `<div style="overflow-x:auto;">
