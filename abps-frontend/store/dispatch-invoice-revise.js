@@ -485,7 +485,7 @@ function closeRpdiConfirmModal() { document.getElementById("rpdi-confirm-modal")
 // revision can only change what a line BILLS, never remove/add one or
 // retype its description (see lib/projectInvoiceRevisionMerge.js).
 function buildRpdiRevisedLineItemsPayload() {
-  return (rpdiState.lineItems || []).map(li => ({ poLineId: li.lineId, quantity: Number(li.quantity) || 0, ratePerQuantity: Number(li.ratePerQuantity) || 0, totalBasicPrice: Number(li.totalBasicPrice) || 0 }));
+  return (rpdiState.lineItems || []).map(li => ({ poLineId: li.lineId, description: li.description, hsnNumber: li.hsnNumber, unit: li.unit, quantity: Number(li.quantity) || 0, ratePerQuantity: Number(li.ratePerQuantity) || 0, totalBasicPrice: Number(li.totalBasicPrice) || 0 }));
 }
 function buildRpdiRevisedDetailsPayload() {
   const { lineItems, poNumber, poDate, ...rest } = rpdiState;
@@ -603,6 +603,9 @@ async function toggleRpdiEditCard(requestId) {
       const rl = revLines[li.lineId];
       if (!rl) return;
       if (rl.ratePerQuantity != null) li.ratePerQuantity = rl.ratePerQuantity;
+      if (rl.description != null) li.description = rl.description;
+      if (rl.hsnNumber != null) li.hsnNumber = rl.hsnNumber;
+      if (rl.unit != null) li.unit = rl.unit;
       li.totalBasicPrice = (parseFloat(li.quantity) || 0) * (parseFloat(li.ratePerQuantity) || 0);
     });
 
