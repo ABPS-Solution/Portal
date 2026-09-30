@@ -867,6 +867,7 @@ let icfFmtCurrentType = "";
 
 async function handleIcfFormatTypeChange(typeOfMaterial) {
   const type = (typeOfMaterial || "").trim();
+  if (type && type === icfFmtCurrentType && document.getElementById("icf-fmt-list-zone").style.display === "block") return;
   icfFmtCurrentType = type;
   const listZone = document.getElementById("icf-fmt-list-zone");
   const entryModeSelect = document.getElementById("icf-fmt-entry-mode");
@@ -895,14 +896,19 @@ async function handleIcfFormatTypeChange(typeOfMaterial) {
   // into foreign-content parsing, which is what produced the large blank
   // gaps on cards like "LT Hybrid Thyristor Switched". Escape before display.
   listEl.innerHTML = icfCurrentFormats.map(f => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px;">
-      <div>
-        <div style="font-weight:700; color:var(--brand);">${escapeHtml(f.subOption)}</div>
-        <div style="font-size:0.78rem; color:var(--muted); font-family:monospace; margin-top:2px;">${escapeHtml(f.materialNameTemplate)}</div>
-        ${f.ratingTemplate ? `<div style="font-size:0.78rem; color:var(--muted); font-family:monospace;">${escapeHtml(f.ratingTemplate)}</div>` : ''}
-        <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Unit: <strong>${escapeHtml(f.unit)}</strong></div>
+    <div id="icf-fmt-card-${f.formatId}" style="background:#fff; border:2px solid #94a3b8; border-left:5px solid var(--brand); border-radius:var(--radius); overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 16px; background:#f1f5f9; border-bottom:1.5px solid #94a3b8;">
+        <div style="font-weight:800; color:var(--brand); font-size:0.95rem;">${escapeHtml(f.subOption)}</div>
+        <button onclick="editIcfFormat(${f.formatId})" style="width:auto; background:var(--brand); color:#fff; border:none; padding:6px 18px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Edit</button>
       </div>
-      <button onclick="editIcfFormat(${f.formatId})" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem;">Edit</button>
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <tr><td style="width:170px; padding:7px 16px; font-weight:700; color:#334155; border-bottom:1.5px solid var(--border); border-right:1.5px solid var(--border); background:#f8fafc;">Material Name Template</td>
+            <td style="padding:7px 16px; font-family:monospace; color:#0f172a; border-bottom:1.5px solid var(--border); word-break:break-word;">${escapeHtml(f.materialNameTemplate)}</td></tr>
+        <tr><td style="padding:7px 16px; font-weight:700; color:#334155; border-bottom:1.5px solid var(--border); border-right:1.5px solid var(--border); background:#f8fafc;">Rating Template</td>
+            <td style="padding:7px 16px; font-family:monospace; color:#0f172a; border-bottom:1.5px solid var(--border); word-break:break-word;">${f.ratingTemplate ? escapeHtml(f.ratingTemplate) : '<span style="color:var(--muted); font-family:inherit;">No Rating</span>'}</td></tr>
+        <tr><td style="padding:7px 16px; font-weight:700; color:#334155; border-right:1.5px solid var(--border); background:#f8fafc;">Unit</td>
+            <td style="padding:7px 16px; font-weight:700; color:#0f172a;">${escapeHtml(f.unit)}</td></tr>
+      </table>
     </div>`).join("");
 }
 
@@ -917,6 +923,8 @@ async function handleIcfEntryModeChange(newMode) {
 }
 
 function openIcfAddFormatEditor() {
+  const listZone = document.getElementById("icf-fmt-list-zone");
+  if (listZone) listZone.after(document.getElementById("icf-fmt-editor-zone"));
   document.getElementById("icf-fmt-editor-formatid").value = "";
   document.getElementById("icf-fmt-editor-suboption").value = "";
   document.getElementById("icf-fmt-editor-name-template").value = "";
@@ -931,7 +939,7 @@ function openIcfAddFormatEditor() {
 }
 
 function editIcfFormat(formatId) {
-  const f = icfCurrentFormats.find(x => x.formatId === formatId);
+  const f = icfCurrentFormats.find(x => String(x.formatId) === String(formatId));
   if (!f) return;
   document.getElementById("icf-fmt-editor-formatid").value = f.formatId;
   document.getElementById("icf-fmt-editor-suboption").value = f.subOption;
@@ -939,6 +947,8 @@ function editIcfFormat(formatId) {
   document.getElementById("icf-fmt-editor-rating-template").value = f.ratingTemplate || "";
   document.getElementById("icf-fmt-editor-unit").value = f.unit;
   document.getElementById("icf-fmt-editor-deactivate-btn").style.display = "inline-block";
+  const cardEl = document.getElementById("icf-fmt-card-" + formatId);
+  if (cardEl) cardEl.after(document.getElementById("icf-fmt-editor-zone"));
   document.getElementById("icf-fmt-editor-name-error").textContent = "";
   document.getElementById("icf-fmt-editor-rating-error").textContent = "";
   document.getElementById("icf-fmt-editor-zone").style.display = "block";
@@ -947,6 +957,8 @@ function editIcfFormat(formatId) {
 }
 
 function closeIcfFormatEditor() {
+  const lz = document.getElementById("icf-fmt-list-zone"), ez = document.getElementById("icf-fmt-editor-zone");
+  if (lz && ez && lz.contains(ez)) lz.after(ez);
   document.getElementById("icf-fmt-editor-zone").style.display = "none";
 }
 
