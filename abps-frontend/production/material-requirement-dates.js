@@ -32,6 +32,7 @@ function mrdSanitizeKey(itemCode) {
 // ── Assign Material Requirement Date ──────────────────────────────────
 
 async function initializeAssignMaterialRequirementDatePanel() {
+  mrdRenderGateBar("mrd-gate-bar-assign");
   const fb = document.getElementById("mrd-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   genericDropdownReset("mrd-prn-select", "— Select a project first —");
@@ -479,6 +480,7 @@ function switchReviseMRDTab(tab) {
 }
 
 async function initializeReviseMRDPanel() {
+  mrdRenderGateBar("mrd-gate-bar-revise");
   const fb = document.getElementById("rmrd-feedback");
   if (fb) { fb.style.display = "none"; fb.innerHTML = ""; }
   const tabsBar = document.getElementById("rmrd-tabs-bar");
@@ -707,4 +709,38 @@ async function submitReviseMRDOther(ns, prnId, btn) {
     btn.disabled = false; btn.textContent = originalText;
     showPurchaseFeedback("rmrd-feedback", "Network error: " + e.message, "error");
   }
+}
+
+// Material Requirement Date gate (1 Oct 2026). While paused, dates are
+// optional; a Super Admin can switch it on or off here.
+async function mrdRenderGateBar(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  let enabled = true;
+  try { const d = await apFetch({ action: "fetchMrdGateSetting" }); if (d.success) enabled = !!d.enabled; } catch (e) {}
+  const isSuper = localStorage.getItem("isUserSuperAdminGlobal") === "true";
+  const btn = isSuper
+    ? `<button onclick="mrdToggleGate(${!enabled})" style="width:auto; margin-left:auto; padding:6px 14px; border:none; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem; color:#fff; background:${enabled ? '#b91c1c' : '#15803d'};">${enabled ? 'Pause Requirement Dates' : 'Turn Requirement Dates On'}</button>`
+    : '';
+  el.style.display = (enabled && !isSuper) ? "none" : "flex";
+  el.style.cssText += "; align-items:center; gap:12px; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius); font-size:0.85rem; font-weight:700;";
+  el.style.background = enabled ? "#f0fdf4" : "#eff6ff";
+  el.style.borderLeft = enabled ? "4px solid #15803d" : "4px solid #2563eb";
+  el.style.color = enabled ? "#14532d" : "#1e3a8a";
+  el.innerHTML = (enabled
+    ? "Requirement Dates are ON: Purchase only sees a PRN's material once its dates are entered."
+    : "Requirement Dates are PAUSED: entering dates is optional and nothing is hidden from Purchase.") + btn;
+}
+
+async function mrdToggleGate(turnOn) {
+  const msg = turnOn
+    ? "Turn Material Requirement Dates ON?\n\nPurchase will stop seeing any PRN material until Production has entered its dates."
+    : "Pause Material Requirement Dates?\n\nDates become optional and Purchase sees every PRN's shortfall straight away.";
+  if (!(await abpsConfirm(msg, { okLabel: turnOn ? "Turn On" : "Pause", title: "Material Requirement Dates" }))) return;
+  try {
+    const d = await apFetch({ action: "setMrdGateSetting", enabled: turnOn, operatorName: appActiveOperatorIdentityString });
+    if (!d.success) { alert(d.error || "Could not change the setting."); return; }
+  } catch (e) { alert("Network error: " + e.message); return; }
+  mrdRenderGateBar("mrd-gate-bar-assign");
+  mrdRenderGateBar("mrd-gate-bar-revise");
 }
