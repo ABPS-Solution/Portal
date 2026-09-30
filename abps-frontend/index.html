@@ -2171,7 +2171,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           </div>
           <div>
             <label class="field-label" style="margin-top:0;">Department *</label>
-            <select id="fg-add-department" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+            <select id="fg-add-department" disabled onchange="fgAddRebuildBOQList()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
               <option value="">— Select —</option>
               <option value="Panel">Panel</option>
               <option value="Reactor">Reactor</option>

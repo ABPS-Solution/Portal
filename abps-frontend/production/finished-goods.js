@@ -241,19 +241,7 @@ async function handleFGAddProjectChange(projectId) {
       // Job Card out of both, and a BOQ whose every Job Card is done out
       // of the BOQ list (it simply never gets a boqMap entry).
       window.fgJobCardsCache = (data.jobCards || []).filter(jc => !jc.hasFgEntry);
-      const boqMap = {};
-      window.fgJobCardsCache.forEach(jc => {
-        if (jc.boqId && !boqMap[jc.boqId]) boqMap[jc.boqId] = jc.boqId;
-      });
-      if (Object.keys(boqMap).length === 0) {
-        fgBOQDisplayReset("⚠ No BOQ IDs found for this project");
-        if (boqLabel) boqLabel.style.color = "var(--warn)";
-      } else {
-        fgBOQDisplayReset("— Select BOQ ID —");
-        fgBOQPopulate(Object.entries(boqMap).map(([boqId, label]) => ({ value: boqId, label })));
-        fgBOQDisplayEnable();
-        if (boqLabel) boqLabel.style.color = "var(--brand)";
-      }
+      fgAddRebuildBOQList();
     } catch(e) {
       fgBOQDisplayReset("Error loading BOQs");
     }
@@ -262,6 +250,34 @@ async function handleFGAddProjectChange(projectId) {
     if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
     fgBOQDisplayReset("— Select Project First —");
     if (boqLabel) boqLabel.style.color = "var(--muted)";
+  }
+}
+
+// BOQ ID list = this project's BOQs that still have a Job Card without an
+// FG entry, narrowed to the selected Department. Re-run on Department change.
+function fgAddRebuildBOQList() {
+  const boqLabel = document.getElementById("fg-add-boq-label");
+  const dept = (document.getElementById("fg-add-department")?.value || "").trim();
+  document.getElementById("fg-add-boq").value = "";
+  handleFGBOQChange("");
+  if (!window.fgJobCardsCache) return;
+  if (!dept) {
+    fgBOQDisplayReset("— Select Department First —");
+    if (boqLabel) boqLabel.style.color = "var(--muted)";
+    return;
+  }
+  const boqMap = {};
+  window.fgJobCardsCache.forEach(jc => {
+    if (jc.boqId && !boqMap[jc.boqId] && (jc.department || "") === dept) boqMap[jc.boqId] = jc.boqId;
+  });
+  if (Object.keys(boqMap).length === 0) {
+    fgBOQDisplayReset(`⚠ No ${dept} BOQ IDs found for this project`);
+    if (boqLabel) boqLabel.style.color = "var(--warn)";
+  } else {
+    fgBOQDisplayReset("— Select BOQ ID —");
+    fgBOQPopulate(Object.entries(boqMap).map(([boqId, label]) => ({ value: boqId, label })));
+    fgBOQDisplayEnable();
+    if (boqLabel) boqLabel.style.color = "var(--brand)";
   }
 }
 
