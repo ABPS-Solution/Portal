@@ -876,7 +876,7 @@ async function handleIcfFormatTypeChange(typeOfMaterial) {
   if (!type) { listZone.style.display = "none"; return; }
 
   const cfg = (window.itemCodeTypeConfigCache || []).find(t => t.typeOfMaterial === type);
-  entryModeSelect.value = cfg ? cfg.entryMode : 'Fixed Format';
+  if (entryModeSelect) entryModeSelect.value = cfg ? cfg.entryMode : 'Fixed Format';
 
   listZone.style.display = "block";
   const listEl = document.getElementById("icf-fmt-formats-list");
