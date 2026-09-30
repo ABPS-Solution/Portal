@@ -5,6 +5,14 @@ function initializeStockSweepPanel() {
   document.getElementById("sweep-material-dropdown").style.display = "none";
   const st = document.getElementById("sweep-type");
   if (st) st.value = "Production Return";
+  const cdOpt = document.getElementById("sweep-type-countdown-opt");
+  if (cdOpt) { const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true"; cdOpt.hidden = !isAdmin; cdOpt.disabled = !isAdmin; }
+  const cdWrap = document.getElementById("sweep-countdown-reason-wrap");
+  if (cdWrap) cdWrap.style.display = "none";
+  const cdReason = document.getElementById("sweep-countdown-reason");
+  if (cdReason) cdReason.value = "";
+  const sbtn = document.getElementById("sweep-submit-btn");
+  if (sbtn) sbtn.textContent = "Submit Stock Sweep";
   const formBody = document.getElementById("sweep-form-body");
   if (formBody) formBody.style.display = "";
   renderSweepBasket();
@@ -42,6 +50,9 @@ function handleSweepTypeChange() {
   document.getElementById("sweep-material-search-wrapper").style.display = isBlockedExit ? "none" : "block";
   document.getElementById("sweep-allocation-picker-wrapper").style.display = isBlockedExit ? "block" : "none";
   if (isBlockedExit) loadUnfreedBlockedAllocations();
+  const isCountDown = type === "Count Down";
+  document.getElementById("sweep-countdown-reason-wrap").style.display = isCountDown ? "block" : "none";
+  document.getElementById("sweep-submit-btn").textContent = isCountDown ? "Submit Count Down" : "Submit Stock Sweep";
 }
 
 async function loadUnfreedBlockedAllocations() {
@@ -184,6 +195,7 @@ async function submitStockSweep() {
     return;
   }
   document.getElementById("sweep-feedback").style.display = "none";
+  if (document.getElementById("sweep-type").value === "Count Down") return submitStockCountDown();
   showBlockingOverlay("Recording Stock Sweep...");
   try {
     const data = await apFetch({
@@ -216,3 +228,38 @@ async function submitStockSweep() {
   }
 }
 
+
+async function submitStockCountDown() {
+  const reason = document.getElementById("sweep-countdown-reason").value.trim();
+  if (!reason) {
+    showBOQBanner("sweep-feedback", "<strong>Reason Required:</strong> Enter why the stock is being counted down.", "error");
+    return;
+  }
+  const lines = sweepBasket.map(b => `${b.itemCode}: -${fmtQty(parseFloat(b.quantity))}`).join("\n");
+  if (!(await abpsConfirm("Lower RM Store stock for:\n" + lines + "\n\nIf free stock isn't enough, the newest PRNs lose their reservation and will need to purchase it.", { okLabel: "Count Down", title: "Count down stock" }))) return;
+  showBlockingOverlay("Recording Count Down...");
+  try {
+    const data = await apFetch({
+      action: "commitStockWriteDown",
+      operatorName: appActiveOperatorIdentityString,
+      reason,
+      items: sweepBasket.map(b => ({ itemCode: b.itemCode, quantity: parseFloat(b.quantity) })),
+    });
+    if (data.success) {
+      const releasedCount = (data.results || []).reduce((n, r) => n + (r.released || []).length, 0);
+      let msg = `Count down ${escapeHtml(data.batchId)} recorded for ${(data.results || []).length} item(s).`;
+      if (releasedCount) msg += ` ${releasedCount} PRN reservation(s) were reduced and now show that quantity as to-purchase.`;
+      sweepBasket = [];
+      renderSweepBasket();
+      showSuccessWithReset("sweep-feedback", msg, "Record Another", "initializeStockSweepPanel()", []);
+      const formBody = document.getElementById("sweep-form-body");
+      if (formBody) formBody.style.display = "none";
+    } else {
+      showBOQBanner("sweep-feedback", escapeHtml(data.error || "Failed to record count down."), "error");
+    }
+  } catch (e) {
+    showBOQBanner("sweep-feedback", "Network error: " + escapeHtml(e.message), "error");
+  } finally {
+    hideBlockingOverlay();
+  }
+}

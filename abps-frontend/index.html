@@ -2718,6 +2718,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <option value="Found Stock">Found Stock</option>
             <option value="Blocked → Restricted">Spare Store Blocked → Spare Store Restricted</option>
             <option value="Blocked → RM Store">Spare Store Blocked → RM Store</option>
+            <option value="Count Down" id="sweep-type-countdown-opt" hidden disabled>Count Down (Admin only, lowers stock)</option>
           </select>
         </div>
         <div id="sweep-material-search-wrapper" style="position:relative;">
@@ -2733,6 +2734,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <option value="">— Choose an unfreed Blocked allocation —</option>
           </select>
         </div>
+      </div>
+      <div id="sweep-countdown-reason-wrap" style="display:none; margin-bottom:12px; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:var(--radius); padding:10px 12px;">
+        <label class="field-label">Reason for Count Down *</label>
+        <textarea id="sweep-countdown-reason" rows="2" placeholder="e.g. Weekly recount found less than system stock" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); font:inherit; box-sizing:border-box;"></textarea>
+        <div style="font-size:0.78rem; color:#991b1b; margin-top:4px;">Lowers RM Store stock. Free stock is used first; beyond that, the newest PRNs lose their reservation and show it as to-purchase again.</div>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px; background:#fff;">
         <thead><tr style="text-align:left;">
