@@ -153,6 +153,20 @@ const EMP_TABLE_COL_BORDER = "border-left:2px solid var(--border);";
 const EMP_TABLE_CELL = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
 const EMP_TABLE_TH = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
 
+// Tour screen: positive Tour Balance high to low, then negatives most
+// negative first, then zeros. Daily screen: Daily Balance high to low.
+function edSortEmployeesForScreen(ns, list) {
+  if (ns === 'ed') {
+    const grp = v => v > 0 ? 0 : v < 0 ? 1 : 2;
+    list.sort((x, y) => {
+      const a = Number(x.balance) || 0, b = Number(y.balance) || 0;
+      return grp(a) - grp(b) || (a > 0 ? b - a : a - b);
+    });
+  } else if (ns === 'cee') {
+    list.sort((x, y) => (Number(y.cashBalance) || 0) - (Number(x.cashBalance) || 0));
+  }
+}
+
 async function edLoadEmployeeDetailsTable(ns) {
   const cfg = EMP_SCREEN_CONFIG[ns];
   const wrap = document.getElementById(`${ns}-table-wrap`);
@@ -160,6 +174,7 @@ async function edLoadEmployeeDetailsTable(ns) {
   try {
     const data = await acFetch("listAllTourEmployees", { sortBy: cfg.sortBy });
     if (!data.success) { wrap.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
+    edSortEmployeesForScreen(ns, data.employees);
     window.edEmployeesCache[ns] = data.employees;
     const searchInput = document.getElementById(`${ns}-search-input`);
     if (searchInput) searchInput.value = "";
