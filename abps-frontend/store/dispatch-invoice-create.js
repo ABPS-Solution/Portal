@@ -314,7 +314,7 @@ function cpdiRenderInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Product Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; padding-top:14px; border-top:2px solid #94a3b8; font-size:1.15rem;">Product Details</div>
       <div id="cpdi-lineitems-wrap" style="overflow-x:auto;"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
@@ -357,7 +357,7 @@ function cpdiRenderInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Bank Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; padding-top:14px; border-top:2px solid #94a3b8; font-size:1.15rem;">Bank Details</div>
       <div class="grid-cell-item" style="max-width:320px; margin-bottom:10px;">
         <label>Bank Account</label>
         <select onchange="selectCpdiBankOption(this.value)" style="width:100%; padding:6px 4px;">
@@ -584,19 +584,23 @@ async function initializeCpdiEditingTab() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.invoices || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No pending drafts.</div>`; return; }
     feed.innerHTML = data.invoices.map(inv => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCpdiEditCard(${inv.invoiceId})">
-          <div>
-            <strong>${inv.invoiceType} Invoice draft #${inv.invoiceId}</strong> — ${inv.projectId}
-            <div style="font-size:0.8rem; color:var(--muted);">Created by ${escapeHtml(inv.createdBy || '—')} · ${formatOrdinalDateTime ? formatOrdinalDateTime(inv.createdAt) : inv.createdAt}</div>
+      <div style="border:2px solid #94a3b8; border-left:5px solid #f59e0b; border-radius:var(--radius); margin-bottom:12px; background:#fff; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer; padding:12px 16px;" onclick="toggleCpdiEditCard(${inv.invoiceId})">
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span style="padding:3px 10px; border-radius:999px; background:${inv.invoiceType === 'Final' ? '#dcfce7' : '#e0e7ff'}; color:${inv.invoiceType === 'Final' ? '#15803d' : '#1e3a8a'}; font-weight:800; font-size:0.75rem; text-transform:uppercase;">${escapeHtml(inv.invoiceType)} Invoice</span>
+              <strong style="font-size:1rem; color:var(--brand);">${escapeHtml(inv.invoiceNo || ('Draft #' + inv.invoiceId))}</strong>
+            </div>
+            <div style="font-size:0.9rem; font-weight:700; color:#111827; margin-top:4px;">${escapeHtml(inv.projectId)}</div>
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">Created by ${escapeHtml(inv.createdBy || '—')} · ${formatOrdinalDateTime ? formatOrdinalDateTime(inv.createdAt) : inv.createdAt}</div>
           </div>
-          <div style="text-align:right;">
+          <div style="text-align:right; line-height:1.7;">
             ${inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Invoice Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No invoice draft yet</span>`}
             <br/>
             ${inv.dcCheckingDocUrl ? `<a href="${driveLink(inv.dcCheckingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Delivery Challan Draft #${inv.dcCheckingDraftCount} ↗</a>` : (inv.dispatchChallanId ? `<span style="color:#b45309; font-size:0.8rem;">No Delivery Challan draft yet</span>` : '')}
           </div>
         </div>
-        <div id="cpdi-edit-card-${inv.invoiceId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
+        <div id="cpdi-edit-card-${inv.invoiceId}" style="display:none; border-top:2px solid #94a3b8; padding:14px 16px;"></div>
       </div>`).join('');
   } catch(e) {
     feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
@@ -636,9 +640,8 @@ async function toggleCpdiEditCard(invoiceId) {
     cpdiFormZoneId = `cpdi-edit-form-${invoiceId}`;
     card.innerHTML = `
       <div id="cpdi-edit-form-${invoiceId}"></div>
-      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveCpdiEdit(${invoiceId})">Save &amp; Generate Invoice Draft</button>
-        ${cpdiEditDispatchChallanId ? `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px;" onclick="generateCpdiDcCheckingDraft(${invoiceId}, ${cpdiEditDispatchChallanId})">Generate Delivery Challan Draft</button>` : ''}
+      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-start; flex-wrap:wrap;">
+        <button class="nav-btn-styled" style="background:var(--brand); padding:10px 22px; font-weight:700; width:auto;" onclick="saveCpdiEdit(${invoiceId})">Save &amp; Generate Invoice and Delivery Challan Drafts</button>
       </div>
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
     cpdiRenderInvoiceForm();
@@ -744,7 +747,8 @@ async function generateCpdiDcCheckingDraft(invoiceId, challanId) {
 function renderCpdiDcCheckingControl(containerId, challanId) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.innerHTML = `<button class="nav-btn-styled" style="background:var(--accent); padding:8px 16px; font-weight:700;" onclick="generateCpdiDcCheckingDraftInline('${containerId}', ${challanId})">Generate Delivery Challan Draft</button>`;
+  // Generated automatically with the invoice draft (no separate button).
+  generateCpdiDcCheckingDraftInline(containerId, challanId);
 }
 async function generateCpdiDcCheckingDraftInline(containerId, challanId) {
   const el = document.getElementById(containerId);

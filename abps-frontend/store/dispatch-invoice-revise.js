@@ -366,7 +366,7 @@ function renderRpdiForm() {
         </div>
       </div>
 
-      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Product Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; padding-top:14px; border-top:2px solid #94a3b8; font-size:1.15rem;">Product Details</div>
       <div id="rpdi-lineitems-wrap" style="overflow-x:auto;"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
@@ -409,7 +409,7 @@ function renderRpdiForm() {
         </div>
       </div>
 
-      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Bank Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; padding-top:14px; border-top:2px solid #94a3b8; font-size:1.15rem;">Bank Details</div>
       <div class="grid-cell-item" style="max-width:320px; margin-bottom:10px;">
         <label>Bank Account</label>
         <select onchange="selectRpdiBankOption(this.value)" style="width:100%; padding:6px 4px;">
