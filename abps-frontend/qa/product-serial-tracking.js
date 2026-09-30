@@ -22,7 +22,7 @@ let psnQueueRows = []; // cached full "All Units" list, filtered client-side by 
 const PSN_TIER_META = {
   exact: { label: "Bought for this project", color: '#15803d', bg: '#dcfce7' },
   auto:  { label: "Store stock reserved for this project", color: '#b45309', bg: '#fef3c7' },
-  fifo:  { label: "Likely source (oldest delivery)", color: '#1d4ed8', bg: '#dbeafe' },
+  fifo:  { label: "Likely source", color: '#1d4ed8', bg: '#dbeafe' },
 };
 
 // Status badge colors — a real stock/lifecycle state (Pending FG Approval /
@@ -335,6 +335,7 @@ function psnRenderMaterialSources(trace) {
   const mono = "font-family:ui-monospace, 'SF Mono', Consolas, monospace;";
   const na = '<span style="color:var(--muted);">N/A</span>';
 
+  const poUrls = (trace && trace.poUrls) || {};
   const body = lines.map((m, mi) => {
     const unit = escapeHtml(m.unitType || '');
     const issuedQty = Number(m.issuedQuantity) || 0;
@@ -346,30 +347,31 @@ function psnRenderMaterialSources(trace) {
     const rows = src.map((pl, i) => {
       const first = i === 0 ? `
         <td rowspan="${span}" style="${stripe}">${escapeHtml(m.materialName || '')}</td>
-        <td rowspan="${span}" style="text-align:center; ${stripe}">${trimNum(m.allottedQuantity || 0)} ${unit}</td>
-        <td rowspan="${span}" style="text-align:center; font-weight:700; ${stripe}">${trimNum(issuedQty)} ${unit}</td>` : '';
+        <td rowspan="${span}" style="text-align:center; ${stripe}">${unit || na}</td>
+        <td rowspan="${span}" style="text-align:center; ${stripe}">${trimNum(m.allottedQuantity || 0)}</td>
+        <td rowspan="${span}" style="text-align:center; font-weight:700; ${stripe}">${trimNum(issuedQty)}</td>` : '';
+      const qtyCell = (extra) => `<td style="text-align:center; font-weight:800; font-size:1rem; ${extra || ''}">${trimNum(pl ? pl.attributedQuantity || 0 : 0)}</td>`;
       if (!pl) {
         const why = issuedQty > 0 ? 'Issued, but no delivery record was found' : 'Not issued to this Job Card yet';
-        return `<tr>${first}<td colspan="5" style="text-align:center; color:var(--muted);">${why}</td><td style="text-align:center; color:var(--muted);">0</td></tr>`;
+        return `<tr>${first}<td colspan="6" style="text-align:center; color:var(--muted);">${why}</td></tr>`;
       }
       if (!pl.poNo && !pl.grnNumber) {
-        const nf = '<span style="color:#991b1b; font-weight:700;">Not found</span>';
         const red = 'background:#fee2e2;';
         return `<tr>${first}
           <td style="text-align:center; ${red}"><span class="psn-tier-chip" style="color:#991b1b; background:#fecaca;">Source unknown</span></td>
-          <td style="${red}">${nf}</td><td style="${red}">${nf}</td><td style="${red}">${nf}</td><td style="${red}">${nf}</td>
-          <td style="text-align:center; font-weight:800; color:#991b1b; ${red}">${trimNum(pl.attributedQuantity || 0)}</td></tr>`;
+          ${qtyCell(red + ' color:#991b1b;')}
+          <td colspan="4" style="text-align:center; ${red} color:#991b1b; font-weight:700;">Source unknown</td></tr>`;
       }
       const tier = PSN_TIER_META[pl.tier] || { label: pl.tier, color: '#334155', bg: '#f1f5f9' };
       const qa = pl.qaPerson || pl.qaPassDate
         ? `${pl.qaPerson ? escapeHtml(pl.qaPerson) : ''}${pl.qaPassDate ? '<div style="color:var(--muted); font-size:0.78rem;">' + formatOrdinalDate(pl.qaPassDate) + '</div>' : ''}` : na;
       return `<tr>${first}
         <td style="text-align:center;"><span class="psn-tier-chip" style="color:${tier.color}; background:${tier.bg}; white-space:normal;">${escapeHtml(tier.label)}</span></td>
-        <td><div style="font-weight:700; ${mono} font-size:0.8rem;">${pl.poNo ? escapeHtml(pl.poNo) : na}</div>${pl.poDate ? '<div style="color:var(--muted); font-size:0.78rem;">' + formatOrdinalDate(pl.poDate) + '</div>' : ''}</td>
+        ${qtyCell()}
+        <td><div style="font-weight:700; ${mono} font-size:0.8rem;">${pl.poNo ? (poUrls[pl.poNo] ? `<a href="${driveLink(poUrls[pl.poNo])}" target="_blank" rel="noopener" style="color:var(--brand); text-decoration:underline;">${escapeHtml(pl.poNo)}</a>` : escapeHtml(pl.poNo)) : na}</div>${pl.poDate ? '<div style="color:var(--muted); font-size:0.78rem;">' + formatOrdinalDate(pl.poDate) + '</div>' : ''}</td>
         <td>${pl.vendorName ? escapeHtml(pl.vendorName) : na}</td>
         <td><div style="${mono} font-size:0.8rem;">${pl.grnNumber ? escapeHtml(pl.grnNumber) : na}</div></td>
         <td>${qa}</td>
-        <td style="text-align:center; font-weight:800;">${trimNum(pl.attributedQuantity || 0)}</td>
       </tr>`;
     }).join('');
 
@@ -393,9 +395,9 @@ function psnRenderMaterialSources(trace) {
   return `${legend}<div style="overflow-x:auto;">
     <table class="psn-bordered psn-material-table">
       <thead><tr>
-        ${th('Material Name', '24%')}${th('BOQ Allotted Qty', '8%', 'center')}${th('Ticket Issued Qty', '8%', 'center')}
-        ${th('Source', '13%', 'center')}${th('PO No / Date', '11%')}${th('Vendor', '12%')}${th('GRN Number', '10%')}
-        ${th('Q/A Checked By', '9%')}${th('Qty', '5%', 'center')}
+        ${th('Material Name', '26%')}${th('Unit', '5%', 'center')}${th('BOQ Allotted Qty', '6%', 'center')}${th('Ticket Issued Qty', '6%', 'center')}
+        ${th('Source', '12%', 'center')}${th('Qty', '5%', 'center')}${th('PO No / Date', '10%')}${th('Vendor', '12%')}${th('GRN Number', '9%')}
+        ${th('Q/A Checked By', '9%')}
       </tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
