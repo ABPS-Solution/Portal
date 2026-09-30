@@ -597,7 +597,6 @@ async function submitFGApprovalDecision(fgId, action) {
           </div>`;
         feedback.innerHTML = `
           <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:#dcfce7; border-bottom:2px solid #86efac;">
-            <div style="width:34px; height:34px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex:none;">✓</div>
             <div>
               <div style="font-size:1.05rem; font-weight:800; color:#14532d;">Finished Good Approved & Added to FG Store</div>
               <div style="font-size:0.8rem; color:#166534; margin-top:2px;">This unit is now available in the Finished Goods Store.</div>
