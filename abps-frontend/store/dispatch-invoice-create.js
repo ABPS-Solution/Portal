@@ -550,16 +550,18 @@ async function submitCpdiCreate() {
       document.getElementById("cpdi-detail-zone").style.display = "none";
       const successZone = document.getElementById("cpdi-success-zone");
       successZone.style.display = "block";
-      successZone.innerHTML = `
-        <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
-          ${isFinal ? 'Final' : 'Partial'} Invoice draft #${data.invoiceId} created for Project ID: ${cpdiCache.projectId} — awaiting authorization.
-        </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Invoice Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">⚠ Invoice draft generation failed — retry from the Editing tab.</div>`}
-        <div id="cpdi-dc-checking-zone" style="margin-top:10px;"></div>
-        <div style="margin-top:16px;">
-          <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchCreatePdiTab('new')">+ Create New Draft</button>
-          <button class="nav-btn-styled" style="background:var(--muted); padding:8px 20px; font-weight:700; margin-left:8px;" onclick="switchCreatePdiTab('editing')">Go to Pending Invoices (Editing)</button>
-        </div>`;
+      renderPdiSuccessCard("cpdi-success-zone", {
+        title: `${isFinal ? 'Final' : 'Partial'} Invoice draft created`,
+        rows: [
+          ["Invoice No.", data.invoiceNo || ""],
+          ["Invoice Type", `${isFinal ? 'Final' : 'Partial'} Invoice`],
+          ["Project ID", cpdiCache.projectId],
+          ["Status", "Awaiting authorization"],
+        ],
+        links: [{ label: `Open Invoice Draft #${data.checkingDraftNumber || 1}`, url: data.checkingDocUrl ? driveLink(data.checkingDocUrl) : "" }],
+        resetLabel: "Create New Draft", resetFn: "switchCreatePdiTab('new')",
+      });
+      successZone.insertAdjacentHTML("beforeend", '<div id="cpdi-dc-checking-zone" style="margin-top:4px;"></div>');
       if (data.dispatchChallanId) renderCpdiDcCheckingControl('cpdi-dc-checking-zone', data.dispatchChallanId);
     } else {
       showBOQBanner("cpdi-feedback", data.error || "Failed.", "error");
