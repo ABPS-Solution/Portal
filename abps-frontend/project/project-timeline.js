@@ -78,6 +78,15 @@ const PTL_STAGE_LABEL = { 1: 'Order Acceptance', 2: 'Approvals', 3: 'Pre Product
 
 let ptlProjects = [];
 let ptlData = null;
+
+// Once the Final Delivery / Dispatch Date is done, the Predicted date has no
+// meaning left: drop it from both the map and the Steps list.
+function ptlDropPredictedIfDelivered(data) {
+  if (!data || !Array.isArray(data.trunk)) return data;
+  const delivery = data.trunk.find(n => n.id === 'delivery');
+  if (delivery && (delivery.actual || delivery.done === true)) data.trunk = data.trunk.filter(n => n.id !== 'predictedDelivery');
+  return data;
+}
 let ptlSelected = null;
 
 // Admin-only test backdate - server re-checks perm_admin regardless (see
@@ -221,7 +230,7 @@ async function selectPtlProject(projectId) {
       fb.innerHTML = `<strong>Failed:</strong> ${escapeHtml(data.error || 'Could not load this project.')}`;
       return;
     }
-    ptlData = data; ptlSelected = null;
+    ptlData = ptlDropPredictedIfDelivered(data); ptlSelected = null;
     ptlRender();
   } catch (e) {
     body.innerHTML = "";
@@ -288,7 +297,7 @@ async function ptlRefetchForTodayOverride() {
   try {
     const data = await apFetch({ action: "fetchProjectTimeline", projectId, todayOverride: ptlToday() });
     if (!data.success || !ptlData || ptlData.project.projectId !== projectId) return;
-    ptlData = data;
+    ptlData = ptlDropPredictedIfDelivered(data);
     ptlRender();
     if (document.getElementById("ptl-fs-overlay")?.style.display !== "none") ptlRenderFullscreen();
   } catch (e) { /* keep the current view */ }

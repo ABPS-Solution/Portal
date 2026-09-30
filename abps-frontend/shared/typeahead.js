@@ -26,7 +26,25 @@ function handleSharedProjectTypeaheadInput(query, inputId, dropdownId, includeCo
   // here meant the placeholder's "...or Customer Name" search never
   // actually matched anything on ANY screen using this shared component —
   // it always fell through to "" and silently only matched on Project ID.
-  const pool = includeComplete ? (window.sharedAllProjectCodes || window.sharedActiveProjectCodes || []) : (window.sharedActiveProjectCodes || []);
+  // Active + Complete list is loaded on first use (other screens replace
+  // the Active list with their own, so it can't be relied on here).
+  if (includeComplete && !window.sharedAllProjectCodes) {
+    if (!window._sharedAllProjectsLoading) {
+      window._sharedAllProjectsLoading = fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", includeComplete: true })
+        .then(all => {
+          window.sharedAllProjectCodes = all.projects || [];
+          window.sharedProjectMeta = Object.assign(window.sharedProjectMeta || {}, all.projectMeta || {});
+        })
+        .catch(() => {})
+        .finally(() => { window._sharedAllProjectsLoading = null; });
+    }
+    window._sharedAllProjectsLoading && window._sharedAllProjectsLoading.then(() => {
+      const el = document.getElementById(inputId);
+      if (el && window.sharedAllProjectCodes) handleSharedProjectTypeaheadInput(el.value, inputId, dropdownId, true);
+    });
+    return;
+  }
+  const pool = includeComplete ? (window.sharedAllProjectCodes || []) : (window.sharedActiveProjectCodes || []);
   const matches = pool.filter(p => {
     const companyName = (meta[p] && meta[p].companyName) || "";
     return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
