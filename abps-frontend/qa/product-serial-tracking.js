@@ -41,7 +41,8 @@ const PSN_STATUS_META = {
 function psnStatusBadge(status) {
   const s = status || 'Unknown';
   const meta = PSN_STATUS_META[s] || { color: '#334155', bg: '#f1f5f9' };
-  return `<span class="psn-status-badge" style="color:${meta.color}; background:${meta.bg};">${escapeHtml(s)}</span>`;
+  const label = s === 'Consumed in Production' ? 'Used in Production' : s;
+  return `<span class="psn-status-badge" style="color:${meta.color}; background:${meta.bg};">${escapeHtml(label)}</span>`;
 }
 
 function initializeProductSerialTrackingPanel() {
@@ -340,7 +341,7 @@ function psnRenderMaterialSources(trace) {
     const unit = escapeHtml(m.unitType || '');
     const issuedQty = Number(m.issuedQuantity) || 0;
     const src = issuedQty > 0 && (m.poLines || []).length ? m.poLines : [null];
-    const rej = m.rejections || [];
+    const rej = []; // repair history not shown: we cannot tell if repaired material was issued
     const span = src.length + (rej.length ? 1 : 0);
     const stripe = mi % 2 ? 'background:#f8fafc;' : '';
 
