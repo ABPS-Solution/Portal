@@ -122,6 +122,18 @@ async function handleCpdiProjectChange(projectId) {
     cpdiCache = { projectId, lines: lineData.lines };
     cpdiInitInvoiceStateFromLines();
     cpdiRenderDetail();
+    pdiDraftWire("createPDI", "cpdi-detail-zone", () => cpdiCache && cpdiInvoiceState ? {
+      id: cpdiCache.projectId, inv: cpdiInvoiceState,
+      payment: document.getElementById("cpdi-payment-received")?.value || "No",
+    } : null);
+    pdiDraftOffer("createPDI", "cpdi-detail-zone", projectId, (st) => {
+      if (!st || !st.inv || !cpdiCache || cpdiCache.projectId !== st.id) return;
+      cpdiInvoiceState = st.inv;
+      cpdiRenderDetail();
+      const pay = document.getElementById("cpdi-payment-received");
+      if (pay && st.payment) pay.value = st.payment;
+      recalcPdiTotals(cpdiInvoiceState, 'cpdi');
+    });
   } catch(e) {
     showBOQBanner("cpdi-feedback", "Network error: " + e.message, "error");
   }
@@ -161,7 +173,7 @@ function cpdiRenderDetail() {
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
     const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${escapeHtml(l.productName || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
       <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}${(hasBoq && (l.readySerials || []).length) ? `<div><a href="javascript:void(0)" onclick="showCpdiReadySerials(${idx})" style="font-size:0.72rem; font-weight:600; color:var(--brand);">View Job Cards / Serial Nos.</a></div>` : ''}</td>
@@ -262,7 +274,7 @@ function cpdiRenderInvoiceForm() {
       </div>
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
-        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">${s._invoiceNo ? escapeHtml(s._invoiceNo) : 'Given when the draft is created'}</div></div>
+        <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">${s._invoiceNo ? escapeHtml(s._invoiceNo) : 'When draft is created'}</div></div>
         ${field('Insurance No.', 'insuranceNo')}
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
@@ -528,6 +540,7 @@ async function submitCpdiCreate() {
       paymentReceivedConfirmation, documents,
     });
     if (data.success) {
+      abpsDraftClear("createPDI");
       const cpdiTabsBar = document.getElementById("cpdi-tab-new")?.parentElement;
       if (cpdiTabsBar) cpdiTabsBar.style.display = "none";
       document.getElementById("cpdi-select-zone").style.display = "none";

@@ -284,6 +284,12 @@ async function loadRpdiForm(invoiceId) {
     };
     renderRpdiForm();
     document.getElementById("rpdi-generate-btn-wrap").style.display = "block";
+    pdiDraftWire("revisePDI", "rpdi-detail-zone", () => rpdiCache && rpdiState && rpdiFormOpenId ? { id: rpdiCache.invoiceId, inv: rpdiState } : null);
+    pdiDraftOffer("revisePDI", "rpdi-invoice-form-zone", data.invoiceId, (st) => {
+      if (!st || !st.inv || String(rpdiCache.invoiceId) !== String(st.id)) return;
+      rpdiState = st.inv;
+      renderRpdiForm();
+    });
   } catch(e) {
     zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
   }
@@ -496,6 +502,7 @@ async function submitRpdiCreateRequest() {
       operatorName: appActiveOperatorIdentityString || "Unknown",
     });
     if (data.success) {
+      abpsDraftClear("revisePDI");
       const rpdiTabsBar = document.getElementById("rpdi-tab-select")?.parentElement;
       if (rpdiTabsBar) rpdiTabsBar.style.display = "none";
       document.getElementById("rpdi-select-zone").style.display = "none";

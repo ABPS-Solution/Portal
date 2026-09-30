@@ -2329,7 +2329,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px; min-width:640px;">
           <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">Product</th><th style="padding:8px; text-align:center;">Ordered Qty</th>
+            <th style="padding:8px;">Product Name</th><th style="padding:8px; text-align:center;">Ordered Qty</th>
             <th style="padding:8px; text-align:center;">Already Invoiced</th><th style="padding:8px; text-align:center;">Ready to Invoice</th>
             <th style="padding:8px; text-align:center;">Qty to Bill Now</th>
           </tr></thead>
@@ -2339,12 +2339,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div id="cpdi-invoice-form-zone" style="display:none;"></div>
 
         <div id="cpdi-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
-          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
+          <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Packing List * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-packingList-dropzone" onclick="document.getElementById('cpdi-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-packingList-dropzone" onclick="document.getElementById('cpdi-doc-packingList-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Packing List
               </div>
               <input type="file" id="cpdi-doc-packingList-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'packingList')" />
@@ -2352,7 +2352,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Serial Number Confirmation Sheet * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('cpdi-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('cpdi-doc-serialNumberConfirmationSheet-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Serial Number Confirmation Sheet
               </div>
               <input type="file" id="cpdi-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
@@ -2363,7 +2363,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-warrantyCard-dropzone" onclick="document.getElementById('cpdi-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-warrantyCard-dropzone" onclick="document.getElementById('cpdi-doc-warrantyCard-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Warranty Card
               </div>
               <input type="file" id="cpdi-doc-warrantyCard-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'warrantyCard')" />
@@ -2371,7 +2371,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">History Card * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-historyCard-dropzone" onclick="document.getElementById('cpdi-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-historyCard-dropzone" onclick="document.getElementById('cpdi-doc-historyCard-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach History Card
               </div>
               <input type="file" id="cpdi-doc-historyCard-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'historyCard')" />
@@ -2379,7 +2379,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Images of Products Loaded in Truck * <span style="color:#b91c1c;">(required)</span></label>
-              <div class="card-box" id="cpdi-doc-truckLoadedImages-dropzone" onclick="document.getElementById('cpdi-doc-truckLoadedImages-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-truckLoadedImages-dropzone" onclick="document.getElementById('cpdi-doc-truckLoadedImages-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Images of Products Loaded in Truck
               </div>
               <input type="file" id="cpdi-doc-truckLoadedImages-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'truckLoadedImages')" />
@@ -2390,7 +2390,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label class="field-label" style="margin-top:0;">LR Copy</label>
-              <div class="card-box" id="cpdi-doc-lrCopy-dropzone" onclick="document.getElementById('cpdi-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-lrCopy-dropzone" onclick="document.getElementById('cpdi-doc-lrCopy-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach LR Copy
               </div>
               <input type="file" id="cpdi-doc-lrCopy-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'lrCopy')" />
@@ -2398,7 +2398,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">MD cc</label>
-              <div class="card-box" id="cpdi-doc-mdcc-dropzone" onclick="document.getElementById('cpdi-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-mdcc-dropzone" onclick="document.getElementById('cpdi-doc-mdcc-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach MD cc
               </div>
               <input type="file" id="cpdi-doc-mdcc-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'mdcc')" />
@@ -2406,7 +2406,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
-              <div class="card-box" id="cpdi-doc-inspectionClearance-dropzone" onclick="document.getElementById('cpdi-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div class="card-box" id="cpdi-doc-inspectionClearance-dropzone" onclick="document.getElementById('cpdi-doc-inspectionClearance-input').click()" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 📎 Click to attach Inspection Clearance
               </div>
               <input type="file" id="cpdi-doc-inspectionClearance-input" multiple hidden onchange="cpdiHandleFileSelectionMulti(this, 'inspectionClearance')" />

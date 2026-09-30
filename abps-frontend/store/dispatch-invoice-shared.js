@@ -372,3 +372,30 @@ function renderPdiQueueCardHeader(onclickJs, cells, rightHtml) {
     <div style="flex-shrink:0; text-align:right;">${rightHtml || ''}</div>
   </div>`;
 }
+
+
+// Refresh/offline restore for Create and Revise Project Dispatch Invoice,
+// same mechanism as Create BOQ (shared/drafts.js). The form is rebuilt
+// from a state object, so the whole state is saved (not DOM fields) and
+// only offered back for the same project / invoice it was typed for.
+const pdiDraftTimers = {};
+function pdiDraftWire(key, containerId, getState) {
+  const root = document.getElementById(containerId);
+  if (!root || root.dataset.pdiDraftWired === "1") return;
+  root.dataset.pdiDraftWired = "1";
+  const save = (e) => {
+    if (e && e.target && e.target.type === "file") return;
+    clearTimeout(pdiDraftTimers[key]);
+    pdiDraftTimers[key] = setTimeout(() => {
+      const state = getState();
+      if (state && state.id) abpsDraftSave(key, { fields: {}, state });
+    }, 800);
+  };
+  root.addEventListener("input", save);
+  root.addEventListener("change", save);
+}
+function pdiDraftOffer(key, containerId, id, apply) {
+  const d = abpsDraftRead(key);
+  if (!d || !d.payload || !d.payload.state || String(d.payload.state.id) !== String(id)) return;
+  abpsDraftOfferRestore(key, containerId, apply, { hasFileUploads: true });
+}
