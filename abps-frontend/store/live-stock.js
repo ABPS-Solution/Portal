@@ -123,7 +123,10 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     // to "No". A legacy ticket under a non-Service department still needs
     // this — checking legacyCompanyName, not just department, is what
     // makes that work.
-    const isServiceTicket = (ticket.department || "").toString().trim() === "Service" || !!ticket.legacyCompanyName;
+    // Finished Goods tickets never draw on Spare Store either, so hide the
+    // two spare columns for them too.
+    const isServiceTicket = (ticket.department || "").toString().trim() === "Service" || !!ticket.legacyCompanyName
+      || (ticket.storeTargetScope || "") === "Finished Goods Store";
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
