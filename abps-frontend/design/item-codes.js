@@ -364,6 +364,7 @@ async function executeItemCodeSearch() {
 }
 
 async function revealItemCodeCreateForm() {
+  ["itemcode-search-results-zone", "itemcode-no-results-zone"].forEach(id => { const z = document.getElementById(id); if (z) z.style.display = "none"; });
   const createZone = document.getElementById("itemcode-create-form-zone");
   const codeInput  = document.getElementById("itemcode-new-code");
   const nameInput  = document.getElementById("itemcode-new-name");
