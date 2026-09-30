@@ -602,8 +602,8 @@ async function toggleRpdiEditCard(requestId) {
     rpdiState.lineItems.forEach(li => {
       const rl = revLines[li.lineId];
       if (!rl) return;
-      li.quantity = rl.quantity; li.ratePerQuantity = rl.ratePerQuantity;
-      li.totalBasicPrice = (parseFloat(rl.quantity) || 0) * (parseFloat(rl.ratePerQuantity) || 0);
+      if (rl.ratePerQuantity != null) li.ratePerQuantity = rl.ratePerQuantity;
+      li.totalBasicPrice = (parseFloat(li.quantity) || 0) * (parseFloat(li.ratePerQuantity) || 0);
     });
 
     // Only one invoice form may exist on the page (shared element ids).
