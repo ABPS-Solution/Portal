@@ -664,12 +664,13 @@ async function submitFGAddItem() {
       const jcSet = (String(jobCard).match(/^JC_(Set-\d+)/) || [])[1];
       showBOQBanner("fg-add-feedback",
         `<div style="font-size:1rem; font-weight:800; margin-bottom:10px;">Added to Finished Goods Store</div>` +
-        prnSuccessGrid([
-          prnSuccessTile("Product", escapeHtml([productName, rating].filter(Boolean).join(" - "))),
+        `<div style="display:grid; grid-template-columns:1.3fr 2.6fr 0.6fr 0.7fr 1fr; gap:10px; margin-bottom:6px;">${[
+          prnSuccessTile("Project ID", escapeHtml(projectId)),
+          prnSuccessTile("Product Name", escapeHtml([productName, rating].filter(Boolean).join(" - "))),
           prnSuccessTile("Job Card", `<span title="${escapeHtml(jobCard)}">${escapeHtml(jcSet ? jcSet.replace("-", " ") : jobCard)}</span>`),
           prnSuccessTile("Department", escapeHtml(department)),
-          prnSuccessTile("Status", "Pending FG Approval by QA"),
-        ]) +
+          prnSuccessTile("Use", escapeHtml(finishedGoodUse)),
+        ].join("")}</div>` +
         `<div style="margin-top:12px;">
            <button class="nav-btn-styled" onclick="startAnotherFGAddEntry()" style="background:#15803d; color:#fff; font-weight:700; padding:8px 18px;">+ Add Another FG Material</button>
          </div>`,
