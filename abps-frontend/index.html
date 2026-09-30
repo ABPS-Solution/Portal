@@ -491,7 +491,7 @@
   #workspace-purchaseOrder .card-box:not(.done),
   #workspace-cardDetails .card-box:not(.done),
   #upload-drawings-upload-zone .card-box:not(.done),
-  #canvas-module-fg-add .card-box:not(.done) { border: 2px dashed var(--brand); background: #eff6ff; color: var(--brand); font-weight: 600; }
+  #canvas-module-fg-add .card-box:not(.done), #commissioning-report-upload-box:not(.done) { border: 2px dashed var(--brand); background: #eff6ff; color: var(--brand); font-weight: 600; }
   #canvas-module-fg-add input:not([type="hidden"]):not([type="file"]), #canvas-module-fg-add select, #canvas-module-fg-add textarea,
   #fg-add-boq-display, #fg-add-jobcard-display { border: 2px solid #94a3b8 !important; }
   #workspace-purchaseOrder .card-box.done,
@@ -2567,7 +2567,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="position:relative;">
             <label class="field-label" style="margin-top:0;">Project ID or Customer Name</label>
             <input type="text" id="mow-search-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
-              oninput="handleSharedProjectTypeaheadInput(this.value, 'mow-search-project-ta-input', 'mow-search-project-ta-dropdown')"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'mow-search-project-ta-input', 'mow-search-project-ta-dropdown', true)"
               style="width:100%; padding:8px; border:2px solid #64748b; border-radius:var(--radius); font-weight:600;" />
             <div id="mow-search-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
@@ -5494,7 +5494,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <label class="field-label">Project ID or Customer Name *</label>
           <div style="position:relative;">
             <input type="text" id="commissioning-report-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
-              oninput="handleSharedProjectTypeaheadInput(this.value, 'commissioning-report-project-ta-input', 'commissioning-report-project-ta-dropdown')"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'commissioning-report-project-ta-input', 'commissioning-report-project-ta-dropdown', true)"
               onchange="handleCommissioningReportProjectChange(this.value)"
               style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
             <div id="commissioning-report-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
@@ -5504,7 +5504,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <label class="field-label">Customer Name</label>
           <textarea id="commissioning-report-customer-name" readonly placeholder="Auto-filled from Project ID" style="min-height:38px; padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f8fafc;"></textarea>
         </div>
-        <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center;">📋 Select Commissioning Report</div>
+        <div class="card-box" id="commissioning-report-upload-box" onclick="document.getElementById('commissioning-report-raw-file').click()" style="padding: 24px; font-size: 0.9rem; min-height: 90px; display: flex; align-items: center; justify-content: center; cursor: pointer;">📋 Select Commissioning Report</div>
         <input type="file" id="commissioning-report-raw-file" accept="image/*,application/pdf" hidden onchange="handleOpsFileChange(this, 'commissioning-report-upload-box', 'Commissioning Report Document Added ')" />
         <button class="nav-btn-styled" id="btn-ops-commission-submit" style="margin-top: 14px; width: 100%; padding: 10px;" onclick="executeMarketingOperationsDocumentCommit('COMMISSION')">Process Commissioning Report with AI</button>
       </div>
