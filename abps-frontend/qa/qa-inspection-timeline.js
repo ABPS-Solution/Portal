@@ -203,8 +203,23 @@ function qaitRenderDetail(projectId, d) {
   const chainTh = (t, align, w) => `<th style="padding:8px 14px; text-align:${align}; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; ${w ? "width:" + w + ";" : ""}">${t}</th>`;
   const chainRows = QAIT_MILESTONE_CHAIN.map((key, idx) => {
     const actual = d.actuals[key];
-    const canWrite = !actual || qaitIsAdmin();
     const chainDate = idx === 0 ? d.chain.inspection : (idx === 1 ? d.chain.clearanceNote : d.chain.dispatchClearance);
+    const scheduled = idx === 0 ? d.inspectionScheduled : null;
+    const dateInput = (id, val) => `<span style="display:inline-block; width:150px;"><input type="date" id="${id}" value="${val || ''}" style="padding:6px; border:2px solid #94a3b8; border-radius:4px; font-size:0.82rem; width:100%;" /></span>`;
+    const btn = (label, onclick) => `<button class="nav-btn-styled" style="padding:6px 14px; font-size:0.8rem; white-space:nowrap; width:auto;" onclick="${onclick}">${label}</button>`;
+    const actionRow = (label, inner) => `<div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">${label ? `<span style="font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase;">${label}</span>` : ''}${inner}</div>`;
+    let dateText, actionHtml;
+    if (idx === 0) {
+      dateText = actual ? 'Done on ' + qaitFmt(actual)
+        : scheduled ? 'Scheduled for ' + qaitFmt(scheduled)
+        : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable');
+      actionHtml = (actual ? '' : actionRow('Scheduled', dateInput(`qait-sched-${projectId}`, scheduled) + btn(scheduled ? 'Update' : 'Set', `qaitSetInspectionSchedule('${projectId}')`)))
+        + `<div style="height:6px;"></div>`
+        + actionRow('Done on', dateInput(`qait-date-${projectId}-${key}`, actual) + btn(actual ? 'Update' : 'Mark Done', `qaitSetMilestoneDate('${projectId}', '${key}')`));
+    } else {
+      dateText = actual ? 'Done on ' + qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable');
+      actionHtml = actionRow('', dateInput(`qait-date-${projectId}-${key}`, actual) + btn(actual ? 'Update' : 'Set Date', `qaitSetMilestoneDate('${projectId}', '${key}')`));
+    }
     return `
       <tr style="${actual ? 'background:#f0fdf4;' : ''}">
         <td style="padding:10px 14px; vertical-align:middle;">
@@ -215,12 +230,9 @@ function qaitRenderDetail(projectId, d) {
             <span style="font-weight:700; font-size:0.88rem;">${escapeHtml(QAIT_MILESTONE_LABELS[key])}</span>
           </div>
         </td>
-        <td style="padding:10px 14px; text-align:center; vertical-align:middle; font-size:0.84rem; ${actual ? 'color:#15803d; font-weight:700;' : 'color:#111827; font-weight:600;'}">${actual ? 'Done ' + qaitFmt(actual) : (chainDate ? `Estimated ${qaitFmt(chainDate)}` : 'Not yet estimable')}</td>
+        <td style="padding:10px 14px; text-align:center; vertical-align:middle; font-size:0.84rem; ${actual ? 'color:#15803d; font-weight:700;' : 'color:#111827; font-weight:600;'}">${dateText}</td>
         <td style="padding:8px 14px; vertical-align:middle;">
-          ${canWrite ? `<div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
-            <span style="display:inline-block; width:150px;"><input type="date" id="qait-date-${projectId}-${key}" value="${actual || ''}" style="padding:6px; border:2px solid #94a3b8; border-radius:4px; font-size:0.82rem; width:100%;" /></span>
-            <button class="nav-btn-styled" style="padding:6px 14px; font-size:0.8rem; white-space:nowrap; width:auto;" onclick="qaitSetMilestoneDate('${projectId}', '${key}')">${actual ? 'Update (admin)' : 'Set Date'}</button>
-          </div>` : '<div style="text-align:right; color:var(--muted); font-size:0.78rem;">Recorded</div>'}
+          ${actionHtml}
         </td>
       </tr>`;
   }).join("");
@@ -256,8 +268,7 @@ function qaitRenderDetail(projectId, d) {
 
   return `
     <div class="qait-section"><div class="qait-section-title">Stage 4: In-Scope Lanes</div>${laneRows}</div>
-    ${callBlock}
-    <div class="qait-section"><div class="qait-section-title">Stage 5 Chain</div>${chainTable}</div>
+    <div class="qait-section"><div class="qait-section-title">Inspection &amp; Dispatch Steps</div>${chainTable}</div>
     ${docsBlock}
   `;
 }
@@ -286,6 +297,23 @@ function qaitCallFormHtml(projectId, existing) {
 // so a local patch would leave every downstream estimate frozen on its
 // old value instead of cascading forward (same reasoning
 // ptlSetQaMilestoneDate's own comment used to document).
+async function qaitSetInspectionSchedule(projectId) {
+  const date = document.getElementById(`qait-sched-${projectId}`)?.value || "";
+  if (!date) { alert("Pick the scheduled inspection date first."); return; }
+  showBlockingOverlay("Saving scheduled date...");
+  try {
+    const data = await apFetch({ action: "saveQaCustomerInspectionSchedule", projectId, date });
+    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not save this date."); return; }
+    qaitDetailCache.delete(projectId);
+    await qaitFetchDetail(projectId);
+    await qaitLoadQueue();
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+  } finally {
+    hideBlockingOverlay();
+  }
+}
+
 async function qaitSetMilestoneDate(projectId, milestoneKey) {
   const el = document.getElementById(`qait-date-${projectId}-${milestoneKey}`);
   const date = el ? el.value : "";

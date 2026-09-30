@@ -447,10 +447,14 @@ function ptlStageProgressStripHtml() {
   const blocks = p.stages.map(s => {
     const complete = s.total > 0 && s.frac >= 1;
     const started = s.frac > 0 && !complete;
-    const c = s.late ? '#e84545' : 'var(--accent)';
+    // Filled part = work done (always green); a late stage shows the
+    // unfinished remainder in red, so a nearly-done stage with one overdue
+    // step reads as mostly green instead of solid red.
+    const c = 'var(--accent)';
+    const rest = s.late ? '#e84545' : c;
     let inner;
     if (complete) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="${c}"/>`;
-    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="none" stroke="${c}" stroke-width="1.6" opacity=".5"/><rect x="0" y="0" width="${Math.max(3, w * s.frac)}" height="${h}" rx="3" fill="${c}"/>`;
+    else if (started) inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="${s.late ? '#fee2e2' : 'none'}" stroke="${rest}" stroke-width="1.6" opacity="${s.late ? 1 : .5}"/><rect x="0" y="0" width="${Math.max(3, w * s.frac)}" height="${h}" rx="3" fill="${c}"/>`;
     else inner = `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="none" stroke="var(--border)" stroke-width="1.6"/>`;
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; flex:none;">${inner}</svg>`;
   }).join(`<div style="width:${gap}px;"></div>`);
