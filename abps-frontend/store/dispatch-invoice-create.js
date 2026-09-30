@@ -176,7 +176,7 @@ function cpdiRenderDetail() {
       <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
-      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}${(hasBoq && (l.readySerials || []).length) ? `<div><a href="javascript:void(0)" onclick="showCpdiReadySerials(${idx})" style="font-size:0.72rem; font-weight:600; color:var(--brand);">View Job Cards / Serial Nos.</a></div>` : ''}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}</td>
       <td style="padding:8px; text-align:center;">
         <input type="number" min="0" max="${maxQty}" ${cpdiInvoiceState.lineItems[idx].quantity > 0 ? `value="${cpdiInvoiceState.lineItems[idx].quantity}"` : `value="" placeholder="0"`}
           ${blockerMsgs.length ? 'disabled' : ''}
