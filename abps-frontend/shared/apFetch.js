@@ -694,6 +694,7 @@ async function showAppView() {
     console.error("showAppView: userPermissions is empty or missing — dashboard will render with all cards hidden.", userPermissions);
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
+  setTimeout(openDeepLinkModule, 0);
   // Pre-load ItemCodes catalog into memory (fire-and-forget, suppress unhandled rejection)
   loadItemCodeCatalogIntoCache().catch(() => {});
   
@@ -788,21 +789,28 @@ async function showAppView() {
   triggerCompanyDropdownArrayFetch();
   loadCityStateFilterOptions();
 
-  // Auto-navigate if opened via ?module= deep link (e.g. from new tab)
+  openDeepLinkModule();
+}
+
+// ?module= deep link (e.g. "+ Create Item Code" opens a new tab). Runs as soon
+// as the dashboard is built and again after the slower start-up lookups, in
+// case anything on the way reset the view to the dashboard (1 Oct 2026: the
+// new tab was left sitting on the main dashboard).
+function openDeepLinkModule() {
   const urlParams = new URLSearchParams(window.location.search);
   const deepModule = urlParams.get("module");
   const deepQuery = urlParams.get("q");
-  if (deepModule) {
+  if (!deepModule) return;
+  const dash = document.getElementById("dashboard-view");
+  if (window._deepLinkOpened && !(dash && dash.style.display !== "none")) return;
+  window._deepLinkOpened = true;
+  try { switchActiveDashboardModule(deepModule); } catch (e) { console.error("Deep link open failed:", e); }
+  if (deepQuery && deepModule === "design-itemcode") {
     setTimeout(() => {
-      switchActiveDashboardModule(deepModule);
-      if (deepQuery && deepModule === "design-itemcode") {
-        setTimeout(() => {
-          const input = document.getElementById("itemcode-search-input");
-          if (input) {
-            input.value = deepQuery;
-            if (typeof executeItemCodeSearch === "function") executeItemCodeSearch();
-          }
-        }, 300);
+      const input = document.getElementById("itemcode-search-input");
+      if (input) {
+        input.value = deepQuery;
+        if (typeof executeItemCodeSearch === "function") executeItemCodeSearch();
       }
     }, 300);
   }
