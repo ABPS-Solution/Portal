@@ -215,8 +215,10 @@ function updateCpdiGenerateButtonsState() {
   partialBtn.style.cursor = partialBtn.disabled ? "not-allowed" : "pointer";
 
   const boqLines = cpdiCache.lines.filter(l => l.boqId);
+  const billNow = (l) => Number((cpdiInvoiceState.lineItems[cpdiCache.lines.indexOf(l)] || {}).quantity) || 0;
   const unsettledLines = boqLines.filter(l =>
-    !(l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity)
+    !(l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity
+      && billNow(l) === l.readyToInvoiceQty)
   );
   const allSettled = unsettledLines.length === 0;
   finalBtn.disabled = !allSettled || anyBlocked;
@@ -233,6 +235,7 @@ function updateCpdiGenerateButtonsState() {
     if (!(l.jcTotal > 0)) finalReasons.push(`${name}: no Job Card exists yet`);
     else if (l.jcQaPassed !== l.jcTotal) finalReasons.push(`${name}: ${l.jcTotal - l.jcQaPassed} of ${l.jcTotal} Job Card(s) not yet QA-passed`);
     else if ((l.alreadyInvoicedQty + l.readyToInvoiceQty) < l.orderedQuantity) finalReasons.push(`${name}: only ${l.alreadyInvoicedQty + l.readyToInvoiceQty} of ${l.orderedQuantity} ordered qty invoiced/ready`);
+    else if (billNow(l) !== l.readyToInvoiceQty) finalReasons.push(`${name}: a Final Invoice bills everything left, so Qty to Bill Now must be ${l.readyToInvoiceQty}`);
   });
   if (reasonEl) {
     const shown = !partialBtn.disabled ? finalReasons : [...new Set([...partialReasons, ...finalReasons])];
@@ -255,7 +258,7 @@ function cpdiRenderInvoiceForm() {
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
       <div style="font-weight:800; color:var(--brand); margin-bottom:6px; font-size:1.25rem;">Invoice Details</div>
-      <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs. This creates the invoice draft. The draft is the real invoice (its number is given when the draft is created): print it, get it signed, then it is authorized.</div>
+      
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
         <div class="grid-cell-item" style="max-width:200px; margin:0;">

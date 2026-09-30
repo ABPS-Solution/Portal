@@ -283,8 +283,8 @@ function renderPdiInvoiceViewHtml(d, meta) {
           <td style="text-align:center;">${v(it.hsnNumber)}</td>
           <td style="text-align:center; font-weight:700;">${v(fmtQty(it.quantity))}</td>
           <td style="text-align:center;">${v(it.unit)}</td>
-          <td style="text-align:right;">${pdiMoney(conv(it.ratePerQuantity), isExport)}</td>
-          <td style="text-align:right; font-weight:700;">${pdiMoney(conv(lineAmt(it)), isExport)}</td>
+          <td style="text-align:center;">${pdiMoney(conv(it.ratePerQuantity), isExport)}</td>
+          <td style="text-align:center; font-weight:700;">${pdiMoney(conv(lineAmt(it)), isExport)}</td>
         </tr>`).join('') : `<tr><td colspan="7" style="text-align:center; color:var(--muted);">No lines</td></tr>`}</tbody>
       </table>
       </div>
@@ -403,3 +403,13 @@ function pdiDraftOffer(key, containerId, id, apply) {
   if (!d || !d.payload || !d.payload.state || String(d.payload.state.id) !== String(id)) return;
   abpsDraftOfferRestore(key, containerId, apply, { hasFileUploads: true });
 }
+
+
+// A number box on the invoice screens that still reads 0 is selected on
+// focus, so typing replaces it instead of producing "022222".
+document.addEventListener('focusin', (e) => {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT' || el.readOnly || el.disabled) return;
+  if (!el.closest('.pdi-costing, [id^="cpdi-"], [id^="rpdi-"], [id^="apdi-"], [id^="aprdi-"]')) return;
+  if (String(el.value).trim() === '0') { try { el.select(); } catch (_) {} }
+});
