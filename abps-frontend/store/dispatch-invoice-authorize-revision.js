@@ -151,7 +151,7 @@ function renderArpdiCard(r) {
     <div id="arpdi-docs-${r.requestId}" style="font-size:0.85rem; color:var(--muted);">Loading documents...</div>
     <div style="margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; display:flex; justify-content:flex-start; flex-direction:row-reverse; gap:8px;">
     <button class="nav-btn-styled" style="background:var(--brand); padding:10px 24px; font-weight:700; width:auto;" onclick="openArpdiAuthorizeConfirm(${r.requestId}, '${r.invoiceNo}')">Authorize</button>
-    ${typeof isUserAdminGlobal !== 'undefined' && isUserAdminGlobal ? `<button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:8px 18px; font-weight:700; margin-left:8px;" onclick="adminDeleteArpdiRequest(${r.requestId})">Admin: Delete Request</button>` : ''}
+    <button class="nav-btn-styled" style="background:#dc2626; padding:10px 24px; font-weight:700; width:auto;" onclick="adminDeleteArpdiRequest(${r.requestId})">Reject</button>
     </div>
     <div id="arpdi-card-feedback-${r.requestId}" style="margin-top:10px;"></div>`;
 }
@@ -207,11 +207,11 @@ async function submitArpdiAuthorize() {
 }
 
 async function adminDeleteArpdiRequest(requestId) {
-  if (!await abpsConfirm(`Admin: permanently delete pending revision request #${requestId}? The live invoice is untouched.`)) return;
-  showBlockingOverlay("Deleting request...");
+  if (!await abpsConfirm(`Reject this revision request?\n\nThe revision is discarded and the invoice and its Delivery Challan stay exactly as they are now.`, { title: 'Reject revision', okLabel: 'Reject' })) return;
+  showBlockingOverlay("Rejecting revision...");
   try {
     const data = await apFetch({ action: "deleteProjectDispatchInvoiceRevisionRequest", requestId, operatorName: appActiveOperatorIdentityString || "Unknown" });
-    if (data.success) { showBOQBanner("arpdi-feedback", "Revision request deleted.", "success"); initializeArpdiWorkspace(); }
+    if (data.success) { await initializeArpdiWorkspace(); showBOQBanner("arpdi-feedback", "Revision request rejected. The invoice is unchanged.", "success"); }
     else showBOQBanner("arpdi-feedback", data.error || "Failed.", "error");
   } catch(e) {
     showBOQBanner("arpdi-feedback", "Network error: " + e.message, "error");
