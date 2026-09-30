@@ -513,10 +513,9 @@ async function submitRpdiCreateRequest() {
         <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
           Revision request #${data.requestId} submitted for Invoice ${escapeHtml(rpdiCache.invoiceNo || String(rpdiCache.invoiceId))}. Print the draft, get it signed, then it can be authorized.
         </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft #${data.checkingDraftNumber} ↗</a>` : `<div style="color:#b45309; font-weight:600;">The draft could not be generated. Retry from the Pending Revisions (Editing) tab.</div>`}
+        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Revised Invoice Draft #${data.checkingDraftNumber} ↗</a>${data.challanDraftUrl ? ` <a href="${driveLink(data.challanDraftUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:18px;">Open Revised Delivery Challan Draft ↗</a>` : ''}` : `<div style="color:#b45309; font-weight:600;">The draft could not be generated. Retry from the Pending Revisions (Editing) tab.</div>`}
         <div style="margin-top:16px;">
           <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchRevisePdiTab('select')">+ Revise Another Invoice</button>
-          <button class="nav-btn-styled" style="background:var(--muted); padding:8px 20px; font-weight:700; margin-left:8px;" onclick="switchRevisePdiTab('editing')">Go to Pending Revisions (Editing)</button>
         </div>`;
     } else {
       showBOQBanner("rpdi-feedback", data.error || "Failed.", "error");
@@ -659,7 +658,7 @@ async function generateRpdiCheckingDraftOnly(requestId) {
       if (tabsBar) tabsBar.style.display = "none";
       const fbEl = document.getElementById("rpdi-editing-feedback");
       fbEl.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius); font-weight:600;";
-      fbEl.innerHTML = `Changes saved. Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Draft ↗</a>
+      fbEl.innerHTML = `Changes saved. Draft #${data.checkingDraftNumber} generated. <a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Revised Invoice Draft ↗</a>${data.challanDraftUrl ? ` <a href="${driveLink(data.challanDraftUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:14px;">Open Revised Delivery Challan Draft ↗</a>` : ''}
         <div><button class="nav-btn-styled" style="margin-top:12px; background:var(--accent); padding:7px 18px; font-weight:700;" onclick="switchRevisePdiTab('editing')">+ Edit Another Invoice Revision</button></div>`;
       fbEl.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
