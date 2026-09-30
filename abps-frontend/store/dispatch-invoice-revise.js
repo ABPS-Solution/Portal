@@ -541,17 +541,22 @@ async function initializeRpdiEditingTab() {
     if (!data.success) { feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     if (!(data.requests || []).length) { feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No pending revision requests.</div>`; return; }
     feed.innerHTML = data.requests.map(r => `
-      <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleRpdiEditCard(${r.requestId})">
-          <div>
-            <strong>Revision #${r.requestId}</strong> for ${r.invoiceType} Invoice ${r.invoiceNo} (${r.projectId})
-            <div style="font-size:0.8rem; color:var(--muted);">Requested by ${escapeHtml(r.requestedBy || '—')}</div>
+      <div style="border:2px solid #94a3b8; border-left:5px solid #f59e0b; border-radius:var(--radius); margin-bottom:12px; background:#fff; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; cursor:pointer; padding:12px 16px;" onclick="toggleRpdiEditCard(${r.requestId})">
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span style="padding:3px 10px; border-radius:999px; background:${r.invoiceType === 'Final' ? '#dcfce7' : '#e0e7ff'}; color:${r.invoiceType === 'Final' ? '#15803d' : '#1e3a8a'}; font-weight:800; font-size:0.75rem; text-transform:uppercase;">${escapeHtml(r.invoiceType || '')} Invoice</span>
+              <span style="padding:3px 10px; border-radius:999px; background:#fef3c7; color:#92400e; font-weight:800; font-size:0.75rem; text-transform:uppercase;">Revision #${r.requestId}</span>
+              <strong style="font-size:1rem; color:var(--brand);">${escapeHtml(r.invoiceNo || '')}</strong>
+            </div>
+            <div style="font-size:0.9rem; font-weight:700; color:#111827; margin-top:4px;">${escapeHtml(r.projectId || '')}</div>
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">Requested by ${escapeHtml(r.requestedBy || '—')}</div>
           </div>
-          <div style="text-align:right;">
+          <div style="text-align:right; line-height:1.7;">
             ${r.checkingDocUrl ? `<a href="${driveLink(r.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand); font-weight:700; font-size:0.85rem;">Draft #${r.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem;">No draft yet</span>`}
           </div>
         </div>
-        <div id="rpdi-edit-card-${r.requestId}" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;"></div>
+        <div id="rpdi-edit-card-${r.requestId}" style="display:none; border-top:2px solid #94a3b8; padding:14px 16px;"></div>
       </div>`).join('');
   } catch(e) {
     feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
@@ -607,8 +612,8 @@ async function toggleRpdiEditCard(requestId) {
     rpdiFormZoneId = `rpdi-edit-form-${requestId}`;
     card.innerHTML = `
       <div id="rpdi-edit-form-${requestId}"></div>
-      <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="saveRpdiEdit(${requestId})">Save &amp; Generate Draft</button>
+      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-start; flex-wrap:wrap;">
+        <button class="nav-btn-styled" style="background:var(--brand); padding:10px 22px; font-weight:700; width:auto;" onclick="saveRpdiEdit(${requestId})">Save &amp; Generate Revision Draft</button>
       </div>
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
     renderRpdiForm();
