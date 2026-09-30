@@ -219,43 +219,45 @@ function oppRenderEditorContent(projectId) {
   // lead View Details Tasks table (tasks-followups.js) — Product 85% /
   // Qty 5% / Amount 10%, one row per product.
   const productsBox = (lineItems || []).length ? `
-    <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.78rem;">
-      <strong style="color:var(--muted); font-size:0.7rem; text-transform:uppercase;">Products in this Order</strong>
-      <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:6px;">
+    <div style="margin-top:14px; background:#fff; border:2px solid #94a3b8; border-radius:var(--radius); font-size:0.84rem; overflow:hidden;">
+      <div style="padding:8px 12px; background:#e0e7ff; border-bottom:2px solid #94a3b8; font-size:0.8rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; letter-spacing:0.03em;">Products in this Order</div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
-          <tr style="border-bottom:2px solid var(--border);">
+          <tr style="border-bottom:2px solid #94a3b8; background:#f8fafc;">
             <th style="width:85%; padding:5px 6px; text-align:left; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Product</th>
-            <th style="width:5%; padding:5px 6px; text-align:center; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Qty</th>
-            <th style="width:10%; padding:5px 6px; text-align:right; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Amount</th>
+            <th style="width:5%; padding:5px 6px; text-align:center; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid #94a3b8;">Qty</th>
+            <th style="width:10%; padding:5px 6px; text-align:center; font-size:0.68rem; text-transform:uppercase; color:var(--muted); border-left:2px solid #94a3b8;">Amount</th>
           </tr>
         </thead>
         <tbody>
           ${lineItems.map(li => `
-            <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:5px 6px; word-wrap:break-word; overflow-wrap:break-word;">${escapeHtml(li.description || '-')}</td>
-              <td style="padding:5px 6px; text-align:center; border-left:2px solid var(--border); white-space:nowrap;">${li.quantity != null ? `<strong>${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}</strong>` : '-'}</td>
-              <td style="padding:5px 6px; text-align:right; border-left:2px solid var(--border); font-family:monospace; white-space:nowrap;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '-'}</td>
+            <tr style="border-bottom:2px solid #94a3b8;">
+              <td style="padding:8px 10px; word-wrap:break-word; overflow-wrap:break-word;">${escapeHtml(li.description || '-')}</td>
+              <td style="padding:5px 6px; text-align:center; border-left:2px solid #94a3b8; white-space:nowrap;">${li.quantity != null ? `<strong>${oppFmt(li.quantity)}${li.unit ? ' ' + escapeHtml(li.unit) : ''}</strong>` : '-'}</td>
+              <td style="padding:5px 6px; text-align:center; border-left:2px solid #94a3b8; font-family:monospace; font-weight:700; white-space:nowrap;">${li.totalAmount != null ? '₹' + oppFmt(li.totalAmount) : '-'}</td>
             </tr>`).join("")}
         </tbody>
       </table>
     </div>` : "";
 
   return `
-    <div style="padding:14px 16px; border-top:1px solid var(--border); background:#e9edf2;">
+    <div style="padding:16px 18px; border-top:2px solid #94a3b8; background:#f1f5f9;">
       ${project.paymentTerms ? `
-      <div style="padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:0.82rem;">
-        <strong style="color:var(--muted); font-size:0.72rem; text-transform:uppercase;">Payment Terms (reference only)</strong>
-        <div style="margin-top:4px; white-space:pre-line;">${escapeHtml(project.paymentTerms)}</div>
+      <div style="background:#fff; border:2px solid #94a3b8; border-radius:var(--radius); font-size:0.88rem; overflow:hidden;">
+        <div style="padding:8px 12px; background:#e0e7ff; border-bottom:2px solid #94a3b8; font-size:0.8rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; letter-spacing:0.03em;">Payment Terms (reference only)</div>
+        <div style="padding:10px 12px; white-space:pre-line;">${escapeHtml(project.paymentTerms)}</div>
       </div>` : ""}
       ${productsBox}
-      <div style="margin-top:14px; font-size:0.85rem;">
-        PO Total (incl. GST): <strong>${poTotal == null ? 'Unknown' : '₹' + oppFmt(poTotal)}</strong>
+      <div style="margin-top:16px; padding:10px 14px; background:#fff; border:2px solid #94a3b8; border-left:6px solid var(--brand); border-radius:var(--radius); font-size:0.95rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-weight:800; text-transform:uppercase; font-size:0.78rem; color:#1e3a8a;">Payment Schedule</span>
+        <span style="margin-left:auto;">PO Total (incl. GST): <strong style="font-size:1.05rem;">${poTotal == null ? 'Unknown' : '₹' + oppFmt(poTotal)}</strong>
+</span>
         ${fallbackNote}
       </div>
       <div id="opp-tranches-wrap-${projectId}" style="margin-top:12px;"></div>
-      <div id="opp-balance-line-${projectId}" style="margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
-      <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="nav-btn-styled" style="background:var(--brand); padding:8px 16px;" onclick="oppSaveSchedule('${projectId}')">Save</button>
+      <div style="display:flex; align-items:center; gap:14px; margin-top:14px; padding-top:12px; border-top:2px solid #94a3b8; flex-wrap:wrap;">
+        <div id="opp-balance-line-${projectId}" style="font-size:0.88rem; font-weight:700;"></div>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:10px 26px; font-weight:700; width:auto; margin-left:auto;" onclick="oppSaveSchedule('${projectId}')">Save</button>
       </div>
       <div id="opp-editor-feedback-${projectId}" style="margin-top:10px;"></div>
     </div>`;
@@ -292,7 +294,7 @@ function oppRenderTranches(projectId) {
     // there's no real value yet — typing into a pre-filled "0" without
     // first clearing it is what produced "01111".
     return `
-      <div id="opp-tranche-row-${projectId}-${i}" style="background:${oppTrancheRowBg(t)}; border:1px solid var(--border); border-radius:6px; padding:8px 10px; margin-bottom:8px;">
+      <div id="opp-tranche-row-${projectId}-${i}" style="background:${oppTrancheRowBg(t)}; border:2px solid #94a3b8; border-radius:6px; padding:10px 12px; margin-bottom:10px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Expected Amount ₹</label>
