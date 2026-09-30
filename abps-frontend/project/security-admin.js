@@ -71,7 +71,8 @@ function switchSecurityAdminTab(tab) {
   // and the backend fetchTrustedDevices/deleteTrustedDevice routes are
   // flagged, not deleted, per house convention.
   if (tab === 'emailinboxes' && typeof loadEmailInboxes === 'function') loadEmailInboxes();
-  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes'].forEach(t => {
+  if (tab === 'pdfkeys') loadPdfShiftCredits();
+  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -1194,5 +1195,34 @@ async function submitAddUserToSystem(deptSlug, deptName) {
     await loadSecurityAdminPinUsers();
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+  }
+}
+
+
+// ── PDF Keys ───────────────────────────────────────────────────────────
+async function loadPdfShiftCredits() {
+  const body = document.getElementById('sa-pdfkeys-body');
+  if (!body) return;
+  body.innerHTML = '<div style="padding:14px; color:var(--muted);">Checking keys...</div>';
+  try {
+    const data = await apFetch({ action: 'fetchPdfShiftCredits' });
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
+    const rows = (data.keys || []).map(k => {
+      const low = !k.error && k.remaining === 0;
+      return `<tr style="${low ? 'background:#fee2e2;' : ''}">
+        <td style="padding:10px 14px; text-align:center; font-weight:700;">Key #${k.key}</td>
+        <td style="padding:10px 14px; text-align:center; font-weight:800; font-size:1rem; color:${k.error ? '#b91c1c' : low ? '#b91c1c' : '#15803d'};">${k.error ? 'Error: ' + escapeHtml(k.error) : k.remaining}</td>
+        <td style="padding:10px 14px; text-align:center;">${k.renewAt ? escapeHtml(formatOrdinalDate(k.renewAt)) : '—'}</td>
+      </tr>`;
+    }).join('');
+    body.innerHTML = `
+      <div style="margin-bottom:10px; font-size:0.95rem; font-weight:700;">Total credits left: <span style="color:${data.totalRemaining < 50 ? '#b91c1c' : '#15803d'}; font-size:1.1rem;">${data.totalRemaining}</span>
+        <button class="nav-btn-styled" style="margin-left:12px; padding:5px 14px; font-size:0.8rem; width:auto;" onclick="loadPdfShiftCredits()">Refresh</button></div>
+      <table style="width:100%; max-width:720px; border-collapse:collapse; font-size:0.9rem;">
+        <thead><tr><th style="padding:10px 14px; text-align:center;">Key</th><th style="padding:10px 14px; text-align:center;">Credits Left</th><th style="padding:10px 14px; text-align:center;">Renews</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="3" style="padding:14px; text-align:center; color:var(--muted);">No keys configured.</td></tr>'}</tbody>
+      </table>`;
+  } catch (e) {
+    if (e.message !== 'SESSION_EXPIRED') body.innerHTML = `<div style="color:#b91c1c; padding:12px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }

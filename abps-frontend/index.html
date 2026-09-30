@@ -3190,6 +3190,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
       <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
       <button id="sa-tab-emailinboxes" class="nav-btn-styled" onclick="switchSecurityAdminTab('emailinboxes')" style="flex:1; padding:11px 16px;">Email Inboxes</button>
+      <button id="sa-tab-pdfkeys" class="nav-btn-styled" onclick="switchSecurityAdminTab('pdfkeys')" style="flex:1; padding:11px 16px;">PDF Keys</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
@@ -3263,6 +3264,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="eib-feedback" style="display:none; padding:10px 12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
       <div id="eib-mount"></div>
     </div>
+    <div id="sa-panel-pdfkeys" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every document PDF (invoices, POs, BOQs, challans, tickets...) is made with these PDFShift keys. When one runs out, the next key is used automatically. Each key gets 50 free credits a month, renewing on its own date.</p>
+      <div id="sa-pdfkeys-body"></div>
+    </div>
+
     <div id="sa-panel-holidays" style="display:none;">
       <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
         <div>
