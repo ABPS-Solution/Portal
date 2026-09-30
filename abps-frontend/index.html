@@ -972,6 +972,22 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 #canvas-module-tour-expense table td,
 #canvas-module-cash-expenses table td,
 #canvas-module-travel-tickets table td { border:2px solid #94a3b8 !important; }
+/* Add / Check Item Code - Search / Add Item Code: bordered sections (1 Oct 2026) */
+#icf-mode-search #itemcode-search-zone-wrapper { background:#fff !important; border:2px solid #94a3b8 !important; border-left:5px solid var(--brand) !important; padding:0 !important; overflow:hidden; }
+#icf-mode-search #itemcode-search-zone-wrapper::before { content:"Search the Catalog"; display:block; padding:9px 16px; background:#f1f5f9; border-bottom:1.5px solid #94a3b8; font-weight:800; font-size:0.85rem; color:var(--brand); }
+#icf-mode-search #itemcode-search-zone-wrapper > div { padding:14px 16px; }
+#icf-mode-search #itemcode-or-search-divider { border-top:1.5px dashed #94a3b8; padding-top:10px; }
+#icf-mode-search #itemcode-search-results-zone { border:2px solid #94a3b8; border-radius:var(--radius); padding:12px 14px; background:#f8fafc; }
+#icf-mode-search #itemcode-suggestions-mount > div { border:2px solid #94a3b8 !important; border-left:5px solid var(--brand) !important; }
+#icf-mode-search #itemcode-suggestions-mount > div:hover { border-color:var(--brand) !important; background:var(--highlight-bg) !important; }
+#icf-mode-search #itemcode-no-results-zone { border:2px solid #fca5a5 !important; }
+#icf-mode-search #itemcode-create-form-zone { background:#fff !important; border:2px solid #94a3b8 !important; border-left:5px solid var(--accent) !important; padding:0 !important; overflow:hidden; }
+#icf-mode-search #itemcode-create-form-zone > * { margin-left:16px; margin-right:16px; }
+#icf-mode-search #itemcode-create-form-zone > *:last-child { margin-bottom:16px; }
+#icf-mode-search #itemcode-create-form-zone > div:first-child { margin:0 0 14px !important; padding:10px 16px; background:#f0fdf4; border-bottom:1.5px solid #94a3b8; font-size:0.85rem !important; }
+#icf-mode-search #icf-new-fixed-form { border:2px solid #94a3b8 !important; background:#f8fafc !important; }
+#icf-mode-search input[type="text"]:not([readonly]), #icf-mode-search select, #icf-mode-search textarea { border:1.5px solid #94a3b8 !important; }
+#icf-mode-search input[type="text"]:not([readonly]):focus, #icf-mode-search select:focus, #icf-mode-search textarea:focus { border-color:var(--brand) !important; outline:none; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
