@@ -109,7 +109,7 @@ async function loadRpdiHistory(projectId) {
         <tbody>
           ${data.invoices.map(inv => `<tr>
             <td style="font-weight:700; text-align:center; vertical-align:middle;">${inv.invoiceType}</td>
-            <td style="font-weight:600; vertical-align:middle;">${escapeHtml(inv.invoiceNo || '')}</td>
+            <td style="font-weight:600; text-align:center; vertical-align:middle;">${escapeHtml(inv.invoiceNo || '')}</td>
             <td style="text-align:center; vertical-align:middle;">V${inv.revision}</td>
             <td style="text-align:center; vertical-align:middle;">${inv.pdfUrl ? `<a href="${driveLink(inv.pdfUrl)}" target="_blank" rel="noopener" class="pdi-link-btn">Open ↗</a>` : '—'}</td>
             <td style="text-align:center; vertical-align:middle;"><button id="rpdi-docs-btn-${inv.invoiceId}" class="nav-btn-styled" style="background:#475569; padding:4px 12px; font-size:0.8rem;" onclick="toggleRpdiDocuments(${inv.invoiceId})">View / Change</button></td>
