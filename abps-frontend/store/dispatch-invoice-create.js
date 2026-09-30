@@ -640,7 +640,7 @@ async function toggleCpdiEditCard(invoiceId) {
     cpdiFormZoneId = `cpdi-edit-form-${invoiceId}`;
     card.innerHTML = `
       <div id="cpdi-edit-form-${invoiceId}"></div>
-      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-start; flex-wrap:wrap;">
+      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-end; flex-wrap:wrap;">
         <button class="nav-btn-styled" style="background:var(--brand); padding:10px 22px; font-weight:700; width:auto;" onclick="saveCpdiEdit(${invoiceId})">Save &amp; Generate Invoice and Delivery Challan Drafts</button>
       </div>
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;

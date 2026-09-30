@@ -612,7 +612,7 @@ async function toggleRpdiEditCard(requestId) {
     rpdiFormZoneId = `rpdi-edit-form-${requestId}`;
     card.innerHTML = `
       <div id="rpdi-edit-form-${requestId}"></div>
-      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-start; flex-wrap:wrap;">
+      <div style="display:flex; gap:10px; margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; justify-content:flex-end; flex-wrap:wrap;">
         <button class="nav-btn-styled" style="background:var(--brand); padding:10px 22px; font-weight:700; width:auto;" onclick="saveRpdiEdit(${requestId})">Save &amp; Generate Revision Draft</button>
       </div>
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
