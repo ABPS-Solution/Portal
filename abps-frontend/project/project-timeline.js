@@ -1055,8 +1055,11 @@ function ptlCanvasNodes() {
   // diverge and that divergence is the point of showing both.
   // Inspection Call Release is not drawn on the map (it crowded Stage 4's
   // production steps); it stays in the Steps list and in Flags.
-  const tailIds = ['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', 'predictedDelivery'];
-  const standaloneIds = ['delivery'];
+  // After delivery the Predicted node is dropped, so the line runs to the
+  // Final Delivery / Dispatch Date instead.
+  const deliveredNow = !(ptlData.trunk || []).some(n => n.id === 'predictedDelivery');
+  const tailIds = ['customer_inspection', 'inspection_clearance_note', 'dispatch_clearance', deliveredNow ? 'delivery' : 'predictedDelivery'];
+  const standaloneIds = deliveredNow ? [] : ['delivery'];
   const byId = id => (ptlData.trunk || []).find(n => n.id === id);
   const dated = id => { const n = byId(id); return n && ptlEff(n) ? n : null; };
   return {
