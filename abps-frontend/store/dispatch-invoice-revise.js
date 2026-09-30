@@ -102,7 +102,7 @@ async function loadRpdiHistory(projectId) {
       return;
     }
     historyZone.innerHTML = `
-      <div style="font-weight:800; color:var(--brand); margin-bottom:8px; font-size:0.95rem;">Invoice History — ${escapeHtml(projectId)}</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:10px; font-size:1.2rem;">Invoice History <span style="font-size:0.95rem; color:#111827; font-weight:700;">· ${escapeHtml(projectId)}</span></div>
       <table class="pdi-grid-table" style="margin-bottom:6px;">
         <colgroup><col style="width:11%;" /><col style="width:24%;" /><col style="width:8%;" /><col style="width:12%;" /><col style="width:15%;" /><col style="width:30%;" /></colgroup>
         <thead><tr><th>Type</th><th>Invoice No.</th><th>Rev</th><th>Invoice PDF</th><th>Documents</th><th>Action</th></tr></thead>
@@ -115,7 +115,7 @@ async function loadRpdiHistory(projectId) {
             <td style="text-align:center; vertical-align:middle;"><button id="rpdi-docs-btn-${inv.invoiceId}" class="nav-btn-styled" style="background:#475569; padding:4px 12px; font-size:0.8rem;" onclick="toggleRpdiDocuments(${inv.invoiceId})">View / Change</button></td>
             <td style="text-align:center; vertical-align:middle;">${inv.pendingRevisionRequestId
               ? `<span style="color:#b45309; font-weight:600; font-size:0.8rem;">Revision pending (#${inv.pendingRevisionRequestId})</span>`
-              : `<button class="nav-btn-styled" style="background:var(--accent); padding:5px 14px; font-size:0.85rem;" onclick="loadRpdiForm(${inv.invoiceId})">Revise Invoice</button>`}</td>
+              : `<button class="nav-btn-styled" style="background:var(--brand); padding:7px 18px; font-size:0.88rem; font-weight:700; width:auto;" onclick="loadRpdiForm(${inv.invoiceId})">Revise Invoice</button>`}</td>
           </tr>
           <tr id="rpdi-docs-row-${inv.invoiceId}" style="display:none;">
             <td colspan="6" style="background:#f8fafc; padding:12px;"><div id="rpdi-docs-zone-${inv.invoiceId}"></div></td>

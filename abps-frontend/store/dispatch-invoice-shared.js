@@ -139,8 +139,8 @@ function renderPdiLineItemsTable(wrapId, items, idPrefix, onItemChange, onDelete
               if (type === 'text') {
                 return `<td><textarea rows="1" oninput="${onItemChange}(${idx}, '${key}', this.value); pdiAutoGrowField(this);" onfocus="pdiAutoGrowField(this);" style="${key === 'description' ? '' : 'text-align:center; '}width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
-              if (key === 'quantity' && idPrefix === 'cpdi') {
-                return `<td><input type="number" value="${(parseFloat(it[key]) || 0) || ''}" placeholder="0" readonly title="Set by Qty to Bill Now above"
+              if (key === 'quantity' && (idPrefix === 'cpdi' || String(idPrefix).startsWith('rpdi'))) {
+                return `<td><input type="number" value="${(parseFloat(it[key]) || 0) || ''}" placeholder="0" readonly title="${idPrefix === 'cpdi' ? 'Set by Qty to Bill Now above' : 'The billed quantity cannot be revised'}"
                   style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--text); font-weight:700; text-align:center; cursor:not-allowed;" /></td>`;
               }
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
