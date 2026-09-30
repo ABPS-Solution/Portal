@@ -44,7 +44,7 @@ function renderFGApprovalCard(item) {
 
   card.innerHTML = `
     <div onclick="toggleFGApprovalCardBody(${item.fgId})" style="cursor:pointer; border:2px solid #94a3b8; border-radius:var(--radius); background:#f1f5f9; overflow:hidden;">
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 14px; border-bottom:2px solid #94a3b8; background:#e0e7ff;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 14px; border-bottom:2px solid #94a3b8; background:#fff;">
         <strong style="color:var(--brand); font-size:0.98rem;">${escapeHtml(item.projectId || "—")}</strong>
         <span style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border:1.5px solid #94a3b8; border-radius:999px; background:#fff; font-size:0.8rem;">
           <span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.7rem;">Dept</span>
@@ -144,7 +144,7 @@ function renderFGApprovalDetailBody(fgId) {
 
   return `
     <div style="border:${B}; border-radius:var(--radius); background:#fff; margin-bottom:16px; overflow:hidden;">
-      <div style="padding:8px 14px; background:#e0e7ff; border-bottom:${B}; font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; letter-spacing:0.5px;">Finished Goods Details</div>
+      <div style="padding:8px 14px; background:#fff; border-bottom:${B}; font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#1e3a8a; letter-spacing:0.5px;">Finished Goods Details</div>
       <div style="display:grid; grid-template-columns:2fr 1fr 0.6fr 1.4fr; border-bottom:${B};">
         ${field("Project ID", fg.projectId)}
         ${field("Department", fg.department, true)}
