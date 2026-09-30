@@ -476,7 +476,7 @@ async function triggerFGBOQValidation() {
           <thead><tr>${fgTh("Sr No", true)}${fgTh("Material Name", false, "left")}${fgTh("Unit")}${fgTh("BOQ Allotted Qty")}${fgTh("Ticket Consumed Qty")}</tr></thead>
           <tbody>${shownDetails.map((d, i) => `<tr style="background:${d.matched ? "#fff" : "#fecaca"};">
             <td style="${fgTd(true)} font-weight:700;">${i + 1}</td>
-            <td style="${fgTd(false, "left")} word-break:break-word;">${escapeHtml(d.materialName)}</td>
+            <td style="${fgTd(false, "left")} word-break:break-word;">${escapeHtml(d.materialName)}${/finished/i.test(d.typeOfStore || "") ? " <strong>(Finished Goods)</strong>" : ""}</td>
             <td style="${fgTd()}">${escapeHtml(d.unitType || "")}</td>
             <td style="${fgTd()} font-weight:700;">${fmtQty(d.required)}</td>
             <td style="${fgTd()} font-weight:700; color:${d.matched ? "#15803d" : "#b91c1c"};">${fmtQty(d.consumed)}</td>
