@@ -200,7 +200,7 @@ async function eibSave(i) {
 }
 async function eibDelete(i) {
   const m = eibMailboxes[i];
-  if (!confirm(`Remove ${m.address} from the directory? Mail arriving on it will no longer be recognised as ours or linked to anyone.`)) return;
+  if (!await abpsConfirm(`Remove ${m.address} from the directory? Mail arriving on it will no longer be recognised as ours or linked to anyone.`)) return;
   try {
     const data = await apFetch({ action: "deleteEmailMailbox", address: m.address });
     // Not saved yet — just drop it locally.
@@ -222,7 +222,7 @@ async function eibSetFeed(i, feed) {
 }
 async function eibDisconnect(i) {
   const c = eibConnections[i];
-  if (!confirm(`Disconnect ${c.email}? It will stop being read. You can reconnect it later with the link at the top.`)) return;
+  if (!await abpsConfirm(`Disconnect ${c.email}? It will stop being read. You can reconnect it later with the link at the top.`)) return;
   try {
     const data = await apFetch({ action: "disconnectEmailInbox", email: c.email });
     if (!data.success) return eibFeedback(data.error || "Disconnect failed.", false);

@@ -1051,7 +1051,7 @@ async function submitPORevisionUI() {
 async function cancelPOEntirely(poNo) {
   const st = window.rpoActive;
   if (!st) return;
-  if (!confirm(`Cancel PO ${poNo} entirely?\n\nEvery line goes to zero and all PRN allocations are released back to "still to order". This still requires authorization.`)) return;
+  if (!await abpsConfirm(`Cancel PO ${poNo} entirely?\n\nEvery line goes to zero and all PRN allocations are released back to "still to order". This still requires authorization.`)) return;
   const lines = st.lineItems.map(li => ({
     itemCode: li.itemCode, srNo: li.srNo, description: li.description, unit: li.unit,
     vendorDiscussedQty: 0, rate: Number(li.rate) || 0, discountPercent: Number(li.discountPercent) || 0,
@@ -1078,7 +1078,7 @@ async function dismissPORevision(poNo) {
   // justification (routes/purchase.js's dismissPORevisionQueue only ever
   // validated poNo, reason was always optional), but the old prompt()'s
   // wording read as if typing something was mandatory.
-  const ok = confirm(`Mark ${poNo} as needing no revision?\n\nUse this when you covered the PRN change with a NEW purchase order instead.`);
+  const ok = await abpsConfirm(`Mark ${poNo} as needing no revision?\n\nUse this when you covered the PRN change with a NEW purchase order instead.`);
   if (!ok) return;
   try {
     const data = await apFetch({ action: "dismissPORevisionQueue", poNo, operatorName: appActiveOperatorIdentityString });
@@ -1704,7 +1704,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
       const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
       const lines = (data.staleNotes || []).map(s =>
         `• ${s.prnId} / ${s.itemCode}: drafted ${fmt(s.drafted)}, but it can now only take ${fmt(s.canAbsorb)} — ${fmt(s.surplus)} becomes spare stock.`).join("\n");
-      if (confirm(`A PRN changed since this revision was drafted.\n\n${lines}\n\nAuthorize with these adjustments?`)) {
+      if (await abpsConfirm(`A PRN changed since this revision was drafted.\n\n${lines}\n\nAuthorize with these adjustments?`)) {
         return authorizePORevisionUI(requestId, true);
       }
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
@@ -1740,7 +1740,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
 }
 
 async function rejectPORevisionUI(requestId) {
-  if (!confirm("Reject this PO revision? The PO stays unchanged and returns to the revision queue.")) return;
+  if (!await abpsConfirm("Reject this PO revision? The PO stays unchanged and returns to the revision queue.")) return;
   try {
     const data = await apFetch({ action: "rejectPORevision", requestId, rejectionReason: null,
       operatorName: appActiveOperatorIdentityString });
@@ -1817,13 +1817,13 @@ function poRevRowHtml(o) {
 
 
 // ── Add / remove rows (29 Sep 2026) ─────────────────────────────────────
-function rpoRemoveRow(idx) {
+async function rpoRemoveRow(idx) {
   const st = window.rpoActive;
   const li = st?.lineItems[idx];
   if (!li) return;
   if (li.isNew) { st.lineItems.splice(idx, 1); renderPORevisionCard(); return; }
   if ((Number(li.receivedQty) || 0) > 0) return;
-  if (!confirm(`Remove ${li.itemCode} from this PO? Its PRN allocations go back to the PRNs and its delivery schedule is cancelled once the revision is authorized.`)) return;
+  if (!await abpsConfirm(`Remove ${li.itemCode} from this PO? Its PRN allocations go back to the PRNs and its delivery schedule is cancelled once the revision is authorized.`)) return;
   li._removed = true;
   li._prevQuantity = li.quantity;
   li.quantity = 0;

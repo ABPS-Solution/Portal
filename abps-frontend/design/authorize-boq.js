@@ -209,7 +209,7 @@ async function authorizeBOQRevision(updateId) {
 async function rejectBOQRevision(updateId) {
   const reqItem = uboqRevList.find(r => String(r.updateId) === String(updateId));
   if (!reqItem) return;
-  if (!confirm(`Reject this revision request for ${reqItem.boqId}? The BOQ stays at its current authorized version.`)) return;
+  if (!await abpsConfirm(`Reject this revision request for ${reqItem.boqId}? The BOQ stays at its current authorized version.`)) return;
 
   const authBtn = document.getElementById(`boqrev-auth-btn-${updateId}`);
   const rejBtn  = document.getElementById(`boqrev-reject-btn-${updateId}`);
@@ -234,7 +234,7 @@ async function rejectBOQRevision(updateId) {
 }
 
 async function rejectBOQDraft(boqId) {
-  if (!confirm(`Reject BOQ ${boqId}? This fully undoes it -- as if it was never made. The product/material will become selectable again on Create BOQ.`)) return;
+  if (!await abpsConfirm(`Reject BOQ ${boqId}? This fully undoes it -- as if it was never made. The product/material will become selectable again on Create BOQ.`)) return;
 
   const rejBtn    = document.getElementById("eboq-reject-btn");
   const submitBtn = document.getElementById("eboq-submit-btn");

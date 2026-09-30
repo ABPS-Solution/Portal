@@ -592,7 +592,7 @@ async function submitMcClearance(projectId) {
   const warning = anyDecrease
     ? "\n\nWARNING: One or more products have a REDUCED MFC Quantity. Job Cards beyond the new count will be deleted (or marked Excess/Orphaned if already partially consumed), and any Finished Goods BOQs depending on these products will have their quantities reduced too."
     : "";
-  if (!confirm(`Submit Manufacturing Clearance for ${projectId}?${warning}`)) return;
+  if (!await abpsConfirm(`Submit Manufacturing Clearance for ${projectId}?${warning}`)) return;
 
   showBlockingOverlay("Submitting Manufacturing Clearance...");
   try {
@@ -786,7 +786,7 @@ async function holdMcProduct(projectId, lineId) {
   const reason = prompt("Reason for placing this product On Hold (required):");
   if (reason === null) return; // cancelled
   if (!reason.trim()) { alert("A reason is required to place a Hold."); return; }
-  if (!confirm(`Hold this product on ${projectId}?\n\nThis releases its currently-reserved store stock back to the free pool — the material becomes claimable by other projects' PRNs. No new BOQ/PRN/PO/Job Card/Store Ticket can be raised for it until un-held. Work already in progress (open POs, approved tickets, open Job Cards) is not affected.`)) return;
+  if (!await abpsConfirm(`Hold this product on ${projectId}?\n\nThis releases its currently-reserved store stock back to the free pool — the material becomes claimable by other projects' PRNs. No new BOQ/PRN/PO/Job Card/Store Ticket can be raised for it until un-held. Work already in progress (open POs, approved tickets, open Job Cards) is not affected.`)) return;
 
   showBlockingOverlay("Placing Hold...");
   try {
@@ -803,7 +803,7 @@ async function holdMcProduct(projectId, lineId) {
 }
 
 async function unholdMcProduct(projectId, lineId) {
-  if (!confirm(`Remove the Hold on this product for ${projectId}? This tries to re-reserve its stock from whatever is currently free — if another project has since claimed it, only part (or none) may come back.`)) return;
+  if (!await abpsConfirm(`Remove the Hold on this product for ${projectId}? This tries to re-reserve its stock from whatever is currently free — if another project has since claimed it, only part (or none) may come back.`)) return;
 
   showBlockingOverlay("Removing Hold...");
   try {
@@ -863,7 +863,7 @@ async function mcAnotherClearance(projectId) {
 }
 
 async function mcActivateProject(projectId) {
-  if (!confirm(`Activate ${projectId}? This clears it for manufacturing and makes it visible to all departments. This cannot be undone from this screen.`)) return;
+  if (!await abpsConfirm(`Activate ${projectId}? This clears it for manufacturing and makes it visible to all departments. This cannot be undone from this screen.`)) return;
   showBlockingOverlay("Activating project...");
   try {
     const data = await apFetch({ action: "activateProject", projectId });
@@ -877,7 +877,7 @@ async function mcActivateProject(projectId) {
 }
 
 async function mcReactivateProject(projectId) {
-  if (!confirm(`Reactivate ${projectId}? This moves it back to Active. Its PRNs stay Completed and any resumed production will need a fresh Excess Material Request or new PRN.`)) return;
+  if (!await abpsConfirm(`Reactivate ${projectId}? This moves it back to Active. Its PRNs stay Completed and any resumed production will need a fresh Excess Material Request or new PRN.`)) return;
   showBlockingOverlay("Reactivating project...");
   try {
     const data = await apFetch({ action: "reactivateCompletedProject", projectId });

@@ -82,7 +82,7 @@ async function submitApdiAuthorize() {
   try {
     const data = await apFetch({ action: "authorizeProjectDispatchInvoice", invoiceId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) {
-      initializeApdiWorkspace();
+      document.getElementById("apdi-cards-feed").innerHTML = "";
       const pending = [];
       if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
       if (!data.challanUrl) pending.push("The Delivery Challan PDF is still being generated and will retry automatically — find it later in Search Material Outward on Delivery Challan.");
@@ -101,7 +101,7 @@ async function submitApdiAuthorize() {
           { label: "Open Invoice", url: data.url ? driveLink(data.url) : "" },
           { label: "Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
         ],
-        resetLabel: "Authorize Another", resetFn: "initializeApdiWorkspace()",
+        resetLabel: "Authorize Another Invoice", resetFn: "initializeApdiWorkspace()",
       });
       document.getElementById("apdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
@@ -118,7 +118,7 @@ async function submitApdiAuthorize() {
 
 // ── Admin-only: delete a stuck draft (the sole escape hatch, no reject) ──
 async function adminDeleteApdiDraft(invoiceId) {
-  if (!confirm(`Admin: permanently delete pending invoice draft #${invoiceId}? This releases its reserved units and cannot be undone. Its invoice number will be recorded as cancelled.`)) return;
+  if (!await abpsConfirm(`Admin: permanently delete pending invoice draft #${invoiceId}? This releases its reserved units and cannot be undone. Its invoice number will be recorded as cancelled.`)) return;
   showBlockingOverlay("Deleting draft...");
   try {
     const data = await apFetch({ action: "deleteProjectDispatchInvoiceDraft", invoiceId, operatorName: appActiveOperatorIdentityString || "Unknown" });

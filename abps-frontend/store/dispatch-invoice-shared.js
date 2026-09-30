@@ -350,7 +350,6 @@ function renderPdiSuccessCard(elementId, opts) {
   el.innerHTML = `
     <div style="border:1.5px solid #86efac; background:#f0fdf4; border-radius:var(--radius); padding:18px;">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-        <div style="width:34px; height:34px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0;">✓</div>
         <div style="font-size:1.05rem; font-weight:800; color:#15803d;">${opts.title}</div>
       </div>
       <table class="pdi-grid-table" style="max-width:640px; background:#fff;"><tbody>

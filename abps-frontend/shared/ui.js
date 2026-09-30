@@ -297,3 +297,41 @@ document.addEventListener("click", (e) => {
 // ASSIGN CURRENT STOCK
 // ═══════════════════════════════════════════════════════
 
+
+
+// abpsConfirm — on-page OK / Cancel box used instead of the browser's
+// confirm() popup. Returns a Promise<boolean>; callers await it.
+function abpsConfirm(message, opts) {
+  return new Promise(resolve => {
+    const o = opts || {};
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100000; display:flex; align-items:center; justify-content:center; padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff; border-radius:10px; max-width:480px; width:100%; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:10px;';
+    title.textContent = o.title || 'Please confirm';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:0.92rem; color:#111827; white-space:pre-line; line-height:1.5; margin-bottom:18px;';
+    msg.textContent = String(message == null ? '' : message);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:flex-end; gap:10px;';
+    const cancel = document.createElement('button');
+    cancel.type = 'button'; cancel.className = 'nav-btn-styled';
+    cancel.style.cssText = 'background:#e2e8f0; color:#111827; padding:8px 20px; font-weight:700; width:auto;';
+    cancel.textContent = o.cancelLabel || 'Cancel';
+    const ok = document.createElement('button');
+    ok.type = 'button'; ok.className = 'nav-btn-styled';
+    ok.style.cssText = 'background:var(--brand); padding:8px 22px; font-weight:700; width:auto;';
+    ok.textContent = o.okLabel || 'OK';
+    const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(v); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); done(false); } else if (e.key === 'Enter') { e.preventDefault(); done(true); } };
+    cancel.onclick = () => done(false);
+    ok.onclick = () => done(true);
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+    document.addEventListener('keydown', onKey, true);
+    row.append(cancel, ok); box.append(title, msg, row); wrap.appendChild(box);
+    document.body.appendChild(wrap);
+    ok.focus();
+  });
+}

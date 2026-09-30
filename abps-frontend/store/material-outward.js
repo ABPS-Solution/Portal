@@ -211,7 +211,7 @@ async function mowRemoveTicketFromDraft(challanId, ticketId) {
   if (!draft) return;
   if (window._mowExpandedDrafts) window._mowExpandedDrafts.add(String(challanId));
   mowSaveCardLocal(challanId);
-  if (!confirm(`Remove ${ticketId} from Draft Challan #${challanId}? It will return to the pool of tickets awaiting a challan.`)) return;
+  if (!await abpsConfirm(`Remove ${ticketId} from Draft Challan #${challanId}? It will return to the pool of tickets awaiting a challan.`)) return;
   const remaining = (draft.linked_tickets || []).map(t => t.ticketId).filter(id => id !== ticketId);
   if (remaining.length === 0) {
     // Removing the last ticket is equivalent to discarding the draft —
@@ -578,7 +578,7 @@ async function mowDiscardDraft(challanId, skipConfirm) {
 // tells the operator to raise a fresh ticket instead of trying to patch
 // this one.
 async function rejectMaterialOutwardRequest(ticketId) {
-  if (!confirm(`Reject ${ticketId}?
+  if (!await abpsConfirm(`Reject ${ticketId}?
 
 Its material is returned to the store and the ticket cannot be used again. Raise a new Material Issue Ticket if it is still needed.
 

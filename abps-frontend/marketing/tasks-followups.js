@@ -35,7 +35,7 @@ async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
 }
 
 async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
-  if(!confirm("Confirm deletion?")) return;
+  if(!await abpsConfirm("Confirm deletion?")) return;
   
   const btn = event.target;
   btn.disabled = true;
@@ -286,7 +286,7 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
 }
 
 async function removeIsolatedTaskItem(leadRef, taskId, event) {
-  if (!confirm("Confirm cancellation?")) return;
+  if (!await abpsConfirm("Confirm cancellation?")) return;
   
   const btn = event.target;
   btn.disabled = true;
@@ -514,7 +514,7 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
 }
 
 async function removeMatrixTaskFromEngine(taskId, event) {
-  if (!confirm("Confirm task removal?")) return;
+  if (!await abpsConfirm("Confirm task removal?")) return;
   
   const btn = event.target;
   btn.classList.add("loading");
@@ -536,7 +536,7 @@ async function removeMatrixTaskFromEngine(taskId, event) {
 
 // PERSISTENT ARCHIVE PIPELINE: Fires a network hit to log deletions, pulling them from future views permanently
 async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) {
-  if (!confirm("Remove this email lead permanently?")) return;
+  if (!await abpsConfirm("Remove this email lead permanently?")) return;
   
   const cardNode = document.getElementById(`email-lead-wrapper-node-${elementIndex}`);
   const deleteBtn = event.target;

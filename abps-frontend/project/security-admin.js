@@ -275,7 +275,7 @@ async function submitAddAllowedNetwork() {
 }
 
 async function deactivateNetwork(networkId) {
-  if (!confirm("Deactivate this network? Users on it will no longer be treated as on the office network.")) return;
+  if (!await abpsConfirm("Deactivate this network? Users on it will no longer be treated as on the office network.")) return;
   try {
     const data = await apFetch({ action: "deactivateAllowedNetwork", networkId });
     if (data.success) { showBOQBanner("sa-feedback", "Network deactivated.", "success"); loadAllowedNetworks(); }
@@ -321,7 +321,7 @@ async function submitAddHoliday() {
 }
 
 async function submitDeleteHoliday(date) {
-  if (!confirm("Delete this holiday? Business-day math will treat this date as a normal working day again.")) return;
+  if (!await abpsConfirm("Delete this holiday? Business-day math will treat this date as a normal working day again.")) return;
   try {
     const data = await apFetch({ action: "deleteHoliday", date });
     if (data.success) { showBOQBanner("sa-feedback", "Holiday deleted.", "success"); loadHolidays(); }
@@ -351,7 +351,7 @@ async function loadTrustedDevices() {
 }
 
 async function submitDeleteTrustedDevice(deviceId) {
-  if (!confirm("Delete this trusted device? It will need to log in from the office network again to be trusted.")) return;
+  if (!await abpsConfirm("Delete this trusted device? It will need to log in from the office network again to be trusted.")) return;
   try {
     const data = await apFetch({ action: "deleteTrustedDevice", deviceId });
     if (data.success) { showBOQBanner("sa-feedback", "Trusted device deleted.", "success"); loadTrustedDevices(); }
@@ -437,7 +437,7 @@ function renderOutageModeStatus(settings) {
 
 async function activateOutageModeNow() {
   const hours = parseFloat(document.getElementById("sa-outage-hours").value) || 1;
-  if (!confirm(`Activate Outage Mode for ${hours} hour(s)? Any user who has logged in from the office before will be able to sign in remotely until it expires.`)) return;
+  if (!await abpsConfirm(`Activate Outage Mode for ${hours} hour(s)? Any user who has logged in from the office before will be able to sign in remotely until it expires.`)) return;
   try {
     const data = await apFetch({ action: "activateOutageMode", hours });
     if (data.success) { showBOQBanner("sa-feedback", "Outage Mode activated.", "success"); loadSecuritySettings(); }
@@ -694,7 +694,7 @@ function renderSecurityAdminPinUsers() {
 }
 
 async function submitClearUserPinLockout(personKey) {
-  if (!confirm(`Clear the PIN lockout for ${personKey}? Their existing PIN stays the same.`)) return;
+  if (!await abpsConfirm(`Clear the PIN lockout for ${personKey}? Their existing PIN stays the same.`)) return;
   try {
     const data = await apFetch({ action: "clearUserPinLockout", personKey });
     if (data.success) { showBOQBanner("sa-feedback", "Lockout cleared.", "success"); loadSecurityAdminPinUsers(); }
@@ -820,7 +820,7 @@ async function saveDeviceRestriction(deviceId) {
 }
 
 async function submitDeleteRegisteredDevice(deviceId) {
-  if (!confirm("Delete this device? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
+  if (!await abpsConfirm("Delete this device? No one will be able to PIN-login on it until it's re-enrolled with a new code.")) return;
   try {
     const data = await apFetch({ action: "deleteRegisteredDevice", deviceId });
     if (data.success) { showBOQBanner("sa-feedback", "Device deleted.", "success"); loadRegisteredDevices(); }
@@ -949,7 +949,7 @@ async function saDeviceAddPersonRemove(personKey) {
   if (!modal) return;
   const idx = modal._allowedKeys.indexOf(personKey);
   if (idx === -1) return;
-  if (!confirm(`Remove ${modal._allowedNames[idx]} from this device? They will no longer be able to PIN-login here.`)) return;
+  if (!await abpsConfirm(`Remove ${modal._allowedNames[idx]} from this device? They will no longer be able to PIN-login here.`)) return;
   modal._allowedKeys.splice(idx, 1);
   modal._allowedNames.splice(idx, 1);
   await saDeviceAddPersonCommit(modal);
@@ -1165,7 +1165,7 @@ async function togglePermissionMatrixPill(dbColumn) {
 async function submitRemoveUserFromSystem(personKey) {
   const u = saAllPinUsers.find(x => x.personKey === personKey);
   const name = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : personKey;
-  if (!confirm(`Permanently delete ${name} from the system?\n\nThey are logged out everywhere and can never log in again. This cannot be undone. Old leads, tasks and follow-ups they are named on will show their user ID (${personKey}) instead of their name.`)) return;
+  if (!await abpsConfirm(`Permanently delete ${name} from the system?\n\nThey are logged out everywhere and can never log in again. This cannot be undone. Old leads, tasks and follow-ups they are named on will show their user ID (${personKey}) instead of their name.`)) return;
   try {
     const data = await apFetch({ action: "removeUserFromSystem", personKey });
     if (!data.success) { showBOQBanner("sa-feedback", data.error || "Could not remove this person.", "error"); return; }

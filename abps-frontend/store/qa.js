@@ -442,7 +442,7 @@ async function commitQARevisionToBackend(grnNumber, btn) {
       return;
     }
   }
-  if (!confirm(`This will reverse the original Q/A for ${grnNumber} and re-apply it with these values across stock, PRN, PO, PPS and assignments. Continue?`)) return;
+  if (!await abpsConfirm(`This will reverse the original Q/A for ${grnNumber} and re-apply it with these values across stock, PRN, PO, PPS and assignments. Continue?`)) return;
 
   btn.disabled = true; btn.textContent = "Submitting...";
   showBlockingOverlay("Revising Q/A...");

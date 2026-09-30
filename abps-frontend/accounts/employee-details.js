@@ -276,7 +276,7 @@ async function edSubmitUpdateEmployee(employeeId, ns) {
 
 async function edSubmitDeleteEmployee(employeeId, employeeName, ns) {
   const cfg = EMP_SCREEN_CONFIG[ns];
-  if (!confirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked unless both Tour Balance and Daily Balance are 0 and they have no advance/voucher/expense history.)`)) return;
+  if (!await abpsConfirm(`Permanently delete "${employeeName}"? This cannot be undone. (Blocked unless both Tour Balance and Daily Balance are 0 and they have no advance/voucher/expense history.)`)) return;
   showBlockingOverlay("Deleting...");
   try {
     const data = await acFetch("deleteTourEmployee", { employeeId });
@@ -395,7 +395,7 @@ async function submitUpdateExpenseLimit(expenseType) {
 }
 
 async function submitDeleteExpenseLimit(expenseType) {
-  if (!confirm(`Delete the ${expenseType} daily limit (both Manager and Executive)?`)) return;
+  if (!await abpsConfirm(`Delete the ${expenseType} daily limit (both Manager and Executive)?`)) return;
   const group = elLimitsData.filter(l => l.expenseType === expenseType);
   showBlockingOverlay("Deleting...");
   try {

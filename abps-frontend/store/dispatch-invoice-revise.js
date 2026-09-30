@@ -230,7 +230,7 @@ async function rpdiReplaceDocument(invoiceId, documentId, docType, input) {
 }
 
 async function rpdiRemoveDocument(invoiceId, documentId) {
-  if (!confirm("Remove this document from the invoice? The invoice itself is not changed.")) return;
+  if (!await abpsConfirm("Remove this document from the invoice? The invoice itself is not changed.")) return;
   showBlockingOverlay("Removing document...");
   try {
     const data = await apFetch({ action: "removeProjectInvoiceDocument", invoiceId, documentId, operatorName: appActiveOperatorIdentityString || "Unknown" });

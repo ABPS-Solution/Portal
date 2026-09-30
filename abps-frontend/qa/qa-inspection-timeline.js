@@ -377,7 +377,7 @@ async function qaitUploadDocument(projectId) {
 }
 
 async function qaitDeleteDocument(projectId, documentId) {
-  if (!confirm("Remove this document?")) return;
+  if (!await abpsConfirm("Remove this document?")) return;
   showBlockingOverlay("Removing document...");
   try {
     const data = await apFetch({ action: "deleteQaInspectionDocument", projectId, documentId });

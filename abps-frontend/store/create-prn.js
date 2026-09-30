@@ -827,7 +827,7 @@ async function authorizePRN(prnId) {
 }
 
 async function rejectPRN(prnId) {
-  if (!confirm(`Reject PRN ${prnId}? Reserved store quantities will be released and no purchase lines will be created.`)) return;
+  if (!await abpsConfirm(`Reject PRN ${prnId}? Reserved store quantities will be released and no purchase lines will be created.`)) return;
   const authBtn = document.getElementById(`aprn-auth-btn-${prnId}`);
   const rejBtn = document.getElementById(`aprn-reject-btn-${prnId}`);
   if (rejBtn) { rejBtn.disabled = true; rejBtn.textContent = "Rejecting..."; }

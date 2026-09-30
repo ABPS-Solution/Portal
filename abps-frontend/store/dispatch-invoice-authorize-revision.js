@@ -172,7 +172,7 @@ async function submitArpdiAuthorize() {
   try {
     const data = await apFetch({ action: "authorizeProjectDispatchInvoiceRevision", requestId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) {
-      initializeArpdiWorkspace();
+      document.getElementById("arpdi-cards-feed").innerHTML = "";
       const pending = [];
       if (!data.url) pending.push("The invoice PDF is still being generated and will retry automatically.");
       if (data.challanNumber && !data.challanUrl) pending.push("The updated Delivery Challan PDF is still being generated and will retry automatically.");
@@ -191,7 +191,7 @@ async function submitArpdiAuthorize() {
           { label: "Open Revised Invoice", url: data.url ? driveLink(data.url) : "" },
           { label: "Open Delivery Challan", url: data.challanUrl ? driveLink(data.challanUrl) : "" },
         ],
-        resetLabel: "Authorize Another", resetFn: "initializeArpdiWorkspace()",
+        resetLabel: "Authorize Another Revision", resetFn: "initializeArpdiWorkspace()",
       });
       document.getElementById("arpdi-feedback").scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
@@ -207,7 +207,7 @@ async function submitArpdiAuthorize() {
 }
 
 async function adminDeleteArpdiRequest(requestId) {
-  if (!confirm(`Admin: permanently delete pending revision request #${requestId}? The live invoice is untouched.`)) return;
+  if (!await abpsConfirm(`Admin: permanently delete pending revision request #${requestId}? The live invoice is untouched.`)) return;
   showBlockingOverlay("Deleting request...");
   try {
     const data = await apFetch({ action: "deleteProjectDispatchInvoiceRevisionRequest", requestId, operatorName: appActiveOperatorIdentityString || "Unknown" });

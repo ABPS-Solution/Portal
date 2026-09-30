@@ -1003,7 +1003,7 @@ async function submitIcfSaveFormat() {
 async function submitIcfDeactivateFormat() {
   const formatId = document.getElementById("icf-fmt-editor-formatid").value.trim();
   if (!formatId) return;
-  if (!confirm("Deactivate this Item Code format? Existing item codes already created from it are unaffected.")) return;
+  if (!await abpsConfirm("Deactivate this Item Code format? Existing item codes already created from it are unaffected.")) return;
   try {
     const data = await apFetch({ action: "deactivateItemCodeFormat", formatId, operatorName: appActiveOperatorIdentityString });
     if (!data.success) return showBOQBanner("itemcode-feedback-banner", "⚠️ " + data.error, "error");

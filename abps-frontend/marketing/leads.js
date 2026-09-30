@@ -1360,7 +1360,7 @@ async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, enco
     const companyNameForConfirm = decodeURIComponent(encodedCompanyNameForConfirm || "");
     const contactNameForConfirm = decodeURIComponent(encodedContactNameForConfirm || "");
     const confirmLabel = [companyNameForConfirm, contactNameForConfirm].filter(Boolean).join(" ") || "this record";
-    if (!confirm(`Confirm Delete of ${confirmLabel}?`)) return;
+    if (!await abpsConfirm(`Confirm Delete of ${confirmLabel}?`)) return;
     const btn = event.target; 
     btn.disabled = true;
     btn.innerHTML = 'Deleting...';

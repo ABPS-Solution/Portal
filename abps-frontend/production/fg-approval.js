@@ -411,7 +411,7 @@ async function removeFGDocRow(fgId, documentId, tempId) {
     refreshFGDocTable(fgId);
     return;
   }
-  if (!confirm("Remove this document? It will be deleted from Drive as well.")) return;
+  if (!await abpsConfirm("Remove this document? It will be deleted from Drive as well.")) return;
   try {
     const data = await apFetch({
       action: "deleteFinishedGoodsDocument", activeEngineer: appActiveOperatorIdentityString,
@@ -559,7 +559,7 @@ async function submitFGApprovalDecision(fgId, action) {
   const feedback = document.getElementById("fg-approval-feedback");
   feedback.style.display = "none";
 
-  if (action === "reject" && !confirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
+  if (action === "reject" && !await abpsConfirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
 
   const fg = window._fgApprovalState[fgId]?.fg || {};
   const productSerialNumber = fgApprovalSerialValue(fgId).trim();

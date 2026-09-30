@@ -268,8 +268,8 @@ function applyPinvDraftOverlay(saved) {
 // first place (File objects aren't serializable), so nothing extra to
 // clear there beyond what initializePinvWorkspace's resetPinvDocFiles()
 // already does.
-function clearPinvForm() {
-  if (!confirm("Clear the entire invoice in progress: project selection, invoice details, and Product Details?")) return;
+async function clearPinvForm() {
+  if (!await abpsConfirm("Clear the entire invoice in progress: project selection, invoice details, and Product Details?")) return;
   clearPinvDraftStorage();
   initializePinvWorkspace();
 }

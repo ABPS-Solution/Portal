@@ -2386,7 +2386,7 @@ async function cmitDraftRestoreClick() {
   if (slot) slot.innerHTML = "";
 }
 async function cmitClearEntireTicket() {
-  if (!confirm("Clear the entire ticket? Everything entered here, including the basket and saved progress, will be removed.")) return;
+  if (!await abpsConfirm("Clear the entire ticket? Everything entered here, including the basket and saved progress, will be removed.")) return;
   cmitDraftClearAll();
   const fb = document.getElementById("store-ticket-runtime-inline-feedback-banner");
   if (fb) fb.style.display = "none";

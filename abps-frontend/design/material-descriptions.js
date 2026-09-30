@@ -104,7 +104,7 @@ async function createMaterialDescriptionInline(text, inputId, dropdownId, hidden
       // for the two duplicate-flag responses, never for a real validation
       // error, so it's what distinguishes "advisory, can override" from
       // "actually invalid, nothing to override."
-      if (data.existing && confirm(`${data.error}\n\nClick OK to create it anyway as a new, separate description.`)) {
+      if (data.existing && await abpsConfirm(`${data.error}\n\nClick OK to create it anyway as a new, separate description.`)) {
         return createMaterialDescriptionInline(text, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg, true);
       }
       if (!data.existing) alert(data.error || "Could not create this description.");

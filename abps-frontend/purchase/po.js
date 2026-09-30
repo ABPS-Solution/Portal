@@ -56,7 +56,7 @@ async function promptRenameRMPONumber(oldPoNo) {
     alert('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
     return;
   }
-  if (!confirm(`Rename "${oldPoNo}" to "${newPoNo}"? This cannot be undone from here.`)) return;
+  if (!await abpsConfirm(`Rename "${oldPoNo}" to "${newPoNo}"? This cannot be undone from here.`)) return;
 
   showBlockingOverlay("Correcting PO number...");
   try {
@@ -837,8 +837,8 @@ function clearCPODraftStorage() {
   try { localStorage.removeItem(CPO_DRAFT_STORAGE_KEY); } catch (e) { /* ignore */ }
 }
 
-function clearCPOForm() {
-  if (!confirm("Clear the entire Purchase Order form: Header, Material Rows, and Allocations?")) return;
+async function clearCPOForm() {
+  if (!await abpsConfirm("Clear the entire Purchase Order form: Header, Material Rows, and Allocations?")) return;
   clearCPODraftStorage();
   initializeCreatePOPanel();
 }
@@ -1547,7 +1547,7 @@ async function authorizePOFromForm() {
 async function rejectPOFromForm() {
   const poNo = window.cpoEditingPoNo;
   if (!poNo) return;
-  if (!confirm(`Reject ${poNo}? This deletes the PO entirely.`)) return;
+  if (!await abpsConfirm(`Reject ${poNo}? This deletes the PO entirely.`)) return;
 
   const banner = document.getElementById("authorize-po-feedback");
   showBlockingOverlay("Rejecting PO...");

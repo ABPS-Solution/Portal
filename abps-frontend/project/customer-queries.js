@@ -438,7 +438,7 @@ function validateCqPayloadClientSide(s) {
 }
 
 async function deleteCqIncomingEmail(messageId) {
-  if (!confirm("Delete this incoming email? This cannot be undone.")) return;
+  if (!await abpsConfirm("Delete this incoming email? This cannot be undone.")) return;
   try {
     const data = await apFetch({ action: "deleteIncomingQueryEmail", messageId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) await loadCqIncomingEmails();
@@ -826,7 +826,7 @@ function toggleCqResolvedCard(queryId) {
 }
 
 async function reopenCqQuery(queryId) {
-  if (!confirm("Reopen this query? It will move back to Current Pending Queries.")) return;
+  if (!await abpsConfirm("Reopen this query? It will move back to Current Pending Queries.")) return;
   try {
     const data = await apFetch({ action: "reopenCustomerQuery", queryId, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) {
