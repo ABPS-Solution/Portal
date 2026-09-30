@@ -3835,19 +3835,25 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <!-- ═══════ MODE: ADD / CHANGE ITEM CODE FORMAT (admin) ═══════ -->
       <div id="icf-mode-format" style="display:none;">
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; position:relative;">
-          <label class="field-label" style="margin-top:0;">Type of Material</label>
-          <input type="text" id="icf-fmt-type-ta-input" placeholder="Type to search..." autocomplete="off"
-            oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-fmt-type-ta-input', 'icf-fmt-type-ta-dropdown')"
-            onchange="handleIcfFormatTypeChange(this.value)"
-            style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; max-width:420px;" />
-          <div id="icf-fmt-type-ta-dropdown" style="display:none; position:absolute; top:68px; left:16px; width:calc(100% - 32px); max-width:420px; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-          <div style="margin-top:10px;">
-            <label style="font-size:0.8rem; font-weight:600;">Entry Mode:</label>
-            <select id="icf-fmt-entry-mode" onchange="handleIcfEntryModeChange(this.value)" style="padding:6px; font-weight:600; border:1.5px solid var(--border); border-radius:4px; margin-left:8px;">
-              <option value="Fixed Format">Fixed Format</option>
-              <option value="Free Form">Free Form</option>
-            </select>
+        <div style="background:#fff; border:2px solid #94a3b8; border-left:5px solid var(--brand); border-radius:var(--radius); margin-bottom:16px;">
+          <div style="padding:9px 16px; background:#f1f5f9; border-bottom:1.5px solid #94a3b8; border-radius:var(--radius) var(--radius) 0 0; font-weight:800; font-size:0.85rem; color:var(--brand);">Choose Type of Material</div>
+          <div style="display:grid; grid-template-columns:minmax(220px,2fr) minmax(200px,1fr); gap:16px; padding:14px 16px; align-items:start;">
+            <div style="position:relative;">
+              <label class="field-label" style="margin-top:0;">Type of Material</label>
+              <input type="text" id="icf-fmt-type-ta-input" placeholder="Type to search..." autocomplete="off"
+                oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-fmt-type-ta-input', 'icf-fmt-type-ta-dropdown')"
+                onchange="handleIcfFormatTypeChange(this.value)"
+                style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid #94a3b8; border-radius:var(--radius); width:100%;" />
+              <div id="icf-fmt-type-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Entry Mode</label>
+              <select id="icf-fmt-entry-mode" onchange="handleIcfEntryModeChange(this.value)" style="width:100%; padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid #94a3b8; border-radius:var(--radius);">
+                <option value="Fixed Format">Fixed Format</option>
+                <option value="Free Form">Free Form</option>
+              </select>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Fixed Format: new item codes must use one of this type's formats. Free Form: typed freely.</div>
+            </div>
           </div>
         </div>
 
