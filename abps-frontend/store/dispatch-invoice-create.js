@@ -254,7 +254,7 @@ function cpdiRenderInvoiceForm() {
 
   zone.innerHTML = `
     <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;">
-      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1rem;">Invoice Details</div>
+      <div style="font-weight:800; color:var(--brand); margin-bottom:6px; font-size:1.25rem;">Invoice Details</div>
       <div style="font-size:0.87rem; color:var(--muted); margin-bottom:14px;">Fill in what the invoice needs. This creates the invoice draft. The draft is the real invoice (its number is given when the draft is created): print it, get it signed, then it is authorized.</div>
 
       <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
@@ -291,7 +291,7 @@ function cpdiRenderInvoiceForm() {
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-        <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
+        <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:12px; background:#fff;">
           <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">BILL TO PARTY</div>
           ${field('Name', null, ['billTo','name'])}
           ${field('Address', null, ['billTo','address'])}
@@ -300,7 +300,7 @@ function cpdiRenderInvoiceForm() {
           ${field('Contact Name', null, ['billTo','contactName'])}
           ${field('Contact No.', null, ['billTo','contactNo'])}
         </div>
-        <div style="border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:#fff;">
+        <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:12px; background:#fff;">
           <div style="font-weight:700; color:var(--brand); margin-bottom:8px; font-size:0.88rem;">SHIP TO PARTY</div>
           ${field('Name', null, ['shipTo','name'])}
           ${field('Address', null, ['shipTo','address'])}
@@ -311,11 +311,11 @@ function cpdiRenderInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Product Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Product Details</div>
       <div id="cpdi-lineitems-wrap" style="overflow-x:auto;"></div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <div style="width:300px; display:flex; flex-direction:column; gap:6px;">
+        <div class="pdi-costing" style="width:400px; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-radius:4px; padding:6px 10px;">
             <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Sub Total</span>
             <strong id="cpdi-subtotal-display">₹0</strong>
@@ -354,7 +354,7 @@ function cpdiRenderInvoiceForm() {
         </div>
       </div>
 
-      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.9rem;">Bank Details</div>
+      <div style="font-weight:800; color:var(--brand); margin:18px 0 10px; font-size:1.15rem;">Bank Details</div>
       <div class="grid-cell-item" style="max-width:320px; margin-bottom:10px;">
         <label>Bank Account</label>
         <select onchange="selectCpdiBankOption(this.value)" style="width:100%; padding:6px 4px;">

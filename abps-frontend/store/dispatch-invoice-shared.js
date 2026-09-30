@@ -126,7 +126,7 @@ function renderPdiLineItemsTable(wrapId, items, idPrefix, onItemChange, onDelete
   wrap.innerHTML = `
     <table class="store-basket-data-table" style="min-width:820px; table-layout:fixed;">
       <colgroup><col style="width:3%;" />${cols.map(c => `<col style="width:${c[3]};" />`).join('')}${showDelete ? '<col style="width:36px;" />' : ''}</colgroup>
-      <thead><tr><th>Sr No</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}${showDelete ? '<th></th>' : ''}</tr></thead>
+      <thead><tr><th>Sr No</th>${cols.map(c => `<th${['quantity', 'unit', 'ratePerQuantity', 'totalBasicPrice'].includes(c[0]) ? ' style="text-align:center;"' : ''}>${c[1]}</th>`).join('')}${showDelete ? '<th></th>' : ''}</tr></thead>
       <tbody>
         ${items.length === 0 ? `<tr><td colspan="${cols.length + (showDelete ? 2 : 1)}" style="text-align:center; color:var(--muted);">No PO line items found for this project</td></tr>` : items.map((it, idx) => `
           <tr>
@@ -138,6 +138,10 @@ function renderPdiLineItemsTable(wrapId, items, idPrefix, onItemChange, onDelete
               }
               if (type === 'text') {
                 return `<td><textarea rows="1" oninput="${onItemChange}(${idx}, '${key}', this.value); pdiAutoGrowField(this);" onfocus="pdiAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+              }
+              if (key === 'quantity' && idPrefix === 'cpdi') {
+                return `<td><input type="number" value="${(parseFloat(it[key]) || 0) || ''}" placeholder="0" readonly title="Set by Qty to Bill Now above"
+                  style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--text); font-weight:700; text-align:center; cursor:not-allowed;" /></td>`;
               }
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
