@@ -290,12 +290,17 @@ async function tvsRefreshBalanceBuckets() {
 }
 
 function tvsRenderBucket(title, employees, color) {
+  const th = "padding:7px 10px; font-size:0.72rem; text-transform:uppercase; color:var(--muted); background:var(--highlight-bg);";
   const rows = employees.length
-    ? employees.map(e => `<div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.88rem;">
-        <span>${escapeHtml(e.employeeName)}</span><span style="font-weight:700; font-size:1.05rem; color:${color};">${formatINRComma(e.balance)}</span></div>`).join("")
-    : `<div style="color:var(--muted); font-size:0.8rem;">None.</div>`;
-  return `<div style="flex:1; min-width:220px; background:var(--highlight-bg); padding:12px 14px; border-radius:var(--radius);">
-    <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>${rows}</div>`;
+    ? employees.map(e => `<tr><td style="padding:6px 10px; font-size:0.88rem;">${escapeHtml(e.employeeName)}</td>
+        <td style="padding:6px 10px; text-align:right; font-weight:700; font-size:1.05rem; color:${color};">${formatINRComma(e.balance)}</td></tr>`).join("")
+    : `<tr><td colspan="2" style="padding:6px 10px; color:var(--muted); font-size:0.8rem; text-align:center;">None.</td></tr>`;
+  return `<div style="flex:1; min-width:220px;">
+    <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <thead><tr><th style="${th} text-align:left;">Employee</th><th style="${th} text-align:right; width:40%;">Balance</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
 }
 
 // "2nd Sep 2026" style — day-of-month with ordinal suffix, short month
@@ -352,7 +357,7 @@ function tvsRenderCard(v) {
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
-      ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
+      ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener" style="font-size:0.7rem; word-break:break-all; overflow-wrap:anywhere;">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     const rawActual = Number(l.actualAmount) || 0;
     const rawCap = l.capAmount != null ? Number(l.capAmount) : null;

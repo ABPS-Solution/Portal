@@ -34,7 +34,7 @@ function tvcRenderCard(v) {
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billLinksHtml = bills.length > 0
-      ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
+      ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener" style="font-size:0.7rem; word-break:break-all; overflow-wrap:anywhere;">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason
         ? `<span style="color:var(--muted); font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>`
         : `<span style="color:var(--muted);">— no bill required —</span>`;
@@ -251,7 +251,7 @@ async function tvcUploadBillForLine(lineId) {
     input.value = "";
     if (data.success) {
       document.getElementById(`tvc-bills-${lineId}`).innerHTML =
-        data.bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>");
+        data.bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener" style="font-size:0.7rem; word-break:break-all; overflow-wrap:anywhere;">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>");
     } else {
       showTourFeedback(data.error, "error");
     }
