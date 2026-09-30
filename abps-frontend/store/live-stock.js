@@ -1091,7 +1091,7 @@ function renderFinishedGoodsStoreStockTables() {
     const groupArr = Object.values(groups);
 
     if (groupArr.length === 0) {
-      container.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">${q ? `No materials matched "${q}".` : `No items in ${dept.label} Finished Goods Store.`}</td></tr>`;
+      container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">${q ? `No materials matched "${q}".` : `No items in ${dept.label} Finished Goods Store.`}</td></tr>`;
       return;
     }
 
@@ -1101,7 +1101,6 @@ function renderFinishedGoodsStoreStockTables() {
         <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.productName)}</td>
         <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.productRating || "—")}</td>
         <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.descriptionOfMaterial || "—")}</td>
-        <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.make || "—")}</td>
         <td style="padding:8px; font-size:0.82rem;">${escapeHtml(g.unit)}</td>
         <td style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:${g.inStock > 0 ? "var(--accent)" : "#b91c1c"};">
           ${g.inStock}
