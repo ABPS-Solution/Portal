@@ -181,6 +181,14 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             <div id="se-processing-msg-${item.gateNumber}" style="font-size:0.72rem; font-weight:700; margin-top:3px;"></div>
           </div>
+          <div style="max-width:620px; margin:-6px 0 14px;">
+            <label class="field-label">Or: Old pre-system PO No (ordered before the system went live)</label>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <input type="text" id="se-legacy-po-${item.gateNumber}" maxlength="60" autocomplete="off" placeholder="PO number printed on the old PO..."
+                style="flex:1; min-width:260px; max-width:360px; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
+              <span style="font-size:0.75rem; font-weight:700; color:#b45309;">After Q/A, the material goes to the PRNs still waiting for it.</span>
+            </div>
+          </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
             <table class="store-basket-data-table row-lined-table" style="width:100%; table-layout:fixed; min-width:1150px; border-collapse:collapse;">
               <thead>

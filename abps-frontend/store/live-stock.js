@@ -722,6 +722,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
   const poNoInput = document.getElementById(`se-po-number-${gateNum}`);
   const processingChallanNo = (document.getElementById(`se-processing-dc-${gateNum}`)?.value || "").trim();
   const headerPoNo = poNoInput ? poNoInput.value.trim() : "";
+  const legacyPoNo = (document.getElementById(`se-legacy-po-${gateNum}`)?.value || "").trim();
 
   const builtLineItems = [];
   document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(codeEl => {
@@ -767,10 +768,10 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     builtLineItems.push(line);
   });
 
-  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo, processingChallanNo: processingChallanNo || undefined };
+  const itemData = { gateNumber: srcItem.gateNumber, storePerson: appActiveOperatorIdentityString || "", lineItems: builtLineItems, poNo: headerPoNo, processingChallanNo: processingChallanNo || undefined, legacyPoNo: legacyPoNo || undefined };
 
-  if (headerPoNo && processingChallanNo) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter either a PO Number or a Delivery Challan No, not both.", "error");
+  if ([headerPoNo, processingChallanNo, legacyPoNo].filter(Boolean).length > 1) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Fill only one of: PO Number, Delivery Challan No, or Old pre-system PO No.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";
@@ -783,8 +784,8 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     btn.textContent = "Submit Store Entry and GRN";
     return;
   }
-  if (!headerPoNo && !processingChallanNo) {
-    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above (or the Delivery Challan No this material is returning against) before submitting.", "error");
+  if (!headerPoNo && !processingChallanNo && !legacyPoNo) {
+    showBOQBanner('store-entry-runtime-feedback-banner', "⚠️ Enter a PO Number above (or the Delivery Challan No, or the Old pre-system PO No) before submitting.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     btn.disabled = false;
     btn.textContent = "Submit Store Entry and GRN";
