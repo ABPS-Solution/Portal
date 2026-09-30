@@ -434,7 +434,15 @@ async function handleCreateTicketProjectChange(chosenProjectVal) {
         const r = await apFetch({ action: "fetchServiceEligibleBoqs", projectId: chosenProjectVal });
         eligible = (r && r.success && r.boqIds) || [];
       } catch (e) { eligible = []; }
-      scopedJobCards = allJobCards.filter(jc => eligible.includes(jc.boqId));
+      // No BOQ is picked for Service: go straight to Choose Store.
+      if (eligible.length) {
+        ticketBOQDisplayReset("Not needed for Service");
+        handleCreateTicketBOQChange("__service__");
+      } else {
+        ticketBOQDisplayReset("⚠ No dispatched units on this project");
+        if (boqLabel) boqLabel.style.color = "var(--warn)";
+      }
+      return;
     } else if (outgoingUse === "Processing") {
       const dept = localStorage.getItem("userDepartment") || localStorage.getItem("erpUserDepartment") || "";
       const isAdmin = (localStorage.getItem("isUserAdminGlobal") || localStorage.getItem("erpIsUserAdminGlobal")) === "true";

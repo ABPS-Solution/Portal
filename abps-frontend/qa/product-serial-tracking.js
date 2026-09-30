@@ -356,6 +356,13 @@ function psnRenderMaterialSources(trace) {
         const why = issuedQty > 0 ? 'Issued, but no delivery record was found' : 'Not issued to this Job Card yet';
         return `<tr>${first}<td colspan="6" style="text-align:center; color:var(--muted);">${why}</td></tr>`;
       }
+      if (!pl.poNo && !pl.grnNumber && /finished/i.test(m.typeOfStore || '')) {
+        const fgBg = 'background:#ecfdf5;';
+        return `<tr>${first}
+          <td style="text-align:center; ${fgBg}"><span class="psn-tier-chip" style="color:#15803d; background:#dcfce7;">Finished Good</span></td>
+          ${qtyCell(fgBg)}
+          <td colspan="4" style="text-align:center; ${fgBg} color:#15803d; font-weight:700;">Built in-house (Finished Goods Store), not bought on a PO</td></tr>`;
+      }
       if (!pl.poNo && !pl.grnNumber) {
         const red = 'background:#fee2e2;';
         return `<tr>${first}

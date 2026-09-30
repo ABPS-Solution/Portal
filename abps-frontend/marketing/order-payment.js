@@ -79,7 +79,8 @@ async function oppLoadList() {
   try {
     // Fully-paid POs are never fetched at all now -- there's no toggle to
     // reveal them, they're simply not relevant to a payment-tracking list.
-    const data = await apFetch({ action: "fetchOrderPaymentProgressList", includeFullyPaid: false });
+    // Fully paid POs are fetched too, but only shown when searched for.
+    const data = await apFetch({ action: "fetchOrderPaymentProgressList", includeFullyPaid: true });
     if (!data.success) { listEl.innerHTML = `<div style="color:#b91c1c; padding:14px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
     window.oppAllProjects = data.projects || [];
     oppRenderList(oppFilteredProjects(document.getElementById("opp-search-input").value || ""));
@@ -100,7 +101,7 @@ function oppFilteredProjects(query) {
   const q = (query || "").trim().toLowerCase();
   let list = window.oppAllProjects;
   if (window.oppOverdueOnly) list = list.filter(p => p.overdueCount > 0);
-  if (!q) return list;
+  if (!q) return list.filter(p => !(p.pendingBalance != null && p.pendingBalance <= 0.005));
   return list.filter(p =>
     (p.companyName || "").toLowerCase().includes(q) ||
     (p.projectId || "").toLowerCase().includes(q) ||
@@ -149,7 +150,7 @@ function oppRenderCard(p) {
         <div style="flex:1; min-width:220px;">
           <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(p.companyName || '-')}</div>
           <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
-            ${escapeHtml(p.projectId)} · ${escapeHtml(p.projectStatus || '')}${overdueChip}${fallbackChip}
+            ${escapeHtml(p.projectId)} · ${escapeHtml(p.projectStatus || '')}${overdueChip}${fallbackChip}${isFullyPaid ? '<span style="background:#dcfce7; color:#15803d; font-weight:800; font-size:0.72rem; padding:3px 10px; border-radius:10px; margin-left:8px; border:1.5px solid #86efac;">✓ Payment Completed</span>' : ''}
           </div>
         </div>
         <div style="display:flex; gap:26px; align-items:flex-start; font-family:monospace; text-align:right;">

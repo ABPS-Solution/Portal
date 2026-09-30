@@ -1523,7 +1523,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   if (jobCardWrapper) jobCardWrapper.style.display = isService ? "none" : "";
   if (boqJobCardRow) boqJobCardRow.style.gridTemplateColumns = isService ? "1fr" : "1fr 1fr";
   const boqWrapper = document.getElementById("wrapper-ticket-boq");
-  if (boqWrapper) boqWrapper.style.display = "";
+  if (boqWrapper) boqWrapper.style.display = isService ? "none" : "";
 
   resetMaterialRequestCascadingLockState();
 
