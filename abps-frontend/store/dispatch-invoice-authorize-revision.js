@@ -119,8 +119,8 @@ function renderArpdiCard(r) {
     return `<li><strong>${escapeHtml(pl.description || c.description || ('Line ' + pl.lineId))}:</strong> Qty ${ARPDI_FMT(oldQty)} → <span style="font-weight:700; color:${qtyColor};">${ARPDI_FMT(newQty)}</span>${Math.abs(newRate - oldRate) > 1e-9 ? `, Rate ${ARPDI_FMT(oldRate)} → <span style="font-weight:700; color:#b45309;">${ARPDI_FMT(newRate)}</span>` : ""}</li>`;
   }).filter(Boolean);
   const lineSummaryHtml = lineSummaryLines.length ? `
-    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-      <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Line Item Change Summary</div>
+    <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+      <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ Line Item Change Summary</div>
       <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${lineSummaryLines.join("")}</ul>
     </div>` : "";
 
@@ -128,8 +128,8 @@ function renderArpdiCard(r) {
   const generalFieldDefs = ARPDI_GENERAL_FIELD_DEFS(cur, prop);
   const generalBullets = generalFieldDefs.filter(arpdiChangedField).map(arpdiBulletHtml);
   const generalSummaryHtml = generalBullets.length ? `
-    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:12px;">
-      <div style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:#78350f; margin-bottom:6px;">General Change Summary</div>
+    <div style="background:#fffbeb; border:2px solid #f59e0b; border-left:7px solid #d97706; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(217,119,6,0.18);">
+      <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#92400e; margin-bottom:6px; letter-spacing:0.03em;">⚠ General Change Summary</div>
       <ul style="margin:0; padding-left:18px; font-size:0.86rem; color:#334155; line-height:1.7;">${generalBullets.join("")}</ul>
     </div>` : "";
 

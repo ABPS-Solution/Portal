@@ -509,14 +509,21 @@ async function submitRpdiCreateRequest() {
       document.getElementById("rpdi-detail-zone").style.display = "none";
       const successZone = document.getElementById("rpdi-success-zone");
       successZone.style.display = "block";
-      successZone.innerHTML = `
-        <div style="padding:14px; background:#f0fdf4; border-left:4px solid #22c55e; border-radius:var(--radius); color:#15803d; font-weight:600; margin-bottom:14px;">
-          Revision request #${data.requestId} submitted for Invoice ${escapeHtml(rpdiCache.invoiceNo || String(rpdiCache.invoiceId))}. Print the draft, get it signed, then it can be authorized.
-        </div>
-        ${data.checkingDocUrl ? `<a href="${driveLink(data.checkingDocUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Revised Invoice Draft #${data.checkingDraftNumber} ↗</a>${data.challanDraftUrl ? ` <a href="${driveLink(data.challanDraftUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; margin-left:18px;">Open Revised Delivery Challan Draft ↗</a>` : ''}` : `<div style="color:#b45309; font-weight:600;">The draft could not be generated. Retry from the Pending Revisions (Editing) tab.</div>`}
-        <div style="margin-top:16px;">
-          <button class="nav-btn-styled" style="background:var(--accent); padding:8px 20px; font-weight:700;" onclick="switchRevisePdiTab('select')">+ Revise Another Invoice</button>
-        </div>`;
+      renderPdiSuccessCard("rpdi-success-zone", {
+        title: `Revision request #${data.requestId} submitted`,
+        rows: [
+          ["Invoice No.", rpdiCache.invoiceNo || String(rpdiCache.invoiceId)],
+          ["Invoice Type", rpdiCache.invoiceType ? `${rpdiCache.invoiceType} Invoice` : ""],
+          ["Project ID", rpdiCache.projectId],
+          ["Revision", `V${(Number(rpdiCache.invoiceRevision) || 1)} → V${(Number(rpdiCache.invoiceRevision) || 1) + 1}`],
+          ["Next step", "Print the draft, get it signed, then it can be authorized."],
+        ],
+        links: [
+          { label: `Open Revised Invoice Draft #${data.checkingDraftNumber || 1}`, url: data.checkingDocUrl ? driveLink(data.checkingDocUrl) : "" },
+          ...(data.challanDraftUrl ? [{ label: "Open Revised Delivery Challan Draft", url: driveLink(data.challanDraftUrl) }] : []),
+        ],
+        resetLabel: "Revise Another Invoice", resetFn: "switchRevisePdiTab('select')",
+      });
     } else {
       showBOQBanner("rpdi-feedback", data.error || "Failed.", "error");
     }
