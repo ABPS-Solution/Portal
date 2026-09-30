@@ -56,7 +56,7 @@ function eibCountCell(c) {
 }
 
 const EIB_SECTION_ORDER = { "Leads": 0, "Customer Queries": 1, "Excluded": 2 };
-const EIB_SECTION_SHADE = { "Leads": "#eff6ff", "Customer Queries": "#f5f3ff", "Excluded": "#f3f4f6" };
+const EIB_SECTION_SHADE = { "Leads": "#dbeafe", "Customer Queries": "#dbeafe", "Excluded": "#fee2e2" };
 const EIB_SECTION_LABEL = {
   "Leads": "Leads Received through Email",
   "Customer Queries": "Customer Queries Received through Email",
@@ -97,7 +97,7 @@ function eibRender() {
   const mbRows = eibMailboxes.map((m, i) => {
     const chips = m.personKeys.map((k, j) => `<span style="display:inline-flex; align-items:center; gap:4px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:12px; padding:2px 8px; margin:0 4px 4px 0; font-size:0.78rem;">${escapeHtml(eibUserName(k))}<span style="cursor:pointer; color:var(--warn); font-weight:700;" onclick="eibRemovePerson(${i}, ${j})">×</span></span>`).join("");
     const addOpts = users.filter(u => !m.personKeys.includes(u.key)).map(u => `<option value="${escapeHtml(u.key)}">${escapeHtml(u.name)}${u.dept ? " — " + escapeHtml(u.dept) : ""}</option>`).join("");
-    return `<tr style="background:${EIB_SECTION_SHADE[m.section] || "#fff"}; ${m._dirty ? "box-shadow:inset 4px 0 0 #f59e0b;" : ""}">
+    return `<tr style="background:${m.active ? (EIB_SECTION_SHADE[m.section] || "#fff") : "#fee2e2"}; ${m._dirty ? "box-shadow:inset 4px 0 0 #f59e0b;" : ""}">
       <td ${td}><strong>${escapeHtml(m.address)}</strong></td>
       <td ${td}>${chips || `<span style="color:var(--muted); font-size:0.78rem;">No one linked</span>`}
         <select onchange="eibAddPerson(${i}, this.value)" style="width:100%; padding:4px; font-size:0.78rem; margin-top:2px;"><option value="">+ Add employee</option>${addOpts}</select></td>

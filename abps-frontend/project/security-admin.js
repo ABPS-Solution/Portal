@@ -730,7 +730,7 @@ function renderRegisteredDevicesList(devices) {
     return `
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${d.device_label}</td>
-      <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
+      <td style="padding:8px; font-size:0.92rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
       <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
       <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
