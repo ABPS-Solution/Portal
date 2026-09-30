@@ -26,7 +26,6 @@ async function initializeApdiWorkspace() {
           ["Project ID", escapeHtml(inv.projectId || '')],
           ["Created By", escapeHtml(inv.createdBy || '')],
           ["Created On", inv.createdAt ? escapeHtml(formatOrdinalDateTime(inv.createdAt)) : ''],
-          ["Pending", inv.pendingDays === 0 ? 'Today' : `${inv.pendingDays} day(s)`],
         ], inv.checkingDocUrl ? `<a href="${driveLink(inv.checkingDocUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" class="pdi-link-btn">Draft #${inv.checkingDraftCount} ↗</a>` : `<span style="color:#b45309; font-size:0.8rem; font-weight:600;">No draft yet</span>`)}
         <div id="apdi-card-${inv.invoiceId}" style="display:none; padding:12px 14px;"></div>
       </div>`).join('');
@@ -56,8 +55,8 @@ async function toggleApdiCard(invoiceId) {
         invoiceType: data.invoiceType, projectId: data.projectId, poNumber: data.poNumber,
         poDate: data.poDate ? formatOrdinalDate(data.poDate) : '', documents: data.documents || [],
       })}
-      <div style="margin-top:16px;">
-      <button class="nav-btn-styled" style="background:var(--brand); padding:8px 18px; font-weight:700;" onclick="openApdiAuthorizeConfirm(${invoiceId}, '${data.projectId}')">Authorize</button>
+      <div style="margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; display:flex; justify-content:flex-start; flex-direction:row-reverse; gap:8px;">
+      <button class="nav-btn-styled" style="background:var(--brand); padding:10px 24px; font-weight:700; width:auto;" onclick="openApdiAuthorizeConfirm(${invoiceId}, '${data.projectId}')">Authorize</button>
       ${typeof isUserAdminGlobal !== 'undefined' && isUserAdminGlobal ? `<button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:8px 18px; font-weight:700; margin-left:8px;" onclick="adminDeleteApdiDraft(${invoiceId})">Admin: Delete Draft</button>` : ''}
       </div>
       <div id="apdi-card-feedback-${invoiceId}" style="margin-top:10px;"></div>`;

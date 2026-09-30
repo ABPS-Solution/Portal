@@ -149,8 +149,8 @@ function renderArpdiCard(r) {
     })}
     <div class="pdi-view-section">Invoice Documents</div>
     <div id="arpdi-docs-${r.requestId}" style="font-size:0.85rem; color:var(--muted);">Loading documents...</div>
-    <div style="margin-top:16px;">
-    <button class="nav-btn-styled" style="background:var(--brand); padding:8px 18px; font-weight:700;" onclick="openArpdiAuthorizeConfirm(${r.requestId}, '${r.invoiceNo}')">Authorize</button>
+    <div style="margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; display:flex; justify-content:flex-start; flex-direction:row-reverse; gap:8px;">
+    <button class="nav-btn-styled" style="background:var(--brand); padding:10px 24px; font-weight:700; width:auto;" onclick="openArpdiAuthorizeConfirm(${r.requestId}, '${r.invoiceNo}')">Authorize</button>
     ${typeof isUserAdminGlobal !== 'undefined' && isUserAdminGlobal ? `<button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:8px 18px; font-weight:700; margin-left:8px;" onclick="adminDeleteArpdiRequest(${r.requestId})">Admin: Delete Request</button>` : ''}
     </div>
     <div id="arpdi-card-feedback-${r.requestId}" style="margin-top:10px;"></div>`;

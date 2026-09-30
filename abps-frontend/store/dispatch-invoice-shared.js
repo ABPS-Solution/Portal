@@ -369,11 +369,11 @@ function renderPdiSuccessCard(elementId, opts) {
 // (25 Sep 2026): tinted background, labelled cells, the draft link on the
 // right. cells: [[label, valueHtml], ...]
 function renderPdiQueueCardHeader(onclickJs, cells, rightHtml) {
-  return `<div onclick="${onclickJs}" style="cursor:pointer; background:#eaf1fb; border-bottom:1px solid #d3e0f2; border-radius:var(--radius) var(--radius) 0 0; padding:12px 14px; display:flex; gap:14px; align-items:center;">
-    <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px 16px;">
-      ${cells.map(c => `<div style="min-width:0;"><div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:var(--muted);">${c[0]}</div><div style="font-weight:700; font-size:0.88rem; word-break:break-word;">${c[1] == null || c[1] === '' ? '—' : c[1]}</div></div>`).join('')}
+  return `<div onclick="${onclickJs}" style="cursor:pointer; background:#fff; border-bottom:2px solid #94a3b8; border-radius:var(--radius) var(--radius) 0 0; display:flex; align-items:stretch;">
+    <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));">
+      ${cells.map((c, i) => `<div style="min-width:0; padding:10px 14px; ${i ? 'border-left:2px solid #e2e8f0;' : ''}"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:3px;">${c[0]}</div><div style="font-weight:700; font-size:0.92rem; color:#111827; word-break:break-word;">${c[1] == null || c[1] === '' ? '—' : c[1]}</div></div>`).join('')}
     </div>
-    <div style="flex-shrink:0; text-align:right;">${rightHtml || ''}</div>
+    <div style="flex-shrink:0; display:flex; align-items:center; padding:10px 14px; border-left:2px solid #94a3b8; background:#f8fafc;">${rightHtml || ''}</div>
   </div>`;
 }
 
