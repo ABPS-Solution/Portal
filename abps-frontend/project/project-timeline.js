@@ -1026,8 +1026,8 @@ function ptlBuildDayRange() {
   // Always cover the zoom window (plus a small margin) so it can be
   // scrolled to exactly, even when nothing is dated that early or late.
   const zw = ptlZoomWindow();
-  // Never scroll back more than 3 days before the first dated point.
-  from = new Date(from.getTime() - 3 * PTL_DAYMS);
+  // Never scroll back more than 1 day before the first dated point.
+  from = new Date(from.getTime() - 1 * PTL_DAYMS);
   to = new Date(Math.max(to.getTime(), ptlParse(zw.to).getTime() + 3 * PTL_DAYMS));
   // Every calendar day is plotted now (31 Aug 2026, was Sunday-skipped) -
   // for date-continuity: something can genuinely happen on a Sunday or
