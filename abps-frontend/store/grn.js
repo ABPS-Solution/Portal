@@ -186,7 +186,6 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <input type="text" id="se-legacy-po-${item.gateNumber}" maxlength="60" autocomplete="off" placeholder="PO number printed on the old PO..."
                 style="flex:1; min-width:260px; max-width:360px; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
-              <span style="font-size:0.75rem; font-weight:700; color:#b45309;">After Q/A, the material goes to the PRNs still waiting for it.</span>
             </div>
           </div>
           <div style="overflow-x:auto; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius);">
