@@ -581,6 +581,7 @@ async function toggleRpdiEditCard(requestId) {
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
       mobileNo: last.mobileNo || "", freightText: last.freightText || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
       tradeType: last.tradeType || "Local", usdRate: last.usdRate || "",
+      poNumber: invData.poNumber || "", poDate: invData.poDate || "",
       billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.billTo || {}) },
       shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "", ...(last.shipTo || {}) },
       lineItems: (invData.lineItems || []).map(li => ({ ...li })),
