@@ -2338,7 +2338,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               document.getElementById('purchase-order-feedback-banner').style.display = 'none';
               document.getElementById('commissioning-report-inputs-container').style.display = 'block';
               document.getElementById('purchase-order-inputs-container').style.display = 'block';
-            " style="background:#15803d; color:white; padding:8px 14px; font-weight:700; flex-shrink:0; align-self:flex-start;">+ Process Another</button>
+            " style="background:#15803d; color:white; padding:8px 14px; font-weight:700; flex-shrink:0; align-self:flex-start;">+ Upload Another</button>
           </div>
         `;
       }
