@@ -398,7 +398,9 @@ function tvsRenderCard(v) {
   const anyActualSet = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
   const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
   const pdfLine = v.pdfUrl
-    ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
+    ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>`
+    : v.status === 'Checked'
+      ? `<div style="font-size:0.78rem; margin-top:4px; color:#b45309;">Voucher PDF is missing. <button onclick="event.stopPropagation(); tvsRegenerateVoucherPdf(${v.voucherId}, this)" style="width:auto; padding:3px 10px; border:none; border-radius:4px; background:var(--brand); color:#fff; font-weight:700; font-size:0.75rem; cursor:pointer;">Generate PDF</button></div>` : '';
 
   // Company-Paid Travel & Hotel — read-only, clearly tagged, never folded
   // into Claimed/Actual. Link/Unlink is NOT admin-gated (explicit
@@ -655,5 +657,17 @@ async function tvsSubmitLineActual(voucherId, lineId, previousValue) {
     input.disabled = false;
     input.value = previousValue;
     if (errEl) errEl.textContent = "Network error: " + e.message;
+  }
+}
+
+async function tvsRegenerateVoucherPdf(voucherId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
+  try {
+    const data = await acFetch("regenerateTourVoucherPdf", { voucherId, operatorName: appActiveOperatorIdentityString });
+    if (!data.success) { alert(data.error || "Could not generate the PDF."); if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; } return; }
+    runTourVoucherSearch();
+  } catch (e) {
+    alert("Network error: " + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; }
   }
 }
