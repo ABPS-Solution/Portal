@@ -1020,11 +1020,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         sel.onchange = function() { otherInp.style.display = (sel.value === "Other") ? "block" : "none"; };
         subCellBv.appendChild(sel); subCellBv.appendChild(otherInp);
         
-        let subCellInd = document.createElement("div"); subCellInd.className = "grid-cell-item";
-        subCellInd.innerHTML = `<label class="field-label" style="margin-top:0;">Type of Industry</label>
-                                <textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Type of Industry" placeholder="e.g. Cement, Steel" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Type of Industry"] || "")}</textarea>`;
-        
-        container.appendChild(subCellBv); container.appendChild(subCellInd);
+        container.appendChild(subCellBv);
         cell.appendChild(container);
       }
       
@@ -1296,6 +1292,8 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       delete fieldsPayload[k]; // Company Name never goes to the lead-update save regardless — it's a protected, denormalized-copy field there.
     }
   });
+  // The company's vertical follows the lead's ABPS Business Vertical (it replaced Type of Industry, 1 Oct 2026).
+  if (fieldsPayload["ABPS Business Vertical"] !== undefined) companyFieldsPayload["Type of Industry"] = fieldsPayload["ABPS Business Vertical"];
   const carrierCompanyId = (document.getElementById(`hidden-companyid-${leadRef}`) || {}).value || "";
 
   try {
@@ -1511,7 +1509,7 @@ async function submitLead() {
       venueName: document.getElementById('venueName').value, 
       additionalMeetingDetails: document.getElementById('additionalMeetingDetails').value,
       businessVertical: getRadioStrict('businessVertical') === 'Other' ? (document.getElementById('businessVerticalOther') ? document.getElementById('businessVerticalOther').value : 'Other') : getRadioStrict('businessVertical'),
-      industry: document.getElementById('industry').value, 
+      industry: '', 
       "Type of Customer": qualFinal,
       lpi: document.getElementById("lpi").value.trim(),
       hbi: document.getElementById("hbi").value.trim(), 
