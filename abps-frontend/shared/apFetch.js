@@ -254,11 +254,14 @@ document.addEventListener("click", async (e) => {
 }, true);
 
 async function apFetch(payload) {
+  // _timeoutMs: a longer wait for one slow call (e.g. AI reading a PO); never sent.
+  const apTimeoutMs = payload._timeoutMs || 60000;
+  delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("sessionToken");
   const res = await fetchWithRetry(GAS_URL, {
     method: "POST",
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(60000),
+    signal: AbortSignal.timeout(apTimeoutMs),
   });
   const contentType = res.headers.get("content-type") || "";
   // Same reasoning as acFetch's own copy of this comment: a non-2xx status

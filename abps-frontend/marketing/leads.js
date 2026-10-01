@@ -2439,6 +2439,7 @@ async function extractPurchaseOrderForReview() {
 
     const data = await apFetch({
       action: "extractPurchaseOrderPreview",
+      _timeoutMs: 270000,
       leadId: leadDropEl.value.trim(),
       fileName: activeWorkingFile.name,
       base64Data: fileBase64Raw,
