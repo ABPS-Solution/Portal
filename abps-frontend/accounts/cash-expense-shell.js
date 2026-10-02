@@ -11,7 +11,7 @@ const CASH_EXPENSE_TOGGLES = ["expenses", "vouchers", "balance", "search", "empl
 // Mirrors abps-backend/routes/cashExpenses.js's EXPENSE_TYPES /
 // FOOD_SNACKS_SUB_TYPES constants.
 const CASH_EXPENSE_TYPES = ['Stationary', 'Repair & Maintenance', 'House Keeping', 'Pantry', 'Food & Snacks',
-  'Guest Hospitality', 'URD Purchase', 'Local Material Transport', 'Local Conveyance', 'Vehicle Expenses', 'Others'];
+  'Guest Hospitality', 'URD Purchase', 'Local Material Transport', 'Local Conveyance', 'Vehicle Expenses', 'Weight Scale', 'Legal Charges', 'Courier', 'Alok Sir Expenses', 'Others'];
 const CASH_FOOD_SNACKS_SUB_TYPES = ['Snacks for OT', 'Staff Snacks'];
 
 function initializeCashExpensesPanel() {
