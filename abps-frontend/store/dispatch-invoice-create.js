@@ -171,12 +171,14 @@ function cpdiRenderDetail() {
     const blockerMsgs = [];
     if (l.pendingTicketsCount > 0) blockerMsgs.push(`${l.pendingTicketsCount} pending store ticket(s)`);
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
-    const maxQty = hasBoq ? l.readyToInvoiceQty : l.orderedQuantity;
+    const isManual = l.needsBoqJc === false;
+    const showQtys = hasBoq || isManual;
+    const maxQty = showQtys ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
-      <td style="padding:8px; text-align:center;">${hasBoq ? l.orderedQuantity : '—'}</td>
-      <td style="padding:8px; text-align:center;">${hasBoq ? l.alreadyInvoicedQty : '—'}</td>
-      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${hasBoq ? l.readyToInvoiceQty : 'Final only'}</td>
+      <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${isManual ? `<div style="color:#475569; font-size:0.78rem; font-weight:700; margin-top:2px;">No BOQ / JC: billed by hand, up to the PO quantity</div>` : ''}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px; text-align:center;">${showQtys ? l.orderedQuantity : '—'}</td>
+      <td style="padding:8px; text-align:center;">${showQtys ? l.alreadyInvoicedQty : '—'}</td>
+      <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${showQtys ? l.readyToInvoiceQty : 'Final only'}</td>
       <td style="padding:8px; text-align:center;">
         <input type="number" min="0" max="${maxQty}" ${cpdiInvoiceState.lineItems[idx].quantity > 0 ? `value="${cpdiInvoiceState.lineItems[idx].quantity}"` : `value="" placeholder="0"`}
           ${blockerMsgs.length ? 'disabled' : ''}

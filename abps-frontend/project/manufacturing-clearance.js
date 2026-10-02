@@ -198,6 +198,7 @@ async function loadMcLineItems(projectId) {
         newMfcQuantity: li.mfcQuantity || 0,
         onHold: !!li.onHold, holdReason: li.holdReason || "",
         boqIds: li.boqIds || [],
+        needsBoqJc: li.needsBoqJc !== false,
       };
       mcLineItemMeta[projectId][li.lineId] = {
         description: li.description,
@@ -246,6 +247,9 @@ function renderMcLineItemsTable(projectId, lineItems) {
     // Product" button below) can change it from here on.
     const hasBoq = (state.boqIds || []).length > 0;
     const productSearchDisabledAttr = hasBoq ? "disabled" : rowDisabledAttr;
+    const needsBoqJc = state.needsBoqJc !== false;
+    const toggleLocked = !(gatingComplete && !isHeld) || (needsBoqJc && hasBoq);
+    const toggleTitle = (needsBoqJc && hasBoq) ? "This product already has a BOQ, so it must keep BOQ / Job Card" : (needsBoqJc ? "Click to mark this row as not needing a BOQ / Job Card" : "Click to mark this row as needing a BOQ / Job Card");
     const productSearchStyleExtra = hasBoq ? " background:#f1f5f9; cursor:not-allowed;" : ((gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;");
     return `
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
@@ -280,6 +284,11 @@ function renderMcLineItemsTable(projectId, lineItems) {
             style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${(gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
+          <button type="button" data-mc-boq-toggle data-locked="${toggleLocked ? 1 : 0}" ${toggleLocked ? "disabled" : ""} title="${toggleTitle}"
+            onclick="toggleMcNeedsBoqJc('${projectId}', ${li.lineId}, this)"
+            style="min-width:58px; padding:5px 10px; border:none; border-radius:12px; font-weight:800; font-size:0.75rem; color:#fff; background:${needsBoqJc ? '#15803d' : '#b91c1c'};${toggleLocked ? ' opacity:0.6; cursor:not-allowed;' : ' cursor:pointer;'}">${needsBoqJc ? 'YES' : 'NO'}</button>
+        </td>
+        <td style="padding:8px; text-align:center; vertical-align:middle;">
           ${isAdmin ? (isHeld
             ? `<button class="nav-btn-styled" data-mc-hold-btn onclick="unholdMcProduct('${projectId}', ${li.lineId})" style="background:#15803d; padding:5px 10px; font-size:0.72rem;">Un-hold</button>`
             : `<button class="nav-btn-styled" data-mc-hold-btn onclick="holdMcProduct('${projectId}', ${li.lineId})" style="background:#b91c1c; padding:5px 10px; font-size:0.72rem;">Hold</button>`)
@@ -294,9 +303,9 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table class="mc-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:18%;" /><col style="width:15%;" /><col style="width:15%;" />
+            <col style="width:17%;" /><col style="width:14%;" /><col style="width:14%;" />
             <col style="width:6%;" /><col style="width:6%;" /><col style="width:6%;" />
-            <col style="width:7%;" /><col style="width:7%;" /><col style="width:8%;" /><col style="width:7%;" />
+            <col style="width:7%;" /><col style="width:7%;" /><col style="width:8%;" /><col style="width:7%;" /><col style="width:7%;" />
           </colgroup>
           <thead>
             <tr style="background:var(--highlight-bg); text-align:left;">
@@ -309,6 +318,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
               <th style="padding:8px; text-align:center;">Pending MFC Quantity</th>
               <th style="padding:8px; text-align:center;">New MFC Quantity</th>
+              <th style="padding:8px; text-align:center;">Needs BOQ / JC</th>
               <th style="padding:8px; text-align:center;">Hold</th>
             </tr>
           </thead>
@@ -350,8 +360,10 @@ function setMcTableEnabled(projectId, enabled) {
       el.style.background = rowEnabled ? '' : '#f1f5f9';
       el.style.cursor = rowEnabled ? '' : 'not-allowed';
     });
+    const tog = tr.querySelector('[data-mc-boq-toggle]');
+    if (tog) tog.disabled = !rowEnabled || (state[lineId] && state[lineId].needsBoqJc !== false && (state[lineId].boqIds || []).length > 0);
   });
-  wrap.querySelectorAll('button:not([data-mc-hold-btn])').forEach(el => { el.disabled = !enabled; });
+  wrap.querySelectorAll('button:not([data-mc-hold-btn]):not([data-mc-boq-toggle])').forEach(el => { el.disabled = !enabled; });
 }
 
 // buildMcGatingPanelHtml — the 4 project-level fields shown once above the
@@ -554,6 +566,15 @@ function clampMcNewMfcQty(inp, projectId, lineId) {
   mcLineItemState[projectId][lineId].newMfcQuantity = val;
 }
 
+function toggleMcNeedsBoqJc(projectId, lineId, btn) {
+  const st = mcLineItemState[projectId] && mcLineItemState[projectId][lineId];
+  if (!st || btn.disabled) return;
+  st.needsBoqJc = st.needsBoqJc === false;
+  btn.textContent = st.needsBoqJc ? "YES" : "NO";
+  btn.style.background = st.needsBoqJc ? "#15803d" : "#b91c1c";
+  btn.title = st.needsBoqJc ? "Click to mark this row as not needing a BOQ / Job Card" : "Click to mark this row as needing a BOQ / Job Card";
+}
+
 async function submitMcClearance(projectId) {
   const state = mcLineItemState[projectId];
   if (!state) return;
@@ -568,15 +589,16 @@ async function submitMcClearance(projectId) {
     standardProductName: state[lineId].standardProductName,
     standardProductRating: state[lineId].standardProductRating,
     newMfcQuantity: state[lineId].newMfcQuantity,
+    needsBoqJc: state[lineId].needsBoqJc !== false,
   }));
   if (rows.length === 0) {
     alert("Every product row on this project is currently On Hold — nothing to submit.");
     return;
   }
 
-  const missing = rows.filter(r => !r.standardItemCode);
+  const missing = rows.filter(r => r.needsBoqJc && !r.standardItemCode);
   if (missing.length > 0) {
-    alert("Standard Product Name is required for every product row before submitting.");
+    alert("Standard Product Name is required for every product row that needs a BOQ / JC before submitting.");
     return;
   }
 
