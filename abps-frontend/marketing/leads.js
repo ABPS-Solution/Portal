@@ -891,7 +891,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   
   // MATCHED LAYOUT BLUEPRINT Blueprints
   const customSectionLayout = [
-    { type: "META", keys: ["Status"] },
+    { type: "META", keys: ["Status", "Engineer Name"] },
     { type: "CARD", keys: ["Contact Person Name", "Company Name", "Position", "Phone", "Alt Phone", "Email", "Website", "City", "State", "Country", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
@@ -967,15 +967,27 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         if (rawTime) { let timeMatch = rawTime.toString().match(/(\d{1,2}:\d{2})/); inp.value = timeMatch ? timeMatch[0] : ""; }
         cell.appendChild(inp);
       } 
+      else if (key === "Engineer Name" && localStorage.getItem("isUserSuperAdminGlobal") !== "true") {
+        // View only: only the Super Admin can reassign a lead's ABPS Engineer.
+        let inp = document.createElement("input"); inp.type = "text"; inp.readOnly = true;
+        inp.value = leadMap[key] || "";
+        inp.style.cssText = "background:#f1f5f9; cursor:not-allowed;";
+        cell.appendChild(inp);
+      }
       else if (key === "Engineer Name") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
+        const curKey = leadMap["Engineer Key"] || "";
+        if (curKey && !cachedEngineers.some(eng => eng.personKey === curKey)) {
+          let op = document.createElement("option"); op.value = curKey; op.textContent = leadMap[key] || curKey; op.selected = true;
+          sel.appendChild(op);
+        }
         // leadMap["Engineer Name"] is now a resolved display name (from the
         // COALESCE in LEAD_CARD_SELECT), so match against eng.name here —
         // but the option's actual value must still be the person key, since
         // that's what gets sent back on save.
         cachedEngineers.forEach(eng => {
           let op = document.createElement("option"); op.value = eng.personKey; op.textContent = eng.name;
-          if (leadMap[key] === eng.name) op.selected = true;
+          if (curKey ? eng.personKey === curKey : leadMap[key] === eng.name) op.selected = true;
           sel.appendChild(op);
         });
         cell.appendChild(sel);
