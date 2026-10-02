@@ -118,39 +118,11 @@ function adRenderDashboard(data) {
 
   document.getElementById("ad-s-topups").textContent = adFmtINR(stats.topups);
 
-  // Chart 1 — Expense Trend. Single-bucket period renders as a bar (a
-  // 1-point line chart is an invisible dot), same convention as
-  // Purchase's RM PO trend chart.
-  if (adChartTrend) adChartTrend.destroy();
-  const ctx1 = document.getElementById("ad-chart-trend").getContext("2d");
-  if (expenseTrend.length === 0) {
-    adChartTrend = new Chart(ctx1, { type: "line", data: { labels: ["No data"], datasets: [{ data: [0], borderColor: "#f1f5f9" }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-  } else if (expenseTrend.length === 1) {
-    adChartTrend = new Chart(ctx1, {
-      type: "bar",
-      data: { labels: expenseTrend.map(t => t.label), datasets: [{ label: "Expense", data: expenseTrend.map(t => t.amount), backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4, barThickness: 40 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: "#f1f5f9" } } }
-      }
-    });
-  } else {
-    adChartTrend = new Chart(ctx1, {
-      type: "line",
-      data: {
-        labels: expenseTrend.map(t => t.label),
-        datasets: [{
-          label: "Expense", data: expenseTrend.map(t => t.amount),
-          borderColor: "rgba(37,99,235,0.9)", backgroundColor: "rgba(37,99,235,0.12)",
-          tension: 0.25, fill: true, pointRadius: 3, pointBackgroundColor: "rgba(37,99,235,0.9)",
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: "#f1f5f9" } } }
-      }
-    });
-  }
+  // Balance tables in place of the old Total Expense Trend chart.
+  if (adChartTrend) { adChartTrend.destroy(); adChartTrend = null; }
+  const balWrap = document.getElementById("ad-balance-tables");
+  if (balWrap) balWrap.innerHTML = adRenderBalanceTable("Balance ₹10,000 or over", data.balancesOver, "#b91c1c")
+    + adRenderBalanceTable("Balance -₹10,000 or under", data.balancesUnder, "#15803d");
 
   // Chart (left) — Tour Expense by Type, top 5 (horizontal bar)
   if (adChartTourType) adChartTourType.destroy();
@@ -185,4 +157,19 @@ function adRenderDashboard(data) {
       }
     });
   }
+}
+
+// Tour Expense Tracker balance buckets (1 Oct 2026, replaced Total Expense Trend).
+function adRenderBalanceTable(title, list, color) {
+  const th = "padding:5px 8px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); background:var(--highlight-bg); border:1.5px solid #94a3b8;";
+  const td = "padding:5px 8px; font-size:0.8rem; border:1.5px solid #94a3b8;";
+  const rows = (list || []).length
+    ? list.map(e => `<tr><td style="${td}">${escapeHtml(e.employeeName)}</td><td style="${td} text-align:right; font-weight:700; color:${color};">${adFmtINR(e.balance)}</td></tr>`).join("")
+    : `<tr><td colspan="2" style="${td} text-align:center; color:var(--muted);">None.</td></tr>`;
+  return `<div style="flex:1; min-width:0; display:flex; flex-direction:column; min-height:0;">
+    <div style="font-weight:700; font-size:0.78rem; margin-bottom:4px;">${title}</div>
+    <div style="flex:1; min-height:0; overflow-y:auto;">
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+      <thead><tr><th style="${th} text-align:left;">Employee</th><th style="${th} text-align:right; width:42%;">Balance</th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>`;
 }
