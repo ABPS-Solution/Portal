@@ -55,3 +55,7 @@ scratch_*
 "code.gs old.txt"
 "index (Exibition Excel sheet github hosting version).html"
 "index old.html"
+
+# BOQ migration working files (customer data, never public)
+boq_migration_doc/
+BOQ_Migration_Pending_Information.docx
