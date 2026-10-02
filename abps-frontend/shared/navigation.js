@@ -88,6 +88,8 @@ async function navigateToModule(key) {
         const crCustomerName = document.getElementById("commissioning-report-customer-name");
         if (crProjectInput) crProjectInput.value = "";
         if (crCustomerName) crCustomerName.value = "";
+    } else if (key === "uploadRevisedPo") {
+        if (typeof crpoInitPanel === "function") crpoInitPanel();
     } else if (key === "purchaseOrder") {
         targetPanelKeyIdStr = "purchaseOrder";
         // Always start fresh — otherwise leaving via Return to Main
@@ -383,6 +385,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
   const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
   const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
+  const canUploadRevisedPo         = userPermissionsObject.uploadRevisedPo === true;
   const canSearchCompany           = userPermissionsObject.searchCompany === true;
   const canSearchTasks             = userPermissionsObject.searchTasks === true;
   const canSearchStatus            = userPermissionsObject.searchStatus === true;
@@ -447,6 +450,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   }
   if (document.getElementById("mod-purchase-order")) {
     document.getElementById("mod-purchase-order").style.display = canUploadPurchaseOrder ? "block" : "none";
+  if (document.getElementById("mod-upload-revised-po")) document.getElementById("mod-upload-revised-po").style.display = canUploadRevisedPo ? "block" : "none";
   }
   if (document.getElementById("mod-company")) {
     document.getElementById("mod-company").style.display = canSearchCompany ? "block" : "none";
@@ -639,7 +643,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");

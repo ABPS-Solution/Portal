@@ -1154,6 +1154,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="sec-label">Upload Documents</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')"><span class="mc-label">Upload Purchase Order</span></div>
+        <div class="menu-card" id="mod-upload-revised-po" onclick="navigateToModule('uploadRevisedPo')"><span class="mc-label">Upload Revised Purchase Order</span></div>
         <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-label">Upload Commissioning Report</span></div>
       </div>
       <div class="sec-label">Search</div>
@@ -5539,6 +5540,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
     </div>
 
+    <div id="workspace-uploadRevisedPo" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Upload Revised Purchase Order</h2>
+      <div id="crpo-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:16px; border-left:4px solid;"></div>
+      <label class="field-label">Select Project *</label>
+      <select id="crpo-project-select" onchange="crpoSelectProject(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></select>
+      <div id="crpo-details-zone" style="display:none;"></div>
+      <div id="crpo-upload-zone" style="display:none;"></div>
+      <div id="crpo-review-zone" style="display:none;"></div>
+    </div>
     <div id="workspace-purchaseOrder" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Upload Purchase Order</h2>
       <div id="purchase-order-feedback-banner" style="display: none; padding: 12px; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius); margin-bottom: 16px; border-left: 4px solid;"></div>
@@ -6071,6 +6081,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="marketing/marketing-dashboard.js"></script>
 <script src="marketing/meeting-prep.js"></script>
 <script src="marketing/order-payment.js"></script>
+<script src="marketing/revised-po.js"></script>
 <script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
 <script src="design/material-descriptions.js"></script>
