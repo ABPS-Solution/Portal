@@ -33,7 +33,7 @@ async function ddLoadDashboard(customVal) {
   if (!body) return;
   // Show loading state on stat cards
   ["dd-s-overdue","dd-s-pending","dd-s-pendingrevisions","dd-s-itemcodes","dd-s-drawingsuploaded",
-   "dd-s-authorized","dd-s-revised","dd-s-drawingturnaround","dd-s-avgboqs","dd-s-revrate"].forEach(id => {
+   "dd-s-authorized","dd-s-revised","dd-s-drawingturnaround"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -67,8 +67,6 @@ function ddRenderDashboard(data) {
   document.getElementById("dd-s-revised").textContent    = stats.totalRevised;
   document.getElementById("dd-s-drawingturnaround").textContent =
     stats.avgDrawingTurnaroundDays !== null ? stats.avgDrawingTurnaroundDays + " days" : "—";
-  document.getElementById("dd-s-avgboqs").textContent = stats.avgBoqsPerActiveProject !== null ? stats.avgBoqsPerActiveProject : "—";
-  document.getElementById("dd-s-revrate").textContent = stats.boqRevisionRate !== null ? stats.boqRevisionRate + "%" : "—";
 
   // Products Cleared at MFC, Still Awaiting a BOQ — Tier-1 only (the
   // product's own first BOQ), not the Tier-2/Finished Goods material

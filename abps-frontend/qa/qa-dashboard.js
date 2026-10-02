@@ -49,8 +49,8 @@ function qadLoadCustom() {
 }
 
 async function qadLoadDashboard(customVal) {
-  ["qad-s-pendingqa","qad-s-fgpending","qad-s-dueoverdue","qad-s-repairing","qad-s-docgap",
-   "qad-s-checked","qad-s-rejrate","qad-s-fgapproved","qad-s-repairresolved","qad-s-turnaround"].forEach(id => {
+  ["qad-s-pendingqa","qad-s-fgpending","qad-s-dueoverdue","qad-s-repairing",
+   "qad-s-checked","qad-s-rejrate","qad-s-fgapproved"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -79,14 +79,11 @@ function qadRenderDashboard(data) {
   document.getElementById("qad-s-repairing").textContent = stats.currentlyRepairing.count;
   document.getElementById("qad-s-repairing-sub").textContent = stats.currentlyRepairing.count > 0
     ? `oldest ${stats.currentlyRepairing.oldestDays}d` : "";
-  document.getElementById("qad-s-docgap").textContent = stats.docsPendingUploadProjects;
 
   // Row 2 -- period throughput / rates
   document.getElementById("qad-s-checked").textContent = stats.materialsQaChecked;
   document.getElementById("qad-s-rejrate").textContent = stats.qaRejectionRate === null ? "—" : `${stats.qaRejectionRate.toFixed(1)}%`;
   document.getElementById("qad-s-fgapproved").textContent = stats.fgUnitsApproved;
-  document.getElementById("qad-s-repairresolved").textContent = stats.repairQaResolved;
-  document.getElementById("qad-s-turnaround").textContent = stats.avgQaTurnaroundHours === null ? "—" : `${Math.round(stats.avgQaTurnaroundHours * 60)} min`;
 
   // Chart 1 -- QA Rejection Rate Trend (line)
   if (qadChartRejTrend) qadChartRejTrend.destroy();
@@ -111,10 +108,10 @@ function qadRenderDashboard(data) {
     data: {
       labels: checkedVolumeTrend.labels,
       datasets: [
-        { label: "OK Qty", data: checkedVolumeTrend.ok,
+        { label: "OK GRNs", data: checkedVolumeTrend.ok,
           borderColor: "rgba(16,185,129,0.8)", backgroundColor: "rgba(16,185,129,0.08)",
           pointRadius: 3, fill: true, tension: 0.3 },
-        { label: "Not-OK/Missing Qty", data: checkedVolumeTrend.rejected,
+        { label: "Rejected / Missing GRNs", data: checkedVolumeTrend.rejected,
           borderColor: "rgba(239,68,68,0.8)", backgroundColor: "rgba(239,68,68,0.08)",
           pointRadius: 3, fill: true, tension: 0.3 },
       ]

@@ -41,7 +41,7 @@ function pdLoadCustom() {
 // identical comment (design-dashboard.js) for the full rationale.
 async function pdLoadDashboard(customVal) {
   ["pd-s-noassign","pd-s-partassign","pd-s-unsched","pd-s-partsched","pd-s-grns",
-   "pd-s-pendingpo","pd-s-pendingporev","pd-s-pos","pd-s-actioninprogress","pd-s-ontime"].forEach(id => {
+   "pd-s-pendingpo","pd-s-pendingporev","pd-s-pos","pd-s-ontime"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
   try {
@@ -78,7 +78,6 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-pendingporev").textContent = stats.pendingPORevisionAuthorizations;
   document.getElementById("pd-s-pos").textContent          = stats.totalPOs;
   document.getElementById("pd-s-ontime").textContent       = pdFormatPct(stats.onTimeDeliveryRate);
-  document.getElementById("pd-s-actioninprogress").textContent = stats.actionInProgressUnresolvedRows;
 
   // Chart 1 — RM POs Created Over Time. A single-day period (Today,
   // Yesterday, or a 1-day custom range) buckets to exactly one point —
