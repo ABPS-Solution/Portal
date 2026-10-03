@@ -739,7 +739,7 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
     const factorRaw = converterInput ? converterInput.value.trim() : '1';
     const factor = parseFloat(factorRaw);
     let unitConverter = 1;
-    if (unitType.toLowerCase() !== (itemCodeUnit || '').toLowerCase()) {
+    if (!sameStockUnit(unitType, itemCodeUnit)) {
       if (!factorRaw || isNaN(factor) || factor <= 0) { unitConverterMissing = true; unitConverter = null; }
       else unitConverter = factor;
     }

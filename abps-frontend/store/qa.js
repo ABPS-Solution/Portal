@@ -194,7 +194,7 @@ function updateSEUnitConverterLock(gateNumber, idx) {
 
   const invoiceUnit  = invoiceUnitInput.value.trim();
   const itemCodeUnit = itemCodeUnitInput.value.trim();
-  const sameUnit = !!itemCodeUnit && invoiceUnit.toLowerCase() === itemCodeUnit.toLowerCase();
+  const sameUnit = sameStockUnit(invoiceUnit, itemCodeUnit);
 
   if (sameUnit) {
     converterInput.value = '1';

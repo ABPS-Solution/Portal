@@ -368,6 +368,21 @@ function gateDocLinksHtml(docUrls, invoiceNumber, challanNumber) {
     style="display:inline-block; margin-left:6px; padding:3px 9px; border:1px solid var(--brand); border-radius:4px; color:var(--brand); font-weight:700; font-size:0.78rem; text-decoration:none; background:#fff;">${labels[i] || "View Document"} ↗</a>`).join("");
 }
 
+// Same unit written differently ("Kgs" / "KG", "Pcs" / "NOS", "Mtr" / "Meter").
+function canonicalUnit(u) {
+  const k = String(u || "").toLowerCase().replace(/[^a-z]/g, "");
+  const map = {
+    kg: "KG", kgs: "KG", kgm: "KG", kgms: "KG", kilo: "KG", kilos: "KG", kilogram: "KG", kilograms: "KG",
+    nos: "NOS", no: "NOS", nr: "NOS", number: "NOS", numbers: "NOS", pc: "NOS", pcs: "NOS", piece: "NOS", pieces: "NOS", ea: "NOS", each: "NOS", unit: "NOS", units: "NOS",
+    m: "METER", mtr: "METER", mtrs: "METER", meter: "METER", meters: "METER", metre: "METER", metres: "METER", rmt: "METER", mt: "METER",
+    l: "LITRE", ltr: "LITRE", ltrs: "LITRE", lit: "LITRE", litre: "LITRE", litres: "LITRE", liter: "LITRE", liters: "LITRE",
+    set: "SET", sets: "SET", roll: "ROLL", rolls: "ROLL", rol: "ROLL", pair: "PAIR", pairs: "PAIR",
+    g: "GRAM", gm: "GRAM", gms: "GRAM", gram: "GRAM", grams: "GRAM"
+  };
+  return map[k] || k.toUpperCase();
+}
+function sameStockUnit(a, b) { return !!a && !!b && canonicalUnit(a) === canonicalUnit(b); }
+
 function itemCatalogMatches(it, query) {
   return materialSearchScore(it, query) > 0;
 }

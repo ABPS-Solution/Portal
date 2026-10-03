@@ -78,7 +78,7 @@ async function initializeStoreEntryWorkspaceQueue() {
         // see updateSEUnitConverterLock, which re-derives this same
         // same-unit check live as either unit input changes.
         const invoiceUnitVal = (line.unitType || "NOS").toString().trim();
-        const sameUnit = preFilledUnit && invoiceUnitVal.toLowerCase() === preFilledUnit.toLowerCase();
+        const sameUnit = sameStockUnit(invoiceUnitVal, preFilledUnit);
 
         const codeStyle = isPreFilled
           ? "font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"
