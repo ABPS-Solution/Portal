@@ -240,8 +240,8 @@ async function parseGateDocumentsWithAI() {
             style="font-size:0.85rem; padding:5px 4px; font-weight:700; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
         </td>
         <td style="width:140px; padding:6px; vertical-align:middle;">
-          <input type="number" class="gate-row-qty-input" value="${item.gateQuantity ?? ''}" step="any" min="0" readonly tabindex="-1" title="Invoice Qty is corrected at Store Entry and GRN"
-            style="font-size:1.05rem; padding:5px 4px; font-weight:700; color:#000; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#f1f5f9; cursor:not-allowed;">
+          <input type="number" class="gate-row-qty-input" value="${item.gateQuantity ?? ''}" step="any" min="0" title="Invoice Qty (editable)"
+            style="font-size:1.05rem; padding:5px 4px; font-weight:700; color:#000; text-align:center; width:100%; border:1.5px solid var(--border); border-radius:3px; background:#fff;">
         </td>
       </tr>`;
     });
@@ -269,6 +269,8 @@ async function commitGateEntryRecordsToBackend() {
   if (targetGateInvoiceFiles.length > 0 && !document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
   if (targetGateChallanFiles.length > 0 && !document.getElementById('gate-meta-challan').value.trim()) return alert("Challan Number is compulsory.");
 
+  if ([...document.querySelectorAll('.gate-row-qty-input')].some(i => i.value === '' || !(Number(i.value) >= 0))) return alert("Every Invoice Qty must be a number of 0 or more.");
+
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
   showBlockingOverlay("Saving Gate Entry...");
@@ -283,7 +285,7 @@ async function commitGateEntryRecordsToBackend() {
     // Invoice Unit is read-only here (not operator-editable) — this just
     // reads back whatever the AI extraction/default already set.
     item.unitType = unitInputs[idx] ? (unitInputs[idx].value.trim() || 'NOS') : (item.unitType || 'NOS');
-    // Invoice Qty is read-only at Gate Entry; it is corrected at Store Entry and GRN.
+    // Invoice Qty is editable at Gate Entry (3 Oct 2026).
     item.gateQuantity = qtyInputs[idx] && qtyInputs[idx].value !== '' ? Number(qtyInputs[idx].value) : item.gateQuantity;
     if (!item.rawDescriptionLine && tableRows[idx]) {
       item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
