@@ -650,6 +650,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             </div>
           </div>`;
         feed.appendChild(card);
+        qaDraftAttach(card, item.grnNumber);
       }
     });
   } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
@@ -725,6 +726,63 @@ document.addEventListener("click", function(e) {
     document.querySelectorAll("[id^='qa-drop-']").forEach(d => d.style.display = "none");
   }
 });
+
+// ── Q/A Check saved progress (3 Oct 2026) ─────────────────────────────
+// Same draft store as the BOQ screens (shared/drafts.js): every change on a
+// Pending Q/A card is saved locally, restored when the card is shown again
+// (after leaving the screen, a refresh, offline, or session expiry), and
+// cleared once that GRN's Q/A is submitted.
+const QA_DRAFT_FIELDS = ["qa-item-code", "qa-mat-name", "qa-unit", "qa-ok", "qa-reason", "qa-action", "qa-done"];
+const qaDraftTimers = {};
+function qaDraftKey(grn) { return "qaCheck:" + grn; }
+
+function qaDraftCapture(card, grn) {
+  const fields = {};
+  QA_DRAFT_FIELDS.forEach(p => card.querySelectorAll("." + CSS.escape(p + "-" + grn)).forEach(el => {
+    fields[p + "|" + el.dataset.idx] = el.type === "checkbox" ? !!el.checked : el.value;
+  }));
+  return fields;
+}
+
+function qaDraftAttach(card, grn) {
+  const save = () => {
+    clearTimeout(qaDraftTimers[grn]);
+    qaDraftTimers[grn] = setTimeout(() => {
+      if (!card.isConnected || typeof abpsDraftSave !== "function") return;
+      abpsDraftSave(qaDraftKey(grn), qaDraftCapture(card, grn));
+    }, 400);
+  };
+  ["input", "change", "click"].forEach(ev => card.addEventListener(ev, save));
+
+  const saved = typeof abpsDraftRead === "function" ? abpsDraftRead(qaDraftKey(grn)) : null;
+  if (!saved || !saved.payload) return;
+  const f = saved.payload;
+  const el = (p, idx) => card.querySelector("." + CSS.escape(p + "-" + grn) + '[data-idx="' + idx + '"]');
+  const idxs = new Set(Object.keys(f).map(k => k.split("|")[1]));
+  idxs.forEach(idx => {
+    ["qa-item-code", "qa-mat-name", "qa-unit"].forEach(p => {
+      const e = el(p, idx); const v = f[p + "|" + idx];
+      if (e && v != null && v !== "") e.value = v;
+    });
+    const nameDisp = el("qa-mat-name-display", idx);
+    if (nameDisp && f["qa-mat-name|" + idx]) { const sp = nameDisp.querySelector("span"); if (sp) sp.textContent = f["qa-mat-name|" + idx]; }
+    const ok = el("qa-ok", idx);
+    if (ok && f["qa-ok|" + idx] != null && f["qa-ok|" + idx] !== "") {
+      ok.value = f["qa-ok|" + idx];
+      ok.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    const reason = el("qa-reason", idx);
+    if (reason && !reason.disabled && f["qa-reason|" + idx]) { reason.value = f["qa-reason|" + idx]; if (typeof autoGrowTextField === "function") autoGrowTextField(reason); }
+    const action = el("qa-action", idx);
+    if (action && !action.disabled && f["qa-action|" + idx]) action.value = f["qa-action|" + idx];
+    const done = el("qa-done", idx);
+    if (done) done.checked = !!f["qa-done|" + idx];
+  });
+  const head = card.querySelector(".contact-summary-header-row");
+  if (head && !card.querySelector(".qa-draft-note")) {
+    head.insertAdjacentHTML("beforeend", '<div class="qa-draft-note" style="margin-top:6px; font-size:0.75rem; font-weight:700; color:#b45309;">Saved progress restored for this GRN.</div>');
+  }
+}
 
 function autoBalanceQaQuantities(okInput, grnNum, idx) {
   const max = parseInt(okInput.dataset.max, 10);

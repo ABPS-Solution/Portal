@@ -931,6 +931,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      if (typeof abpsDraftClear === "function") abpsDraftClear(qaDraftKey(grnNum));
       // Hide the whole queue (not just this card) until Refresh Queue is pressed.
       const feed = document.getElementById("store-grn-queue-cards-feed");
       if (feed) feed.innerHTML = "";
