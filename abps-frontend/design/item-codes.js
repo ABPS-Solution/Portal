@@ -183,35 +183,7 @@ async function loadItemCodeCatalogIntoCache(forceRefresh = false) {
 // long) for an item to qualify at all — a short/generic word can no
 // longer single-handedly surface an unrelated item.
 function filterItemCodeCatalogStrict(query, catalog, topN) {
-  const queryWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1);
-  if (queryWords.length === 0) return [];
-  const codeQuery = query.toLowerCase().replace(/\s+/g, '');
-
-  const scored = catalog.map(item => {
-    const nameNorm = (item.combinedName || item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
-    const nameWords = nameNorm.split(/\s+/).filter(Boolean);
-    const codeNorm = (item.itemCode || "").toLowerCase();
-    const codeMatch = codeQuery.length >= 3 && codeNorm.includes(codeQuery);
-
-    let score = 0;
-    for (const qw of queryWords) {
-      let tokenScore = 0;
-      for (const nw of nameWords) {
-        if (nw === qw) tokenScore = Math.max(tokenScore, 10);
-        else if (qw.length >= 3 && (nw.startsWith(qw) || qw.startsWith(nw))) tokenScore = Math.max(tokenScore, 6);
-      }
-      if (tokenScore === 0) return { item, score: 0, allMatched: false };
-      score += tokenScore;
-    }
-    if (codeMatch) score += 20;
-    return { item, score, allMatched: true };
-  });
-
-  return scored
-    .filter(s => s.allMatched || s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topN)
-    .map(s => s.item);
+  return materialSearch(catalog, query, topN);
 }
 
 async function executeItemCodeSearch() {
@@ -1058,7 +1030,7 @@ function handleSENameSearch(inputEl, gateNum, idx) {
   if (query.length < 2) { dropdown.style.display = "none"; return; }
   // Search matches the raw name (findable without knowing the rating), display/select the
   // combined name — same convention as BOQ search and every other catalog consumer.
-  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  const matches = materialSearch(catalog, query, 10);
   if (matches.length === 0) {
     const createUrl = window.location.pathname + "?module=design-itemcode";
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">

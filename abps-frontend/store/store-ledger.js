@@ -46,12 +46,7 @@ function handleStoreLedgerMaterialSearch(prefix, query) {
 
   const catalog = window.itemCodeCatalogCache || [];
   const already = new Set((window.storeLedgerSelectedMaterials[prefix] || []).map(m => m.itemCode));
-  const matches = catalog.filter(c => {
-    if (already.has(c.itemCode)) return false;
-    const name = (c.productName || '').toLowerCase();
-    const combined = (c.combinedName || `${name} ${(c.rating || '').toLowerCase()} ${(c.make || '').toLowerCase()}`).toLowerCase().trim();
-    return name.includes(q) || combined.includes(q) || (c.itemCode || '').toLowerCase().includes(q);
-  }).slice(0, 12);
+  const matches = materialSearch(catalog.filter(c => !already.has(c.itemCode)), q, 12);
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.8rem; color:var(--muted);">No matching material found.</div>`;

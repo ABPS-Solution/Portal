@@ -510,11 +510,7 @@ function handleMcProductSearch(query, projectId, lineId) {
   }
 
   const q = query.toLowerCase();
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    const combined = (item.combinedName || `${name} ${(item.rating || "").toLowerCase()} ${(item.make || "").toLowerCase()}`).toLowerCase().trim();
-    return name.includes(q) || combined.includes(q);
-  }).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
 
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">
@@ -737,10 +733,7 @@ function handleProductRenameSearch(query) {
   if (!query || query.trim().length < 1) { results.innerHTML = ""; return; }
   const q = query.toLowerCase();
   const catalog = window.itemCodeCatalogCache || [];
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    return name.includes(q) || `${name} ${(item.rating||"").toLowerCase()}`.includes(q);
-  }).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
   results.innerHTML = matches.map(item => `
     <div onclick="selectProductRenameCandidate('${item.itemCode}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"

@@ -404,10 +404,8 @@ async function triggerLiveWarehouseStockMetricsSync() {
 // word must appear somewhere, so a pasted "Name - Rating - Make: X" still
 // matches the card that shows those parts separately.
 function liveStockSearchMatches(parts, query) {
-  const norm = (t) => (t || "").toString().toLowerCase().replace(/[^a-z0-9.]+/g, " ").trim();
-  const hay = " " + norm(parts.join(" ")) + " ";
-  const words = norm(query).split(" ").filter(Boolean);
-  return words.every(w => hay.includes(w));
+  if (!String(query || "").trim()) return true;
+  return materialSearchScore(parts, query, p => p) > 0;
 }
 
 window.rawStockSearchQuery = "";
@@ -1612,10 +1610,7 @@ async function handleAssStockSearch(query) {
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
   const combinedLabel = (item) => item.rating ? `${item.productName} - ${item.rating}` : item.productName;
-  const matches = catalog.filter(item => {
-    const hay = `${item.itemCode} ${item.combinedName || combinedLabel(item)} ${item.make || ''}`.toLowerCase();
-    return hay.includes(q);
-  }).slice(0, 15);
+  const matches = materialSearch(catalog, q, 15);
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">No item code matches "${escapeHtml(query)}".</div>`;
     dropdown.style.display = "block";
@@ -1805,7 +1800,7 @@ function handleEiDelivMaterialInput(query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => (it.productName||"").toLowerCase().includes(q) || (it.rating||"").toLowerCase().includes(q) || (it.make||"").toLowerCase().includes(q)).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectEiDelivMaterial(${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"

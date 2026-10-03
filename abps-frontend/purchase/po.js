@@ -172,7 +172,7 @@ function handleSrchPOMaterialInput(query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectSrchPOMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
@@ -1067,7 +1067,7 @@ function handleCPODescSearch(rowId, query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', ${jsArg(it.combinedName || it.productName || '')}, ${jsArg(it.unit||'Nos')})"
@@ -2099,7 +2099,7 @@ function handleRMPONameSearch(inputEl, idx) {
   dropdown.style.left   = rect.left + "px";
   dropdown.style.width  = rect.width + "px";
 
-  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  const matches = materialSearch(catalog, query, 10);
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
       <span>No match found</span>

@@ -2125,10 +2125,7 @@ function ticketExpectedReturnSearch(query, i) {
   dd.style.maxHeight = Math.min(Math.max(window.innerHeight - rect.bottom - 12, 180), 280) + "px";
   const q = (query || "").trim().toLowerCase();
   if (!q) { dd.style.display = "none"; return; }
-  const matches = (window.itemCodeCatalogCache || []).filter(item => {
-    const combined = (item.combinedName || item.productName || "").toLowerCase();
-    return combined.includes(q) || (item.itemCode || "").toLowerCase().includes(q);
-  }).slice(0, 10);
+  const matches = materialSearch((window.itemCodeCatalogCache || []), q, 10);
   if (!matches.length) {
     dd.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching material found.
       <a href="${escapeHtml(window.location.pathname)}?module=design-itemcode&q=${encodeURIComponent(query)}" target="_blank" style="color:var(--brand); font-weight:700;">Create Item Code first →</a></div>`;
@@ -2195,12 +2192,10 @@ function ticketItemTaFilter() {
   const input = document.getElementById("ticket-item-ta-input");
   const sel = ticketItemTaSelect();
   if (!input || !sel || sel.disabled) return;
-  const words = input.value.toLowerCase().replace(/[^a-z0-9. ]/g, " ").split(/\s+/).filter(Boolean);
   const opts = Array.from(sel.options).filter(o => o.value !== "" && !o.disabled);
-  const hits = opts.filter(o => {
-    const t = o.textContent.toLowerCase().replace(/[^a-z0-9. ]/g, " ");
-    return words.every(w => t.includes(w));
-  }).slice(0, 80);
+  const hits = input.value.trim()
+    ? materialSearch(opts, input.value, 80, o => [o.textContent, o.value])
+    : opts.slice(0, 80);
   const dd = ticketItemTaDropdown();
   window._ticketItemTaHits = hits.map(o => o.value);
   window._ticketItemTaActive = -1;

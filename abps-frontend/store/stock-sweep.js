@@ -96,13 +96,7 @@ async function handleSweepSearch(query) {
   }
   const catalog = window.itemCodeCatalogCache || [];
   const q = query.toLowerCase();
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    const rating = (item.rating || "").toLowerCase();
-    const make = (item.make || "").toLowerCase();
-    const combined = (item.combinedName || `${name} ${rating} ${make}`).toLowerCase().trim();
-    return name.includes(q) || rating.includes(q) || make.includes(q) || combined.includes(q);
-  }).slice(0, 15);
+  const matches = materialSearch(catalog, q, 15);
   if (matches.length === 0) {
     dropdown.innerHTML = `<div style="padding:8px 12px; color:var(--muted);">No item code matches "${escapeHtml(query)}".</div>`;
     dropdown.style.display = "block";

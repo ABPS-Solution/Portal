@@ -710,11 +710,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
   // "name rating" string (so typing "Air Core Reactor 40A" also finds
   // it) — display and select still use the combined name, same
   // convention as every other catalog consumer.
-  const matches = catalog.filter(item => {
-    const name = (item.productName || "").toLowerCase();
-    const combined = (item.combinedName || `${name} ${(item.rating || "").toLowerCase()} ${(item.make || "").toLowerCase()}`).toLowerCase().trim();
-    return name.includes(q) || combined.includes(q);
-  }).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
 
   if (matches.length === 0) {
     dropdown.style.display = "block";

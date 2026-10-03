@@ -45,7 +45,7 @@ function handleSVCIMaterialInput(query) {
   const catalog = window.itemCodeCatalogCache || [];
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.toLowerCase();
-  const matches = catalog.filter(it => itemCatalogMatches(it, q)).slice(0, 10);
+  const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
     <div onclick="selectSVCIMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"

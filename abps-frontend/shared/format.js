@@ -355,8 +355,139 @@ function enhanceAllDateInputsForDMY() {
 // Item-code search: matches the full "Name - Rating - Make" text (so a
 // name copied from another screen finds its item), ignoring extra spaces.
 function itemCatalogMatches(it, query) {
-  const norm = (t) => (t || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
-  const q = norm(query);
-  if (!q) return false;
-  return norm([it.combinedName, `${it.productName || ""} - ${it.rating || ""}`, it.productName, it.rating, it.make].join(" | ")).includes(q);
+  return materialSearchScore(it, query) > 0;
+}
+
+// ── Forgiving material search (3 Oct 2026) ────────────────────────────
+// One search used by every material picker. Ignores spaces/punctuation
+// ("bus bar" = "busbar", "50x6" = "50 x 6"), takes words in any order,
+// tolerates 1-2 wrong letters per word, understands shop-floor short forms
+// (MATERIAL_SEARCH_ALIASES) and ranks the best match first.
+const MATERIAL_SEARCH_ALIASES = {
+  al: "aluminium", alu: "aluminium", aluminum: "aluminium", alluminium: "aluminium", allu: "aluminium",
+  cu: "copper", cop: "copper", cap: "capacitor", caps: "capacitor", capa: "capacitor",
+  fg: "fiber glass", fibre: "fiber", frp: "fiber glass", ss: "stainless steel",
+  gi: "galvanized", hdg: "hot dip galvanized", galvanised: "galvanized",
+  lugs: "lug", bolts: "bolt", nuts: "nut", washers: "washer", fuses: "fuse", lamps: "lamp",
+  sleve: "sleeve", sleev: "sleeve", washar: "washer", wahhar: "washer", condactor: "conductor",
+  woodn: "wooden", hardner: "hardener", pepar: "paper", sander: "sand", matrial: "material",
+  thred: "thread", thard: "thread", buuble: "bubble", buble: "bubble", strech: "stretch", sterch: "stretch",
+  insuleatar: "insulator", insulater: "insulator", contator: "contactor", contactar: "contactor",
+  channal: "channel", groment: "grommet", cabal: "cable", cabel: "cable", termanal: "terminal",
+  vaccum: "vacuum", vacum: "vacuum", favi: "fevi", putti: "putty", teap: "tape",
+  ct: "current transformer", pt: "potential transformer", rvt: "residual voltage transformer",
+  mcb: "mcb", mccb: "mccb", acb: "acb", vcb: "vcb", la: "arrester", sa: "surge arrester",
+  pfc: "power factor controller", apfc: "apfc", ind: "indicating", ex: "exhaust"
+};
+
+function msNormText(t) {
+  return String(t == null ? "" : t).toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/(\d)\s*x\s*(\d)/g, "$1 $2")
+    .replace(/([a-z])(\d)/g, "$1 $2").replace(/(\d)([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9.]+/g, " ").replace(/(^|\s)\.|\.(\s|$)/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
+function msEditDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev2 = null, prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i]; let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (prev2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
+      cur.push(v); if (v < rowMin) rowMin = v;
+    }
+    if (rowMin > max) return max + 1;
+    prev2 = prev; prev = cur;
+  }
+  return prev[b.length];
+}
+
+function msAllowedTypos(word) {
+  if (/^\d/.test(word) || word.length <= 3) return 0;
+  return word.length <= 6 ? 1 : 2;
+}
+
+// Score one query word against an item's words / compact text. 0 = no match.
+function msWordScore(qw, words, compact) {
+  if (/^\d/.test(qw)) {
+    const qn = qw.replace(/^0+(?=\d)/, "");
+    for (const w of words) if (w === qw || (/^\d/.test(w) && w.replace(/^0+(?=\d)/, "") === qn)) return 10;
+    return 0;
+  }
+  let best = 0;
+  for (const w of words) {
+    if (w === qw) return 10;
+    if (qw.length >= 2 && w.startsWith(qw)) best = Math.max(best, 7);
+  }
+  if (best) return best;
+  if (qw.length >= 4 && compact.includes(qw)) return 6;
+  const allowed = msAllowedTypos(qw);
+  if (allowed) {
+    for (const w of words) {
+      if (w.length < 3 || /^\d/.test(w)) continue;
+      const d = msEditDistance(qw, w, allowed);
+      if (d <= allowed) best = Math.max(best, 5 - d);
+      else if (w.length > qw.length) {
+        const dp = msEditDistance(qw, w.slice(0, qw.length), allowed);
+        if (dp <= allowed) best = Math.max(best, 3 - dp);
+      }
+    }
+  }
+  return best;
+}
+
+function msDefaultFields(it) {
+  return [it.combinedName, it.productName, it.materialName, it.rating, it.make, it.itemCode, it.typeOfMaterial];
+}
+
+const _msPrepCache = new WeakMap();
+function msPrepare(item, getFields) {
+  const key = (item && typeof item === "object") ? item : null;
+  const cached = key && !getFields ? _msPrepCache.get(key) : null;
+  if (cached) return cached;
+  const parts = (getFields || msDefaultFields)(item).filter(Boolean).map(msNormText);
+  const words = Array.from(new Set(parts.join(" ").split(" ").filter(Boolean)));
+  const prep = { parts, words, compact: parts.join("").replace(/ /g, "") };
+  if (key && !getFields) _msPrepCache.set(key, prep);
+  return prep;
+}
+
+// Returns 0 when the item does not match; otherwise higher = better.
+function materialSearchScore(item, query, getFields) {
+  const qText = msNormText(query);
+  if (!qText) return 0;
+  const prep = msPrepare(item, getFields);
+  const parts = prep.parts, words = prep.words, compact = prep.compact;
+  const qCompact = qText.replace(/ /g, "");
+  let score = 0;
+  for (const raw of qText.split(" ")) {
+    let s = msWordScore(raw, words, compact);
+    const alias = MATERIAL_SEARCH_ALIASES[raw];
+    if (alias) {
+      const aWords = msNormText(alias).split(" ");
+      const aScore = Math.min(...aWords.map(a => msWordScore(a, words, compact)));
+      s = Math.max(s, aScore);
+    }
+    if (!s) return 0;
+    score += s;
+  }
+  if (qCompact.length >= 3 && compact.includes(qCompact)) score += 8;
+  const main = parts[0] || "";
+  if (main.startsWith(qText.split(" ")[0])) score += 3;
+  return score;
+}
+
+// Ranked search: best matches first, at most `limit` results.
+function materialSearch(list, query, limit, getFields) {
+  const scored = [];
+  (list || []).forEach((item, i) => {
+    const s = materialSearchScore(item, query, getFields);
+    if (s > 0) scored.push({ item, s, i });
+  });
+  scored.sort((a, b) => b.s - a.s || a.i - b.i);
+  return scored.slice(0, limit || scored.length).map(x => x.item);
 }

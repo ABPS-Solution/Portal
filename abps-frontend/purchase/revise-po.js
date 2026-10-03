@@ -1880,8 +1880,8 @@ function renderRPOAddMaterialList() {
   if (!list) return;
   const q = (document.getElementById("rpo-add-search")?.value || "").trim().toLowerCase();
   const onPo = new Set((window.rpoActive?.lineItems || []).map(li => li.itemCode));
-  const items = (window.rpoAddableMaterials || []).filter(m => !onPo.has(m.itemCode)
-    && (!q || (m.description + " " + m.itemCode).toLowerCase().includes(q)));
+  const notOnPo = (window.rpoAddableMaterials || []).filter(m => !onPo.has(m.itemCode));
+  const items = q ? materialSearch(notOnPo, q, 0, m => [m.description, m.itemCode]) : notOnPo;
   if (!items.length) {
     list.innerHTML = `<div style="color:var(--muted); text-align:center; padding:20px;">No material still to be ordered matches.</div>`;
     return;
