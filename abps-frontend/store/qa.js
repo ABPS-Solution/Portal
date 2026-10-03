@@ -622,6 +622,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${item.grnNumber}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Vendor: ${escapeHtml(item.vendorName)}</span>
                 <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700;">Invoice: ${item.invoiceNumber}</span>
+                ${gateDocLinksHtml(item.docUrls, item.invoiceNumber, item.challanNumber)}
               </div>
               ${qaDateDisplay ? `<span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">${qaDateDisplay}</span>` : ''}
             </div>

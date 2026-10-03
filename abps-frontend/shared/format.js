@@ -354,6 +354,20 @@ function enhanceAllDateInputsForDMY() {
 
 // Item-code search: matches the full "Name - Rating - Make" text (so a
 // name copied from another screen finds its item), ignoring extra spaces.
+// Gate Entry's uploaded Invoice / Challan as "open in new tab" links.
+// drive_image_url holds "invoiceUrl, challanUrl" (either may be missing).
+function gateDocLinksHtml(docUrls, invoiceNumber, challanNumber) {
+  const urls = String(docUrls || "").split(",").map(u => u.trim()).filter(Boolean);
+  if (!urls.length) return '<span style="font-size:0.78rem; color:var(--muted); margin-left:6px;">No invoice / challan uploaded</span>';
+  let labels;
+  if (urls.length >= 2) labels = ["View Invoice", "View Challan"];
+  else if (invoiceNumber && !challanNumber) labels = ["View Invoice"];
+  else if (challanNumber && !invoiceNumber) labels = ["View Challan"];
+  else labels = ["View Invoice / Challan"];
+  return urls.slice(0, 2).map((u, i) => `<a href="${escapeHtml(driveLink(u))}" target="_blank" rel="noopener" onclick="event.stopPropagation();"
+    style="display:inline-block; margin-left:6px; padding:3px 9px; border:1px solid var(--brand); border-radius:4px; color:var(--brand); font-weight:700; font-size:0.78rem; text-decoration:none; background:#fff;">${labels[i] || "View Document"} ↗</a>`).join("");
+}
+
 function itemCatalogMatches(it, query) {
   return materialSearchScore(it, query) > 0;
 }

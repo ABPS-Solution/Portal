@@ -158,6 +158,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
               Vendor: <strong style="color:var(--text); font-weight:700;">${escapeHtml(item.vendorName || "Designated ABPS Supplier Profile")}</strong>
+              ${gateDocLinksHtml(item.docUrls, item.invoiceNumber, item.challanNumber)}
             </div>
           </div>
         </div>
