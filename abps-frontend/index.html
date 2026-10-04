@@ -990,6 +990,63 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 #icf-mode-search input[type="text"]:not([readonly]):focus, #icf-mode-search select:focus, #icf-mode-search textarea:focus { border-color:var(--brand) !important; outline:none; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
 #icf-mode-search #icf-new-admin-manual-toggle label, #icf-mode-search #icf-new-ai-skip-wrap label { display:flex !important; align-items:center; gap:10px; width:fit-content; padding:8px 14px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:6px; font-size:0.82rem !important; font-weight:700 !important; color:#92400e !important; cursor:pointer; }
 #icf-mode-search #icf-new-admin-manual-toggle input[type="checkbox"], #icf-mode-search #icf-new-ai-skip-wrap input[type="checkbox"] { width:18px !important; height:18px; margin:0; flex:none; accent-color:#d97706; cursor:pointer; }
+  /* Drive Documents (shared/drive-documents.js) */
+  .ddoc-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .ddoc-toolbar input[type=text] { flex:1 1 240px; width:auto; }
+  .ddoc-view-btn { width:auto; padding:9px 16px; border:1px solid var(--border); background:#f1f5f9; color:#334155; border-radius:8px; font-weight:700; cursor:pointer; }
+  .ddoc-view-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+  #ddoc-breadcrumb { font-size:0.9rem; margin:4px 0 14px; color:#475569; }
+  #ddoc-breadcrumb a { color:var(--brand); font-weight:700; text-decoration:none; }
+  #ddoc-breadcrumb span { font-weight:700; }
+  .ddoc-sep { margin:0 8px; color:#94a3b8; font-weight:400 !important; }
+  .ddoc-dept { margin-bottom:18px; }
+  .ddoc-dept-title { font-weight:800; font-size:0.95rem; margin-bottom:8px; color:#334155; }
+  .ddoc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px; }
+  .ddoc-folder { width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:#fff; border:1px solid var(--border); border-left:4px solid #94a3b8; border-radius:8px; padding:10px 12px; cursor:pointer; }
+  .ddoc-folder:hover { background:#f8fafc; box-shadow:0 1px 4px rgba(15,23,42,0.08); }
+  .ddoc-folder-icon { font-size:1.1rem; }
+  .ddoc-folder-name { font-weight:700; color:#0f172a; word-break:break-word; }
+  .ddoc-folder-sub { font-size:0.8rem; color:#475569; word-break:break-word; }
+  .ddoc-folder-count { font-size:0.78rem; color:#64748b; }
+  .ddoc-filter { margin-bottom:12px; }
+  .ddoc-section { margin-bottom:16px; }
+  .ddoc-section-title { font-weight:800; color:#334155; margin:4px 0 8px; }
+  .ddoc-doc { border:1px solid var(--border); border-radius:8px; background:#fff; margin-bottom:8px; }
+  .ddoc-doc-main { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:10px 12px; flex-wrap:wrap; }
+  .ddoc-doc-info { min-width:0; flex:1 1 260px; }
+  .ddoc-doc-title { font-weight:700; color:#0f172a; word-break:break-word; }
+  .ddoc-doc-meta { font-size:0.8rem; color:#64748b; margin-top:2px; word-break:break-word; }
+  .ddoc-doc-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .ddoc-btn { width:auto; display:inline-block; padding:6px 12px; border-radius:6px; border:1px solid var(--brand); background:#fff; color:var(--brand); font-size:0.82rem; font-weight:700; text-decoration:none; cursor:pointer; }
+  .ddoc-btn-dl { background:#15803d; border-color:#15803d; color:#fff; }
+  .ddoc-btn-ghost { border-color:#cbd5e1; color:#334155; background:#f8fafc; }
+  .ddoc-versions { border-top:1px dashed var(--border); background:#f8fafc; padding:6px 12px; border-radius:0 0 8px 8px; }
+  .ddoc-version { display:flex; gap:10px; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.85rem; color:#334155; flex-wrap:wrap; }
+  .ddoc-loading, .ddoc-empty { color:#64748b; padding:14px 0; }
+  .ddoc-error { color:#b91c1c; padding:14px 0; font-weight:700; }
+  .dacc-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; }
+  .dacc-people { max-height:620px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .dacc-person { width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; flex-direction:column; }
+  .dacc-person.active { border-color:var(--brand); background:#eff6ff; }
+  .dacc-person-name { font-weight:700; color:#0f172a; }
+  .dacc-person-meta { font-size:0.78rem; color:#64748b; }
+  .dacc-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+  .dacc-head-name { font-weight:800; font-size:1.05rem; }
+  .dacc-screen-toggle { display:flex; gap:8px; align-items:center; font-weight:700; font-size:0.88rem; cursor:pointer; }
+  .dacc-screen-toggle input { width:auto; }
+  .dacc-hint { font-size:0.82rem; color:#64748b; margin:0 0 12px; }
+  .dacc-dept { border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:10px; background:#fff; }
+  .dacc-dept-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .dacc-pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .dacc-pill { width:auto; padding:7px 12px; border-radius:999px; border:1px solid #cbd5e1; background:#f1f5f9; color:#334155; font-weight:700; font-size:0.82rem; cursor:pointer; }
+  .dacc-pill.on { color:#fff; }
+  .dacc-log { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  .dacc-log th, .dacc-log td { border:1px solid var(--border); padding:6px 8px; text-align:left; }
+  @media (max-width:640px) {
+    .dacc-layout { grid-template-columns:1fr; }
+    .dacc-people { max-height:260px; }
+    .ddoc-grid { grid-template-columns:1fr; }
+  }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1116,6 +1173,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
+      <button id="header-drive-btn" class="logout-btn" onclick="openDriveDocumentsPanel()" title="Drive Documents" style="margin-right:6px; display:none;">Drive</button>
       <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">Docs</button>
       <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
@@ -2850,6 +2908,28 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
+  <div id="canvas-module-drive-documents" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitDriveDocumentsBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Drive Documents</h2>
+      <div class="ddoc-toolbar">
+        <button id="ddoc-view-project" class="ddoc-view-btn active" onclick="ddocSetView('project')">By Project</button>
+        <button id="ddoc-view-type" class="ddoc-view-btn" onclick="ddocSetView('type')">By Type</button>
+        <input type="text" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
+      </div>
+      <div id="ddoc-admin-bar" style="display:none; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+        <button class="ddoc-btn ddoc-btn-ghost" onclick="ddocRunIndex(false)">Refresh list</button>
+        <button class="ddoc-btn ddoc-btn-ghost" onclick="ddocRunIndex(true)">Scan Drive for older versions</button>
+        <span id="ddoc-admin-status" style="font-size:0.82rem; color:#64748b;"></span>
+      </div>
+      <div id="ddoc-breadcrumb"></div>
+      <div id="ddoc-mount"></div>
+    </div>
+  </div>
+
   <div id="canvas-module-qa-inspection-timeline" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -3215,6 +3295,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
       <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Permissions</button>
+      <button id="sa-tab-docaccess" class="nav-btn-styled" onclick="switchSecurityAdminTab('docaccess')" style="flex:1; padding:11px 16px;">Document Access</button>
       <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere Access</button>
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs / Enrollment Code</button>
       <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
@@ -3296,6 +3377,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="eib-feedback" style="display:none; padding:10px 12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
       <div id="eib-mount"></div>
     </div>
+    <div id="sa-panel-docaccess" style="display:none;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+        <input type="text" id="sa-docaccess-search" placeholder="Search a person or department..." oninput="daccRender()" style="flex:1 1 240px; width:auto;">
+        <button class="ddoc-btn ddoc-btn-ghost" onclick="daccShowDownloadLog()">Who opened what</button>
+      </div>
+      <div id="sa-docaccess-body"></div>
+    </div>
+
     <div id="sa-panel-pdfkeys" style="display:none;">
       <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every document PDF (invoices, POs, BOQs, challans, tickets...) is made with these PDFShift keys. When one runs out, the next key is used automatically. Each key gets 50 free credits a month, renewing on its own date.</p>
       <div id="sa-pdfkeys-body"></div>
@@ -6040,6 +6129,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="shared/typeahead.js"></script>
 <script src="shared/navigation.js"></script>
 <script src="shared/documentation.js"></script>
+<script src="shared/drive-documents.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>
 <script src="project/daily-timeline.js"></script>

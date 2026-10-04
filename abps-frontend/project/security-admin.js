@@ -72,7 +72,8 @@ function switchSecurityAdminTab(tab) {
   // flagged, not deleted, per house convention.
   if (tab === 'emailinboxes' && typeof loadEmailInboxes === 'function') loadEmailInboxes();
   if (tab === 'pdfkeys') loadPdfShiftCredits();
-  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys'].forEach(t => {
+  if (tab === 'docaccess') loadDocumentAccessMatrix();
+  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';

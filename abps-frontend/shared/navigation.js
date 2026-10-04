@@ -292,6 +292,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if(document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
   if(document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
+  if(document.getElementById("canvas-module-drive-documents")) document.getElementById("canvas-module-drive-documents").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
   document.getElementById("dashboard-view").style.display = "block"; 
@@ -380,6 +381,8 @@ function returnToDashboard() {
  * mapping structural visibility states safely across all dashboard grids rows.
  */
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
+  const driveBtn = document.getElementById("header-drive-btn");
+  if (driveBtn) driveBtn.style.display = userPermissionsObject && userPermissionsObject.viewDocuments === true ? "" : "none";
   // 1. EXTRACT MARKETING ACCESS PRIVILEGES MATRIX
   const canEnterCard               = userPermissionsObject.cardDetails === true;
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
@@ -990,6 +993,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
   if (document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
+  if (document.getElementById("canvas-module-drive-documents")) document.getElementById("canvas-module-drive-documents").style.display = "none";
   if (document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
   if (document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
   if (document.getElementById("canvas-module-revise-material-requirement-date")) document.getElementById("canvas-module-revise-material-requirement-date").style.display = "none";
@@ -1237,6 +1241,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const dtlCanvas = document.getElementById("canvas-module-daily-timeline");
     if (dtlCanvas) { dtlCanvas.style.display = "block"; initializeDailyTimelinePanel(); }
+  } else if (targetCanvasModuleId === 'drive-documents') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const ddocCanvas = document.getElementById("canvas-module-drive-documents");
+    if (ddocCanvas) { ddocCanvas.style.display = "block"; initializeDriveDocumentsPanel(); }
   } else if (targetCanvasModuleId === 'documentation') {
     document.getElementById("dashboard-view").style.display = "none";
     const docCanvas = document.getElementById("canvas-module-documentation");
