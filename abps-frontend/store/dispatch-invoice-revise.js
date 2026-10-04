@@ -268,6 +268,7 @@ async function loadRpdiForm(invoiceId) {
     rpdiCache = { invoiceId: data.invoiceId, invoiceNo: data.invoiceNo || "", projectId: data.projectId, invoiceType: data.invoiceType, invoiceRevision: data.revision || 0 };
     const last = data.lastInvoiceDetails || {};
     rpdiState = {
+      invoiceDocDate: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10),
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
       mobileNo: last.mobileNo || "", freightText: last.freightText || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",
@@ -330,6 +331,7 @@ function renderRpdiForm() {
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>P.O. No.</label><div style="padding:6px 4px; font-weight:600;">${s.poNumber || '—'}</div></div>
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>PO Date</label><div style="padding:6px 4px; font-weight:600;">${s.poDate || '—'}</div></div>
+        <div class="grid-cell-item"><label>Invoice Date</label><input type="date" value="${esc(s.invoiceDocDate || new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10))}" onchange="updateRpdiField('invoiceDocDate', this.value)" style="width:100%; padding:6px 4px;" /></div>
         ${field('Insurance No.', 'insuranceNo')}
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
@@ -584,6 +586,7 @@ async function toggleRpdiEditCard(requestId) {
     const last = invData.lastInvoiceDetails || {};
     rpdiCache = { invoiceId: r.invoiceId, invoiceNo: r.invoiceNo || "", projectId: r.projectId, invoiceType: r.invoiceType, invoiceRevision: Number(r.currentRevision) || 0 };
     rpdiState = {
+      invoiceDocDate: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10),
       insuranceNo: last.insuranceNo || "", mdccNo: last.mdccNo || "", transportName: last.transportName || "",
       lrNoDate: last.lrNoDate || "", lcNoDate: last.lcNoDate || "", dcNoDate: last.dcNoDate || "", vehicleNo: last.vehicleNo || "",
       mobileNo: last.mobileNo || "", freightText: last.freightText || "", incoterms: last.incoterms || "", incotermsPlace: last.incotermsPlace || "",

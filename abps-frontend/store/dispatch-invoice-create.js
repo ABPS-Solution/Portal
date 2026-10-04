@@ -141,6 +141,7 @@ async function handleCpdiProjectChange(projectId) {
 
 function cpdiInitInvoiceStateFromLines() {
   cpdiInvoiceState = {
+    invoiceDocDate: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10),
     insuranceNo: "", mdccNo: "", transportName: "", lrNoDate: "", lcNoDate: "", dcNoDate: "", vehicleNo: "", mobileNo: "", freightText: "",
     incoterms: "", incotermsPlace: "", tradeType: "Local", usdRate: "",
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
@@ -280,6 +281,7 @@ function cpdiRenderInvoiceForm() {
 
       <div class="compact-fields-grid" style="margin-bottom:14px;">
         <div class="grid-cell-item" style="background:#f1f5f9;"><label>Invoice No.</label><div style="padding:6px 4px; font-weight:600; color:var(--muted);">${s._invoiceNo ? escapeHtml(s._invoiceNo) : 'When draft is created'}</div></div>
+        <div class="grid-cell-item"><label>Invoice Date</label><input type="date" value="${esc(s.invoiceDocDate || new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10))}" onchange="updateCpdiField('invoiceDocDate', this.value)" style="width:100%; padding:6px 4px;" /></div>
         ${field('Insurance No.', 'insuranceNo')}
         ${field('MDCC NO', 'mdccNo')}
         ${field('Transport Name', 'transportName')}
