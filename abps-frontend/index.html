@@ -1028,6 +1028,32 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   .ddoc-version { display:flex; gap:10px; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.85rem; color:#334155; flex-wrap:wrap; }
   .ddoc-loading, .ddoc-empty { color:#64748b; padding:14px 0; }
   .ddoc-error { color:#b91c1c; padding:14px 0; font-weight:700; }
+  /* Documents polish */
+  .ddoc-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .ddoc-toolbar { gap:12px; margin-bottom:16px; }
+  .ddoc-view-switch { display:inline-flex; background:#f1f5f9; border:1px solid var(--border); border-radius:10px; padding:4px; gap:4px; }
+  .ddoc-view-switch .ddoc-view-btn { border:none; background:transparent; padding:8px 18px; border-radius:7px; font-size:0.9rem; }
+  .ddoc-view-switch .ddoc-view-btn.active { background:var(--brand); color:#fff; box-shadow:0 1px 3px rgba(15,23,42,0.15); }
+  .ddoc-search-input, .ddoc-filter {
+    height:42px; padding:0 14px 0 38px !important; border:1px solid #cbd5e1; border-radius:10px; font-size:0.92rem; background:#fff
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E") no-repeat 13px center;
+    box-sizing:border-box; transition:border-color .15s, box-shadow .15s; }
+  .ddoc-search-input:focus, .ddoc-filter:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(37,99,235,0.12); outline:none; }
+  .ddoc-filter { width:100%; max-width:460px; margin-bottom:16px; }
+  #ddoc-breadcrumb { font-size:0.95rem; margin:2px 0 14px; }
+  .ddoc-grid { grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:14px; }
+  .ddoc-folder { display:grid; grid-template-columns:32px 1fr; column-gap:10px; row-gap:3px; align-content:start; padding:14px 14px 12px; border-radius:10px; transition:box-shadow .15s, transform .15s; }
+  .ddoc-folder:hover { box-shadow:0 4px 12px rgba(15,23,42,0.10); transform:translateY(-1px); background:#fff; }
+  .ddoc-folder > * { grid-column:2; }
+  .ddoc-folder > .ddoc-folder-icon { grid-column:1; grid-row:1 / span 3; font-size:1.5rem; line-height:1; padding-top:1px; }
+  .ddoc-folder-name { font-size:0.92rem; line-height:1.35; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .ddoc-folder-sub { font-size:0.8rem; line-height:1.35; }
+  .ddoc-folder-count { margin-top:4px; font-size:0.75rem; font-weight:700; color:#475569; background:#f1f5f9; border-radius:999px; padding:2px 9px; justify-self:start; }
+  .ddoc-dept { margin-bottom:24px; }
+  .ddoc-dept-title { margin-bottom:12px; }
+  .ddoc-doc { border-radius:10px; margin-bottom:10px; }
+  .ddoc-doc-main { padding:12px 14px; }
+  .ddoc-btn { padding:7px 14px; border-radius:8px; }
   .dacc-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; }
   .dacc-people { max-height:620px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
   .dacc-person { width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; flex-direction:column; }
@@ -2921,14 +2947,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="nav-btn-styled" onclick="exitDriveDocumentsBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div class="ddoc-head">
         <h2 class="panel-title" style="margin:0;">Documents</h2>
         <button id="ddoc-admin-bar" class="ddoc-btn ddoc-btn-ghost" style="display:none;" onclick="ddocRunIndex()">Refresh list</button>
       </div>
       <div class="ddoc-toolbar">
-        <button id="ddoc-view-type" class="ddoc-view-btn active" onclick="ddocSetView('type')">By Type</button>
-        <button id="ddoc-view-project" class="ddoc-view-btn" onclick="ddocSetView('project')">By Project</button>
-        <input type="text" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
+        <div class="ddoc-view-switch">
+          <button id="ddoc-view-type" class="ddoc-view-btn active" onclick="ddocSetView('type')">By Type</button>
+          <button id="ddoc-view-project" class="ddoc-view-btn" onclick="ddocSetView('project')">By Project</button>
+        </div>
+        <input type="text" class="ddoc-search-input" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
       </div>
       <div id="ddoc-breadcrumb"></div>
       <div id="ddoc-mount"></div>
