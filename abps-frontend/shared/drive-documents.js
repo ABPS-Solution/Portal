@@ -192,10 +192,21 @@ async function ddocLoadDocuments(payload, groupByCategory) {
       sections.get(sectionKey).docs.push(d);
     });
     const ordered = [...sections.values()].sort((a, b) => a.head.localeCompare(b.head) || String(a.sub || "").localeCompare(String(b.sub || "")));
-    mount.innerHTML = ordered.map(s => `
+    const renderSection = s => `
       <div class="ddoc-section">
         ${s.head || s.sub ? `<div class="ddoc-section-title">📂 ${escapeHtml([s.head, s.sub].filter(Boolean).join(" › "))}</div>` : ""}
         ${s.docs.map(ddocRenderDocument).join("")}
+      </div>`;
+    if (!groupByCategory) { mount.innerHTML = ordered.map(renderSection).join(""); return; }
+    // Project and search views: department headings first, then each type.
+    const deptOf = label => (ddocState.categories.find(c => c.label === label) || {}).department || "Other";
+    const byDept = {};
+    ordered.forEach(s => { (byDept[deptOf(s.head)] = byDept[deptOf(s.head)] || []).push(s); });
+    const deptOrder = [...ddocState.departments, "Other"].filter(d => byDept[d]);
+    mount.innerHTML = deptOrder.map(d => `
+      <div class="ddoc-dept">
+        <div class="ddoc-dept-title" style="color:${DDOC_DEPT_COLORS[d] || "#334155"}; font-size:1.05rem; border-bottom:2px solid ${DDOC_DEPT_COLORS[d] || "#334155"}; padding-bottom:4px; margin-bottom:10px;">${escapeHtml(d)}</div>
+        ${byDept[d].map(renderSection).join("")}
       </div>`).join("");
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
