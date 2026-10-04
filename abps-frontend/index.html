@@ -990,6 +990,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 #icf-mode-search input[type="text"]:not([readonly]):focus, #icf-mode-search select:focus, #icf-mode-search textarea:focus { border-color:var(--brand) !important; outline:none; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
 #icf-mode-search #icf-new-admin-manual-toggle label, #icf-mode-search #icf-new-ai-skip-wrap label { display:flex !important; align-items:center; gap:10px; width:fit-content; padding:8px 14px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:6px; font-size:0.82rem !important; font-weight:700 !important; color:#92400e !important; cursor:pointer; }
 #icf-mode-search #icf-new-admin-manual-toggle input[type="checkbox"], #icf-mode-search #icf-new-ai-skip-wrap input[type="checkbox"] { width:18px !important; height:18px; margin:0; flex:none; accent-color:#d97706; cursor:pointer; }
+  /* Column + row lines, same look as PPS Tracking (Store Ledger, Consumption Variance) */
+  .grid-lines-table th, .grid-lines-table td { border-left:1.5px solid var(--border); border-bottom:1.5px solid #cbd5e1; }
+  .grid-lines-table th:first-child, .grid-lines-table td:first-child { border-left:none; }
+  .grid-lines-table thead th { border-bottom:2px solid #94a3b8; }
   /* Drive Documents (shared/drive-documents.js) */
   .ddoc-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
   .ddoc-toolbar input[type=text] { flex:1 1 240px; width:auto; }
@@ -1173,8 +1177,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
-      <button id="header-drive-btn" class="logout-btn" onclick="openDriveDocumentsPanel()" title="Drive Documents" style="margin-right:6px; display:none;">Drive</button>
-      <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Documentation" style="margin-right:6px;">Docs</button>
+      <button id="header-drive-btn" class="logout-btn" onclick="openDriveDocumentsPanel()" title="Documents" style="margin-right:6px; display:none;">Documents</button>
+      <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Information" style="margin-right:6px;">Information</button>
       <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
     </div>
   </header>
@@ -1738,7 +1742,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('rm', 'Raw Materials')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
           </div>
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+            <table class="grid-lines-table" style="width:100%; border-collapse:collapse; min-width:800px;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
@@ -1746,6 +1750,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Swept Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
                 </tr>
@@ -1781,7 +1786,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button class="nav-btn-styled" onclick="downloadConsumptionVarianceReportFile()" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
           </div>
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:1100px;">
+            <table class="grid-lines-table" style="width:100%; border-collapse:collapse; min-width:1100px;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="padding:8px; font-size:0.72rem; text-align:left;">Project ID</th>
@@ -1911,7 +1916,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('fgstock', 'Finished Goods')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
           </div>
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+            <table class="grid-lines-table" style="width:100%; border-collapse:collapse; min-width:800px;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
@@ -1919,6 +1924,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Swept Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
                 </tr>
@@ -1971,7 +1977,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('spare', 'Spare')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
           </div>
           <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
-            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+            <table class="grid-lines-table" style="width:100%; border-collapse:collapse; min-width:800px;">
               <thead>
                 <tr style="background:#f8fafc;">
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
@@ -1979,6 +1985,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
                   <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Swept Stock</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
                   <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
                 </tr>
@@ -2914,16 +2921,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="nav-btn-styled" onclick="exitDriveDocumentsBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Drive Documents</h2>
-      <div class="ddoc-toolbar">
-        <button id="ddoc-view-project" class="ddoc-view-btn active" onclick="ddocSetView('project')">By Project</button>
-        <button id="ddoc-view-type" class="ddoc-view-btn" onclick="ddocSetView('type')">By Type</button>
-        <input type="text" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h2 class="panel-title" style="margin:0;">Documents</h2>
+        <button id="ddoc-admin-bar" class="ddoc-btn ddoc-btn-ghost" style="display:none;" onclick="ddocRunIndex()">Refresh list</button>
       </div>
-      <div id="ddoc-admin-bar" style="display:none; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-        <button class="ddoc-btn ddoc-btn-ghost" onclick="ddocRunIndex(false)">Refresh list</button>
-        <button class="ddoc-btn ddoc-btn-ghost" onclick="ddocRunIndex(true)">Scan Drive for older versions</button>
-        <span id="ddoc-admin-status" style="font-size:0.82rem; color:#64748b;"></span>
+      <div class="ddoc-toolbar">
+        <button id="ddoc-view-type" class="ddoc-view-btn active" onclick="ddocSetView('type')">By Type</button>
+        <button id="ddoc-view-project" class="ddoc-view-btn" onclick="ddocSetView('project')">By Project</button>
+        <input type="text" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
       </div>
       <div id="ddoc-breadcrumb"></div>
       <div id="ddoc-mount"></div>
@@ -3294,7 +3299,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
-      <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Permissions</button>
+      <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Section Permissions</button>
       <button id="sa-tab-docaccess" class="nav-btn-styled" onclick="switchSecurityAdminTab('docaccess')" style="flex:1; padding:11px 16px;">Document Access</button>
       <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere Access</button>
       <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs / Enrollment Code</button>
@@ -3380,7 +3385,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="sa-panel-docaccess" style="display:none;">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
         <input type="text" id="sa-docaccess-search" placeholder="Search a person or department..." oninput="daccRender()" style="flex:1 1 240px; width:auto;">
-        <button class="ddoc-btn ddoc-btn-ghost" onclick="daccShowDownloadLog()">Who opened what</button>
       </div>
       <div id="sa-docaccess-body"></div>
     </div>

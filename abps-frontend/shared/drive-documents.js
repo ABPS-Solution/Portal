@@ -7,7 +7,7 @@
 // Backend: routes/documents.js. Types: lib/documentCategories.js.
 // ═══════════════════════════════════════════════════════════════════════
 
-let ddocState = { view: "project", categories: [], departments: [], isAdmin: false, trail: [] };
+let ddocState = { view: "type", categories: [], departments: [], isAdmin: false, trail: [] };
 
 const DDOC_DEPT_COLORS = {
   Marketing: "#be185d", Design: "#2563eb", Purchase: "#7c3aed", Store: "#0369a1", Production: "#b45309",
@@ -37,7 +37,7 @@ async function initializeDriveDocumentsPanel() {
     ddocState.departments = data.departments || [];
     ddocState.isAdmin = !!data.isAdmin;
     const adminBar = document.getElementById("ddoc-admin-bar");
-    if (adminBar) adminBar.style.display = ddocState.isAdmin ? "flex" : "none";
+    if (adminBar) adminBar.style.display = ddocState.isAdmin ? "" : "none";
     if (!ddocState.categories.length) {
       mount.innerHTML = `<div class="ddoc-empty">You have not been given access to any document type yet. Ask an admin (Security &amp; Login Access → Document Access).</div>`;
       return;
@@ -140,7 +140,6 @@ async function ddocShowProjects() {
   try {
     const data = await apFetch({ action: "fetchDocumentProjects" });
     if (!data.success) throw new Error(data.error || "Could not load projects.");
-    const others = ddocState.categories.filter(c => !c.projectScoped);
     mount.innerHTML = `
       <input type="text" class="ddoc-filter" placeholder="Filter projects..." oninput="ddocFilterFolders(this.value)">
       <div class="ddoc-grid" id="ddoc-folder-grid">
@@ -152,17 +151,7 @@ async function ddocShowProjects() {
             <span class="ddoc-folder-sub">${escapeHtml(p.company_name || "")}${p.project_status ? " · " + escapeHtml(p.project_status) : ""}</span>
             <span class="ddoc-folder-count">${p.n} file${p.n === 1 ? "" : "s"}</span>
           </button>`).join("") || `<div class="ddoc-empty">No project documents yet.</div>`}
-      </div>
-      ${others.length ? `
-        <div class="ddoc-dept-title" style="margin-top:22px;">Not tied to a project</div>
-        <div class="ddoc-grid">
-          ${others.map(c => `
-            <button class="ddoc-folder" style="border-left-color:${DDOC_DEPT_COLORS[c.department] || "#334155"};" onclick="ddocOpenCategory(${jsArg(c.key)})">
-              <span class="ddoc-folder-icon">📁</span>
-              <span class="ddoc-folder-name">${escapeHtml(c.label)}</span>
-              <span class="ddoc-folder-count">${c.count} file${c.count === 1 ? "" : "s"}</span>
-            </button>`).join("")}
-        </div>` : ""}`;
+      </div>`;
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
     mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
@@ -264,19 +253,17 @@ function ddocToggleVersions(id, btn) {
   btn.textContent = btn.textContent.replace(show ? "▾" : "▴", show ? "▴" : "▾");
 }
 
-async function ddocRunIndex(scanDrive) {
-  if (scanDrive && !(await abpsConfirm("Read Drive once to add older BOQ / PRN / PPS versions and all Drawings? This can take a few minutes.", { okLabel: "Scan Drive" }))) return;
-  const status = document.getElementById("ddoc-admin-status");
-  if (status) status.textContent = scanDrive ? "Scanning Drive... (this can take a few minutes)" : "Refreshing...";
+async function ddocRunIndex() {
+  const btn = document.getElementById("ddoc-admin-bar");
+  if (btn) { btn.disabled = true; btn.textContent = "Refreshing..."; }
   try {
-    const data = await apFetch({ action: "runDocumentIndex", scanDrive: !!scanDrive, _timeoutMs: 600000 });
+    const data = await apFetch({ action: "runDocumentIndex" });
     if (!data.success) throw new Error(data.error || "Refresh failed.");
-    const h = data.history;
-    if (status) status.textContent = `Done: ${data.index.indexed} links checked` + (h ? `, ${h.olderVersions} older versions and ${h.drawings} drawings added` + (h.errors.length ? `, ${h.errors.length} errors` : "") : "") + ".";
     initializeDriveDocumentsPanel();
   } catch (err) {
-    if (err.message === "SESSION_EXPIRED") return;
-    if (status) status.textContent = err.message;
+    if (err.message !== "SESSION_EXPIRED") alert(err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Refresh list"; }
   }
 }
 
@@ -338,10 +325,9 @@ function daccDetailHtml(u) {
       </div>
       <label class="dacc-screen-toggle">
         <input type="checkbox" ${u.documentsScreen ? "checked" : ""} onchange="daccToggleScreen(${jsArg(u.personKey)}, this.checked, this)">
-        Drive Documents screen
+        Documents screen
       </label>
     </div>
-    <p class="dacc-hint">Click a type to give or take away access. This decides who can open these documents anywhere in the system, not only on the Drive Documents screen.</p>
     ${daccState.departments.filter(d => byDept[d]).map(d => {
       const all = byDept[d].every(c => has.has(c.key));
       const color = DDOC_DEPT_COLORS[d] || "#334155";

@@ -158,7 +158,7 @@ function renderStoreLedgerTable(prefix, rows) {
   const bodyEl = document.getElementById(`${prefix}-ledger-table-body`);
   if (!bodyEl) return;
   if (rows.length === 0) {
-    bodyEl.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:16px; color:var(--muted);">No materials found for this range.</td></tr>`;
+    bodyEl.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--muted);">No materials found for this range.</td></tr>`;
     return;
   }
   bodyEl.innerHTML = rows.map(r => `
@@ -168,6 +168,7 @@ function renderStoreLedgerTable(prefix, rows) {
       <td style="padding:8px;">${escapeHtml(r.typeOfMaterial || '—')}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem;">${trimNum(r.startingStock)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#15803d;">${trimNum(r.inwardQty)}</td>
+      <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#7c3aed;">${trimNum(r.sweptQty || 0)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; color:#b91c1c;">${trimNum(r.issuedQty)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-weight:800; font-size:1.15rem; color:var(--brand);">${trimNum(r.endingStock)}</td>
     </tr>`).join('');
