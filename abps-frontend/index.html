@@ -1054,6 +1054,20 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   .ddoc-doc { border-radius:10px; margin-bottom:10px; }
   .ddoc-doc-main { padding:12px 14px; }
   .ddoc-btn { padding:7px 14px; border-radius:8px; }
+  .ddoc-doc-main { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:14px; align-items:center; }
+  .ddoc-doc-title { font-size:0.95rem; line-height:1.4; }
+  .ddoc-doc-meta { margin-top:0; white-space:nowrap; font-size:0.82rem; text-align:right; }
+  .ddoc-doc-actions { flex-wrap:nowrap; }
+  .ddoc-versions .ddoc-doc-main { padding:8px 0; border-top:1px dashed var(--border); }
+  .ddoc-versions .ddoc-doc-title { font-weight:600; color:#334155; font-size:0.88rem; }
+  .ddoc-version-group { margin-bottom:16px; display:flex; flex-direction:column; gap:6px; }
+  .ddoc-version-group .ddoc-doc { margin-bottom:0; }
+  .ddoc-doc.ddoc-current { border:2px solid #16a34a; box-shadow:0 0 0 3px rgba(22,163,74,0.10); }
+  @media (max-width:760px) {
+    .ddoc-doc-main { grid-template-columns:1fr; gap:8px; }
+    .ddoc-doc-meta { text-align:left; white-space:normal; }
+    .ddoc-doc-actions { flex-wrap:wrap; }
+  }
   .dacc-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; }
   .dacc-people { max-height:620px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
   .dacc-person { width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; flex-direction:column; }

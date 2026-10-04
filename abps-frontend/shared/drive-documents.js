@@ -197,7 +197,7 @@ async function ddocLoadDocuments(payload, groupByCategory) {
     const renderSection = s => `
       <div class="ddoc-section">
         ${s.head || s.sub ? `<div class="ddoc-section-title">📂 ${escapeHtml([s.head, s.sub].filter(Boolean).join(" › "))}</div>` : ""}
-        ${s.docs.map(d => ddocRenderDocument(d, showGroup)).join("")}
+        ${s.docs.map(d => ddocRenderDocument(d, showGroup, !groupByCategory)).join("")}
       </div>`;
     if (!groupByCategory) { mount.innerHTML = ordered.map(renderSection).join(""); return; }
     // Project and search views: department headings first, then each type.
@@ -229,31 +229,33 @@ function ddocFileButtons(v) {
           <a class="ddoc-btn ddoc-btn-dl" href="${escapeHtml(open + (open.includes("?") ? "&" : "?") + "dl=1")}" target="_blank" rel="noopener">Download</a>`;
 }
 
-function ddocRenderDocument(d, showGroup) {
+function ddocRenderDocument(d, showGroup, expandVersions) {
   const latest = d.versions[0];
   const older = d.versions.slice(1);
-  const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
-  return `
-    <div class="ddoc-doc">
+  const hasVersions = older.length > 0;
+  const metaOf = (v, isTop) => [showGroup && isTop ? d.group : "", ddocVersionLabel(v, false), v.date ? formatOrdinalDateTime(v.date) : ""]
+    .filter(Boolean).map(escapeHtml).join(" · ");
+  const row = (v, isTop, extraActions) => `
       <div class="ddoc-doc-main">
-        <div class="ddoc-doc-info">
-          <div class="ddoc-doc-title">📄 ${escapeHtml(d.title)}</div>
-          <div class="ddoc-doc-meta">
-            ${escapeHtml([showGroup ? d.group : "", ddocVersionLabel(latest, older.length > 0), latest.date ? formatOrdinalDateTime(latest.date) : ""].filter(Boolean).join(" · "))}
-          </div>
-        </div>
-        <div class="ddoc-doc-actions">
-          ${older.length ? `<button class="ddoc-btn ddoc-btn-ghost" onclick="ddocToggleVersions('${id}', this)">${older.length} older version${older.length === 1 ? "" : "s"} ▾</button>` : ""}
-          ${ddocFileButtons(latest)}
-        </div>
-      </div>
-      ${older.length ? `
+        <div class="ddoc-doc-title">${escapeHtml(isTop ? d.title : (v.title || d.title))}</div>
+        <div class="ddoc-doc-meta">${metaOf(v, isTop)}</div>
+        <div class="ddoc-doc-actions">${extraActions || ""}${ddocFileButtons(v)}</div>
+      </div>`;
+  // By Type: every version as its own row, newest first; the one in use is green.
+  if (expandVersions && hasVersions) {
+    return `
+    <div class="ddoc-version-group">
+      ${d.versions.map((v, i) => `<div class="ddoc-doc ${v.current ? "ddoc-current" : ""}">${row(v, i === 0)}</div>`).join("")}
+    </div>`;
+  }
+  const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
+  const toggle = hasVersions ? `<button class="ddoc-btn ddoc-btn-ghost" onclick="ddocToggleVersions('${id}', this)">${older.length} older version${older.length === 1 ? "" : "s"} ▾</button>` : "";
+  return `
+    <div class="ddoc-doc ${hasVersions && latest.current ? "ddoc-current" : ""}">
+      ${row(latest, true, toggle)}
+      ${hasVersions ? `
         <div class="ddoc-versions" id="${id}" style="display:none;">
-          ${older.map(v => `
-            <div class="ddoc-version">
-              <span>${escapeHtml([ddocVersionLabel(v, false) || "Earlier version", v.date ? formatOrdinalDateTime(v.date) : "", v.title !== d.title ? v.title : ""].filter(Boolean).join(" · "))}</span>
-              <span class="ddoc-doc-actions">${ddocFileButtons(v)}</span>
-            </div>`).join("")}
+          ${older.map(v => row(v, false)).join("")}
         </div>` : ""}
     </div>`;
 }
