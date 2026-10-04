@@ -177,6 +177,8 @@ function ddocSearchInput(value) {
 
 // ── Document list (shared by folder, project and search views) ──────────
 async function ddocLoadDocuments(payload, groupByCategory) {
+  // The folder is already in the breadcrumb except in search results.
+  const showGroup = payload.action === "searchDocuments";
   const mount = document.getElementById("ddoc-mount");
   mount.innerHTML = `<div class="ddoc-loading">Loading documents...</div>`;
   try {
@@ -195,7 +197,7 @@ async function ddocLoadDocuments(payload, groupByCategory) {
     const renderSection = s => `
       <div class="ddoc-section">
         ${s.head || s.sub ? `<div class="ddoc-section-title">📂 ${escapeHtml([s.head, s.sub].filter(Boolean).join(" › "))}</div>` : ""}
-        ${s.docs.map(ddocRenderDocument).join("")}
+        ${s.docs.map(d => ddocRenderDocument(d, showGroup)).join("")}
       </div>`;
     if (!groupByCategory) { mount.innerHTML = ordered.map(renderSection).join(""); return; }
     // Project and search views: department headings first, then each type.
@@ -227,7 +229,7 @@ function ddocFileButtons(v) {
           <a class="ddoc-btn ddoc-btn-dl" href="${escapeHtml(open + (open.includes("?") ? "&" : "?") + "dl=1")}" target="_blank" rel="noopener">Download</a>`;
 }
 
-function ddocRenderDocument(d) {
+function ddocRenderDocument(d, showGroup) {
   const latest = d.versions[0];
   const older = d.versions.slice(1);
   const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
@@ -237,7 +239,7 @@ function ddocRenderDocument(d) {
         <div class="ddoc-doc-info">
           <div class="ddoc-doc-title">📄 ${escapeHtml(d.title)}</div>
           <div class="ddoc-doc-meta">
-            ${escapeHtml([d.group, ddocVersionLabel(latest, older.length > 0), latest.date ? formatOrdinalDateTime(latest.date) : "", latest.fileName].filter(Boolean).join(" · "))}
+            ${escapeHtml([showGroup ? d.group : "", ddocVersionLabel(latest, older.length > 0), latest.date ? formatOrdinalDateTime(latest.date) : ""].filter(Boolean).join(" · "))}
           </div>
         </div>
         <div class="ddoc-doc-actions">
@@ -249,7 +251,7 @@ function ddocRenderDocument(d) {
         <div class="ddoc-versions" id="${id}" style="display:none;">
           ${older.map(v => `
             <div class="ddoc-version">
-              <span>${escapeHtml([ddocVersionLabel(v, false) || "Earlier version", v.date ? formatOrdinalDateTime(v.date) : "", v.title !== d.title ? v.title : "", v.fileName].filter(Boolean).join(" · "))}</span>
+              <span>${escapeHtml([ddocVersionLabel(v, false) || "Earlier version", v.date ? formatOrdinalDateTime(v.date) : "", v.title !== d.title ? v.title : ""].filter(Boolean).join(" · "))}</span>
               <span class="ddoc-doc-actions">${ddocFileButtons(v)}</span>
             </div>`).join("")}
         </div>` : ""}
