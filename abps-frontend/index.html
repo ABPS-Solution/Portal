@@ -5654,7 +5654,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <h2 class="panel-title">Upload Revised Purchase Order</h2>
       <div id="crpo-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:16px; border-left:4px solid;"></div>
       <label class="field-label">Select Project *</label>
-      <select id="crpo-project-select" onchange="crpoSelectProject(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"></select>
+      <input type="text" id="crpo-project-ta-input" autocomplete="off" placeholder="Start typing a company name, project ID or PO number..." oninput="handleCrpoProjectTypeaheadInput(this.value)" onfocus="handleCrpoProjectTypeaheadInput(this.value)" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+      <select id="crpo-project-select" hidden onchange="crpoSelectProject(this.value)"></select>
       <div id="crpo-details-zone" style="display:none;"></div>
       <div id="crpo-upload-zone" style="display:none;"></div>
       <div id="crpo-review-zone" style="display:none;"></div>

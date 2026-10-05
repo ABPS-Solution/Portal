@@ -45,6 +45,8 @@ async function crpoInitPanel() {
   });
   const sel = document.getElementById('crpo-project-select');
   if (!sel) return;
+  const taInput = document.getElementById('crpo-project-ta-input');
+  if (taInput) { taInput.value = ''; taInput.placeholder = 'Loading projects...'; }
   sel.innerHTML = '<option value="">Loading projects...</option>';
   try {
     const data = await apFetch({ action: 'fetchActiveProjectsForPoRevision' });
@@ -52,9 +54,48 @@ async function crpoInitPanel() {
     crpoProjects = data.projects || [];
     sel.innerHTML = '<option value="">— Select an Active project —</option>' + crpoProjects.map(p =>
       `<option value="${escapeHtml(p.projectId)}">${escapeHtml(p.companyName || '')} · ${escapeHtml(p.projectId)}${p.poNumber ? ' · PO ' + escapeHtml(p.poNumber) : ''}</option>`).join('');
+    if (taInput) taInput.placeholder = 'Start typing a company name, project ID or PO number...';
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') sel.innerHTML = '<option value="">Network error</option>';
   }
+}
+
+// Type-to-pick project, same as Upload Purchase Order's company box: the
+// hidden <select> keeps the chosen project id for the rest of this screen.
+function handleCrpoProjectTypeaheadInput(query) {
+  const sel = document.getElementById('crpo-project-select');
+  const input = document.getElementById('crpo-project-ta-input');
+  if (!sel || !input) return;
+  const ddId = 'crpo-project-ta-dropdown';
+  const dd = ensureCompanySearchDropdownEl(ddId);
+  dd.dataset.inputId = 'crpo-project-ta-input';
+  const words = String(query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) { dd.style.display = 'none'; return; }
+  const matches = [...sel.options].filter(o => o.value && words.every(w => o.text.toLowerCase().includes(w))).slice(0, 15);
+  if (!matches.length) {
+    dd.innerHTML = '<div style="padding:9px 12px; font-size:0.85rem; color:var(--muted);">No matching Active project.</div>';
+  } else {
+    dd.innerHTML = matches.map(o => `
+      <div onmousedown="event.preventDefault(); selectCrpoProjectTypeahead(${jsArg(o.value)})"
+        style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
+        onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(o.text)}</div>`).join('');
+  }
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + 'px';
+  dd.style.left = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
+  dd.style.display = 'block';
+}
+
+function selectCrpoProjectTypeahead(projectId) {
+  const sel = document.getElementById('crpo-project-select');
+  const input = document.getElementById('crpo-project-ta-input');
+  if (!sel || !input) return;
+  sel.value = projectId;
+  input.value = sel.selectedOptions[0] ? sel.selectedOptions[0].text : '';
+  const dd = document.getElementById('crpo-project-ta-dropdown');
+  if (dd) dd.style.display = 'none';
+  crpoSelectProject(projectId);
 }
 
 async function crpoSelectProject(projectId) {
