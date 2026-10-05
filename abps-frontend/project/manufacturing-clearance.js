@@ -196,6 +196,8 @@ async function loadMcLineItems(projectId) {
         make: (catalogMatch && catalogMatch.make) || "",
         itemCodeUnit: (catalogMatch && catalogMatch.unit) || "",
         newMfcQuantity: li.mfcQuantity || 0,
+        orderQuantity: Number(li.quantity) || 0,
+        currentMfcQuantity: li.mfcQuantity || 0,
         onHold: !!li.onHold, holdReason: li.holdReason || "",
         boqIds: li.boqIds || [],
         needsBoqJc: li.needsBoqJc !== false,
@@ -275,14 +277,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${escapeHtml(li.unit || "—")}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${escapeHtml(itemCodeUnitVal || "—")}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(li.mfcQuantity)}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#b45309;">${fmtQty(Math.max(0, (Number(li.quantity) || 0) - (Number(li.mfcQuantity) || 0)))}</td>
-        <td style="padding:8px; text-align:center; vertical-align:middle;">
-          <input type="number" id="mc-new-mfc-${safeId}-${li.lineId}" value="${trimNum(state.newMfcQuantity)}" ${rowDisabledAttr}
-            min="0" max="${li.quantity}" step="any"
-            oninput="clampMcNewMfcQty(this, '${projectId}', ${li.lineId})"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${(gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
-        </td>
+        ${mcMfcQtyCellsHtml(projectId, safeId, li.lineId, state, li.quantity, li.mfcQuantity, gatingComplete && !isHeld)}
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           <button type="button" data-mc-boq-toggle data-locked="${toggleLocked ? 1 : 0}" ${toggleLocked ? "disabled" : ""} title="${toggleTitle}"
             onclick="toggleMcNeedsBoqJc('${projectId}', ${li.lineId}, this)"
@@ -562,6 +557,35 @@ function clampMcNewMfcQty(inp, projectId, lineId) {
   mcLineItemState[projectId][lineId].newMfcQuantity = val;
 }
 
+// A row with Needs BOQ / JC = No has no MFC quantities to manage: all three
+// cells show "-" and the row is cleared for its full order quantity on submit
+// (the server does the same, see submitManufacturingClearance).
+function mcMfcQtyCellsHtml(projectId, safeId, lineId, state, orderQty, currentMfc, enabled) {
+  const id = `${safeId}-${lineId}`;
+  if (state.needsBoqJc === false) {
+    const dash = k => `<td id="mc-${k}-${id}" title="No BOQ / Job Card: cleared for the full order quantity when you submit" style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:var(--muted);">-</td>`;
+    return dash("cur") + dash("pend") + dash("new");
+  }
+  return `<td id="mc-cur-${id}" style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#111827;">${fmtQty(currentMfc)}</td>
+        <td id="mc-pend-${id}" style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:700; color:#b45309;">${fmtQty(Math.max(0, (Number(orderQty) || 0) - (Number(currentMfc) || 0)))}</td>
+        <td id="mc-new-${id}" style="padding:8px; text-align:center; vertical-align:middle;">
+          <input type="number" id="mc-new-mfc-${id}" value="${trimNum(state.newMfcQuantity)}" ${enabled ? "" : "disabled"}
+            min="0" max="${orderQty}" step="any"
+            oninput="clampMcNewMfcQty(this, '${projectId}', ${lineId})"
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${enabled ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
+        </td>`;
+}
+function mcRefreshMfcQtyCells(projectId, lineId) {
+  const st = mcLineItemState[projectId] && mcLineItemState[projectId][lineId];
+  const safeId = projectId.replace(/[^a-zA-Z0-9]/g, "_");
+  const cur = document.getElementById(`mc-cur-${safeId}-${lineId}`);
+  if (!st || !cur) return;
+  const tmp = document.createElement("tbody");
+  tmp.innerHTML = `<tr>${mcMfcQtyCellsHtml(projectId, safeId, lineId, st, st.orderQuantity, st.currentMfcQuantity, true)}</tr>`;
+  const fresh = [...tmp.firstChild.children];
+  ["cur", "pend", "new"].forEach((k, i) => { const old = document.getElementById(`mc-${k}-${safeId}-${lineId}`); if (old) old.replaceWith(fresh[i]); });
+}
+
 function toggleMcNeedsBoqJc(projectId, lineId, btn) {
   const st = mcLineItemState[projectId] && mcLineItemState[projectId][lineId];
   if (!st || btn.disabled) return;
@@ -569,6 +593,7 @@ function toggleMcNeedsBoqJc(projectId, lineId, btn) {
   btn.textContent = st.needsBoqJc ? "YES" : "NO";
   btn.style.background = st.needsBoqJc ? "#15803d" : "#b91c1c";
   btn.title = st.needsBoqJc ? "Click to mark this row as not needing a BOQ / Job Card" : "Click to mark this row as needing a BOQ / Job Card";
+  mcRefreshMfcQtyCells(projectId, lineId);
 }
 
 async function submitMcClearance(projectId) {
@@ -584,7 +609,7 @@ async function submitMcClearance(projectId) {
     standardItemCode: state[lineId].standardItemCode,
     standardProductName: state[lineId].standardProductName,
     standardProductRating: state[lineId].standardProductRating,
-    newMfcQuantity: state[lineId].newMfcQuantity,
+    newMfcQuantity: state[lineId].needsBoqJc === false ? state[lineId].orderQuantity : state[lineId].newMfcQuantity,
     needsBoqJc: state[lineId].needsBoqJc !== false,
   }));
   if (rows.length === 0) {
