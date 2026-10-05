@@ -101,10 +101,10 @@ async function ddocOpenCategory(categoryKey) {
       <input type="text" class="ddoc-filter" placeholder="Filter ${escapeHtml(cat.groupLabel.toLowerCase())}s..." oninput="ddocFilterFolders(this.value)">
       <div class="ddoc-grid" id="ddoc-folder-grid">
         ${data.folders.map(f => `
-          <button class="ddoc-folder" data-filter="${escapeHtml((f.grp + " " + (f.company_name || "")).toLowerCase())}"
+          <button class="ddoc-folder" data-filter="${escapeHtml((f.grp + " " + ddocGroupLabel(f.grp) + " " + (f.company_name || "")).toLowerCase())}"
                   onclick="ddocOpenFolder(${jsArg(categoryKey)}, ${jsArg(f.grp)})">
             <span class="ddoc-folder-icon">📁</span>
-            <span class="ddoc-folder-name">${escapeHtml(f.grp)}</span>
+            <span class="ddoc-folder-name">${escapeHtml(ddocGroupLabel(f.grp))}</span>
             ${f.company_name && !String(f.grp).includes(f.company_name) ? `<span class="ddoc-folder-sub">${escapeHtml(f.company_name)}</span>` : ""}
             <span class="ddoc-folder-count">${f.n} file${f.n === 1 ? "" : "s"}${f.last_at ? " · " + escapeHtml(formatOrdinalDate(f.last_at)) : ""}</span>
           </button>`).join("")}
@@ -113,6 +113,12 @@ async function ddocOpenCategory(categoryKey) {
     if (err.message === "SESSION_EXPIRED") return;
     mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
   }
+}
+
+// Month folders are stored as "2026-10"; shown as "Oct 2026".
+function ddocGroupLabel(group) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(group || ""));
+  return m ? APP_MONTH_NAMES[Number(m[2]) - 1] + " " + m[1] : String(group || "");
 }
 
 function ddocFilterFolders(q) {
@@ -127,7 +133,7 @@ async function ddocOpenFolder(categoryKey, group) {
   ddocBreadcrumb([
     { label: "All types", go: ddocShowTypes },
     { label: cat ? cat.label : categoryKey, go: () => ddocOpenCategory(categoryKey) },
-    { label: group, go: () => ddocOpenFolder(categoryKey, group) },
+    { label: ddocGroupLabel(group), go: () => ddocOpenFolder(categoryKey, group) },
   ]);
   await ddocLoadDocuments({ action: "fetchDocumentFiles", category: categoryKey, group }, false);
 }
@@ -233,7 +239,7 @@ function ddocRenderDocument(d, showGroup, expandVersions) {
   const latest = d.versions[0];
   const older = d.versions.slice(1);
   const hasVersions = older.length > 0;
-  const metaOf = (v, isTop) => [showGroup && isTop ? d.group : "", ddocVersionLabel(v, false), v.date ? formatOrdinalDateTime(v.date) : ""]
+  const metaOf = (v, isTop) => [showGroup && isTop ? ddocGroupLabel(d.group) : "", ddocVersionLabel(v, false), v.date ? formatOrdinalDateTime(v.date) : ""]
     .filter(Boolean).map(escapeHtml).join(" · ");
   const row = (v, isTop, extraActions) => `
       <div class="ddoc-doc-main">
