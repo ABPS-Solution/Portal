@@ -77,7 +77,9 @@ async function crpoSelectProject(projectId) {
       <div style="margin-top:18px; font-weight:800; color:var(--brand); font-size:1.05rem;">Upload Revised Purchase Order</div>
       <div class="card-box" id="crpo-upload-box" onclick="document.getElementById('crpo-file').click()" style="margin-top:8px; padding:24px; font-size:0.9rem; min-height:90px; display:flex; align-items:center; justify-content:center;">📋 Select Revised Purchase Order *</div>
       <input type="file" id="crpo-file" accept="image/*,application/pdf" hidden onchange="crpoFileChosen(this)" />
-      <button class="nav-btn-styled" id="crpo-extract-btn" style="margin-top:12px; width:100%; padding:10px;" onclick="crpoExtract()">Process Revised Purchase Order with AI</button>`;
+      <button class="nav-btn-styled" id="crpo-extract-btn" style="margin-top:12px; width:100%; padding:10px;" onclick="crpoExtract()">Process Revised Purchase Order with AI</button>
+      <div style="text-align:center; color:var(--muted); font-size:0.85rem; margin:12px 0 6px;">or</div>
+      <button class="nav-btn-styled" style="width:100%; padding:10px; background:#475569;" onclick="crpoEditWithoutDocument()">Edit without a new document</button>`;
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') dz.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
@@ -175,6 +177,26 @@ async function crpoExtract() {
   }
 }
 
+// Same review form, filled with the current PO, so a few fields can be
+// corrected and saved without uploading a revised document.
+function crpoEditWithoutDocument() {
+  const projectId = document.getElementById('crpo-project-select').value;
+  if (!projectId || !crpoDetails) return alert('Select a project first.');
+  crpoFile = null;
+  const box = document.getElementById('crpo-upload-box');
+  if (box) box.textContent = '📋 Select Revised Purchase Order *';
+  const header = {};
+  CRPO_HEADER_FIELDS.forEach(([k]) => { header[k] = crpoDetails.header[k] == null ? '' : crpoDetails.header[k]; });
+  const lineItems = crpoDetails.lines.map(l => ({
+    itemCode: l.itemCode || '', hsnNumber: l.hsnNumber || '', description: l.description || '',
+    quantity: l.quantity ?? '', unit: l.unit || '', ratePerQuantity: l.ratePerQuantity ?? '', gstAmount: l.gstAmount ?? '',
+    matchLineId: l.lineId,
+  }));
+  crpoReview = { projectId, base64Data: null, header, lineItems, removeLineIds: new Set(), withoutDocument: true };
+  crpoRenderReview();
+  document.getElementById('crpo-review-zone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function crpoRenderReview() {
   const rz = document.getElementById('crpo-review-zone');
   rz.style.display = 'block';
@@ -190,14 +212,16 @@ function crpoRenderReview() {
   }).join('');
   rz.innerHTML = `
     <div style="margin-top:20px; padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius);">
-      <div style="font-weight:800; color:var(--brand); font-size:1.1rem;">Review Revised Purchase Order</div>
-      <div style="color:var(--muted); font-size:0.82rem; margin:4px 0 12px;">Check every value. For each product row choose which current PO row it revises, or "New row". Current rows you don't map stay as they are unless you tick Remove.</div>
+      <div style="font-weight:800; color:var(--brand); font-size:1.1rem;">${crpoReview.withoutDocument ? 'Edit Purchase Order' : 'Review Revised Purchase Order'}</div>
+      <div style="color:var(--muted); font-size:0.82rem; margin:4px 0 12px;">${crpoReview.withoutDocument
+        ? 'Change only the values that need correcting and save. No new document is attached; the revision history records what changed.'
+        : 'Check every value. For each product row choose which current PO row it revises, or "New row". Current rows you don\'t map stay as they are unless you tick Remove.'}</div>
       <div style="display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); gap:10px;">${headerHtml}</div>
       <div style="margin-top:16px; font-weight:700;">Product Rows</div>
       <div id="crpo-review-lines"></div>
       <button class="nav-btn-styled" style="margin-top:8px; width:auto; padding:6px 14px; background:#475569;" onclick="crpoAddRow()">+ Add Row</button>
       <div id="crpo-unmapped"></div>
-      <button class="nav-btn-styled" id="crpo-submit-btn" style="margin-top:16px; width:100%; padding:10px; background:var(--accent); font-weight:700;" onclick="crpoSubmit()">Submit Revised Purchase Order</button>
+      <button class="nav-btn-styled" id="crpo-submit-btn" style="margin-top:16px; width:100%; padding:10px; background:var(--accent); font-weight:700;" onclick="crpoSubmit()">${crpoReview.withoutDocument ? 'Save Changes' : 'Submit Revised Purchase Order'}</button>
     </div>`;
   rz.querySelectorAll('textarea').forEach(t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; });
   crpoRenderLines();
@@ -296,7 +320,7 @@ async function crpoSubmit() {
     if (qty < (Number(old.invoicedQuantity) || 0)) return alert(`"${old.description}" cannot go below its invoiced quantity (${fmtQty(old.invoicedQuantity)}).`);
     if (qty < (Number(old.mfcQuantity) || 0)) cuts.push(`${old.description}: MFC ${fmtQty(old.mfcQuantity)} → ${fmtQty(qty)}`);
   }
-  const msg = `Submit this revision of the Purchase Order for ${crpoReview.projectId}?` +
+  const msg = (crpoReview.withoutDocument ? `Save these changes to the Purchase Order for ${crpoReview.projectId}? No new document will be attached.` : `Submit this revision of the Purchase Order for ${crpoReview.projectId}?`) +
     (cuts.length ? `\n\nThese products go below their MFC quantity. MFC, BOQ and Job Cards will be reduced:\n• ${cuts.join('\n• ')}` : '') +
     (crpoReview.removeLineIds.size ? `\n\n${crpoReview.removeLineIds.size} current row(s) will be removed.` : '');
   if (!await abpsConfirm(msg)) return;
@@ -316,7 +340,7 @@ async function crpoSubmit() {
     const pid = crpoReview.projectId;
     const okMsg = `✅ Revision ${data.revisionNo} saved for ${escapeHtml(pid)}: ${escapeHtml(data.summary || '')}.` +
       (data.revisedBoqIds && data.revisedBoqIds.length ? ` Revised BOQs: ${data.revisedBoqIds.map(x => escapeHtml(x)).join(', ')}.` : '') +
-      (data.fileUrl ? ` <a href="${driveLink(data.fileUrl)}" target="_blank" rel="noopener">View revised PO ↗</a>` : ' <span style="color:#b45309;">(The PO document could not be saved to Drive.)</span>');
+      (data.withoutDocument ? '' : data.fileUrl ? ` <a href="${driveLink(data.fileUrl)}" target="_blank" rel="noopener">View revised PO ↗</a>` : ' <span style="color:#b45309;">(The PO document could not be saved to Drive.)</span>');
     await crpoSelectProject(pid);
     crpoBanner(okMsg, 'success');
   } catch (e) {
