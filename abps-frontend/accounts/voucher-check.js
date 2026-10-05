@@ -182,7 +182,9 @@ function tvcRenderTicketPicker(v) {
                margin-bottom:8px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
       <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}" onclick="event.stopPropagation();" style="width:16px; height:16px; margin:0;">
       <div style="min-width:0;">
-        <div style="font-weight:700; overflow-wrap:break-word;">${titleLine}</div>
+        <div style="font-weight:700; overflow-wrap:break-word;">${t.invoiceUrl
+          ? `<a href="${escapeHtml(driveLink(t.invoiceUrl))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" title="Open the ticket" style="color:var(--brand); text-decoration:underline;">${titleLine}</a>`
+          : titleLine}</div>
         <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">${metaBits}</div>
         <div style="margin-top:4px;">${overlapBadge}</div>
       </div>

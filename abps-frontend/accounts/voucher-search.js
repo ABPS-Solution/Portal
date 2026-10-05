@@ -426,8 +426,9 @@ function tvsRenderCard(v) {
     const label = isHotel
       ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${forTag}`
       : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${forTag}`;
+    const labelLinked = t.invoiceUrl ? `<a href="${escapeHtml(driveLink(t.invoiceUrl))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" title="Open the ticket" style="color:var(--brand);">${label}</a>` : label;
     return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
-      <span>${label}${invoiceLink}${cancelledTag}</span>
+      <span>${labelLinked}${invoiceLink}${cancelledTag}</span>
       <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
     </div>`;
   }).join("");
@@ -543,8 +544,9 @@ async function tvsToggleLinkPicker(voucherId) {
       const label = isHotel
         ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
         : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
+      const labelLinked = t.invoiceUrl ? `<a href="${escapeHtml(driveLink(t.invoiceUrl))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" title="Open the ticket" style="color:var(--brand);">${label}</a>` : label;
       return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; font-size:0.85rem; border-top:1px solid var(--border);">
-        <span>${label} · ${dateCell} · for ${escapeHtml(t.employeeName)} · ${overlapBadge}</span>
+        <span>${labelLinked} · ${dateCell} · for ${escapeHtml(t.employeeName)} · ${overlapBadge}</span>
         <span style="white-space:nowrap;">${formatINRComma(t.price)}
           <button class="nav-btn-styled" onclick="event.stopPropagation(); tvsLinkBooking(${voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px;">Link</button>
         </span>
