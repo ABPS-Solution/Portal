@@ -455,17 +455,18 @@ function renderCBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="cboqMaterialRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') cboqMaterialRows[${idx}].designRatePerQuantity=''; renderCBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="boqSetStoreType(cboqMaterialRows[${idx}], this.value); renderCBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
+          ${boqAcStoreOptionHtml(row)}
         </select>
       </td>
       <td style="padding:4px; position:relative;">
-        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+        ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('cboq', idx, row, `renderCBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'cboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>
+        >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="cboq-mat-dropdown-${idx}" onmousedown="event.stopPropagation();" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -473,9 +474,9 @@ function renderCBOQMaterialRows() {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
+        ${boqIsAcRow(row) ? boqAcQtyCellHtml() : `<input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
           oninput="cboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; boqQtyChanged('cboq', ${idx}, this); updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=cboqMaterialRows[${idx}].quantityFor1Set*(Number(cboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />`}
       </td>
       <td style="padding:4px; text-align:center; vertical-align:middle;">
         <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
@@ -641,8 +642,39 @@ function boqQtyChanged(prefix, idx, el) {
   const hint = tr && tr.querySelector(".boq-rate-hint");
   if (hint) hint.outerHTML = boqRateHintHtml(row, prefix);
 }
+// Additional Costing rows (5 Oct 2026): costing only (Transport, Labour...).
+// No item code, never on a PRN / Job Card / ticket. One lump-sum amount per
+// set, stored as Qty / Set 1 x Design Rate. Keep in step with
+// ADDITIONAL_COSTING_* in abps-backend/lib/boqCosting.js.
+const BOQ_AC_STORE = "Additional Costing";
+const BOQ_AC_OPTIONS = ["Internal Transport", "Labour Charges for Reactor"];
+const BOQ_AC_UNIT = "Lump Sum";
+function boqIsAcRow(row) { return !!row && row.typeOfStore === BOQ_AC_STORE; }
+function boqAcStoreOptionHtml(row) {
+  return `<option value="${BOQ_AC_STORE}" ${boqIsAcRow(row) ? "selected" : ""}>Additional Costing</option>`;
+}
+function boqSetStoreType(row, value) {
+  const wasAc = boqIsAcRow(row);
+  row.typeOfStore = value;
+  if (value === "Finished Goods Store") row.designRatePerQuantity = "";
+  if (value === BOQ_AC_STORE && !wasAc) {
+    Object.assign(row, { materialName: "", itemCode: "", make: "", quantityFor1Set: 1, unit: BOQ_AC_UNIT, designRatePerQuantity: "", descriptionId: null, descriptionOfMaterial: "" });
+  } else if (wasAc && value !== BOQ_AC_STORE) {
+    Object.assign(row, { materialName: "", itemCode: "", make: "", quantityFor1Set: "", unit: "", designRatePerQuantity: "" });
+  }
+}
+function boqAcMaterialSelectHtml(prefix, idx, row, rerenderJs) {
+  const opts = BOQ_AC_OPTIONS.map(o => `<option value="${escapeHtml(o)}" ${row.materialName === o ? "selected" : ""}>${escapeHtml(o)}</option>`).join("");
+  return `<select onchange="boqRowsForPrefix('${prefix}')[${idx}].materialName=this.value; boqRowsForPrefix('${prefix}')[${idx}].costingVerified=false; ${rerenderJs}" style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;">
+    <option value="" ${row.materialName ? "" : "selected"}>Select costing item...</option>${opts}</select>`;
+}
+function boqAcQtyCellHtml() {
+  return `<input type="text" value="1" readonly title="Additional Costing is one lump-sum amount per set" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`;
+}
+
 function boqRateHintHtml(row, prefix) {
   const wrap = (txt, color, title) => `<div class="boq-rate-hint" ${title ? `title="${escapeHtml(title)}"` : ""} style="font-size:0.68rem; line-height:1.25; color:${color || "var(--muted)"}; margin-top:3px; text-align:center;">${txt}</div>`;
+  if (boqIsAcRow(row)) return wrap("Lump-sum amount for one set");
   if (!row.itemCode) return "";
   if (row.typeOfStore === "Finished Goods Store") return wrap(Number(row.designRatePerQuantity) > 0 ? "From this product's own authorized BOQ" : "Filled automatically when this product's own BOQ is authorized");
   if (!(row.itemCode in window.boqPurchaseRateCache)) return wrap("Checking purchase history…");
@@ -673,7 +705,7 @@ function boqUnverifyRow(prefix, idx) {
 // its material changed, or its Qty / Set or Design Rate / Qty changed.
 function boqCostingRowKey(r) {
   const code = String(r.itemCode || r.materialName || "").trim().toUpperCase();
-  const store = r.typeOfStore === "Finished Goods Store" ? "FG" : "RM";
+  const store = r.typeOfStore === "Finished Goods Store" ? "FG" : boqIsAcRow(r) ? "AC" : "RM";
   return code ? `${code}|${store}|${r.descriptionId || ""}` : "";
 }
 function boqRevisionRowNeedsTick(baselineRows, r) {

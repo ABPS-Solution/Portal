@@ -598,17 +598,18 @@ function renderEBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="eboqMaterialRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') eboqMaterialRows[${idx}].designRatePerQuantity=''; eboqMaterialRows[${idx}].costingVerified=false; renderEBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="boqSetStoreType(eboqMaterialRows[${idx}], this.value); eboqMaterialRows[${idx}].costingVerified=false; renderEBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
+          ${boqAcStoreOptionHtml(row)}
         </select>
       </td>
       <td style="padding:4px; position:relative;">
-        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+        ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('eboq', idx, row, `renderEBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'eboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>
+        >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="eboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -616,9 +617,9 @@ function renderEBOQMaterialRows() {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
+        ${boqIsAcRow(row) ? boqAcQtyCellHtml() : `<input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
           oninput="boqUnverifyRow('eboq', ${idx}); eboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; boqQtyChanged('eboq', ${idx}, this); updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=eboqMaterialRows[${idx}].quantityFor1Set*(Number(eboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />`}
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="text" value="${escapeHtml(row.unit || "—")}" readonly

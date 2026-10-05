@@ -209,17 +209,18 @@ function renderBOQRevisionRows(updateId) {
     <tr style="border-bottom:1px solid #f1f5f9;${changeTag ? ' outline:3px solid #f59e0b; outline-offset:-3px; background:#fffbeb;' : ''}"${changeTag ? ` title="${changeTag} in this revision"` : ''}>
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}${changeTag ? `<div style="margin-top:3px; font-size:0.62rem; font-weight:800; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px;">${changeTag}</div>` : ''}</td>
       <td style="padding:4px;">
-        <select onchange="uboqRevRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') uboqRevRows[${idx}].designRatePerQuantity=''; uboqRevRows[${idx}].costingVerified=false; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="boqSetStoreType(uboqRevRows[${idx}], this.value); uboqRevRows[${idx}].costingVerified=false; renderBOQRevisionRows(${updateId});" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
+          ${boqAcStoreOptionHtml(row)}
         </select>
       </td>
       <td style="padding:4px; position:relative;">
-        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+        ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('boqrev', idx, row, `renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>
+        >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="boqrev-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -227,9 +228,9 @@ function renderBOQRevisionRows(updateId) {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
+        ${boqIsAcRow(row) ? boqAcQtyCellHtml() : `<input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
           oninput="boqUnverifyRow('boqrev', ${idx}); uboqRevRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; boqQtyChanged('boqrev', ${idx}, this); const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=uboqRevRows[${idx}].quantityFor1Set*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />`}
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
@@ -587,17 +588,18 @@ function renderUBOQMaterialRows() {
     tr.innerHTML = `
       <td style="text-align:center; padding:6px; font-weight:700; color:var(--muted);">${idx + 1}</td>
       <td style="padding:4px;">
-        <select onchange="uboqMaterialRows[${idx}].typeOfStore=this.value; if(this.value==='Finished Goods Store') uboqMaterialRows[${idx}].designRatePerQuantity=''; renderUBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
+        <select onchange="boqSetStoreType(uboqMaterialRows[${idx}], this.value); renderUBOQMaterialRows();" style="padding:4px; font-size:0.8rem; width:100%;">
           <option value="Raw Materials Store" ${row.typeOfStore==="Raw Materials Store"?"selected":""}>Raw Material</option>
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
+          ${boqAcStoreOptionHtml(row)}
         </select>
       </td>
       <td style="padding:4px; position:relative;">
-        <textarea rows="1" placeholder="Type to search..." autocomplete="off"
+        ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('uboq', idx, row, `renderUBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>
+        >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="uboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -605,9 +607,9 @@ function renderUBOQMaterialRows() {
           style="padding:5px; font-size:0.78rem; font-family:monospace; font-weight:700; text-align:center; background:#e0f2fe; color:var(--brand); cursor:not-allowed; border-radius:3px; border:1px solid #bae6fd; width:100%;" />
       </td>
       <td style="padding:4px; text-align:center;">
-        <input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
+        ${boqIsAcRow(row) ? boqAcQtyCellHtml() : `<input type="number" value="${row.quantityFor1Set || ""}" min="0" placeholder="0"
           oninput="uboqMaterialRows[${idx}].quantityFor1Set=parseFloat(this.value)||0; boqQtyChanged('uboq', ${idx}, this); updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=uboqMaterialRows[${idx}].quantityFor1Set*(Number(uboqMaterialRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
-          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />
+          style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;" />`}
       </td>
       <td style="padding:4px; text-align:center;">
         <input type="text" value="${escapeHtml(row.unit || "—")}" readonly
