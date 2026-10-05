@@ -376,7 +376,7 @@ function canonicalUnit(u) {
     nos: "NOS", no: "NOS", nr: "NOS", number: "NOS", numbers: "NOS", pc: "NOS", pcs: "NOS", piece: "NOS", pieces: "NOS", ea: "NOS", each: "NOS", unit: "NOS", units: "NOS",
     m: "METER", mtr: "METER", mtrs: "METER", meter: "METER", meters: "METER", metre: "METER", metres: "METER", rmt: "METER", mt: "METER",
     l: "LITRE", ltr: "LITRE", ltrs: "LITRE", lit: "LITRE", litre: "LITRE", litres: "LITRE", liter: "LITRE", liters: "LITRE",
-    set: "SET", sets: "SET", roll: "ROLL", rolls: "ROLL", rol: "ROLL", pair: "PAIR", pairs: "PAIR",
+    set: "SET", sets: "SET", roll: "ROLL", rolls: "ROLL", rol: "ROLL", pair: "PAIR", pairs: "PAIR", pkt: "PKT", pkts: "PKT", packet: "PKT", packets: "PKT",
     g: "GRAM", gm: "GRAM", gms: "GRAM", gram: "GRAM", grams: "GRAM"
   };
   return map[k] || k.toUpperCase();
