@@ -629,6 +629,38 @@ async function addItemToShoppingBasketRow() {
     return;
   }
 
+  // --- CONSUMABLE (Raw Materials Store, outside the BOQ) ---
+  {
+    const jobCardForCons = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    await ticketEnsureJcmCache_("Raw Materials Store", jobCardForCons, projectId);
+    const consMatch = (window._ticketJobCardMaterialsCache.records || []).find(r =>
+      r.isConsumable && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    if (consMatch) {
+      const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
+      const totalCons = quantity + (existingCons ? existingCons.quantity : 0);
+      const canIssue = Number(consMatch.remainingQty) || 0;
+      if (totalCons > canIssue) {
+        restoreAddBtn();
+        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} can be issued now. Reduce the quantity, or use "Request Purchase" for the rest.`);
+        return;
+      }
+      if (existingCons) {
+        existingCons.quantity = totalCons;
+        existingCons.allottedRemainingLimit = canIssue;
+      } else {
+        dynamicTicketShoppingBasketArray.push({
+          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: totalCons,
+          unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
+          allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
+        });
+      }
+      qtyInput.value = ""; ticketItemTaClear();
+      restoreAddBtn();
+      renderDraftBasketTableViewportRows();
+      return;
+    }
+  }
+
   // --- RAW MATERIALS STORE: inventory + BOQ check ---
   let activeCacheCollection = cachedInventoryStockCollection;
   
@@ -1788,7 +1820,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName;
-          opt.textContent = r.materialName;
+          opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
@@ -1841,7 +1873,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       window._ticketJobCardMaterialsCache = { key: jcmCacheKeySpare, records: jcmFetchSpare.records || [] };
 
       const spareRecordsForCard = (jcmFetchSpare.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !r.isConsumable
       );
 
       if (jcmFetchSpare.success && spareRecordsForCard.length > 0) {
@@ -1947,8 +1979,9 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // so both dropdowns list the same set — but Finished Goods items are
       // a genuinely separate pool (their own dropdown branch above) and
       // must never appear here.
+      const isProcessingDept = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Processing";
       const rawRecordsForCard = (jcmFetch.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !(isProcessingDept && r.isConsumable)
       );
 
       if (jcmFetch.success && rawRecordsForCard.length > 0) {
@@ -1959,7 +1992,8 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
             opt.value = r.materialName;
-            opt.textContent = r.materialName;
+            opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
+            if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }
         });
@@ -2402,3 +2436,59 @@ renderDraftBasketTableViewportRows = (orig => function () {
 document.addEventListener("change", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
 document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-dropdown-list"))) cmitDraftSaveSoon(); });
+
+// ── Consumables: Request Purchase (migration 238) ───────────────────────
+// Raised from the stock badge when a consumable is short. A Job Card request
+// is approved into that Job Card's PRN; a Service request is listed for
+// Purchase under its project / legacy company.
+function ticketOpenConsumableRequest(itemCode, materialName, unit) {
+  const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
+  const isLegacy = !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  const projectId = isLegacy ? "" : (document.getElementById("ticket-project-id-dropdown-ta-input")?.value || "");
+  const legacyCompanyName = isLegacy ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim() : "";
+  const jobCardNumber = dept === "Service" ? "" : (document.getElementById("ticket-job-card-dropdown")?.value || "");
+  if (dept !== "Service" && !jobCardNumber) { alert("Select the Job Card first."); return; }
+  const target = dept === "Service" ? (projectId || legacyCompanyName) : jobCardNumber;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100000; display:flex; align-items:center; justify-content:center; padding:16px;";
+  wrap.innerHTML = `
+    <div style="background:#fff; border-radius:10px; max-width:460px; width:100%; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;">
+      <div style="font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:6px;">Request Purchase</div>
+      <div style="font-size:0.88rem; color:#334155; margin-bottom:12px;">${escapeHtml(materialName)}<br><span style="color:var(--muted);">For ${escapeHtml(dept)} · ${escapeHtml(target)}</span></div>
+      <label class="field-label" style="margin-top:0;">Quantity needed (${escapeHtml(unit)}) *</label>
+      <input type="number" min="0" step="any" id="cons-req-qty" style="width:100%; padding:8px;">
+      <label class="field-label">Reason</label>
+      <textarea id="cons-req-reason" rows="2" style="width:100%; padding:8px; font-family:inherit;" placeholder="e.g. Not enough in stock for this Job Card"></textarea>
+      <div id="cons-req-msg" style="margin-top:8px; font-size:0.85rem; font-weight:700;"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 16px; background:#64748b;" id="cons-req-cancel">Cancel</button>
+        <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 16px; background:#7c3aed;" id="cons-req-send">Send to Admin</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = () => wrap.remove();
+  wrap.querySelector("#cons-req-cancel").onclick = close;
+  wrap.addEventListener("click", e => { if (e.target === wrap) close(); });
+  wrap.querySelector("#cons-req-send").onclick = async () => {
+    const btn = wrap.querySelector("#cons-req-send");
+    const msg = wrap.querySelector("#cons-req-msg");
+    const quantity = wrap.querySelector("#cons-req-qty").value;
+    if (!(Number(quantity) > 0)) { msg.style.color = "#b91c1c"; msg.textContent = "Enter a quantity above 0."; return; }
+    btn.disabled = true; btn.textContent = "Sending...";
+    try {
+      const data = await apFetch({
+        action: "submitConsumablePurchaseRequest", itemCode, quantity, department: dept,
+        reason: wrap.querySelector("#cons-req-reason").value, projectId, jobCardNumber, legacyCompanyName,
+      });
+      if (!data.success) throw new Error(data.error || "Could not send the request.");
+      msg.style.color = "#15803d";
+      msg.textContent = `Request #${data.requestId} sent to Admin for approval.`;
+      btn.textContent = "Sent";
+      setTimeout(close, 1400);
+    } catch (e) {
+      if (e.message === "SESSION_EXPIRED") return;
+      msg.style.color = "#b91c1c"; msg.textContent = e.message;
+      btn.disabled = false; btn.textContent = "Send to Admin";
+    }
+  };
+}

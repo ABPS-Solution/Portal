@@ -319,6 +319,10 @@ async function executeItemCodeSearch() {
           <div style="font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.4;">${escapeHtml(match.productName)}</div>
           <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${escapeHtml(match.typeOfMaterial)}${_unit ? ` &nbsp;·&nbsp; <strong style="color:var(--text);">Unit: ${escapeHtml(_unit)}</strong>` : ""}</div>
         </div>
+        ${itemCodeViewerIsAdmin() ? `<label onclick="event.stopPropagation();" title="Consumables can be issued on any Reactor / Capacitor / Panel / Service ticket, outside the BOQ."
+            style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:#5b21b6; margin-left:10px; flex-shrink:0; cursor:pointer;">
+            <input type="checkbox" style="width:auto;" ${match.isConsumable ? "checked" : ""} onchange="toggleItemCodeConsumable(${jsArg(match.itemCode)}, this)"> Consumable
+          </label>` : (match.isConsumable ? '<span style="font-size:0.72rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:999px; margin-left:10px;">CONSUMABLE</span>' : '')}
         <span style="color:var(--brand); font-size:0.78rem; font-weight:700; flex-shrink:0; margin-left:10px;">Clone →</span>
       `;
       suggestMount.appendChild(card);
@@ -1120,3 +1124,20 @@ function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, type
 // CREATE BOQ
 // ═══════════════════════════════════════════════════════
 
+
+// Consumables (migration 238): admin-only flag on an item code.
+function itemCodeViewerIsAdmin() {
+  return (localStorage.getItem("isUserAdminGlobal") || localStorage.getItem("erpIsUserAdminGlobal")) === "true";
+}
+async function toggleItemCodeConsumable(itemCode, box) {
+  try {
+    const data = await apFetch({ action: "setItemCodeConsumable", itemCode, isConsumable: box.checked });
+    if (!data.success) throw new Error(data.error || "Could not save.");
+    const hit = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+    if (hit) hit.isConsumable = box.checked;
+  } catch (e) {
+    if (e.message === "SESSION_EXPIRED") return;
+    box.checked = !box.checked;
+    alert(e.message);
+  }
+}

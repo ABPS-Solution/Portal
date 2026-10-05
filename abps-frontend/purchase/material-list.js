@@ -80,6 +80,7 @@ async function loadMaterialListForPurchase() {
     }
     materialListCache = data.materials || [];
     renderMaterialListFiltered();
+    renderServiceConsumableRequestsToOrder("material-list-service-consumables");
   } catch(e) {
     zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
   } finally {
@@ -128,6 +129,7 @@ function renderMaterialListByType(materials) {
         totalPurchaseQty: 0
       };
     }
+    if (item.isConsumable) aggregated[code].isConsumable = true;
     aggregated[code].totalPurchaseQty += qty;
   });
 
@@ -196,7 +198,7 @@ function renderMaterialListByType(materials) {
       card.onclick = () => showMaterialProjectBreakdownModal(item.itemCode, item.materialName, item.unit, item.totalPurchaseQty);
       card.innerHTML = `
         <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
-          ${escapeHtml(item.materialName)}
+          ${item.isConsumable ? '<span style="font-size:0.62rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:1px 6px; border-radius:999px; margin-right:4px;">CONSUMABLE</span>' : ''}${escapeHtml(item.materialName)}
         </div>
         <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
