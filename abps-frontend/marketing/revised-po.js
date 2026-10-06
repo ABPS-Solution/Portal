@@ -112,44 +112,24 @@ async function crpoSelectProject(projectId) {
     const data = await apFetch({ action: 'fetchProjectPoDetails', projectId });
     if (!data.success) { dz.innerHTML = `<div style="color:#b91c1c;">${escapeHtml(data.error || 'Failed to load PO.')}</div>`; return; }
     crpoDetails = data;
-    crpoRenderDetails();
-    uz.style.display = 'block';
-    uz.innerHTML = `
-      <div style="margin-top:18px; font-weight:800; color:var(--brand); font-size:1.05rem;">Upload Revised Purchase Order</div>
-      <div class="card-box" id="crpo-upload-box" onclick="document.getElementById('crpo-file').click()" style="margin-top:8px; padding:24px; font-size:0.9rem; min-height:90px; display:flex; align-items:center; justify-content:center;">📋 Select Revised Purchase Order *</div>
+    // Upload box first, then the editable current PO, then the revision history.
+    dz.innerHTML = `
+      <div style="margin-top:14px; font-weight:800; color:var(--brand); font-size:1.05rem;">Upload Revised Purchase Order (optional)</div>
+      <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">Upload and process a revised PO to fill the form below from it, or just edit the form and save.</div>
+      <div class="card-box" id="crpo-upload-box" onclick="document.getElementById('crpo-file').click()" style="margin-top:8px; padding:24px; font-size:0.9rem; min-height:90px; display:flex; align-items:center; justify-content:center;">📋 Select Revised Purchase Order</div>
       <input type="file" id="crpo-file" accept="image/*,application/pdf" hidden onchange="crpoFileChosen(this)" />
       <button class="nav-btn-styled" id="crpo-extract-btn" style="margin-top:12px; width:100%; padding:10px;" onclick="crpoExtract()">Process Revised Purchase Order with AI</button>
-      <div style="text-align:center; color:var(--muted); font-size:0.85rem; margin:12px 0 6px;">or</div>
-      <button class="nav-btn-styled" style="width:100%; padding:10px; background:#475569;" onclick="crpoEditWithoutDocument()">Edit without a new document</button>`;
+      <div id="crpo-review-inner"></div>
+      <div id="crpo-history"></div>`;
+    crpoStartFromCurrentPo();
+    crpoRenderHistory();
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') dz.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
-function crpoRenderDetails() {
-  const d = crpoDetails, h = d.header;
-  const cell = (label, val, span) => `<div style="grid-column:span ${span}; min-width:0;"><div style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">${label}</div><div style="padding:6px 8px; background:#f1f5f9; border-radius:4px; font-size:0.85rem; min-height:30px; white-space:pre-wrap; word-break:break-word;">${val}</div></div>`;
-  const fmtVal = (k, type) => {
-    const v = h[k];
-    if (v === null || v === undefined || v === '') return '—';
-    if (type === 'date') return escapeHtml(formatOrdinalDate(v));
-    if (type === 'number') return crpoMoney(v);
-    return escapeHtml(String(v));
-  };
-  const a = d.amounts || {};
-  const lines = d.lines.map(l => `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px;">${escapeHtml(l.itemCode || '—')}</td>
-      <td style="padding:6px;">${escapeHtml(l.hsnNumber || '—')}</td>
-      <td style="padding:6px;">${escapeHtml(l.description || '')}</td>
-      <td style="padding:6px; text-align:center; font-weight:700;">${fmtQty(l.quantity)}</td>
-      <td style="padding:6px; text-align:center;">${escapeHtml(l.unit || '—')}</td>
-      <td style="padding:6px; text-align:right;">${crpoMoney(l.ratePerQuantity)}</td>
-      <td style="padding:6px; text-align:right;">${crpoMoney(l.totalBasicPrice)}</td>
-      <td style="padding:6px; text-align:right;">${crpoMoney(l.gstAmount)}</td>
-      <td style="padding:6px; text-align:right;">${crpoMoney(l.totalAmount)}</td>
-      <td style="padding:6px; text-align:center;">${fmtQty(l.mfcQuantity || 0)}</td>
-      <td style="padding:6px; text-align:center;">${fmtQty(l.invoicedQuantity || 0)}</td>
-    </tr>`).join('');
+function crpoRenderHistory() {
+  const d = crpoDetails;
   const revs = (d.revisions || []).map(r => `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:6px; text-align:center; font-weight:700;">${r.revisionNo}</td>
       <td style="padding:6px;">${escapeHtml(r.poNumber || '—')}</td>
@@ -158,25 +138,10 @@ function crpoRenderDetails() {
       <td style="padding:6px;">${escapeHtml(r.summary || '')}</td>
       <td style="padding:6px; text-align:center;">${r.poDocumentUrl ? `<a href="${driveLink(r.poDocumentUrl)}" target="_blank" rel="noopener">View ↗</a>` : '—'}</td>
     </tr>`).join('');
-  document.getElementById('crpo-details-zone').innerHTML = `
-    <div style="margin-top:14px; font-weight:800; color:var(--brand); font-size:1.05rem;">Current Purchase Order — ${escapeHtml(h.companyName || '')} (${escapeHtml(h.projectId)})</div>
-    <div style="display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); gap:10px; margin-top:10px;">
-      ${CRPO_HEADER_FIELDS.map(([k, label, type, span]) => cell(label.replace(' *', ''), fmtVal(k, type), span)).join('')}
-      ${cell('Basic PO Amount', crpoMoney(a.poBasicAmount), 3)}${cell('GST Amount', crpoMoney(a.poGstAmount), 3)}${cell('Total PO Amount', crpoMoney(a.poTotalAmount), 3)}
-      ${cell('PO Document', a.poDocumentUrl ? `<a href="${driveLink(a.poDocumentUrl)}" target="_blank" rel="noopener">View PO ↗</a>` : '—', 3)}
-    </div>
-    <div style="overflow-x:auto; margin-top:14px;">
-      <table style="width:100%; min-width:900px; border-collapse:collapse; font-size:0.82rem;">
-        <thead><tr style="background:var(--highlight-bg); text-align:left;">
-          <th style="padding:6px;">Customer Item Code</th><th style="padding:6px;">HSN</th><th style="padding:6px;">Order Product Description</th>
-          <th style="padding:6px; text-align:center;">Qty</th><th style="padding:6px; text-align:center;">UOM</th><th style="padding:6px; text-align:right;">Rate</th>
-          <th style="padding:6px; text-align:right;">Basic</th><th style="padding:6px; text-align:right;">GST</th><th style="padding:6px; text-align:right;">Total</th>
-          <th style="padding:6px; text-align:center;">MFC Qty</th><th style="padding:6px; text-align:center;">Invoiced Qty</th>
-        </tr></thead>
-        <tbody>${lines || '<tr><td colspan="11" style="padding:10px; color:var(--muted);">No product rows.</td></tr>'}</tbody>
-      </table>
-    </div>
-    ${revs ? `<div style="margin-top:14px; font-weight:700;">Revision History</div>
+  const el = document.getElementById('crpo-history');
+  if (!el) return;
+  el.innerHTML = `
+    ${revs ? `<div style="margin-top:18px; font-weight:700;">Revision History</div>
     <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
       <thead><tr style="background:var(--highlight-bg); text-align:left;"><th style="padding:6px; text-align:center;">Rev</th><th style="padding:6px;">PO Number</th><th style="padding:6px;">Date</th><th style="padding:6px;">By</th><th style="padding:6px;">Changes</th><th style="padding:6px; text-align:center;">Document</th></tr></thead>
       <tbody>${revs}</tbody></table></div>` : ''}`;
@@ -218,14 +183,11 @@ async function crpoExtract() {
   }
 }
 
-// Same review form, filled with the current PO, so a few fields can be
-// corrected and saved without uploading a revised document.
-function crpoEditWithoutDocument() {
+// The form opens filled with the current PO, ready to edit. Processing a
+// revised document replaces these values with what the AI read.
+function crpoStartFromCurrentPo() {
   const projectId = document.getElementById('crpo-project-select').value;
-  if (!projectId || !crpoDetails) return alert('Select a project first.');
-  crpoFile = null;
-  const box = document.getElementById('crpo-upload-box');
-  if (box) box.textContent = '📋 Select Revised Purchase Order *';
+  if (!projectId || !crpoDetails) return;
   const header = {};
   CRPO_HEADER_FIELDS.forEach(([k]) => { header[k] = crpoDetails.header[k] == null ? '' : crpoDetails.header[k]; });
   const lineItems = crpoDetails.lines.map(l => ({
@@ -235,37 +197,107 @@ function crpoEditWithoutDocument() {
   }));
   crpoReview = { projectId, base64Data: null, header, lineItems, removeLineIds: new Set(), withoutDocument: true };
   crpoRenderReview();
-  document.getElementById('crpo-review-zone').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Same rows, columns and formatting as Upload Purchase Order's review.
 function crpoRenderReview() {
-  const rz = document.getElementById('crpo-review-zone');
-  rz.style.display = 'block';
+  const zone = document.getElementById('crpo-review-inner');
+  if (!zone) return;
   const h = crpoReview.header;
-  const headerHtml = CRPO_HEADER_FIELDS.map(([k, label, type, span]) => {
-    const v = h[k] == null ? '' : h[k];
-    const input = type === 'date'
-      ? `<input type="date" lang="en-GB" value="${escapeHtml(String(v).slice(0, 10))}" onchange="crpoReview.header['${k}'] = this.value" style="width:100%; padding:6px;">`
-      : type === 'number'
-        ? `<input type="text" inputmode="decimal" value="${escapeHtml(String(v))}" oninput="crpoReview.header['${k}'] = this.value" style="width:100%; padding:6px;">`
-        : `<textarea rows="1" oninput="crpoReview.header['${k}'] = this.value; this.style.height='auto'; this.style.height=this.scrollHeight+'px';" style="width:100%; padding:6px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(String(v))}</textarea>`;
-    return `<div style="grid-column:span ${span}; min-width:0;"><label class="field-label">${label}</label>${input}</div>`;
-  }).join('');
-  rz.innerHTML = `
-    <div style="margin-top:20px; padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius);">
-      <div style="font-weight:800; color:var(--brand); font-size:1.1rem;">${crpoReview.withoutDocument ? 'Edit Purchase Order' : 'Review Revised Purchase Order'}</div>
-      <div style="color:var(--muted); font-size:0.82rem; margin:4px 0 12px;">${crpoReview.withoutDocument
-        ? 'Change only the values that need correcting and save. No new document is attached; the revision history records what changed.'
-        : 'Check every value. For each product row choose which current PO row it revises, or "New row". Current rows you don\'t map stay as they are unless you tick Remove.'}</div>
-      <div style="display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); gap:10px;">${headerHtml}</div>
-      <div style="margin-top:16px; font-weight:700;">Product Rows</div>
-      <div id="crpo-review-lines"></div>
-      <button class="nav-btn-styled" style="margin-top:8px; width:auto; padding:6px 14px; background:#475569;" onclick="crpoAddRow()">+ Add Row</button>
-      <div id="crpo-unmapped"></div>
-      <button class="nav-btn-styled" id="crpo-submit-btn" style="margin-top:16px; width:100%; padding:10px; background:var(--accent); font-weight:700;" onclick="crpoSubmit()">${crpoReview.withoutDocument ? 'Save Changes' : 'Submit Revised Purchase Order'}</button>
+  const d = crpoDetails.header;
+  const rowBreak = `<div style="grid-column: 1 / -1; height: 6px;"></div>`;
+  const lockedRow = (label, value, span) => `
+    <div class="grid-cell-item" style="background:#f1f5f9; grid-column: span ${span};">
+      <label style="font-size:0.72rem;">${label}</label>
+      <div style="padding:6px 8px; font-weight:600; color:var(--text); font-size:0.95rem; white-space:normal; word-break:break-word; border:1.5px solid #8492a6; border-radius:4px; background:#f8fafc;">${value || '—'}</div>
     </div>`;
-  rz.querySelectorAll('textarea').forEach(t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; });
+  const field = (label, key, type, span, required) => {
+    const raw = h[key] == null ? '' : String(h[key]);
+    const lbl = required ? `${label} *` : label;
+    if (type === 'number') {
+      return `<div class="grid-cell-item" style="grid-column: span ${span};"><label style="font-size:0.72rem;">${lbl}</label>
+        <input type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(raw))}"
+          oninput="crpoReview.header['${key}'] = sanitizeAmountInput(this)"
+          onfocus="this.value = (crpoReview.header['${key}'] ?? '').toString();"
+          onblur="this.value = formatIndianCurrencyInput(crpoReview.header['${key}']);"
+          style="font-size:0.95rem; padding:7px 8px;" /></div>`;
+    }
+    if (type === 'date') {
+      return `<div class="grid-cell-item" style="grid-column: span ${span};"><label style="font-size:0.72rem;">${lbl}</label>
+        <input type="date" value="${escapeHtml(raw.slice(0, 10))}" oninput="crpoReview.header['${key}'] = this.value" style="font-size:0.95rem; padding:7px 8px;" /></div>`;
+    }
+    return `<div class="grid-cell-item" style="grid-column: span ${span};"><label style="font-size:0.72rem;">${lbl}</label>
+      <textarea rows="1" oninput="crpoReview.header['${key}'] = this.value; autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+        style="font-size:0.95rem; padding:7px 8px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${escapeHtml(raw)}</textarea></div>`;
+  };
+  const docUrl = (crpoDetails.amounts || {}).poDocumentUrl;
+  zone.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:18px;">
+      <div style="font-weight:800; color:var(--brand); margin-bottom:4px; font-size:1.05rem;">${crpoReview.withoutDocument ? 'Purchase Order' : 'Review Revised Purchase Order'}</div>
+      <div style="font-size:0.88rem; color:var(--muted); margin-bottom:14px;">${crpoReview.withoutDocument
+        ? 'Change any value that needs correcting, then Save Changes. The revision history records what changed.'
+        : 'Check every value the AI read. For each product row choose which current PO row it revises, or "New row". Current rows you don\'t map stay as they are unless you tick Remove.'}</div>
+
+      <div class="po-review-fields-grid" style="margin-bottom:14px;">
+        <div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 6;">
+          <label style="font-size:0.72rem;">Project ID</label>
+          <div style="padding:6px 4px; font-weight:700; color:var(--brand); font-family:monospace; font-size:1.05rem; word-break:break-all;">${escapeHtml(crpoReview.projectId)}</div>
+        </div>
+        ${lockedRow('Status', escapeHtml(d.projectStatus || 'Active'), 2)}
+        ${field('PO Number', 'poNumber', 'text', 4, true)}
+        ${field('PO Date', 'poDate', 'date', 4, true)}
+        ${lockedRow('Company Name', escapeHtml(d.companyName || ''), 8)}
+        ${rowBreak}
+        ${field('GST Number', 'gstNumber', 'text', 4)}
+        ${field('Head Office Address', 'headOfficeAddress', 'text', 8)}
+        ${field('Delivery Address', 'deliveryAddress', 'text', 8)}
+        ${field('Tentative Delivery Date', 'deliveryDate', 'date', 4, true)}
+      </div>
+
+      <div style="font-weight:700; color:var(--brand); margin:14px 0 8px; font-size:0.95rem;">Product List</div>
+      <div id="crpo-review-lines"></div>
+      <button class="nav-btn-styled" style="background:var(--brand); margin-top:8px; padding:6px 14px; font-size:0.85rem; width:auto;" onclick="crpoAddRow()">+ Add Row</button>
+      <div id="crpo-unmapped"></div>
+
+      <div class="po-review-fields-grid" style="margin-top:16px;">
+        ${field('Freight Scope', 'freightScope', 'text', 8)}
+        ${field('Insurance Scope', 'insuranceScope', 'text', 8)}
+        ${field('Packaging and Forwarding Scope', 'packagingForwardingScope', 'text', 8)}
+        ${rowBreak}
+        ${field('Delivery Schedule as per PO', 'deliverySchedule', 'text', 8)}
+        ${field('Warranty Terms', 'warrantyTerms', 'text', 8)}
+        ${field('Payment Terms', 'paymentTerms', 'text', 8)}
+        ${rowBreak}
+        ${field('ABG Terms', 'abgTerms', 'text', 6)}
+        ${field('ABG Amount', 'abgAmount', 'number', 3)}
+        ${field('PBG Terms', 'pbgTerms', 'text', 6)}
+        ${field('PBG Amount', 'pbgAmount', 'number', 3)}
+        ${field('LD Clause', 'ldClause', 'text', 6)}
+        ${rowBreak}
+        ${field('Inspection Terms', 'inspectionTerms', 'text', 8)}
+        ${field('Special Requirement', 'specialRequirement', 'text', 8)}
+        ${field('Documents Requirement', 'documentsRequirement', 'text', 8)}
+        ${rowBreak}
+        <div id="crpo-amounts" style="display:contents;"></div>
+        ${lockedRow('Current PO Document', docUrl ? `<a href="${driveLink(docUrl)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open Document ↗</a>` : '—', 4)}
+      </div>
+
+      <button class="nav-btn-styled" id="crpo-submit-btn" style="margin-top:16px; width:100%; padding:12px; background:var(--accent); font-weight:700; font-size:0.95rem;" onclick="crpoSubmit()">${crpoReview.withoutDocument ? 'Save Changes' : 'Submit Revised Purchase Order'}</button>
+    </div>`;
+  zone.querySelectorAll('.grid-cell-item textarea').forEach(autoGrowPoField);
   crpoRenderLines();
+}
+
+// Basic / GST / Total PO Amount are worked out from the product rows (the
+// server recomputes them the same way on save), so they are shown, not typed.
+function crpoRenderAmounts() {
+  const el = document.getElementById('crpo-amounts');
+  if (!el) return;
+  let basic = 0, gst = 0;
+  crpoReview.lineItems.forEach(li => { basic += crpoNum(li.quantity) * crpoNum(li.ratePerQuantity); gst += crpoNum(li.gstAmount); });
+  const box = (label, v) => `<div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
+    <div style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; background:#f8fafc;">${crpoMoney(v)}</div></div>`;
+  el.innerHTML = box('Basic PO Amount', basic) + box('PO GST Amount', gst) + box('PO Total Amount', basic + gst);
 }
 
 function crpoLineWarning(li) {
@@ -286,30 +318,47 @@ function crpoRenderLines() {
     const taken = usedBy[l.lineId] !== undefined && usedBy[l.lineId] !== i;
     return `<option value="${l.lineId}" ${String(cur) === String(l.lineId) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${escapeHtml((l.description || l.itemCode || 'Row ' + l.lineId).slice(0, 70))} (qty ${fmtQty(l.quantity)})</option>`;
   }).join('');
-  const inp = (i, k, w, align) => `<input type="text" value="${escapeHtml(String(crpoReview.lineItems[i][k] ?? ''))}" oninput="crpoUpdateLine(${i}, '${k}', this.value)" style="width:100%; padding:4px; ${align ? 'text-align:' + align + ';' : ''}">`;
+  const cell = 'width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem;';
+  const wrapTxt = (i, k, align) => `<textarea rows="1" oninput="crpoUpdateLine(${i}, '${k}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+    style="${cell} text-align:${align}; resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${escapeHtml(String(crpoReview.lineItems[i][k] ?? ''))}</textarea>`;
+  const amt = (i, k) => `<input type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(crpoReview.lineItems[i][k] ?? ''))}"
+    oninput="crpoUpdateLine(${i}, '${k}', sanitizeAmountInput(this))"
+    onfocus="this.value = (crpoReview.lineItems[${i}]['${k}'] ?? '').toString();"
+    onblur="this.value = formatIndianCurrencyInput(crpoReview.lineItems[${i}]['${k}']);"
+    style="${cell} text-align:right;" />`;
+  const derived = (id, v) => `<input id="${id}" type="text" value="${escapeHtml(formatIndianCurrencyInput(String(v)))}" readonly disabled style="${cell} text-align:right; background:#eef1f5; color:var(--text); border:1px solid var(--border);" />`;
   const rows = crpoReview.lineItems.map((li, i) => {
     const basic = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
-    return `<tr style="border-bottom:1px solid var(--border); vertical-align:top;">
-      <td style="padding:4px;"><select onchange="crpoUpdateLine(${i}, 'matchLineId', this.value, true)" style="width:100%; padding:4px;">${opts(i, li.matchLineId)}</select><div id="crpo-warn-${i}">${crpoLineWarning(li)}</div></td>
-      <td style="padding:4px;">${inp(i, 'itemCode')}</td>
-      <td style="padding:4px;">${inp(i, 'hsnNumber')}</td>
-      <td style="padding:4px;"><textarea rows="2" oninput="crpoUpdateLine(${i}, 'description', this.value)" style="width:100%; padding:4px; font-family:inherit; resize:vertical;">${escapeHtml(li.description || '')}</textarea></td>
-      <td style="padding:4px;">${inp(i, 'quantity', 0, 'center')}</td>
-      <td style="padding:4px;">${inp(i, 'unit', 0, 'center')}</td>
-      <td style="padding:4px;">${inp(i, 'ratePerQuantity', 0, 'right')}</td>
-      <td style="padding:4px; text-align:right;" id="crpo-basic-${i}">${crpoMoney(basic)}</td>
-      <td style="padding:4px;">${inp(i, 'gstAmount', 0, 'right')}</td>
-      <td style="padding:4px; text-align:center;"><button onclick="crpoDeleteRow(${i})" style="background:none; border:none; color:#b91c1c; font-weight:800; cursor:pointer;">✕</button></td>
+    return `<tr>
+      <td style="vertical-align:middle;"><select onchange="crpoUpdateLine(${i}, 'matchLineId', this.value, true)" style="${cell}">${opts(i, li.matchLineId)}</select><div id="crpo-warn-${i}">${crpoLineWarning(li)}</div></td>
+      <td style="vertical-align:middle;">${wrapTxt(i, 'itemCode', 'center')}</td>
+      <td style="vertical-align:middle;">${wrapTxt(i, 'hsnNumber', 'center')}</td>
+      <td style="vertical-align:middle;">${wrapTxt(i, 'description', 'left')}</td>
+      <td style="vertical-align:middle;"><input type="number" value="${escapeHtml(String(li.quantity ?? ''))}" oninput="crpoUpdateLine(${i}, 'quantity', this.value)" style="${cell} text-align:right;" /></td>
+      <td style="vertical-align:middle;">${wrapTxt(i, 'unit', 'center')}</td>
+      <td style="vertical-align:middle;">${amt(i, 'ratePerQuantity')}</td>
+      <td style="vertical-align:middle;">${derived(`crpo-basic-${i}`, basic)}</td>
+      <td style="vertical-align:middle;">${amt(i, 'gstAmount')}</td>
+      <td style="vertical-align:middle;">${derived(`crpo-total-${i}`, basic + crpoNum(li.gstAmount))}</td>
+      <td style="vertical-align:middle; text-align:center;"><button class="po-li-del-btn" onclick="crpoDeleteRow(${i})" title="Remove row">✕</button></td>
     </tr>`;
   }).join('');
-  document.getElementById('crpo-review-lines').innerHTML = `
-    <div style="overflow-x:auto;"><table style="width:100%; min-width:1000px; border-collapse:collapse; font-size:0.82rem; table-layout:fixed;">
-      <colgroup><col style="width:20%"><col style="width:9%"><col style="width:8%"><col style="width:23%"><col style="width:7%"><col style="width:6%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:2%"></colgroup>
-      <thead><tr style="background:var(--highlight-bg); text-align:left;">
-        <th style="padding:6px;">Revises Current Row</th><th style="padding:6px;">Customer Item Code</th><th style="padding:6px;">HSN</th><th style="padding:6px;">Order Product Description *</th>
-        <th style="padding:6px; text-align:center;">Qty *</th><th style="padding:6px; text-align:center;">UOM</th><th style="padding:6px; text-align:right;">Rate</th><th style="padding:6px; text-align:right;">Basic</th><th style="padding:6px; text-align:right;">GST Amount</th><th></th>
-      </tr></thead><tbody>${rows || '<tr><td colspan="10" style="padding:10px; color:var(--muted);">No rows.</td></tr>'}</tbody></table></div>`;
+  const el = document.getElementById('crpo-review-lines');
+  el.innerHTML = `
+    <div class="po-li-table-wrap" style="overflow-x:auto;">
+    <table class="store-basket-data-table" style="width:100%; min-width:1100px; table-layout:fixed;">
+      <colgroup><col style="width:15%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:23%"><col style="width:6%"><col style="width:5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:3%"></colgroup>
+      <thead><tr>
+        <th style="text-align:left;">Revises Current Row</th><th style="text-align:center;">Customer Item Code</th><th style="text-align:center;">HSN Number</th>
+        <th style="text-align:left;">Order Product Description *</th><th style="text-align:right;">Order Quantity *</th><th style="text-align:center;">UOM</th>
+        <th style="text-align:right;">Rate / Quantity</th><th style="text-align:right;">Total Basic Price</th><th style="text-align:right;">GST Amount</th>
+        <th style="text-align:right;">Total Amount (incl. GST)</th><th></th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="11" style="text-align:center; color:var(--muted);">No rows. Click + Add Row.</td></tr>'}</tbody>
+    </table></div>`;
+  el.querySelectorAll('textarea').forEach(autoGrowPoField);
   crpoRenderUnmapped();
+  crpoRenderAmounts();
 }
 
 function crpoRenderUnmapped() {
@@ -333,8 +382,12 @@ function crpoUpdateLine(i, key, value, rerender) {
   if (!li) return;
   li[key] = key === 'matchLineId' ? (value ? Number(value) : null) : value;
   if (rerender) { crpoRenderLines(); return; }
+  const basic = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
   const basicEl = document.getElementById(`crpo-basic-${i}`);
-  if (basicEl) basicEl.innerHTML = crpoMoney(crpoNum(li.quantity) * crpoNum(li.ratePerQuantity));
+  if (basicEl) basicEl.value = formatIndianCurrencyInput(String(basic));
+  const totalEl = document.getElementById(`crpo-total-${i}`);
+  if (totalEl) totalEl.value = formatIndianCurrencyInput(String(basic + crpoNum(li.gstAmount)));
+  crpoRenderAmounts();
   const warnEl = document.getElementById(`crpo-warn-${i}`);
   if (warnEl) warnEl.innerHTML = crpoLineWarning(li);
 }

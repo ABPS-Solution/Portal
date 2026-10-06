@@ -139,7 +139,7 @@ function renderMcProjectCard(project) {
   const deliveryValue = project.mfcInt ? project.actualDeliveryDate : project.deliveryDate;
 
   card.innerHTML = `
-    <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
+    <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:0; border-bottom:none; cursor:pointer;">
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
