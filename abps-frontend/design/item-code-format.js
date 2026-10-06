@@ -343,7 +343,9 @@ function icfWireKvarAutoCalc(placeholders, containerEl, idPrefix) {
   const ampPh = placeholders.find(p => p.kind === 'number' && /^a$/i.test(p.label.trim()));
   const ohmPh = placeholders.find(p => p.kind === 'number' && /^ohm/i.test(p.label.trim()));
   const kvarPh = placeholders.find(p => p.kind === 'number' && /^kvar$/i.test(p.label.trim()));
-  if (!ampPh || !ohmPh || !kvarPh) return;
+  // Air Core only. Iron Core Reactor (has a "total kVAr" box) keeps its own
+  // "suitable for Capacitor Bank N kVAr" as a typed value.
+  if (!ampPh || !ohmPh || !kvarPh || !placeholders.some(p => p.kind === 'number' && /^total\s*kvar$/i.test(p.label.trim()))) return;
   const ampEl = document.getElementById(`${idPrefix}-ph-${ampPh.index}`);
   const ohmEl = document.getElementById(`${idPrefix}-ph-${ohmPh.index}`);
   const kvarEl = document.getElementById(`${idPrefix}-ph-${kvarPh.index}`);
