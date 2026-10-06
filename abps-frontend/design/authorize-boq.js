@@ -444,7 +444,8 @@ async function loadEBOQAllowedProducts(draft) {
     // time) rather than a name+rating lookup into the catalog, which
     // breaks once two Description of Material variants can share one
     // name+rating.
-    if (draft.productItemCode && !options.some(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null))) {
+    if (draft.productItemCode && !options.some(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)
+          && String(o.lineId || o.sourcePoLineId || '') === String(draft.sourcePoLineId || ''))) {
       const catalogEntry = (window.itemCodeCatalogCache || []).find(c => c.itemCode === draft.productItemCode);
       options.push({
         itemCode: draft.productItemCode, descriptionId: draft.descriptionId || null,
@@ -456,15 +457,17 @@ async function loadEBOQAllowedProducts(draft) {
     }
 
     // Keyed by itemCode + descriptionId — see the same fix in create-boq.js.
-    options.forEach(opt => { window.eboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '')] = opt; });
+    options.forEach(opt => { window.eboqAllowedOptionsByValue[eboqOptKey(opt)] = opt; });
     window.eboqAllowedOptionsList = options;
     search.placeholder = options.length ? "— Select Product —" : "— No Products Available —";
 
     if (options.length > 0) {
-      const selectedOpt = options.find(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)) || options[0];
+      const selectedOpt = options.find(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)
+          && String(o.lineId || o.sourcePoLineId || '') === String(draft.sourcePoLineId || ''))
+        || options.find(o => o.itemCode === draft.productItemCode && (o.descriptionId || null) === (draft.descriptionId || null)) || options[0];
       search.value = selectedOpt.displayLabel || selectedOpt.productName;
       autoGrowPoField(search);
-      handleEBOQProductSelectChange(selectedOpt.itemCode + '|' + (selectedOpt.descriptionId || ''), true);
+      handleEBOQProductSelectChange(eboqOptKey(selectedOpt), true);
     }
   } catch(e) {
     search.placeholder = "Network error";
@@ -483,7 +486,7 @@ function showEBOQProductDropdown() {
   if (options.length === 0) { dropdown.style.display = "none"; return; }
 
   dropdown.innerHTML = options.map(opt => `
-    <div onmousedown="event.preventDefault();" onclick="selectEBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}')"
+    <div onmousedown="event.preventDefault();" onclick="selectEBOQProductOption(${jsArg(eboqOptKey(opt))})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${opt.displayLabel || opt.productName}
@@ -499,8 +502,10 @@ document.addEventListener("click", (e) => {
   }
 });
 
-function selectEBOQProductOption(itemCode, descriptionId) {
-  const compositeKey = itemCode + '|' + (descriptionId || '');
+// Options are keyed by item code + description + PO line (the same
+// product can sit on several PO lines, one BOQ each).
+function eboqOptKey(o) { return o.itemCode + '|' + (o.descriptionId || '') + '|' + (o.lineId || o.sourcePoLineId || ''); }
+function selectEBOQProductOption(compositeKey) {
   const opt = (window.eboqAllowedOptionsByValue || {})[compositeKey];
   const dropdown = document.getElementById("eboq-product-dropdown");
   if (dropdown) dropdown.style.display = "none";
@@ -520,7 +525,7 @@ function handleEBOQProductSelectChange(compositeKey, skipBoqIdPreview) {
   const opt = (window.eboqAllowedOptionsByValue || {})[compositeKey];
   if (!opt) return;
   document.getElementById("eboq-product-name").value = opt.productName;
-  document.getElementById("eboq-source-po-line-id").value = opt.sourcePoLineId || "";
+  document.getElementById("eboq-source-po-line-id").value = opt.sourcePoLineId || opt.lineId || "";
   const ratingEl = document.getElementById("eboq-product-rating");
   if (ratingEl) { ratingEl.value = opt.productRating || ""; autoGrowPoField(ratingEl); }
   const qtyEl = document.getElementById("eboq-order-qty");

@@ -266,6 +266,7 @@ async function loadProductionPlanForProject() {
 const PPLAN_LANE_COLOR = { Reactor: '#b45309', Capacitor: '#047857', Panel: '#c2410c' };
 
 function pplanLaneStageLabel(lane) {
+  if (lane.purchasedOutside) return (lane.steps[0] && lane.steps[0].actual) ? "Purchased from Outside - In FG Store" : "Purchasing from Outside";
   if (!lane.planInitialized) return "Not planned yet";
   const doneCount = lane.steps.filter(s => !!s.actual).length;
   if (doneCount === lane.steps.length) return "Complete";
@@ -328,7 +329,7 @@ function pplanRenderLane(lane) {
         <span style="flex:none; white-space:nowrap; font-size:0.88rem; font-weight:700; font-family:monospace; color:${c};">${escapeHtml(pplanLaneStageLabel(lane))}</span>
       </div>
       ${expanded ? `<div style="padding:12px 14px;">
-        ${lane.planInitialized ? pplanRenderLaneSteps(lane, c, pplanCanWriteLane(lane)) : pplanRenderLaneInitialPlanForm(lane)}
+        ${lane.purchasedOutside ? pplanRenderPurchasedOutside(lane, c) : lane.planInitialized ? pplanRenderLaneSteps(lane, c, pplanCanWriteLane(lane)) : pplanRenderLaneInitialPlanForm(lane)}
       </div>` : ''}
     </div>`;
 }
@@ -370,7 +371,46 @@ function pplanRenderLaneInitialPlanForm(lane) {
     </div>
     <div style="margin-top:12px;">
       <button class="nav-btn-styled" ${dis} style="${!canWrite ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
+      <button class="nav-btn-styled" ${dis} style="margin-left:8px; background:#475569;${!canWrite ? ' opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSetPurchasedOutside('${lane.boqId}', true)">Purchasing from Outside</button>
+    </div>
+    <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Choose <strong>Purchasing from Outside</strong> if this product is bought complete from a vendor: it then needs no production steps and is done when the unit is approved into FG Store.</div>`;
+}
+
+// A product bought complete from outside: no production steps, one step
+// "Purchased from Outside, In FG Store", completed automatically when the
+// unit is approved into FG Store. Its target date comes from the PRN's
+// Material Requirement Date (else the project's delivery date).
+function pplanRenderPurchasedOutside(lane, c) {
+  const s = lane.steps[0] || {};
+  const canWrite = pplanCanWriteLane(lane);
+  const done = !!s.actual;
+  const target = s.target || s.planned;
+  return `
+    <div style="background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; font-size:0.88rem;">
+      <div style="font-weight:800; color:${c}; margin-bottom:4px;">Purchasing from Outside</div>
+      <div>This product is bought complete, so it has no production steps. It is done when the unit is approved into FG Store.</div>
+      <div style="margin-top:8px; display:flex; gap:18px; flex-wrap:wrap;">
+        <span><strong>Target in FG Store:</strong> ${target ? escapeHtml(formatOrdinalDate(target)) : '—'} <span style="color:var(--muted);">(from Material Requirement Date)</span></span>
+        <span><strong>Status:</strong> ${done ? 'In FG Store on ' + escapeHtml(formatOrdinalDate(s.actual)) : escapeHtml(s.chip || 'Waiting for FG Store')}</span>
+      </div>
+      ${canWrite && !done ? `<button class="nav-btn-styled" style="margin-top:10px; width:auto; padding:6px 14px; background:#b91c1c;" onclick="pplanSetPurchasedOutside('${lane.boqId}', false)">Undo Purchasing from Outside</button>` : ''}
     </div>`;
+}
+
+async function pplanSetPurchasedOutside(boqId, on) {
+  const lane = (pplanData.lanes || []).find(l => l.boqId === boqId);
+  const name = lane ? [lane.productName, lane.productRating].filter(Boolean).join(" ") : boqId;
+  const msg = on
+    ? `Set "${name}" to Purchasing from Outside?\n\nIt will need no production steps and will be done when the unit is approved into FG Store.`
+    : `Remove Purchasing from Outside for "${name}"?\n\nIt will need a normal production plan again before Material Issue Tickets can be raised.`;
+  if (!(await abpsConfirm(msg, { okLabel: on ? "Purchasing from Outside" : "Remove", title: "Purchasing from Outside" }))) return;
+  try {
+    const data = await apFetch({ action: "setProductPurchasedOutside", boqId, on });
+    if (!data.success) { alert(data.error || "Could not change this product."); return; }
+    pplanClearInitDraft(boqId);
+    await loadProductionPlanForProject();
+    loadProductionPlanningQueue();
+  } catch (e) { alert("Network error: " + e.message); }
 }
 
 // Table form — Process Name / Initial Planning Date (frozen) / Current

@@ -322,7 +322,8 @@ async function loadCboqAllowedProducts(projectId) {
     // code as separate options; a bare itemCode key would let the second
     // one silently overwrite the first in this map.
     window.cboqAllowedOptionsByValue = {};
-    (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '')] = opt; });
+    // + PO line: the same product can be on several PO lines, one BOQ each.
+    (data.options || []).forEach(opt => { window.cboqAllowedOptionsByValue[opt.itemCode + '|' + (opt.descriptionId || '') + '|' + (opt.lineId || '')] = opt; });
     window.cboqAllowedOptionsList = data.options || [];
 
     if (!data.options || data.options.length === 0) {
@@ -374,7 +375,7 @@ function showCBOQProductDropdown() {
       <span>${opt.displayLabel || opt.productName}</span>
       <span style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap;">⏸ On Hold</span>
     </div>` : `
-    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}')"
+    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}', '${opt.lineId || ''}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${opt.displayLabel || opt.productName}
@@ -382,8 +383,10 @@ function showCBOQProductDropdown() {
   dropdown.style.display = "block";
 }
 
-function selectCBOQProductOption(itemCode, descriptionId) {
-  const opt = (window.cboqAllowedOptionsByValue || {})[itemCode + '|' + (descriptionId || '')];
+function selectCBOQProductOption(itemCode, descriptionId, lineId) {
+  const opts = window.cboqAllowedOptionsByValue || {};
+  const opt = opts[itemCode + '|' + (descriptionId || '') + '|' + (lineId || '')]
+    || Object.values(opts).find(o => o.itemCode === itemCode && String(o.descriptionId || '') === String(descriptionId || ''));
   if (opt && opt.onHold) { alert(`This product is On Hold — ${opt.holdReason || 'no reason given'}. An admin must remove the Hold before a BOQ can be created for it.`); return; }
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
