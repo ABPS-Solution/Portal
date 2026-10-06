@@ -649,6 +649,7 @@ async function submitMcClearance(projectId) {
       const summaryRows = rows.map(r => {
         const before = meta[r.lineId] ? meta[r.lineId].currentMfcQuantity : 0;
         const label = r.standardProductName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`;
+        if (!r.needsBoqJc) return { label, raw: true, before: "Needs BOQ / JC", after: "No (no BOQ / Job Card, billed on the Dispatch Invoice)" };
         return { label, before, after: r.newMfcQuantity };
       });
 

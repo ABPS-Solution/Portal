@@ -421,7 +421,7 @@ function icfWireApfcRatedCurrentAutoCalc(template, containerEl, idPrefix) {
   for (let i = 0; i < segments.length - 4; i++) {
     const kvarSeg = segments[i], lit1 = segments[i + 1], vkvSeg = segments[i + 2], lit2 = segments[i + 3], curSeg = segments[i + 4];
     if (kvarSeg.kind !== 'literal' && lit1.kind === 'literal' &&
-        vkvSeg.kind !== 'literal' && lit2.kind === 'literal' && /rated current/i.test(lit2.text) &&
+        vkvSeg.kind !== 'literal' && lit2.kind === 'literal' && /,\s*rated current\s*$/i.test(lit2.text) &&
         curSeg.kind === 'number') {
       const kvarEl = document.getElementById(`${idPrefix}-ph-${kvarSeg.index}`);
       const vkvEl = document.getElementById(`${idPrefix}-ph-${vkvSeg.index}`);
