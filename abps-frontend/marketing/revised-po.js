@@ -5,6 +5,7 @@ let crpoProjects = [];
 let crpoDetails = null;
 let crpoReview = null;
 let crpoFile = null;
+let crpoOaFile = null, crpoCrFile = null; // revised Order Acceptance / Contract Review, replace the old file
 
 const CRPO_HEADER_FIELDS = [
   ['poNumber', 'PO Number', 'text', 2], ['poDate', 'PO Date', 'date', 2], ['deliveryDate', 'Tentative Delivery Date *', 'date', 2],
@@ -38,7 +39,7 @@ function crpoBanner(msg, type) {
 }
 
 async function crpoInitPanel() {
-  crpoDetails = null; crpoReview = null; crpoFile = null;
+  crpoDetails = null; crpoReview = null; crpoFile = null; crpoOaFile = null; crpoCrFile = null;
   crpoBanner('');
   ['crpo-details-zone', 'crpo-upload-zone', 'crpo-review-zone'].forEach(id => {
     const el = document.getElementById(id); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
@@ -99,7 +100,7 @@ function selectCrpoProjectTypeahead(projectId) {
 }
 
 async function crpoSelectProject(projectId) {
-  crpoReview = null; crpoFile = null; crpoBanner('');
+  crpoReview = null; crpoFile = null; crpoOaFile = null; crpoCrFile = null; crpoBanner('');
   const dz = document.getElementById('crpo-details-zone');
   const uz = document.getElementById('crpo-upload-zone');
   const rz = document.getElementById('crpo-review-zone');
@@ -119,6 +120,14 @@ async function crpoSelectProject(projectId) {
       <div class="card-box" id="crpo-upload-box" onclick="document.getElementById('crpo-file').click()" style="margin-top:8px; padding:24px; font-size:0.9rem; min-height:90px; display:flex; align-items:center; justify-content:center;">📋 Select Revised Purchase Order</div>
       <input type="file" id="crpo-file" accept="image/*,application/pdf" hidden onchange="crpoFileChosen(this)" />
       <button class="nav-btn-styled" id="crpo-extract-btn" style="margin-top:12px; width:100%; padding:10px;" onclick="crpoExtract()">Process Revised Purchase Order with AI</button>
+      <div style="margin-top:14px; font-weight:800; color:var(--brand); font-size:0.95rem;">Revised Order Acceptance / Contract Review (optional)</div>
+      <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">A file chosen here replaces the current one when you save; the old file is deleted.</div>
+      <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+        <div class="card-box" id="crpo-oa-box" onclick="document.getElementById('crpo-oa-file').click()" style="flex:1 1 240px; padding:18px; font-size:0.88rem; min-height:70px; display:flex; align-items:center; justify-content:center;">📄 Select Revised Order Acceptance</div>
+        <div class="card-box" id="crpo-cr-box" onclick="document.getElementById('crpo-cr-file').click()" style="flex:1 1 240px; padding:18px; font-size:0.88rem; min-height:70px; display:flex; align-items:center; justify-content:center;">📄 Select Revised Contract Review</div>
+      </div>
+      <input type="file" id="crpo-oa-file" accept="image/*,application/pdf" hidden onchange="crpoDocChosen('oa', this)" />
+      <input type="file" id="crpo-cr-file" accept="image/*,application/pdf" hidden onchange="crpoDocChosen('cr', this)" />
       <div id="crpo-review-inner"></div>
       <div id="crpo-history"></div>`;
     crpoStartFromCurrentPo();
@@ -151,6 +160,14 @@ function crpoFileChosen(input) {
   crpoFile = input.files && input.files[0] ? input.files[0] : null;
   const box = document.getElementById('crpo-upload-box');
   if (box) box.textContent = crpoFile ? `✅ ${crpoFile.name}` : '📋 Select Revised Purchase Order *';
+}
+
+function crpoDocChosen(kind, input) {
+  const f = input.files && input.files[0] ? input.files[0] : null;
+  if (kind === 'oa') crpoOaFile = f; else crpoCrFile = f;
+  const box = document.getElementById(kind === 'oa' ? 'crpo-oa-box' : 'crpo-cr-box');
+  const label = kind === 'oa' ? 'Order Acceptance' : 'Contract Review';
+  if (box) box.textContent = f ? `✅ ${f.name}` : `📄 Select Revised ${label}`;
 }
 
 function crpoReadBase64(file) {
@@ -414,16 +431,24 @@ async function crpoSubmit() {
     if (qty < (Number(old.invoicedQuantity) || 0)) return alert(`"${old.description}" cannot go below its invoiced quantity (${fmtQty(old.invoicedQuantity)}).`);
     if (qty < (Number(old.mfcQuantity) || 0)) cuts.push(`${old.description}: MFC ${fmtQty(old.mfcQuantity)} → ${fmtQty(qty)}`);
   }
+  const poChanged = String(h.poNumber || '').trim() !== String((crpoDetails.header || {}).poNumber || '').trim();
   const msg = (crpoReview.withoutDocument ? `Save these changes to the Purchase Order for ${crpoReview.projectId}? No new document will be attached.` : `Submit this revision of the Purchase Order for ${crpoReview.projectId}?`) +
     (cuts.length ? `\n\nThese products go below their MFC quantity. MFC, BOQ and Job Cards will be reduced:\n• ${cuts.join('\n• ')}` : '') +
-    (crpoReview.removeLineIds.size ? `\n\n${crpoReview.removeLineIds.size} current row(s) will be removed.` : '');
+    (crpoReview.removeLineIds.size ? `\n\n${crpoReview.removeLineIds.size} current row(s) will be removed.` : '') +
+    (poChanged ? `\n\nThe PO Number changes to "${h.poNumber}". The Project ID and every BOQ, PRN and Job Card ID built from it will be renamed to the new PO Number.` : '') +
+    (crpoOaFile ? '\n\nThe Order Acceptance document will be replaced.' : '') +
+    (crpoCrFile ? '\n\nThe Contract Review document will be replaced.' : '');
   if (!await abpsConfirm(msg)) return;
 
   const btn = document.getElementById('crpo-submit-btn');
   if (btn) btn.disabled = true;
   showBlockingOverlay('Saving Revised Purchase Order...');
   try {
+    const docPayload = async (f) => f ? { base64Data: await crpoReadBase64(f), fileName: f.name, mimeType: f.type || 'application/octet-stream' } : null;
+    const orderAcceptanceFile = await docPayload(crpoOaFile);
+    const contractReviewFile = await docPayload(crpoCrFile);
     const data = await apFetch({
+      orderAcceptanceFile, contractReviewFile,
       action: 'commitRevisedPurchaseOrder', _timeoutMs: 180000,
       projectId: crpoReview.projectId, header: h, lineItems: lines,
       removeLineIds: [...crpoReview.removeLineIds],
@@ -431,10 +456,20 @@ async function crpoSubmit() {
       mimeType: crpoFile ? (crpoFile.type || 'application/octet-stream') : 'application/octet-stream',
     });
     if (!data.success) { crpoBanner(escapeHtml(data.error || 'Saving failed.')); return; }
-    const pid = crpoReview.projectId;
+    const pid = data.projectId || crpoReview.projectId;
     const okMsg = `✅ Revision ${data.revisionNo} saved for ${escapeHtml(pid)}: ${escapeHtml(data.summary || '')}.` +
+      (data.oldProjectId ? ` <br>Project ID renamed from <b>${escapeHtml(data.oldProjectId)}</b> to <b>${escapeHtml(pid)}</b> (${data.renamedIds} IDs renamed). BOQ / PRN documents and Drive folders are being updated in the background.` : '') +
+      (data.orderAcceptanceUrl ? ` <a href="${driveLink(data.orderAcceptanceUrl)}" target="_blank" rel="noopener">View new Order Acceptance ↗</a>` : '') +
+      (data.contractReviewUrl ? ` <a href="${driveLink(data.contractReviewUrl)}" target="_blank" rel="noopener">View new Contract Review ↗</a>` : '') +
+      ((data.docWarnings || []).length ? ` <span style="color:#b45309;">${data.docWarnings.map(w => escapeHtml(w)).join(' ')}</span>` : '') +
       (data.revisedBoqIds && data.revisedBoqIds.length ? ` Revised BOQs: ${data.revisedBoqIds.map(x => escapeHtml(x)).join(', ')}.` : '') +
       (data.withoutDocument ? '' : data.fileUrl ? ` <a href="${driveLink(data.fileUrl)}" target="_blank" rel="noopener">View revised PO ↗</a>` : ' <span style="color:#b45309;">(The PO document could not be saved to Drive.)</span>');
+    if (data.oldProjectId) {
+      await crpoInitPanel();
+      const sel = document.getElementById('crpo-project-select'), inp = document.getElementById('crpo-project-ta-input');
+      if (sel) sel.value = pid;
+      if (inp) inp.value = (sel && sel.selectedOptions[0] && sel.selectedOptions[0].value) ? sel.selectedOptions[0].text : pid;
+    }
     await crpoSelectProject(pid);
     crpoBanner(okMsg, 'success');
   } catch (e) {
