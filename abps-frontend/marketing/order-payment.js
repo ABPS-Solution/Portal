@@ -531,8 +531,8 @@ async function oppToggleLeadExpand(projectId, encodedCompany) {
                 <span style="background:#edf2f7;">Status:</span><strong id="card-lbl-status-${tRef}">${escapeHtml(lead["Status"] || "N/A")}</strong>
               </div>
               <div class="meta-row-line-block">
-                <span style="background:#e2e8f0;">Name:</span><strong style="margin-right:20px;" id="card-lbl-name-${tRef}">${escapeHtml(lead["Contact Person Name"] || "Unspecified")}</strong>
-                <span style="background:#edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${escapeHtml(lead["Position"] || "Unspecified")}</strong>
+                <span style="background:#e2e8f0;">Lead:</span><strong style="margin-right:20px;" id="card-lbl-pos-${tRef}">${escapeHtml(lead["Lead Name"] || tRef)}</strong>
+                <span style="background:#edf2f7;">Contacts:</span><strong id="card-lbl-name-${tRef}">${escapeHtml(leadContactNamesText(lead) || "Unspecified")}</strong>
               </div>
             </div>
             <div class="directory-btn-actions-block" onclick="event.stopPropagation()">

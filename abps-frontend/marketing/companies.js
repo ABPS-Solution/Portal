@@ -280,8 +280,8 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
 
     // Sort — matching person first
     const leads = data.leads.sort((a, b) => {
-      const aMatch = (a["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
-      const bMatch = (b["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
+      const aMatch = leadHasContactNamed(a, (personName || "").replace(/\s+/g, "").toLowerCase());
+      const bMatch = leadHasContactNamed(b, (personName || "").replace(/\s+/g, "").toLowerCase());
       return aMatch && !bMatch ? -1 : !aMatch && bMatch ? 1 : 0;
     });
 
@@ -289,8 +289,8 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
 
     leads.forEach(lead => {
       const tRef = lead["Lead ID"];
-      const isTarget = (lead["Contact Person Name"] || "").toLowerCase() === personName.toLowerCase();
-      const cardName = lead["Contact Person Name"] || "Unspecified";
+      const isTarget = leadHasContactNamed(lead, (personName || "").replace(/\s+/g, "").toLowerCase());
+      const cardName = leadContactNamesText(lead) || "Unspecified";
       const isAdminUser = localStorage.getItem("isUserSuperAdminGlobal") === "true";
       const deleteHtml = isAdminUser
         ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyName)}', '${encodeURIComponent(cardName)}')">Delete Record</button>`
@@ -310,8 +310,8 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
               ${isTarget ? '<span style="background:var(--brand); color:#fff; margin-left:8px; font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:700;">LINKED TO TASK</span>' : ''}
             </div>
             <div class="meta-row-line-block">
-              <span style="background:#e2e8f0;">Name:</span><strong style="margin-right:20px;" id="card-lbl-name-${tRef}">${escapeHtml(cardName)}</strong>
-              <span style="background:#edf2f7;">Position:</span><strong id="card-lbl-pos-${tRef}">${escapeHtml(lead["Position"] || "Unspecified")}</strong>
+              <span style="background:#e2e8f0;">Lead:</span><strong style="margin-right:20px;" id="card-lbl-pos-${tRef}">${escapeHtml(lead["Lead Name"] || tRef)}</strong>
+              <span style="background:#edf2f7;">Contacts:</span><strong id="card-lbl-name-${tRef}">${escapeHtml(cardName)}</strong>
             </div>
           </div>
           <div class="directory-btn-actions-block" onclick="event.stopPropagation()">

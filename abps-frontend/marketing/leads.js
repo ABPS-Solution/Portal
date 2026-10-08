@@ -27,6 +27,8 @@ async function fetchAndPopulateUploadLeadDropdowns() {
       const prevVal = el.value;
       el.innerHTML = '<option value="">— Select Company / Lead —</option>';
       cachedUploadLeadsList.forEach(l => {
+        // One lead = one order: a lead that already has a PO can't take another.
+        if (id === "purchase-order-lead-dropdown" && l.hasPo) return;
         const opt = document.createElement("option");
         opt.value = l.leadId; opt.textContent = l.displayLabel;
         el.appendChild(opt);
@@ -696,10 +698,8 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
 
   leadsList.sort((a, b) => {
     // FIXED: Shifted lookups to read "Contact Person Name" instead of old "Name" key
-    let aNameClean = (a["Contact Person Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
-    let bNameClean = (b["Contact Person Name"] || "").toString().replace(/\s+/g, '').toLowerCase();
-    let aMatches = (sanitizedTargetName !== "" && aNameClean === sanitizedTargetName);
-    let bMatches = (sanitizedTargetName !== "" && bNameClean === sanitizedTargetName);
+    let aMatches = leadHasContactNamed(a, sanitizedTargetName);
+    let bMatches = leadHasContactNamed(b, sanitizedTargetName);
     if (aMatches && !bMatches) return -1;
     if (!aMatches && bMatches) return 1;
     return parseInt(b["Lead ID"].split("-")[1]) - parseInt(a["Lead ID"].split("-")[1]);
@@ -712,14 +712,18 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
     wrapperCard.id = `contact-parent-wrapper-${tRef}`;
     
     // FIXED: Use correct column header fields references strings keys
-    let cardDisplayName = (lead["Contact Person Name"] && lead["Contact Person Name"].toString().trim() !== "") ? lead["Contact Person Name"] : "Unspecified Name";
+    let cardDisplayName = leadContactNamesText(lead) || "Unspecified Name";
     let companyLabelName = lead["Company Name"] || "Unspecified Company";
-    
-    if (sanitizedTargetName !== "" && cardDisplayName.toString().replace(/\s+/g, '').toLowerCase() === sanitizedTargetName) {
+    let leadLabelName = lead["Lead Name"] || companyLabelName;
+
+    if (leadHasContactNamed(lead, sanitizedTargetName)) {
       wrapperCard.className += " search-highlighted-focus-node";
     }
 
     const isAdminUser = localStorage.getItem("isUserSuperAdminGlobal") === "true";
+    const mergeButtonHtml = localStorage.getItem("isUserAdminGlobal") === "true"
+      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="openMergeLeadPicker('${tRef}', '${encodeURIComponent(companyLabelName)}')">Merge</button>`
+      : "";
     const deleteButtonHtml = isAdminUser
       ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyLabelName)}', '${encodeURIComponent(cardDisplayName)}')">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
@@ -728,23 +732,24 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       <div class="contact-summary-header-row lead-wrapper-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
-            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Company</span>
-            <strong id="card-lbl-company-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(companyLabelName)}</strong>
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Lead</span>
+            <strong id="card-lbl-company-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(leadLabelName)}</strong>
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Status</span>
             <strong id="card-lbl-status-${tRef}" style="font-size:0.95rem;">${lead["Status"] || "N/A"}</strong>
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
-            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Name</span>
-            <strong id="card-lbl-name-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${cardDisplayName}</strong>
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Contacts</span>
+            <strong id="card-lbl-name-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(cardDisplayName)}</strong>
           </div>
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
-            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Position</span>
-            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${escapeHtml(lead["Position"] || "Unspecified")}</strong>
+            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Lead ID</span>
+            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${escapeHtml(tRef)}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block" style="display:flex; align-items:center; gap:8px; flex-shrink:0;" onclick="event.stopPropagation()">
+          ${mergeButtonHtml}
           ${deleteButtonHtml}
           <span id="expand-trigger-${tRef}" style="color:var(--brand); font-size:1.3rem; font-weight:700; line-height:1; padding:4px 6px;">▾</span>
         </div>
@@ -892,7 +897,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   // MATCHED LAYOUT BLUEPRINT Blueprints
   const customSectionLayout = [
     { type: "META", keys: ["Status", "Engineer Name"] },
-    { type: "CARD", keys: ["Contact Person Name", "Company Name", "Position", "Phone", "Alt Phone", "Email", "Website", "City", "State", "Country", "Company Address"] },
+    { type: "CARD", keys: ["Company Name", "Website", "City", "State", "Country", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
@@ -1221,6 +1226,10 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       }
     });
   });
+  const contactsMount = document.createElement("div");
+  contactsMount.id = "lead-contacts-editor-" + leadRef;
+  canvas.appendChild(contactsMount);
+  renderLeadContactsEditor(leadRef, Array.isArray(leadMap["Contacts"]) ? leadMap["Contacts"] : []);
   canvas.appendChild(gridWrapper);
   // Size every auto-grow textarea to its prefilled value immediately — they
   // only grow on input/focus otherwise, so a long saved value would still
@@ -1334,15 +1343,8 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     if (r.success) {
       if (companySaveOk) alert("Modifications Saved Successfully.");
       // FIXED: Point to renamed structural data attributes identifiers
-      const updatedNameText = fieldsPayload["Contact Person Name"] || "Unspecified Name";
-      const updatedPositionText = fieldsPayload["Position"] || "Unspecified";
       const updatedStatusText = fieldsPayload["Status"] || "N/A";
-      
-      if (document.getElementById(`card-lbl-name-${leadRef}`)) document.getElementById(`card-lbl-name-${leadRef}`).textContent = updatedNameText;
-      if (document.getElementById(`card-lbl-pos-${leadRef}`)) document.getElementById(`card-lbl-pos-${leadRef}`).textContent = updatedPositionText;
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
-      const companyLbl = document.getElementById(`card-lbl-company-${leadRef}`);
-      if (companyLbl && companySaveOk && companyFieldsPayload["Company Name"]) companyLbl.textContent = companyFieldsPayload["Company Name"];
 
       // The collapse/expand toggle re-reads leadMap from a JSON blob baked
       // into this card's onclick attribute at search-render time — closing
@@ -1549,10 +1551,25 @@ async function submitLead() {
       sendOffer: document.getElementById('actOffer').value
     };
 
+    // A company can have several open (no-PO) leads. Ask whether this person
+    // belongs to one of them (same order) or starts a new lead.
+    let targetLeadId = null;
+    let openLeadsResp = null;
+    try { openLeadsResp = await apFetch({ action: 'fetchOpenLeadsForCompany', companyName: fields["Company Name"] }); }
+    catch (e) { if (e.message === "SESSION_EXPIRED") throw e; }
+    if (openLeadsResp && openLeadsResp.success && openLeadsResp.leads.length) {
+      hideBlockingOverlay();
+      const choice = await chooseLeadForNewContact(fields["Company Name"], openLeadsResp.leads);
+      if (choice === null) return;
+      if (choice !== 'NEW') targetLeadId = choice;
+      showBlockingOverlay(targetLeadId ? "Adding contact to lead..." : "Saving Lead...");
+    }
+
     const d = await apFetch({
       action: 'submit',
       activeEngineer: appActiveOperatorIdentityString,
       fields,
+      targetLeadId,
       base64Image: cardImageBase64,
       mimeType: cardImageMimeType
     });
@@ -1578,7 +1595,9 @@ async function submitLead() {
         feedbackBanner.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-              <strong style="font-size: 1rem;">Success! Lead Record Created for ${escapeHtml(fields["Company Name"] || companyVal)}.</strong><br/>
+              <strong style="font-size: 1rem;">${d.addedContactOnly
+                ? `Success! ${escapeHtml(fields["Contact Person Name"] || "Contact")} added to the existing lead.`
+                : `Success! Lead Record Created for ${escapeHtml(fields["Company Name"] || companyVal)}.`}</strong><br/>
               <span style="font-size: 0.88rem; font-weight: 600;">Assigned LEAD ID:
                 <br/><span style="font-family: monospace; font-weight: 800; background: #fff; padding: 4px 10px; border-radius: 4px; border: 1px solid #15803d; color: #111827; display: inline-block; margin-top: 6px;">${d.leadId}</span>
               </span>
@@ -3369,4 +3388,189 @@ function selectPoLeadTypeahead(encodedValue) {
   input.value = sel.selectedOptions[0] ? sel.selectedOptions[0].text : "";
   const dd = document.getElementById("purchase-order-lead-ta-dropdown");
   if (dd) dd.style.display = "none";
+}
+
+
+// ── Lead contacts: a lead (one enquiry / order) holds many people ──────
+function leadContactNamesText(lead) {
+  const list = Array.isArray(lead && lead["Contacts"]) ? lead["Contacts"] : [];
+  const names = list.map(c => (c.name || "").trim()).filter(Boolean);
+  if (names.length) return names.join(", ");
+  return (lead && lead["Contact Person Name"]) || "";
+}
+
+function leadHasContactNamed(lead, sanitizedName) {
+  if (!sanitizedName) return false;
+  const clean = (v) => (v || "").toString().replace(/\s+/g, "").toLowerCase();
+  const list = Array.isArray(lead && lead["Contacts"]) ? lead["Contacts"] : [];
+  if (list.some(c => clean(c.name) === sanitizedName)) return true;
+  return clean(lead && lead["Contact Person Name"]) === sanitizedName;
+}
+
+// Patches the lead JSON baked into the card's onclick so a reopen shows the
+// current contacts (same reason as the post-save patch in saveLeadModifications).
+function patchLeadCardSnapshot(leadRef, patch) {
+  const headerRowEl = document.querySelector(`#contact-parent-wrapper-${leadRef} .contact-summary-header-row`);
+  if (!headerRowEl) return;
+  const m = (headerRowEl.getAttribute("onclick") || "").match(/toggleContactExpansionView\('([^']*)',\s*`([\s\S]*?)`\)/);
+  if (!m) return;
+  try {
+    const map = JSON.parse(decodeURIComponent(m[2]));
+    Object.assign(map, patch);
+    headerRowEl.setAttribute("onclick", `toggleContactExpansionView('${m[1]}', \`${encodeURIComponent(JSON.stringify(map))}\`)`);
+  } catch (e) { console.error("patchLeadCardSnapshot failed:", e); }
+}
+
+window.leadContactsByLead = window.leadContactsByLead || {};
+
+function renderLeadContactsEditor(leadRef, contacts) {
+  window.leadContactsByLead[leadRef] = contacts;
+  const mount = document.getElementById("lead-contacts-editor-" + leadRef);
+  if (!mount) return;
+  const cell = (v) => escapeHtml(v || "");
+  const inp = (cls, v, ph) => `<input type="text" class="${cls}" value="${cell(v)}" placeholder="${ph}" style="width:100%;">`;
+  const rows = contacts.map(c => `
+    <tr data-contact-id="${c.contactId}">
+      <td>${inp("lc-name", c.name, "Name")}</td>
+      <td>${inp("lc-position", c.position, "Position")}</td>
+      <td>${inp("lc-phone", c.phone, "Phone")}</td>
+      <td>${inp("lc-altphone", c.altPhone, "Alt Phone")}</td>
+      <td>${inp("lc-email", c.email, "Email")}</td>
+      <td style="white-space:nowrap; text-align:center;">
+        <button class="nav-btn-styled" style="width:auto; padding:6px 12px;" onclick="saveLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)}, this)">Save</button>
+        ${contacts.length > 1 ? `<button class="nav-btn-styled" style="width:auto; padding:6px 12px; background:var(--warn);" onclick="removeLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)})">Remove</button>` : ""}
+      </td>
+    </tr>`).join("");
+  mount.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:700; margin-bottom:6px;">Contacts on this Lead</div>
+      <div class="mobile-scroll-table-wrap" style="overflow-x:auto;">
+        <table class="lead-contacts-table" style="width:100%; border-collapse:collapse;">
+          <thead><tr><th>Name</th><th>Position</th><th>Phone</th><th>Alt Phone</th><th>Email</th><th></th></tr></thead>
+          <tbody>${rows}
+            <tr class="lc-new-row">
+              <td>${inp("lc-name", "", "Name")}</td>
+              <td>${inp("lc-position", "", "Position")}</td>
+              <td>${inp("lc-phone", "", "Phone")}</td>
+              <td>${inp("lc-altphone", "", "Alt Phone")}</td>
+              <td>${inp("lc-email", "", "Email")}</td>
+              <td style="text-align:center;"><button class="nav-btn-styled" style="width:auto; padding:6px 12px;" onclick="addLeadContactRow(${jsArg(leadRef)}, this)">+ Add Person</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function readLeadContactRow(tr) {
+  const v = (cls) => (tr.querySelector("." + cls)?.value || "").trim();
+  return { name: v("lc-name"), position: v("lc-position"), phone: v("lc-phone"), altPhone: v("lc-altphone"), email: v("lc-email") };
+}
+
+function afterLeadContactsChanged(leadRef, contacts) {
+  renderLeadContactsEditor(leadRef, contacts);
+  const lbl = document.getElementById(`card-lbl-name-${leadRef}`);
+  if (lbl) lbl.textContent = leadContactNamesText({ Contacts: contacts }) || "Unspecified Name";
+  const primary = contacts[0] || {};
+  patchLeadCardSnapshot(leadRef, {
+    "Contacts": contacts, "Contact Person Name": primary.name || "", "Position": primary.position || "",
+    "Phone": primary.phone || "", "Alt Phone": primary.altPhone || "", "Email": primary.email || "",
+  });
+}
+
+async function addLeadContactRow(leadRef, btn) {
+  const tr = btn.closest("tr");
+  const data = readLeadContactRow(tr);
+  if (!data.name && !data.phone && !data.email) { alert("Enter at least a name, phone or email."); return; }
+  btn.disabled = true;
+  try {
+    const r = await apFetch({ action: "addLeadContact", leadId: leadRef, ...data });
+    if (!r.success) { alert(r.error || "Could not add the contact."); return; }
+    const list = (window.leadContactsByLead[leadRef] || []).concat([{ contactId: r.contactId, ...data, isPrimary: false }]);
+    afterLeadContactsChanged(leadRef, list);
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not add the contact."); }
+  finally { btn.disabled = false; }
+}
+
+async function saveLeadContactRow(leadRef, contactId, btn) {
+  const data = readLeadContactRow(btn.closest("tr"));
+  btn.disabled = true;
+  try {
+    const r = await apFetch({ action: "updateLeadContact", contactId, ...data });
+    if (!r.success) { alert(r.error || "Could not save the contact."); return; }
+    const list = (window.leadContactsByLead[leadRef] || []).map(c => c.contactId === contactId ? { ...c, ...data } : c);
+    afterLeadContactsChanged(leadRef, list);
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not save the contact."); }
+  finally { btn.disabled = false; }
+}
+
+async function removeLeadContactRow(leadRef, contactId) {
+  if (!(await abpsConfirm("Remove this person from the lead?"))) return;
+  try {
+    const r = await apFetch({ action: "deleteLeadContact", contactId });
+    if (!r.success) { alert(r.error || "Could not remove the contact."); return; }
+    afterLeadContactsChanged(leadRef, (window.leadContactsByLead[leadRef] || []).filter(c => c.contactId !== contactId));
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not remove the contact."); }
+}
+
+// Merge: pick another lead of the same company to fold into this one.
+async function openMergeLeadPicker(targetLeadId, encodedCompany) {
+  const companyName = decodeURIComponent(encodedCompany || "");
+  let r;
+  try { r = await apFetch({ action: "fetchOpenLeadsForCompany", companyName }); }
+  catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not load the company's leads."); return; }
+  const others = (r.leads || []).filter(l => l.leadId !== targetLeadId);
+  if (!others.length) { alert("This company has no other lead without a PO to merge into this one."); return; }
+  const list = others.map((l, i) => `${i + 1}. ${l.leadName || l.leadId} (${l.leadId})${l.contacts ? " - " + l.contacts : ""}`).join("\n");
+  const pick = prompt(`Merge which lead INTO ${targetLeadId}? Its contacts, follow-ups, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
+  const idx = parseInt(pick, 10) - 1;
+  if (isNaN(idx) || !others[idx]) return;
+  const source = others[idx];
+  if (!(await abpsConfirm(`Merge ${source.leadId} into ${targetLeadId}? This cannot be undone.`))) return;
+  try {
+    const m = await apFetch({ action: "mergeLeads", sourceLeadId: source.leadId, targetLeadId });
+    if (!m.success) { alert(m.error || "Merge failed."); return; }
+    alert("Leads merged. Search again to see the combined lead.");
+    const srcCard = document.getElementById(`contact-parent-wrapper-${source.leadId}`);
+    if (srcCard) srcCard.remove();
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Merge failed."); }
+}
+
+
+// Chooser shown on New Lead when the company already has open (no-PO) leads.
+// Resolves to a leadId (add this person to it), 'NEW' (create a new lead), or
+// null (cancel).
+function chooseLeadForNewContact(companyName, leads) {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100001; display:flex; align-items:center; justify-content:center; padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff; border-radius:10px; max-width:620px; width:100%; max-height:85vh; overflow:auto; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;';
+    const items = leads.map(l => `
+      <label style="display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; cursor:pointer;">
+        <input type="radio" name="lead-choice-radio" value="${escapeHtml(l.leadId)}" style="width:auto; margin-top:4px;">
+        <span><strong>${escapeHtml(l.leadName || l.leadId)}</strong> <span style="color:var(--muted);">(${escapeHtml(l.leadId)}, ${escapeHtml(l.status || '')})</span><br>
+        <span style="font-size:0.85rem;">Contacts: ${escapeHtml(l.contacts || 'none')}</span></span>
+      </label>`).join('');
+    box.innerHTML = `
+      <div style="font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:8px;">${escapeHtml(companyName)} already has open leads</div>
+      <div style="font-size:0.9rem; margin-bottom:12px;">Is this person part of one of these enquiries (same order)? Their contact details will be added to it; the meeting notes on this form will not be saved, so log them as a Follow-Up on that lead.</div>
+      ${items}
+      <label style="display:flex; gap:10px; align-items:center; padding:10px; border:1px solid var(--border); border-radius:8px; cursor:pointer;">
+        <input type="radio" name="lead-choice-radio" value="NEW" checked style="width:auto;">
+        <strong>No, this is a new enquiry: create a new lead</strong>
+      </label>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button type="button" class="nav-btn-styled lc-cancel" style="background:#e2e8f0; color:#111827; width:auto; padding:8px 20px;">Cancel</button>
+        <button type="button" class="nav-btn-styled lc-ok" style="width:auto; padding:8px 22px;">Continue</button>
+      </div>`;
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+    const done = (v) => { wrap.remove(); resolve(v); };
+    box.querySelector('.lc-cancel').onclick = () => done(null);
+    box.querySelector('.lc-ok').onclick = () => {
+      const sel = box.querySelector('input[name="lead-choice-radio"]:checked');
+      done(sel ? sel.value : 'NEW');
+    };
+  });
 }
