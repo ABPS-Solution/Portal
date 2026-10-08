@@ -156,7 +156,8 @@ function icfValidateValues(template, values) {
       const stepSizesVal = Number(vals[ph.stepSizesOf]);
       const kvarTargetVal = Number(vals[ph.kvarTargetOf]);
       if (Math.abs(sumCount - stepSizesVal) > 1e-9) return `"Step Rating" step counts add up to ${sumCount}, but Step Sizes is ${stepSizesVal} — they must match.`;
-      if (Math.abs(sumKvar - kvarTargetVal) > 1e-6) return `"Step Rating" kVAr adds up to ${sumKvar}, but the designed kVAr is ${kvarTargetVal} — they must match.`;
+      // kVAr total vs designed kVAr is a suggestion only (amber hint in the editor).
+      void sumKvar; void kvarTargetVal;
       continue;
     }
 
@@ -224,7 +225,7 @@ function icfInitStepListWidget(ph, containerEl, idPrefix, stepState, onChange) {
     const countEl = mount.querySelector('[data-summary="count"]');
     const kvarEl = mount.querySelector('[data-summary="kvar"]');
     if (countEl) { countEl.textContent = `Steps: ${sumCount} / ${targetCount || '?'}`; countEl.style.color = countOk ? '#15803d' : '#b91c1c'; }
-    if (kvarEl) { kvarEl.textContent = `kVAr: ${sumKvar} / ${targetKvar || '?'}`; kvarEl.style.color = kvarOk ? '#15803d' : '#b91c1c'; }
+    if (kvarEl) { kvarEl.textContent = `kVAr: ${sumKvar} / ${targetKvar || '?'}`; kvarEl.style.color = kvarOk ? '#15803d' : '#b45309'; kvarEl.title = kvarOk ? '' : 'Suggestion only: the steps do not add up to the designed kVAr.'; }
   }
 
   function render() {
