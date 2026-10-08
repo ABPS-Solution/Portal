@@ -15,6 +15,8 @@ const DDOC_DEPT_COLORS = {
 };
 
 function openDriveDocumentsPanel() {
+  // Close whatever screen is open so Documents shows on its own.
+  if (typeof returnToDashboard === "function") returnToDashboard();
   switchActiveDashboardModule("drive-documents");
 }
 
