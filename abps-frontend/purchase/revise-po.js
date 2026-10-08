@@ -520,6 +520,18 @@ function renderPORevisionCard() {
   const rowsHtml = lineItems.map((li, idx) => {
     if (kind === "PRN Driven" && !li.changed && !li._removed && !li.isNew) return ""; // unchanged — not shown, but still counted in the totals below
 
+    // Same item code on several rows (different descriptions): pooled after
+    // the PO, so these rows can only be cancelled with the whole PO.
+    if (!li.isNew && lineItems.filter(x => !x.isNew && x.itemCode === li.itemCode).length > 1) {
+      return `
+    <div data-lineidx="${idx}" style="background:#f8fafc; border:1.5px dashed #94a3b8; border-radius:8px; margin-bottom:12px; padding:10px 12px;">
+      <span style="font-weight:800; font-size:0.85rem; color:#334155;">Row ${idx + 1} locked</span>
+      <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:#334155; margin-left:8px;">${escapeHtml(li.itemCode || "")}</span>
+      <span style="font-size:0.85rem; color:#475569; margin-left:8px;">${escapeHtml(li.additionalDescription || li.description || "")} (${formatQtyTrimmed(li.orderedQty)} ${escapeHtml(li.unit || "")})</span>
+      <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">This item code is on more than one row of this PO, so these rows cannot be revised one by one. Cancel the PO and raise a new one to change them.</div>
+    </div>`;
+    }
+
     if (li._removed) {
       return `
     <div data-lineidx="${idx}" style="background:#fef2f2; border:1.5px dashed #f87171; border-radius:8px; margin-bottom:12px; padding:10px 12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
