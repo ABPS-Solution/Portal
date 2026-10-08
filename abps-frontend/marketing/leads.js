@@ -3427,43 +3427,67 @@ function renderLeadContactsEditor(leadRef, contacts) {
   window.leadContactsByLead[leadRef] = contacts;
   const mount = document.getElementById("lead-contacts-editor-" + leadRef);
   if (!mount) return;
-  const cell = (v) => escapeHtml(v || "");
-  const inp = (cls, v, ph) => `<input type="text" class="${cls}" value="${cell(v)}" placeholder="${ph}" style="width:100%;">`;
-  const rows = contacts.map(c => `
-    <tr data-contact-id="${c.contactId}">
-      <td>${inp("lc-name", c.name, "Name")}</td>
-      <td>${inp("lc-position", c.position, "Position")}</td>
-      <td>${inp("lc-phone", c.phone, "Phone")}</td>
-      <td>${inp("lc-altphone", c.altPhone, "Alt Phone")}</td>
-      <td>${inp("lc-email", c.email, "Email")}</td>
-      <td style="white-space:nowrap; text-align:center;">
-        <button class="nav-btn-styled" style="width:auto; padding:6px 12px;" onclick="saveLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)}, this)">Save</button>
-        ${contacts.length > 1 ? `<button class="nav-btn-styled" style="width:auto; padding:6px 12px; background:var(--warn);" onclick="removeLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)})">Remove</button>` : ""}
-      </td>
-    </tr>`).join("");
+  const v = (x) => escapeHtml(x || "");
+  const field = (cls, val, label, type) => `
+    <label class="lc-field">
+      <span class="lc-label">${label}</span>
+      <input type="${type || "text"}" class="${cls}" value="${v(val)}" placeholder="${label}">
+    </label>`;
+  const fields = (c) =>
+    field("lc-name", c.name, "Name") + field("lc-position", c.position, "Position") +
+    field("lc-phone", c.phone, "Phone", "tel") + field("lc-altphone", c.altPhone, "Alt Phone", "tel") +
+    field("lc-email", c.email, "Email", "email");
+  const rows = contacts.map((c, i) => `
+    <div class="lc-row" data-contact-id="${Number(c.contactId)}">
+      <div class="lc-row-head">
+        <span class="lc-person-no">Person ${i + 1}</span>
+        ${i === 0 ? '<span class="lc-primary-tag">Primary</span>' : ""}
+      </div>
+      <div class="lc-grid">
+        ${fields(c)}
+        <div class="lc-actions">
+          <button type="button" class="nav-btn-styled lc-btn" onclick="saveLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)}, this)">Save</button>
+          ${contacts.length > 1 ? `<button type="button" class="nav-btn-styled lc-btn lc-btn-remove" onclick="removeLeadContactRow(${jsArg(leadRef)}, ${Number(c.contactId)})">Remove</button>` : ""}
+        </div>
+      </div>
+    </div>`).join("");
   mount.innerHTML = `
-    <div style="margin-bottom:14px;">
-      <div style="font-weight:700; margin-bottom:6px;">Contacts on this Lead</div>
-      <div class="mobile-scroll-table-wrap" style="overflow-x:auto;">
-        <table class="lead-contacts-table" style="width:100%; border-collapse:collapse;">
-          <thead><tr><th>Name</th><th>Position</th><th>Phone</th><th>Alt Phone</th><th>Email</th><th></th></tr></thead>
-          <tbody>${rows}
-            <tr class="lc-new-row">
-              <td>${inp("lc-name", "", "Name")}</td>
-              <td>${inp("lc-position", "", "Position")}</td>
-              <td>${inp("lc-phone", "", "Phone")}</td>
-              <td>${inp("lc-altphone", "", "Alt Phone")}</td>
-              <td>${inp("lc-email", "", "Email")}</td>
-              <td style="text-align:center;"><button class="nav-btn-styled" style="width:auto; padding:6px 12px;" onclick="addLeadContactRow(${jsArg(leadRef)}, this)">+ Add Person</button></td>
-            </tr>
-          </tbody>
-        </table>
+    <style>
+      .lc-wrap{margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;padding:14px 16px;}
+      .lc-title{font-weight:800;color:var(--brand);margin-bottom:10px;font-size:0.95rem;}
+      .lc-row{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:#f8fafc;}
+      .lc-row-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+      .lc-person-no{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);}
+      .lc-primary-tag{font-size:0.68rem;font-weight:700;background:var(--brand);color:#fff;border-radius:999px;padding:2px 8px;}
+      .lc-grid{display:grid;grid-template-columns:1.3fr 1.1fr 1fr 1fr 1.4fr auto;gap:8px 10px;align-items:end;}
+      .lc-field{display:flex;flex-direction:column;gap:3px;min-width:0;margin:0;}
+      .lc-label{font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
+      .lc-field input{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;background:#fff;}
+      .lc-actions{display:flex;gap:6px;white-space:nowrap;}
+      .lc-btn{width:auto !important;padding:7px 14px !important;font-size:0.82rem !important;}
+      .lc-btn-remove{background:var(--warn) !important;}
+      .lc-new{border:1.5px dashed var(--brand);background:var(--highlight-bg);}
+      .lc-new .lc-person-no{color:var(--brand);}
+      @media(max-width:900px){.lc-grid{grid-template-columns:1fr 1fr;}.lc-actions{grid-column:1/-1;}}
+      @media(max-width:640px){.lc-grid{grid-template-columns:1fr;}}
+    </style>
+    <div class="lc-wrap">
+      <div class="lc-title">Contacts on this Lead</div>
+      ${rows || '<div style="color:var(--muted);font-size:0.85rem;margin-bottom:10px;">No contact saved yet.</div>'}
+      <div class="lc-row lc-new">
+        <div class="lc-row-head"><span class="lc-person-no">Add a person</span></div>
+        <div class="lc-grid">
+          ${fields({})}
+          <div class="lc-actions">
+            <button type="button" class="nav-btn-styled lc-btn" onclick="addLeadContactRow(${jsArg(leadRef)}, this)">+ Add Person</button>
+          </div>
+        </div>
       </div>
     </div>`;
 }
 
-function readLeadContactRow(tr) {
-  const v = (cls) => (tr.querySelector("." + cls)?.value || "").trim();
+function readLeadContactRow(row) {
+  const v = (cls) => (row.querySelector("." + cls)?.value || "").trim();
   return { name: v("lc-name"), position: v("lc-position"), phone: v("lc-phone"), altPhone: v("lc-altphone"), email: v("lc-email") };
 }
 
@@ -3479,8 +3503,7 @@ function afterLeadContactsChanged(leadRef, contacts) {
 }
 
 async function addLeadContactRow(leadRef, btn) {
-  const tr = btn.closest("tr");
-  const data = readLeadContactRow(tr);
+  const data = readLeadContactRow(btn.closest(".lc-row"));
   if (!data.name && !data.phone && !data.email) { alert("Enter at least a name, phone or email."); return; }
   btn.disabled = true;
   try {
@@ -3493,7 +3516,7 @@ async function addLeadContactRow(leadRef, btn) {
 }
 
 async function saveLeadContactRow(leadRef, contactId, btn) {
-  const data = readLeadContactRow(btn.closest("tr"));
+  const data = readLeadContactRow(btn.closest(".lc-row"));
   btn.disabled = true;
   try {
     const r = await apFetch({ action: "updateLeadContact", contactId, ...data });
