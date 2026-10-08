@@ -739,13 +739,9 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Status</span>
             <strong id="card-lbl-status-${tRef}" style="font-size:0.95rem;">${lead["Status"] || "N/A"}</strong>
           </div>
-          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
+          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0; grid-column:1 / -1;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Contacts</span>
-            <strong id="card-lbl-name-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(cardDisplayName)}</strong>
-          </div>
-          <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
-            <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Lead ID</span>
-            <strong id="card-lbl-pos-${tRef}" style="font-size:0.95rem;">${escapeHtml(tRef)}</strong>
+            <strong id="card-lbl-name-${tRef}" style="font-size:0.95rem; overflow-wrap:anywhere;">${escapeHtml(leadContactsWithPositionText(lead) || cardDisplayName)}</strong>
           </div>
         </div>
         <div class="directory-btn-actions-block" style="display:flex; align-items:center; gap:8px; flex-shrink:0;" onclick="event.stopPropagation()">
@@ -3399,6 +3395,14 @@ function leadContactNamesText(lead) {
   return (lead && lead["Contact Person Name"]) || "";
 }
 
+// "Name (Position), Name (Position)" for the lead card header.
+function leadContactsWithPositionText(lead) {
+  const list = Array.isArray(lead && lead["Contacts"]) ? lead["Contacts"] : [];
+  return list.filter(c => (c.name || "").trim())
+    .map(c => (c.name || "").trim() + ((c.position || "").trim() ? " (" + c.position.trim() + ")" : ""))
+    .join(", ");
+}
+
 function leadHasContactNamed(lead, sanitizedName) {
   if (!sanitizedName) return false;
   const clean = (v) => (v || "").toString().replace(/\s+/g, "").toLowerCase();
@@ -3494,7 +3498,7 @@ function readLeadContactRow(row) {
 function afterLeadContactsChanged(leadRef, contacts) {
   renderLeadContactsEditor(leadRef, contacts);
   const lbl = document.getElementById(`card-lbl-name-${leadRef}`);
-  if (lbl) lbl.textContent = leadContactNamesText({ Contacts: contacts }) || "Unspecified Name";
+  if (lbl) lbl.textContent = leadContactsWithPositionText({ Contacts: contacts }) || "Unspecified Name";
   const primary = contacts[0] || {};
   patchLeadCardSnapshot(leadRef, {
     "Contacts": contacts, "Contact Person Name": primary.name || "", "Position": primary.position || "",
