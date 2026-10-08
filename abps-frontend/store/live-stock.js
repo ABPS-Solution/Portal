@@ -875,8 +875,8 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
   let qaDoneMissing = false;
 
   itemData.lineItems.forEach((line, idx) => {
-    const ok       = parseInt(document.querySelector(`.qa-ok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
-    const notOk    = parseInt(document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`).value, 10) || 0;
+    const ok       = parseFloat(document.querySelector(`.qa-ok-${grnNum}[data-idx="${idx}"]`).value) || 0;
+    const notOk    = parseFloat(document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`).value) || 0;
     const reason   = document.querySelector(`.qa-reason-${grnNum}[data-idx="${idx}"]`).value.trim();
     const action   = document.querySelector(`.qa-action-${grnNum}[data-idx="${idx}"]`).value;
     const done     = document.querySelector(`.qa-done-${grnNum}[data-idx="${idx}"]`).checked;
@@ -888,7 +888,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
       notOkIssues.push(`${itemCode || line.itemCode}: ${notOk} Not OK — missing ${[!reason && "Reason for Not OK", !action && "Action for Rejected"].filter(Boolean).join(" and ")}`);
       actionMissing = true;
     }
-    if (ok + notOk !== (parseInt(line.quantityReceived, 10) || 0)) validationError = true;
+    if (Math.abs(ok + notOk - (parseFloat(line.quantityReceived) || 0)) > 1e-6) validationError = true;
     if (!done) qaDoneMissing = true;
 
     line.okQuantity              = ok;

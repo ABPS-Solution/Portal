@@ -551,7 +551,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
 
       } else {
         item.lineItems.forEach((line, idx) => {
-          const recvd = parseInt(line.quantityReceived, 10) || 0;
+          const recvd = parseFloat(line.quantityReceived) || 0;
           const searchId = `qa-search-${item.grnNumber}-${idx}`;
           const dropId   = `qa-drop-${item.grnNumber}-${idx}`;
           const matName  = (line.materialName || "").toString();
@@ -587,10 +587,10 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             </td>
             <td style="width:70px; padding:6px; text-align:center; font-weight:700; font-size:1.1rem; vertical-align:middle;">${recvd}</td>
             <td style="width:70px; padding:6px; vertical-align:middle;">
-              <input type="number" min="0" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; font-size:1.1rem; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+              <input type="number" min="0" step="any" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; font-size:1.1rem; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
             </td>
             <td style="width:55px; padding:6px; vertical-align:middle;">
-              <input type="number" min="0" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; font-size:1.1rem; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
+              <input type="number" min="0" step="any" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; font-size:1.1rem; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
             </td>
             <td style="width:150px; padding:6px; vertical-align:middle;">
               <textarea rows="1" disabled class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason for Not OK..." oninput="autoGrowTextField(this)" style="display:block; font-size:0.78rem; padding:6px; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.35; white-space:pre-wrap; overflow-wrap:break-word;"></textarea>
@@ -785,13 +785,16 @@ function qaDraftAttach(card, grn) {
 }
 
 function autoBalanceQaQuantities(okInput, grnNum, idx) {
-  const max = parseInt(okInput.dataset.max, 10);
-  let okVal = parseInt(okInput.value, 10) || 0;
+  const max = parseFloat(okInput.dataset.max) || 0;
+  let okVal = parseFloat(okInput.value) || 0;
   if (okVal > max) { okVal = max; okInput.value = max; }
   if (okVal < 0) { okVal = 0; okInput.value = 0; }
+  // Received quantities can be decimals (kg, meters); round to 3 places so
+  // 298.55 - 100.2 shows 198.35, not 198.35000000000002.
+  const notOkVal = Math.round((max - okVal) * 1000) / 1000;
   const notOkInput = document.querySelector(`.qa-notok-${grnNum}[data-idx="${idx}"]`);
-  if (notOkInput) notOkInput.value = max - okVal;
-  qaSyncRejectFields(grnNum, idx, max - okVal);
+  if (notOkInput) notOkInput.value = notOkVal;
+  qaSyncRejectFields(grnNum, idx, notOkVal);
 }
 
 // Reason for Not OK and Action for Rejected only mean something when there
