@@ -26,6 +26,8 @@ let mcLineItemMeta = {};
 // Expense Tracker rebuild; this is where they actually belong.
 function switchMcStatus(status) {
   mcCurrentStatus = status;
+  const si = document.getElementById('mc-search-input');
+  if (si) si.value = '';
   syncMcStatusPills();
   loadManufacturingClearanceList();
 }
@@ -40,6 +42,8 @@ function syncMcStatusPills() {
 
 function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
+  const si = document.getElementById('mc-search-input');
+  if (si) si.value = '';
   mcLineItemState = {};
   mcGatingState = {};
   mcGatingInitialSnapshot = {};
@@ -93,11 +97,12 @@ async function loadManufacturingClearanceList() {
       mcLineItemMeta = {};
       cardsContainer.innerHTML = "";
       data.projects.forEach(p => cardsContainer.appendChild(renderMcProjectCard(p)));
+      filterMcProjects();
       return;
     }
 
     body.innerHTML = data.projects.map(p => `
-      <tr style="border-bottom:1px solid var(--border);">
+      <tr class="mc-filter-row" data-search="${escapeHtml((p.companyName + ' ' + p.projectId).toLowerCase())}" style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
         <td style="padding:8px; word-break:break-word; font-size:0.95rem; font-weight:600;">${escapeHtml(p.companyName)}</td>
         <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
@@ -110,6 +115,7 @@ async function loadManufacturingClearanceList() {
             : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}
         </td>
       </tr>`).join("");
+    filterMcProjects();
   } catch(e) {
     const msg = `Network error: ${e.message}`;
     if (mcCurrentStatus === "Active") cardsContainer.innerHTML = `<div style="padding:14px; text-align:center; color:#b91c1c;">${msg}</div>`;
@@ -131,8 +137,9 @@ function mcStatusPill(project) {
 function renderMcProjectCard(project) {
   const safeId = project.projectId.replace(/[^a-zA-Z0-9]/g, "_");
   const card = document.createElement("div");
-  card.className = "contact-summary-card-parent";
+  card.className = "contact-summary-card-parent mc-filter-row";
   card.id = `mc-card-${safeId}`;
+  card.dataset.search = (project.companyName + ' ' + project.projectId).toLowerCase();
 
   const status = mcStatusPill(project);
   const deliveryLabel = project.mfcInt ? "Final Delivery Date from MFC" : "Tentative Delivery Date";
@@ -140,14 +147,16 @@ function renderMcProjectCard(project) {
 
   card.innerHTML = `
     <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:0; border-bottom:none; cursor:pointer;">
-      <div class="contact-summary-title-info" style="width:100%;">
-        <div class="meta-row-line-block" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
-          <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:3px 8px; font-size:0.85rem; border-radius:3px;">${project.projectId}</span>
-          <strong style="color:#111827; font-size:0.9rem;">${escapeHtml(project.companyName)}</strong>
-          <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="font-size:0.85rem;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
-          <span style="margin-left:auto; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:3px 8px; border-radius:10px;">${status.text}</span>
-          <span id="mc-caret-${safeId}" style="font-weight:700; color:var(--muted);">▸</span>
+      <div style="width:100%; display:flex; align-items:center; gap:14px; border-left:4px solid ${status.color}; padding-left:12px;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:1rem; font-weight:800; color:#111827; margin-bottom:4px;">${escapeHtml(project.companyName)}</div>
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; font-size:0.8rem; color:var(--muted);">
+            <span style="font-family:monospace; color:var(--brand); word-break:break-all;">${escapeHtml(project.projectId)}</span>
+            <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="white-space:nowrap;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
+          </div>
         </div>
+        <span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${status.text}</span>
+        <span id="mc-caret-${safeId}" style="flex-shrink:0; font-weight:700; color:var(--muted); font-size:1rem;">▸</span>
       </div>
     </div>
     <div id="mc-body-${safeId}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
@@ -155,6 +164,19 @@ function renderMcProjectCard(project) {
     </div>
   `;
   return card;
+}
+
+function filterMcProjects() {
+  const q = ((document.getElementById('mc-search-input') || {}).value || '').trim().toLowerCase();
+  let shown = 0, total = 0;
+  document.querySelectorAll('#mc-active-cards-container .mc-filter-row, #mc-list-body .mc-filter-row').forEach(el => {
+    total++;
+    const hit = !q || (el.dataset.search || '').includes(q);
+    el.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  const empty = document.getElementById('mc-search-empty');
+  if (empty) empty.style.display = (q && total && !shown) ? 'block' : 'none';
 }
 
 async function toggleMcCardBody(projectId) {

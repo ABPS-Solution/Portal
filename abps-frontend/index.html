@@ -3234,6 +3234,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="flex:1; padding:11px 16px;">Inactive Projects</button>
       <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="flex:1; padding:11px 16px;">Completed Projects</button>
     </div>
+    <div style="position:relative; margin-bottom:14px;">
+      <input id="mc-search-input" type="text" autocomplete="off" placeholder="Search by company name or Project ID..." oninput="filterMcProjects()" style="width:100%; padding:10px 12px 10px 36px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;">
+      <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none;">&#128269;</span>
+    </div>
+    <div id="mc-search-empty" style="display:none; padding:14px; text-align:center; color:var(--muted);">No projects match your search.</div>
     <table id="mc-list-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
       <colgroup>
         <col style="width:20%;" /><col style="width:13%;" /><col style="width:46%;" /><col style="width:14%;" /><col style="width:7%;" />
