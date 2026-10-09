@@ -452,6 +452,36 @@ function icfWireApfcRatedCurrentAutoCalc(template, containerEl, idPrefix) {
   }
 }
 
+// Client mirror of lib/itemCodeFormat.js's applyLtCapacitorCurrentAutoCalc:
+// LT capacitor "nph kVAr, nph V" + one "nph A" — A is computed and read-only.
+function icfWireLtCapacitorCurrentAutoCalc(template, containerEl, idPrefix) {
+  const { segments } = icfParseTemplate(template);
+  if (!segments || segments.length < 4) return;
+  const [kvarSeg, lit1, vSeg] = segments;
+  if (kvarSeg.kind !== 'number' || (kvarSeg.label || '').trim() !== 'kVAr' || lit1.kind !== 'literal' || vSeg.kind !== 'number' || (vSeg.label || '').trim() !== 'V') return;
+  const aSegs = segments.filter(x => x.kind === 'number' && (x.label || '').trim() === 'A');
+  if (aSegs.length !== 1) return;
+  const aSeg = aSegs[0];
+  if (segments.some(x => x.kind === 'literal' && /rated current/i.test(x.text))) return;
+  const kvarEl = document.getElementById(`${idPrefix}-ph-${kvarSeg.index}`);
+  const vEl = document.getElementById(`${idPrefix}-ph-${vSeg.index}`);
+  const aEl = document.getElementById(`${idPrefix}-ph-${aSeg.index}`);
+  if (!kvarEl || !vEl || !aEl) return;
+  aEl.readOnly = true;
+  aEl.tabIndex = -1;
+  aEl.style.background = '#f1f5f9';
+  aEl.title = 'Auto-calculated as (kVAr x 1000) / (V x root 3)';
+  const recompute = () => {
+    const kvar = parseFloat(kvarEl.value);
+    const vRaw = (vEl.value || '').trim();
+    aEl.value = (isNaN(kvar) || !/^-?\d+(\.\d+)?$/.test(vRaw) || parseFloat(vRaw) === 0)
+      ? '' : String(Math.round((kvar * 1000) / (parseFloat(vRaw) * Math.sqrt(3)) * 1000) / 1000);
+  };
+  kvarEl.addEventListener('input', recompute);
+  vEl.addEventListener('input', recompute);
+  recompute();
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);
@@ -595,6 +625,7 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
   icfWireKvarAutoCalc(placeholders, containerEl, idPrefix);
   icfWireReactorBilAutoCalc(template, containerEl, idPrefix);
   icfWireApfcRatedCurrentAutoCalc(template, containerEl, idPrefix);
+  icfWireLtCapacitorCurrentAutoCalc(template, containerEl, idPrefix);
   icfWireMirrorFields(placeholders, containerEl, idPrefix);
   placeholders.filter(p => p.kind === 'steplist').forEach(ph => icfInitStepListWidget(ph, containerEl, idPrefix, stepListState, onChange));
 
