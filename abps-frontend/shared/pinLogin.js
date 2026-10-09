@@ -86,12 +86,15 @@ function selectLoginDeptButton(deptName) {
 // A Super Admin's PIN is 6 digits: the server answers a 4-digit try with
 // needsSixDigits (not counted as a failure) and we wait for 6 from then on.
 let pinLoginSixDigitName = null;
+// Names known to have a 6-digit PIN on this device, so a 4-digit try is never sent again.
+function pinSixDigitNames() { try { return JSON.parse(localStorage.getItem('abpsPinSixDigitNames') || '[]'); } catch (e) { return []; } }
+function rememberPinSixDigitName(name) { try { const l = pinSixDigitNames(); if (!l.includes(name)) { l.push(name); localStorage.setItem('abpsPinSixDigitNames', JSON.stringify(l)); } } catch (e) {} }
 function handlePinDigitInput() {
   const pinInput = document.getElementById('pin-login-pin-input');
   const digitsOnly = pinInput.value.replace(/\D/g, '').slice(0, 6);
   if (pinInput.value !== digitsOnly) pinInput.value = digitsOnly;
   const engineerSelect = document.getElementById("app-auth-active-engineer-identity");
-  const needsSix = engineerSelect && pinLoginSixDigitName && engineerSelect.value === pinLoginSixDigitName;
+  const needsSix = engineerSelect && engineerSelect.value && (engineerSelect.value === pinLoginSixDigitName || pinSixDigitNames().includes(engineerSelect.value));
   if (digitsOnly.length === 6 || (digitsOnly.length === 4 && !needsSix)) submitPinLoginAttempt();
 }
 
@@ -121,7 +124,9 @@ async function submitPinLoginAttempt() {
   if (!/^(\d{4}|\d{6})$/.test(pin)) return showFeedback("Enter your PIN.", true);
   if (!deviceSecret) return showFeedback("This PC is not set up for PIN login.", true);
 
-  pinInput.disabled = true;
+  // A 4-digit try may turn out to be a Super Admin's 6-digit PIN: keep the box
+  // typeable so the next digits are not lost while the server answers.
+  if (pin.length === 6) pinInput.disabled = true;
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -131,9 +136,11 @@ async function submitPinLoginAttempt() {
 
     if (!data.success && data.needsSixDigits) {
       pinLoginSixDigitName = selectedName;
+      rememberPinSixDigitName(selectedName);
       pinInput.disabled = false;
       pinInput.focus();
-      return showFeedback(data.error || "Enter your 6-digit PIN.", false);
+      if (pinInput.value.replace(/\D/g, '').length === 6) submitPinLoginAttempt();
+      return;
     }
 
     if (data.success) {

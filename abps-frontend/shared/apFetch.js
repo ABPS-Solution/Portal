@@ -41,6 +41,7 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   // syncPlatformPersonnelDropdownOptionsList.
   const rememberedDept = localStorage.getItem("abpsRememberedLoginDept");
   const rememberedName = localStorage.getItem("abpsRememberedLoginName");
+  const sixDigitNames = localStorage.getItem("abpsPinSixDigitNames");
   const drafts = [];
   if (keepDrafts) {
     for (let i = 0; i < localStorage.length; i++) {
@@ -53,6 +54,7 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
   if (rememberedDept) localStorage.setItem("abpsRememberedLoginDept", rememberedDept);
   if (rememberedName) localStorage.setItem("abpsRememberedLoginName", rememberedName);
+  if (sixDigitNames) localStorage.setItem("abpsPinSixDigitNames", sixDigitNames);
   drafts.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (_) {} });
 }
 
