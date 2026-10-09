@@ -482,6 +482,22 @@ function icfWireLtCapacitorCurrentAutoCalc(template, containerEl, idPrefix) {
   recompute();
 }
 
+// Mirror of lib/itemCodeFormat.js's ironCoreKvError (HT > 1 kV, LT <= 1 kV).
+function icfIronCoreKvError(subOption, template, values) {
+  const so = String(subOption || '');
+  const isHt = /\bHT Iron Core Reactor\b/i.test(so), isLt = /\bLT Iron Core Reactor\b/i.test(so);
+  if (!isHt && !isLt) return null;
+  const { segments } = icfParseTemplate(template);
+  if (!segments) return null;
+  const kvSeg = segments.find(x => x.kind === 'number' && (x.label || '').trim() === 'kV');
+  if (!kvSeg) return null;
+  const kv = parseFloat(Array.isArray(values) ? values[kvSeg.index] : '');
+  if (isNaN(kv)) return null;
+  if (isHt && kv <= 1) return 'An HT Iron Core Reactor must be above 1 kV. Use the LT Iron Core Reactor sub-option for 1 kV or under.';
+  if (isLt && kv > 1) return 'An LT Iron Core Reactor must be 1 kV or under. Use the HT Iron Core Reactor sub-option above 1 kV.';
+  return null;
+}
+
 function icfRenderTemplate(template, values) {
   const { segments, error } = icfParseTemplate(template);
   if (error) throw new Error(error);

@@ -492,6 +492,8 @@ async function submitNewItemCode() {
     if (icfSelectedFormat.ratingTemplate) {
       const ratingErr = icfValidateValues(icfSelectedFormat.ratingTemplate, ratingValues);
       if (ratingErr) { showBOQBanner("itemcode-feedback-banner", "⚠️ Rating: " + ratingErr, "error"); return; }
+      const kvErr = icfIronCoreKvError(icfSelectedFormat.subOption, icfSelectedFormat.ratingTemplate, ratingValues);
+      if (kvErr) { showBOQBanner("itemcode-feedback-banner", "⚠️ Rating: " + kvErr, "error"); return; }
     }
     payload = { formatId: icfSelectedFormat.formatId, materialNameValues: nameValues, ratingValues, make };
     materialName = document.getElementById("icf-new-preview-name").textContent;
