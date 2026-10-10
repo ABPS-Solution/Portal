@@ -24,7 +24,7 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
     if (!data.success) throw new Error(data.error || 'Could not load requests.');
     const pending = data.pending || [];
     feed.innerHTML = `
-      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}`;
+      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending Production Memo Purchase Requests</h3></div>'}`;
   } catch (e) {
     if (e.message === 'SESSION_EXPIRED') return;
     feed.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(e.message)}</div>`;
