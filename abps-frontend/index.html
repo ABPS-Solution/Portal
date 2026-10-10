@@ -5794,6 +5794,22 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="workspace-searchStatus" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search Leads by ABPS Engineer Name and Status</h2>
+      <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="lms-tab-cards" onclick="switchLeadMatrixView('cards')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px; width:auto;">Lead Cards</button>
+        <button id="lms-tab-report" onclick="switchLeadMatrixView('report')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px; width:auto;">New Leads Report</button>
+      </div>
+      <div id="lms-report-filters" style="display:none; margin-bottom:16px;">
+        <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Created Between</label>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;">
+          <div style="width:170px; flex:none;"><input type="date" id="nlr-from"></div>
+          <span style="color:var(--muted); font-weight:700;">to</span>
+          <div style="width:170px; flex:none;"><input type="date" id="nlr-to"></div>
+          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('today')">Today</button>
+          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('yesterday')">Yesterday</button>
+          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('week')">This Week</button>
+          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('month')">This Month</button>
+        </div>
+      </div>
       <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
       <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
       <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
@@ -5810,6 +5826,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
 
       <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
+      <button class="btn btn-sub" id="nlr-run-btn" style="display:none;" onclick="runNewLeadsReport()">Run New Leads Report</button>
+      <div id="nlr-output" style="display:none;"></div>
       <div id="lead-matrix-active-filters-display" style="display:none; font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
     </div>
 
@@ -6205,6 +6223,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="project/security-admin.js"></script>
 <script src="project/email-inboxes.js"></script>
 <script src="marketing/leads.js"></script>
+<script src="marketing/new-leads-report.js"></script>
 <script src="marketing/companies.js"></script>
 <script src="marketing/tasks-followups.js"></script>
 <script src="marketing/email-processing.js"></script>

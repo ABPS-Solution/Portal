@@ -203,6 +203,7 @@ async function navigateToModule(key) {
       loadQualFilter();
     } else if (key === "searchStatus") {
       document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => cb.checked = false);
+      if (typeof switchLeadMatrixView === "function") switchLeadMatrixView("cards");
       renderLeadMatrixEngineerCheckboxes();
       const fd = document.getElementById("lead-matrix-active-filters-display");
       if (fd) { fd.style.display = "none"; fd.textContent = ""; }
