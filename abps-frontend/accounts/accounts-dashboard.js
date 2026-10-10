@@ -76,7 +76,7 @@ function adRenderDashboard(data) {
     ? "queue clear" : `oldest ${stats.oldestUncheckedDays ?? 0}d waiting`;
 
   document.getElementById("ad-s-openadv").textContent = stats.openAdvances;
-  document.getElementById("ad-s-openadv-sub").textContent = adFmtINR(stats.openAdvanceAmount) + " given, voucher not closed yet";
+  document.getElementById("ad-s-openadv-sub").textContent = adFmtINR(stats.openAdvanceAmount) + " out" + (stats.openAdvanceOnline > 0 ? ` (${adFmtINR(stats.openAdvanceAmount - stats.openAdvanceOnline)} from box, ${adFmtINR(stats.openAdvanceOnline)} online)` : "");
 
   document.getElementById("ad-s-unactioned").textContent = stats.unactionedTravellers;
   document.getElementById("ad-s-unactioned-sub").textContent = adFmtINR(stats.unactionedTravelAmount) + " unreconciled"
