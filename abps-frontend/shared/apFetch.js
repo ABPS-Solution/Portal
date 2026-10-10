@@ -624,6 +624,7 @@ async function handleGooglePlatformCredentialResponse(response) {
 
 window._sharedProjectTypeaheadLoaded = false;
 function executeLogout() {
+  if (typeof abpsDraftFlushAll === "function") abpsDraftFlushAll();
   if (liveStockSyncIntervalId) { clearInterval(liveStockSyncIntervalId); liveStockSyncIntervalId = null; }
   // 1. Force the Google Identity library script to kill any cached silent-sign-in listeners on phones
   try {
@@ -675,6 +676,7 @@ function executeLogout() {
  * validates access roles gateways, and sets dynamic metric dashboard cards.
  */
 async function showAppView() {
+  if (typeof abpsDraftSyncFromServer === "function") abpsDraftSyncFromServer();
   document.getElementById("auth-container").style.display = "none"; 
   document.getElementById("app-container").style.display = "block";
   document.getElementById("dashboard-view").style.display = "block";

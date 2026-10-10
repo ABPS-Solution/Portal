@@ -18,14 +18,84 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 const ABPS_DRAFT_PREFIX = "abpsDraft:";
-const ABPS_DRAFT_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+// 15 days (10 Oct 2026). Drafts are also saved per login on the server
+// (routes/userDrafts.js) so they follow the person to another device and
+// survive logout; the browser copy is what screens read.
+const ABPS_DRAFT_MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000;
+const ABPS_DRAFT_OWNER_KEY = ABPS_DRAFT_PREFIX + "__owner";
+const abpsDraftPushTimers = {};
+const abpsDraftPushPending = {};
 const ABPS_DRAFT_DEBOUNCE_MS = 800;
 const abpsDraftTimers = {};
 
 function abpsDraftSave(key, payload) {
+  const ts = Date.now();
   try {
-    localStorage.setItem(ABPS_DRAFT_PREFIX + key, JSON.stringify({ ts: Date.now(), payload }));
+    localStorage.setItem(ABPS_DRAFT_PREFIX + key, JSON.stringify({ ts, payload }));
   } catch (_) { /* quota/private mode — autosave is best-effort by design */ }
+  abpsDraftQueuePush(key, ts, payload);
+}
+
+function abpsDraftQueuePush(key, ts, payload) {
+  abpsDraftPushPending[key] = { ts, payload };
+  clearTimeout(abpsDraftPushTimers[key]);
+  abpsDraftPushTimers[key] = setTimeout(() => abpsDraftPushNow(key), 1500);
+}
+
+function abpsDraftPushNow(key) {
+  const p = abpsDraftPushPending[key];
+  if (!p) return;
+  delete abpsDraftPushPending[key];
+  clearTimeout(abpsDraftPushTimers[key]);
+  if (typeof apFetch !== "function") return;
+  apFetch({ action: "saveUserDraft", key, ts: p.ts, payload: p.payload }).catch(() => {});
+}
+
+// Called just before logout clears this browser, so the last few seconds
+// of typing still reach the server.
+function abpsDraftFlushAll() {
+  Object.keys(abpsDraftPushPending).forEach(abpsDraftPushNow);
+}
+
+// Called after login / page load: brings this person's saved progress from
+// the server into this browser (newer copy wins, both ways). A different
+// person's leftover browser copies are removed first (shared devices).
+async function abpsDraftSyncFromServer() {
+  if (typeof apFetch !== "function") return;
+  let data;
+  try { data = await apFetch({ action: "fetchUserDrafts" }); } catch (_) { return; }
+  if (!data || !data.success) return;
+  try {
+    const localKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(ABPS_DRAFT_PREFIX) && k !== ABPS_DRAFT_OWNER_KEY) localKeys.push(k);
+    }
+    const owner = localStorage.getItem(ABPS_DRAFT_OWNER_KEY);
+    if (owner && owner !== data.personKey) {
+      localKeys.forEach(k => localStorage.removeItem(k));
+      localKeys.length = 0;
+    }
+    localStorage.setItem(ABPS_DRAFT_OWNER_KEY, data.personKey);
+    const server = {};
+    (data.drafts || []).forEach(d => { server[d.key] = d; });
+    localKeys.forEach(k => {
+      const key = k.slice(ABPS_DRAFT_PREFIX.length);
+      let raw = null;
+      try { raw = JSON.parse(localStorage.getItem(k) || "null"); } catch (_) {}
+      if (!raw || !raw.payload) return;
+      if (Date.now() - raw.ts > ABPS_DRAFT_MAX_AGE_MS) { localStorage.removeItem(k); return; }
+      if (!server[key] || raw.ts > server[key].ts) abpsDraftQueuePush(key, raw.ts, raw.payload);
+    });
+    Object.values(server).forEach(d => {
+      if (Date.now() - d.ts > ABPS_DRAFT_MAX_AGE_MS) return;
+      let raw = null;
+      try { raw = JSON.parse(localStorage.getItem(ABPS_DRAFT_PREFIX + d.key) || "null"); } catch (_) {}
+      if (!raw || raw.ts < d.ts) {
+        try { localStorage.setItem(ABPS_DRAFT_PREFIX + d.key, JSON.stringify({ ts: d.ts, payload: d.payload })); } catch (_) {}
+      }
+    });
+  } catch (_) { /* best-effort */ }
 }
 
 function abpsDraftRead(key) {
@@ -39,6 +109,9 @@ function abpsDraftRead(key) {
 
 function abpsDraftClear(key) {
   try { localStorage.removeItem(ABPS_DRAFT_PREFIX + key); } catch (_) {}
+  delete abpsDraftPushPending[key];
+  clearTimeout(abpsDraftPushTimers[key]);
+  if (typeof apFetch === "function") apFetch({ action: "clearUserDraft", key }).catch(() => {});
 }
 
 // Capture every user-editable field inside a container, keyed by element

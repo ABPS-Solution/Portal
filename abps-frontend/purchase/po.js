@@ -822,12 +822,15 @@ function persistCPODraft() {
       materialRows: window.cpoMaterialRows || [],
       rowSeq: window.cpoRowSeq || 0,
     };
-    localStorage.setItem(CPO_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    abpsDraftSave("createPO", draft);
   } catch (e) { /* storage unavailable/full — resume just won't work, not fatal */ }
 }
 
 function loadCPODraft() {
   try {
+    const d = abpsDraftRead("createPO");
+    if (d) return d.payload;
+    // Older browser-only copy (before 10 Oct 2026).
     const raw = localStorage.getItem(CPO_DRAFT_STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
@@ -835,6 +838,7 @@ function loadCPODraft() {
 
 function clearCPODraftStorage() {
   try { localStorage.removeItem(CPO_DRAFT_STORAGE_KEY); } catch (e) { /* ignore */ }
+  abpsDraftClear("createPO");
 }
 
 async function clearCPOForm() {

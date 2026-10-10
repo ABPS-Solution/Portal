@@ -3,7 +3,7 @@
 // Requirement Date screens (Create / Authorize / Revise PRN, Assign /
 // Revise Material Requirement Date) across Return to Main Dashboard, a
 // refresh, or a dropped connection. Same storage as shared/drafts.js
-// (abpsDraftSave/Read/Clear, 3-day expiry, cleared on explicit logout).
+// (abpsDraftSave/Read/Clear, 15-day expiry, also saved per login on the server).
 //
 // What is saved: which PRN/BOQ was open, plus the typed values. Reopening
 // the screen reopens that item and puts the values back. The item's own

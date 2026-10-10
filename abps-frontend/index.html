@@ -5798,16 +5798,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button id="lms-tab-cards" onclick="switchLeadMatrixView('cards')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px; width:auto;">Lead Cards</button>
         <button id="lms-tab-report" onclick="switchLeadMatrixView('report')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px; width:auto;">New Leads Report</button>
       </div>
+      <style>
+        .nlr-quick-group { display:inline-flex; border:1.5px solid var(--border); border-radius:999px; overflow:hidden; background:#fff; margin-left:6px; }
+        .nlr-quick-btn { width:auto; border:none; background:transparent; padding:8px 18px; font-size:0.82rem; font-weight:700; color:var(--muted); cursor:pointer; border-right:1px solid var(--border); transition:background 0.15s, color 0.15s; }
+        .nlr-quick-btn:last-child { border-right:none; }
+        .nlr-quick-btn:hover { background:var(--highlight-bg); color:var(--brand); }
+        .nlr-quick-btn.active { background:var(--brand); color:#fff; }
+        @media (max-width:640px) { .nlr-quick-group { margin-left:0; width:100%; } .nlr-quick-btn { flex:1; padding:8px 6px; } }
+      </style>
       <div id="lms-report-filters" style="display:none; margin-bottom:16px;">
         <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Created Between</label>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;">
-          <div style="width:170px; flex:none;"><input type="date" id="nlr-from"></div>
+          <div style="width:170px; flex:none;"><input type="date" id="nlr-from" onchange="nlrMarkQuick(null)"></div>
           <span style="color:var(--muted); font-weight:700;">to</span>
-          <div style="width:170px; flex:none;"><input type="date" id="nlr-to"></div>
-          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('today')">Today</button>
-          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('yesterday')">Yesterday</button>
-          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('week')">This Week</button>
-          <button class="btn" type="button" style="width:auto; padding:6px 12px; background:#64748b;" onclick="nlrQuickRange('month')">This Month</button>
+          <div style="width:170px; flex:none;"><input type="date" id="nlr-to" onchange="nlrMarkQuick(null)"></div>
+          <div class="nlr-quick-group">
+            <button type="button" class="nlr-quick-btn" data-range="today" onclick="nlrQuickRange('today')">Today</button>
+            <button type="button" class="nlr-quick-btn" data-range="yesterday" onclick="nlrQuickRange('yesterday')">Yesterday</button>
+            <button type="button" class="nlr-quick-btn" data-range="week" onclick="nlrQuickRange('week')">This Week</button>
+            <button type="button" class="nlr-quick-btn" data-range="month" onclick="nlrQuickRange('month')">This Month</button>
+          </div>
         </div>
       </div>
       <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>

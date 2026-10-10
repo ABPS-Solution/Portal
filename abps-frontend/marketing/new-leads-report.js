@@ -50,6 +50,13 @@ function nlrQuickRange(kind) {
   const to = kind === 'yesterday' ? from : today;
   document.getElementById("nlr-from").value = from;
   document.getElementById("nlr-to").value = to;
+  // Programmatic .value doesn't fire change; refresh the DD/MM overlay.
+  ["nlr-from", "nlr-to"].forEach(id => document.getElementById(id).dispatchEvent(new Event("input", { bubbles: true })));
+  nlrMarkQuick(kind);
+}
+
+function nlrMarkQuick(kind) {
+  document.querySelectorAll(".nlr-quick-btn").forEach(b => b.classList.toggle("active", b.dataset.range === kind));
 }
 
 function nlrReadFilters() {
