@@ -306,14 +306,14 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <span style="font-size:0.78rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:999px;">PRODUCTION MEMO</span>
+            <span style="font-size:0.78rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:999px;">PRODUCTION MEMO PURCHASE MATERIAL</span>
             Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px;">${fmtQty(totalStockCount)} ${escapeHtml(unitToken)}</span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
             <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">CAN BE ISSUED NOW: ${fmtQty(canIssue)} ${escapeHtml(unitToken)}</span>
             <button type="button" class="nav-btn-styled" style="width:auto; padding:5px 12px; font-size:0.82rem; background:#7c3aed;"
-              onclick="ticketOpenConsumableRequest(${jsArg(jcmMatch.itemCode)}, ${jsArg(jcmMatch.materialName)}, ${jsArg(unitToken)})">Request Purchase</button>
+              onclick="ticketOpenConsumableRequest(${jsArg(jcmMatch.itemCode)}, ${jsArg(jcmMatch.materialName)}, ${jsArg(unitToken)})">Production Memo for Purchase</button>
           </div>
         </div>`;
     } else if (inventoryMatch && jcmMatch) {

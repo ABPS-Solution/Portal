@@ -23,7 +23,7 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
 
   if (inlineFeedbackBanner) {
     inlineFeedbackBanner.style.cssText = "display: block; background: #fffaf0; border-left: 4px solid #dd6b20; color: #c05621; padding: 12px; font-size: 0.82rem; font-weight: 700; text-align: left; margin-bottom: 12px;";
-    inlineFeedbackBanner.innerHTML = `Requested Materials <strong>{ ${materialsList.join(", ")} }</strong> are over the Allotted BOQ for this project. Send an Approval request to Admin or Reduce the requested quantity.`;
+    inlineFeedbackBanner.innerHTML = `Requested Materials <strong>{ ${materialsList.join(", ")} }</strong> are over the Job Card limit. They will go to Approve Excess Material Request when you generate the ticket; explain why below, or reduce the quantity.`;
   }
 
   // Overwrite submission controls row layout area to mount the justification text box window natively
@@ -33,7 +33,7 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
       <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-family: inherit; font-size: 0.85rem; border-color: var(--brand);"></textarea>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
         <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
-        <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="executeBOQLimitIncreaseRequestTransmissionPipeline()" style="background: var(--brand); padding: 9px 20px; font-weight: 700;">Send Approval Request to Admin</button>
+        <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 9px 20px; font-weight: 700;">Generate Material Ticket</button>
       </div>
     </div>
   `;

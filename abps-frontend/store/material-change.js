@@ -315,25 +315,43 @@ function mcrAddChangeToBasket() {
   mcrFinish();
 }
 
-// Basket row HTML for a change entry (used by renderDraftBasketTableViewportRows).
-function materialChangeBasketRowHtml(rowItem, arrayIdx) {
-  const alts = (rowItem.alternates || []).map(a =>
-    `<div style="margin-top:3px;">→ ${escapeHtml(a.materialName)} <strong style="font-family:monospace;">${fmtQty(a.quantity)}</strong> ${escapeHtml(a.unitType || "")}</div>`).join("");
-  return `
+// Basket rows for a change entry: one row per alternate material (its own
+// unit and quantity), tagged, with the replaced material below the name.
+function materialChangeBasketRowsHtml(rowItem, arrayIdx) {
+  const alts = rowItem.alternates || [];
+  const replaceLine = `Replace ${escapeHtml(rowItem.changeFromMaterialName)} <strong style="font-family:monospace;">${fmtQty(rowItem.changeFromQty)}</strong> ${escapeHtml(rowItem.changeFromUnit || "")}`;
+  return alts.map((a, k) => `
     <td style="font-weight:600; padding:10px 8px;">
-      <div>Replace ${escapeHtml(rowItem.changeFromMaterialName)} <strong style="font-family:monospace;">${fmtQty(rowItem.changeFromQty)}</strong> ${escapeHtml(rowItem.changeFromUnit || "")}
+      <div>${escapeHtml(a.materialName)}
         <span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Material Change Approval Pending</span></div>
-      <div style="font-size:0.85rem; color:#92400e;">${alts}</div>
+      <div style="font-size:0.85rem; color:#92400e; margin-top:3px;">${replaceLine}${alts.length > 1 ? ` (with ${alts.length - 1} other material${alts.length > 2 ? "s" : ""})` : ""}</div>
     </td>
-    <td style="text-align:center; font-weight:700; font-size:0.95rem;">—</td>
-    <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">—</td>
-    <td style="text-align:center;">
+    <td style="text-align:center; font-weight:700; font-size:0.95rem;">${escapeHtml(a.unitType || "")}</td>
+    <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${fmtQty(a.quantity)}</td>
+    ${k === 0 ? `<td style="text-align:center;" rowspan="${alts.length}">
       <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
-    </td>`;
+    </td>` : ""}`);
 }
 
-// Submit helpers.
-function basketNormalItems() { return (dynamicTicketShoppingBasketArray || []).filter(r => !r.isMaterialChange); }
+// Adding the original material as a normal row while a change for it is in
+// the basket: issued + replaced must still fit the Job Card's remaining qty.
+function materialChangeConflictMessage(itemCode, newNormalTotal, jcRemaining) {
+  const ch = (dynamicTicketShoppingBasketArray || []).find(r => r.isMaterialChange && r.changeFromItemCode === itemCode);
+  if (!ch) return "";
+  const total = (Number(newNormalTotal) || 0) + (Number(ch.changeFromQty) || 0);
+  if (total <= (Number(jcRemaining) || 0) + 1e-9) return "";
+  return `This basket already replaces ${fmtQty(ch.changeFromQty)} ${ch.changeFromUnit || ""} of ${ch.changeFromMaterialName}. Issuing ${fmtQty(newNormalTotal)} more would take this Job Card to ${fmtQty(total)}, but it has only ${fmtQty(jcRemaining)} left. Reduce the quantity, or delete the material change and make it again.`;
+}
+
+// Submit helpers. Raw Materials Store rows over the Job Card limit go as an
+// Excess Material Request; memo rows as Production Memo purchase requests.
+function basketNormalItems() { return (dynamicTicketShoppingBasketArray || []).filter(r => !r.isMaterialChange && !r.isMemoPurchase); }
+function basketIsExcessRow(r, store) { return !!r.requiresBOQIncreaseFlag && (store || "Raw Materials Store") === "Raw Materials Store"; }
+function basketIssueItems(store) { return basketNormalItems().filter(r => !basketIsExcessRow(r, store)); }
+function basketExcessItems(store) { return basketNormalItems().filter(r => basketIsExcessRow(r, store)); }
+function basketMemoPurchaseItems() {
+  return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMemoPurchase).map(r => ({ itemCode: r.itemCode, quantity: r.quantity }));
+}
 function basketMaterialChanges() {
   return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMaterialChange).map(r => ({
     fromItemCode: r.changeFromItemCode, fromQty: r.changeFromQty,

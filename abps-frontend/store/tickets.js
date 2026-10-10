@@ -196,6 +196,14 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
   
+  if (basketExcessItems(chosenStoreTargetScopeStr).length && !(document.getElementById("boq-increase-justification-notes-input")?.value || "").trim()) {
+    if (feedbackBanner) {
+      feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
+      feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Explain why the extra material is needed (rows over the Job Card limit).`;
+      feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return;
+  }
   // Cache the form BEFORE the button turns into a spinner, or "+ Create
   // New Ticket" restores a stuck "Generating Request Ticket..." button.
   if (!window.storeCreateTicketOriginalTemplateCacheHTML) {
@@ -230,9 +238,12 @@ async function submitMaterialRequestTicketToBackend() {
       storeTargetScope: chosenStoreTargetScopeStr,
       requestOrReturn: 'Request',
       typeOfStore: chosenStoreTargetScopeStr,
-      items: basketNormalItems(),
-      itemsClusterArray: basketNormalItems(),
-      materialChanges: basketMaterialChanges()
+      items: basketIssueItems(chosenStoreTargetScopeStr),
+      itemsClusterArray: basketIssueItems(chosenStoreTargetScopeStr),
+      materialChanges: basketMaterialChanges(),
+      excessItems: basketExcessItems(chosenStoreTargetScopeStr),
+      justificationNotesText: (document.getElementById("boq-increase-justification-notes-input")?.value || "").trim(),
+      memoPurchaseItems: basketMemoPurchaseItems()
     };
     
     const result = await apFetch(payload);
@@ -249,7 +260,7 @@ async function submitMaterialRequestTicketToBackend() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">${result.ticketId ? `Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.` : "Material Change Request Submitted."}</h3>
+            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">${result.ticketId ? `Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.` : "Request Submitted for Approval."}</h3>
             ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${escapeHtml(outwardPurposeVal)}</strong></div>` : ""}
             <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
               ${result.ticketId ? `Assigned Reference Tracking ID: 
@@ -257,6 +268,12 @@ async function submitMaterialRequestTicketToBackend() {
                 ${result.ticketId}
               </span>` : ""}
             </div>
+            ${result.excessTicketId ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#b45309;">Excess Material Request
+              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #b45309; color: #111827; margin-left: 4px;">${escapeHtml(result.excessTicketId)}</span>
+              is waiting in Approve Excess Material Request.</div>` : ""}
+            ${(result.memoRequestIds || []).length ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#5b21b6;">Production Memo for Purchase request${result.memoRequestIds.length > 1 ? "s" : ""}
+              ${result.memoRequestIds.map(id => `<span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #5b21b6; color: #111827; margin-left: 4px;">#${escapeHtml(String(id))}</span>`).join("")}
+              waiting in Approve Production Memo Purchase Requests.</div>` : ""}
             ${result.changeTicketId ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#b45309;">Material Change Request
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #b45309; color: #111827; margin-left: 4px;">${escapeHtml(result.changeTicketId)}</span>
               is waiting for approval in Approve Production Material Change Request.</div>` : ""}
@@ -481,7 +498,7 @@ function checkSpareStoreSuggestion() {
 // so a name comparison missed and created a second row.
 function ticketFindBasketLine_(itemCode, cleanNameKey) {
   const code = (itemCode || "").trim();
-  return dynamicTicketShoppingBasketArray.find(i => !i.isMaterialChange && (
+  return dynamicTicketShoppingBasketArray.find(i => !i.isMaterialChange && !i.isMemoPurchase && (
     (code && (i.itemCode || "").trim() === code)
     || (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanNameKey));
 }
@@ -645,7 +662,7 @@ async function addItemToShoppingBasketRow() {
       const canIssue = Number(consMatch.remainingQty) || 0;
       if (totalCons > canIssue) {
         restoreAddBtn();
-        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} can be issued now. Reduce the quantity, or use "Request Purchase" for the rest.`);
+        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} can be issued now. Reduce the quantity, or use "Production Memo for Purchase" for the rest.`);
         return;
       }
       if (existingCons) {
@@ -744,6 +761,9 @@ async function addItemToShoppingBasketRow() {
     return;
   }
 
+  const changeConflict = materialChangeConflictMessage(jcmMatch.itemCode || itemData.itemCode, totalRequestedQuantity, jcmMatch.remainingQty);
+  if (changeConflict) { restoreAddBtn(); alert(changeConflict); return; }
+
   const isOverAllottedBOQLimit = totalRequestedQuantity > Number(jcmMatch.remainingQty);
   const allottedLimit = Number(jcmMatch.remainingQty);
 
@@ -796,10 +816,26 @@ function renderDraftBasketTableViewportRows() {
       tr.style.color = "#b45309";
     }
 
-    if (rowItem.isMaterialChange) {
-      tr.style.background = "#fffbeb";
-      tr.innerHTML = materialChangeBasketRowHtml(rowItem, arrayIdx);
+    if (rowItem.isMemoPurchase) {
+      tr.style.background = "#f5f3ff";
+      tr.innerHTML = `
+      <td style="font-weight:600; padding:10px 8px;">${escapeHtml(rowItem.materialName)}
+        <span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase</span></td>
+      <td style="text-align:center; font-weight:700; font-size:0.95rem;">${escapeHtml(rowItem.unitType || "")}</td>
+      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${fmtQty(rowItem.quantity)}</td>
+      <td style="text-align:center;">
+        <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
+      </td>`;
       tbody.appendChild(tr);
+      return;
+    }
+    if (rowItem.isMaterialChange) {
+      materialChangeBasketRowsHtml(rowItem, arrayIdx).forEach(html => {
+        const r = document.createElement("tr");
+        r.style.background = "#fffbeb";
+        r.innerHTML = html;
+        tbody.appendChild(r);
+      });
       return;
     }
     tr.innerHTML = `
@@ -1843,7 +1879,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName;
-          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo" : r.materialName;
+          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
@@ -2015,7 +2051,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
             opt.value = r.materialName;
-            opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo" : r.materialName;
+            opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
             if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }
@@ -2460,58 +2496,55 @@ document.addEventListener("change", e => { if (e.target.closest && e.target.clos
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
 document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-dropdown-list"))) cmitDraftSaveSoon(); });
 
-// ── Consumables: Request Purchase (migration 238) ───────────────────────
-// Raised from the stock badge when a consumable is short. A Job Card request
-// is approved into that Job Card's PRN; a Service request is listed for
-// Purchase under its project / legacy company.
+// ── Production Memo for Purchase (migration 249) ─────────────────────────
+// Adds a "Production Memo Purchase Material" row to the basket. It is sent
+// with the ticket and goes to Approve Production Memo Purchase Requests;
+// once approved it is listed in List of Material to Raise Purchase Order
+// (never on a PRN, never reserved).
 function ticketOpenConsumableRequest(itemCode, materialName, unit) {
   const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
-  const isLegacy = !!document.getElementById("ticket-legacy-project-toggle")?.checked;
-  const projectId = isLegacy ? "" : (document.getElementById("ticket-project-id-dropdown-ta-input")?.value || "");
-  const legacyCompanyName = isLegacy ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim() : "";
   const jobCardNumber = dept === "Service" ? "" : (document.getElementById("ticket-job-card-dropdown")?.value || "");
   if (dept !== "Service" && !jobCardNumber) { alert("Select the Job Card first."); return; }
-  const target = dept === "Service" ? (projectId || legacyCompanyName) : jobCardNumber;
+  const cat = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+  let fullName = (cat && (cat.combinedName || cat.productName)) || materialName || itemCode;
+  if (cat && cat.make && !/Make:/i.test(fullName)) fullName += " - Make: " + cat.make;
+  const unitLabel = unit || (cat && cat.unit) || "NOS";
+  const existing = (dynamicTicketShoppingBasketArray || []).find(r => r.isMemoPurchase && r.itemCode === itemCode);
   const wrap = document.createElement("div");
-  wrap.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100000; display:flex; align-items:center; justify-content:center; padding:16px;";
+  wrap.id = "memo-purchase-overlay";
+  wrap.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:9000; display:flex; align-items:center; justify-content:center; padding:16px;";
   wrap.innerHTML = `
-    <div style="background:#fff; border-radius:10px; max-width:460px; width:100%; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;">
-      <div style="font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:6px;">Request Purchase</div>
-      <div style="font-size:0.88rem; color:#334155; margin-bottom:12px;">${escapeHtml(materialName)}<br><span style="color:var(--muted);">For ${escapeHtml(dept)} · ${escapeHtml(target)}</span></div>
-      <label class="field-label" style="margin-top:0;">Quantity needed (${escapeHtml(unit)}) *</label>
-      <input type="number" min="0" step="any" id="cons-req-qty" style="width:100%; padding:8px;">
-      <label class="field-label">Reason</label>
-      <textarea id="cons-req-reason" rows="2" style="width:100%; padding:8px; font-family:inherit;" placeholder="e.g. Not enough in stock for this Job Card"></textarea>
-      <div id="cons-req-msg" style="margin-top:8px; font-size:0.85rem; font-weight:700;"></div>
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
-        <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 16px; background:#64748b;" id="cons-req-cancel">Cancel</button>
-        <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 16px; background:#7c3aed;" id="cons-req-send">Send to Admin</button>
+    <div style="background:var(--card, #fff); border-radius:var(--radius, 8px); max-width:480px; width:100%; box-shadow:0 12px 32px rgba(0,0,0,0.25); overflow:hidden;">
+      <div style="background:var(--brand); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; font-size:1.05rem; color:#fff;">Production Memo for Purchase</h3>
+        <button type="button" id="memo-purchase-x" aria-label="Close" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#fff; width:auto; padding:0;">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:0.95rem; font-weight:700; color:var(--text, #1f2937); line-height:1.4;">${escapeHtml(fullName)}</div>
+        <div style="font-size:0.85rem; color:#475569; margin:4px 0 14px;">Unit: <strong>${escapeHtml(unitLabel)}</strong></div>
+        <label class="field-label" style="margin-top:0;">Quantity *</label>
+        <input type="number" min="0" step="any" id="memo-purchase-qty" value="${existing ? escapeHtml(String(existing.quantity)) : ""}" style="width:100%; padding:9px; font-weight:700;">
+        <div id="memo-purchase-msg" style="display:none; margin-top:8px; font-size:0.85rem; font-weight:700; color:#b91c1c;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#718096; font-weight:700;" id="memo-purchase-cancel">Cancel</button>
+          <button type="button" class="nav-btn-styled" style="width:auto; padding:8px 18px; background:var(--accent); font-weight:700;" id="memo-purchase-add">${existing ? "Update Row" : "Add Row"}</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(wrap);
   const close = () => wrap.remove();
-  wrap.querySelector("#cons-req-cancel").onclick = close;
+  wrap.querySelector("#memo-purchase-x").onclick = close;
+  wrap.querySelector("#memo-purchase-cancel").onclick = close;
   wrap.addEventListener("click", e => { if (e.target === wrap) close(); });
-  wrap.querySelector("#cons-req-send").onclick = async () => {
-    const btn = wrap.querySelector("#cons-req-send");
-    const msg = wrap.querySelector("#cons-req-msg");
-    const quantity = wrap.querySelector("#cons-req-qty").value;
-    if (!(Number(quantity) > 0)) { msg.style.color = "#b91c1c"; msg.textContent = "Enter a quantity above 0."; return; }
-    btn.disabled = true; btn.textContent = "Sending...";
-    try {
-      const data = await apFetch({
-        action: "submitConsumablePurchaseRequest", itemCode, quantity, department: dept,
-        reason: wrap.querySelector("#cons-req-reason").value, projectId, jobCardNumber, legacyCompanyName,
-      });
-      if (!data.success) throw new Error(data.error || "Could not send the request.");
-      msg.style.color = "#15803d";
-      msg.textContent = `Request #${data.requestId} sent to Admin for approval.`;
-      btn.textContent = "Sent";
-      setTimeout(close, 1400);
-    } catch (e) {
-      if (e.message === "SESSION_EXPIRED") return;
-      msg.style.color = "#b91c1c"; msg.textContent = e.message;
-      btn.disabled = false; btn.textContent = "Send to Admin";
-    }
+  const qtyEl = wrap.querySelector("#memo-purchase-qty");
+  qtyEl.focus();
+  wrap.querySelector("#memo-purchase-add").onclick = () => {
+    const q = parseFloat(qtyEl.value);
+    if (!(q > 0)) { const m = wrap.querySelector("#memo-purchase-msg"); m.textContent = "Enter a quantity above 0."; m.style.display = "block"; return; }
+    if (existing) existing.quantity = q;
+    else dynamicTicketShoppingBasketArray.push({ isMemoPurchase: true, itemCode, materialName: fullName, unitType: unitLabel, quantity: q, requiresBOQIncreaseFlag: false });
+    close();
+    renderDraftBasketTableViewportRows();
+    cmitDraftSaveSoon();
   };
 }

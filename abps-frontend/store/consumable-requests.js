@@ -73,9 +73,7 @@ function cprRenderPendingCard(r) {
         <button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#15803d;" onclick="cprAction(${id}, 'Approve')">Approve</button>
         <button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#b91c1c;" onclick="cprAction(${id}, 'Reject')">Reject</button>
       </div>
-      <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">${r.jobCardNumber
-        ? 'Approving adds this quantity to the Job Card\'s PRN, so it appears in List of Material to Raise Purchase Order for this project.'
-        : 'Approving lists it for Purchase under this project (Service request), in List of Material to Raise Purchase Order.'}</div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Approving lists it in List of Material to Raise Purchase Order under this project as Production Memo Purchase Material (no PRN, never reserved; it arrives as free stock).</div>
     </div>`;
 }
 
