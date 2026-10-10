@@ -230,8 +230,9 @@ async function submitMaterialRequestTicketToBackend() {
       storeTargetScope: chosenStoreTargetScopeStr,
       requestOrReturn: 'Request',
       typeOfStore: chosenStoreTargetScopeStr,
-      items: dynamicTicketShoppingBasketArray,
-      itemsClusterArray: dynamicTicketShoppingBasketArray
+      items: basketNormalItems(),
+      itemsClusterArray: basketNormalItems(),
+      materialChanges: basketMaterialChanges()
     };
     
     const result = await apFetch(payload);
@@ -248,14 +249,17 @@ async function submitMaterialRequestTicketToBackend() {
       materialRequestPanelContainer.innerHTML = `
         <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.</h3>
+            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">${result.ticketId ? `Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.` : "Material Change Request Submitted."}</h3>
             ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${escapeHtml(outwardPurposeVal)}</strong></div>` : ""}
             <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-              Assigned Reference Tracking ID: 
+              ${result.ticketId ? `Assigned Reference Tracking ID: 
               <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px; font-size: 1rem;">
                 ${result.ticketId}
-              </span>
+              </span>` : ""}
             </div>
+            ${result.changeTicketId ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#b45309;">Material Change Request
+              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #b45309; color: #111827; margin-left: 4px;">${escapeHtml(result.changeTicketId)}</span>
+              is waiting for approval in Approve Production Material Change Request.</div>` : ""}
           </div>
           <button class="nav-btn-styled" style="background: #15803d; color: white; padding: 10px 20px; font-weight: 700; font-size: 0.85rem;" onclick="resetStoreCreateTicketToInitialState()">
             + Create New Ticket
@@ -477,9 +481,9 @@ function checkSpareStoreSuggestion() {
 // so a name comparison missed and created a second row.
 function ticketFindBasketLine_(itemCode, cleanNameKey) {
   const code = (itemCode || "").trim();
-  return dynamicTicketShoppingBasketArray.find(i =>
+  return dynamicTicketShoppingBasketArray.find(i => !i.isMaterialChange && (
     (code && (i.itemCode || "").trim() === code)
-    || (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanNameKey);
+    || (i.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanNameKey));
 }
 
 async function addItemToShoppingBasketRow() {
@@ -726,6 +730,15 @@ async function addItemToShoppingBasketRow() {
   const invMatch = (cachedInventoryStockCollection || []).find(i => (i.itemCode || "") === (jcmMatch.itemCode || ""));
   const totalStockForItem = invMatch ? Number(invMatch.totalStock) || 0 : null;
   if (totalStockForItem !== null && totalRequestedQuantity > totalStockForItem) {
+    // Job Card issue: offer to wait or ask for a Material Change Request.
+    if (!ticketIsServiceItemMode_() && jobCardNumberVal) {
+      openMaterialChangePopup({
+        materialName, itemCode: jcmMatch.itemCode || itemData.itemCode, unitType: itemData.unitType || jcmMatch.unitType || "",
+        requestedTotal: totalRequestedQuantity, totalStock: totalStockForItem, jcRemaining: Number(jcmMatch.remainingQty) || 0,
+        existingLine: existingLineItem || null, boqId: jcmMatch.boqId || "", restoreAddBtn,
+      });
+      return;
+    }
     restoreAddBtn();
     alert(`${materialName} requested quantity (${totalRequestedQuantity}) exceeds the current total stock in ${activeStoreScope} (${totalStockForItem}). Reduce the quantity, or check with Purchase Department on when more will arrive.`);
     return;
@@ -783,6 +796,12 @@ function renderDraftBasketTableViewportRows() {
       tr.style.color = "#b45309";
     }
 
+    if (rowItem.isMaterialChange) {
+      tr.style.background = "#fffbeb";
+      tr.innerHTML = materialChangeBasketRowHtml(rowItem, arrayIdx);
+      tbody.appendChild(tr);
+      return;
+    }
     tr.innerHTML = `
       <td style="font-weight:600; padding:10px 8px;">
         ${escapeHtml(rowItem.materialName)} 
@@ -846,6 +865,10 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
 
   if (!notesField || !notesField.value.trim()) {
     alert("Compulsory Input Missing: You must fill out the Explain Request justification text box notes before sending to Admin.");
+    return;
+  }
+  if (basketMaterialChanges().length) {
+    alert("This basket also has a Material Change Request. Delete the material change row, send the Excess Material Request, then raise the material change on a new ticket.");
     return;
   }
   

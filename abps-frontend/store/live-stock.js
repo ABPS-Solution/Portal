@@ -153,6 +153,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
             ${escapeHtml(item.materialName)}
             ${item.requiresBOQIncreaseFlag ? '<span style="font-size:0.62rem; background:var(--warn); color:white; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:bold;">OVERRUN</span>' : ''}
+            ${Array.isArray(item.substitutions) && item.substitutions.length ? `<div style="font-size:0.72rem; color:#b45309; font-weight:600; margin-top:2px;">Approved material change, in place of ${escapeHtml([...new Set(item.substitutions.map(x => x.fromMaterialName || x.fromItemCode))].join(', '))}</div>` : ''}
           </td>
           <td style="padding:6px; color:#111827; font-weight:600; font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
           <td class="ticket-jc-remaining-cell" data-itemcode="${item.itemCode}" style="padding:6px; font-weight:700; font-size:0.9rem; text-align:center; vertical-align:middle; color:#0369a1;">${jcRemaining !== null ? fmtQty(jcRemaining) : "—"}</td>

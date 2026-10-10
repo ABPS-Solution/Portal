@@ -1397,6 +1397,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
+        <div class="menu-card" id="mod-material-change-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('material-change-approvals')"><span class="mc-label">Approve Production Material Change Request</span></div>
         <div class="menu-card" id="mod-consumable-purchase-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('consumable-purchase-approvals')"><span class="mc-label">Approve Production Memo Purchase Requests</span></div>
         <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Material Issue Tickets</span></div>
         <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Material Issue Tickets</span></div>
@@ -1733,6 +1734,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <h2 class="panel-title">Approve Excess Material Requests</h2>
       <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
       <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <div id="canvas-module-material-change-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Approve Production Material Change Request</h2>
+      <div id="material-change-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="material-change-approvals-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
     </div>
 
     <div id="canvas-module-consumable-purchase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
@@ -6278,6 +6285,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="store/qa.js"></script>
 <script src="store/tickets.js"></script>
 <script src="store/approvals.js"></script>
+<script src="store/material-change.js"></script>
 <script src="store/live-stock.js"></script>
 <script src="store/store-ledger.js"></script>
 <script src="store/consumption-variance.js"></script>
