@@ -176,11 +176,11 @@ function nlrRenderReport(data, f) {
     return `
     <tr class="nlr-row" id="nlr-row-${id}">
       <td>${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
-      <td><span class="nlr-status">${escapeHtml(r.status)}</span></td>
+      <td style="text-align:center;"><span class="nlr-status">${escapeHtml(r.status)}</span></td>
       <td><strong>${escapeHtml(r.companyName)}</strong>${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}</td>
       <td>${contact ? escapeHtml(contact) : '<span class="nlr-none">None</span>'}${contact && r.position ? `<div class="nlr-sub">${escapeHtml(r.position)}</div>` : ""}${contact && r.phone ? `<div class="nlr-sub">${escapeHtml(r.phone)}</div>` : ""}</td>
       <td>${escapeHtml(r.engineerName) || '<span class="nlr-none">None</span>'}</td>
-      <td>${nlrPlanHtml(r.actionPlan)}</td>
+      <td>${nlrPlanHtml(r.tasks || [])}</td>
       <td>${nlrActivityHtml(r)}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
       <td class="nlr-exp"><button type="button" class="nlr-exp-btn" id="nlr-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)})">▾</button></td>
@@ -193,7 +193,7 @@ function nlrRenderReport(data, f) {
         <colgroup><col style="width:8%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:17%"><col style="width:13%"><col style="width:17%"><col style="width:3%"></colgroup>
         <thead><tr>
           <th>Created Date</th><th class="nlr-center">Status</th><th>Company Name</th><th>Contact Person</th>
-          <th>ABPS Engineer</th><th>Action Plan</th><th class="nlr-center">Activity</th><th>Summary</th><th></th>
+          <th>ABPS Engineer</th><th class="nlr-center">Tasks</th><th class="nlr-center">Activity</th><th>Summary</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
