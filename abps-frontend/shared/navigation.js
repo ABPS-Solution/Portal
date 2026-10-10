@@ -167,7 +167,6 @@ async function navigateToModule(key) {
     
     // Runtime synchronization switches
     if (key === "searchCompany") {
-      if (typeof cdupInitPanel === "function") cdupInitPanel();
       // Every entry starts fresh, like the first visit — never re-run the
       // previous company search.
       const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");

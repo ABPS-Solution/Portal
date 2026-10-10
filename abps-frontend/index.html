@@ -1394,11 +1394,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
         <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
       </div>
-      <div class="sec-label">Raw Materials Store Outward</div>
+      <div class="sec-label">Production Material Requests Approval</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
         <div class="menu-card" id="mod-material-change-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('material-change-approvals')"><span class="mc-label">Approve Production Material Change Request</span></div>
         <div class="menu-card" id="mod-consumable-purchase-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('consumable-purchase-approvals')"><span class="mc-label">Approve Production Memo Purchase Requests</span></div>
+      </div>
+      <div class="sec-label">Raw Materials Store Outward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Material Issue Tickets</span></div>
         <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Material Issue Tickets</span></div>
       </div>
@@ -5750,10 +5753,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="workspace-searchCompany" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by Company Name</h2>
-      <div id="cdup-admin-wrap" style="display:none; margin-bottom:14px;">
-        <button type="button" id="cdup-toggle-btn" class="nav-btn-styled" style="width:auto; padding:6px 16px; background:#475569;" onclick="cdupToggle()">Find Duplicate Companies</button>
-        <div id="cdup-output" style="display:none;"></div>
-      </div>
       <div id="company-dropdown-selector-block">
         <label class="field-label">Select Company Name</label>
         <div style="margin-bottom: 6px;">
@@ -6261,7 +6260,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="project/email-inboxes.js"></script>
 <script src="marketing/leads.js"></script>
 <script src="marketing/new-leads-report.js"></script>
-<script src="marketing/company-duplicates.js"></script>
 <script src="marketing/companies.js"></script>
 <script src="marketing/tasks-followups.js"></script>
 <script src="marketing/email-processing.js"></script>
