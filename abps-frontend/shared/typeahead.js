@@ -266,13 +266,9 @@ async function initializeCreateBOQPanel() {
   // on a return visit the in-memory form is still populated (the
   // isFirstVisit gate above), so a restore prompt would be noise.
   if (typeof abpsDraftAttach === "function") {
-    abpsDraftAttach("createBOQ", "cboq-form-body", () => cboqMaterialRows);
+    abpsDraftAttach("createBOQ", "cboq-form-body", cboqDraftState);
     if (isFirstVisit) {
-      abpsDraftOfferRestore("createBOQ", "cboq-form-body", (rows) => {
-        cboqMaterialRows = Array.isArray(rows) ? rows : [];
-        renderCBOQMaterialRows();
-        updateCBOQTotals();
-      }, { hasFileUploads: true });
+      abpsDraftOfferRestore("createBOQ", "cboq-form-body", cboqApplyDraftState, { hasFileUploads: true });
     }
   }
 

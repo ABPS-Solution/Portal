@@ -303,7 +303,48 @@ function resetCBOQProductSelection() {
 // silently clobber the correct selection with wrong data. Only ever apply
 // the response from whichever call was issued most recently.
 let cboqAllowedProductsRequestSeq = 0;
-async function loadCboqAllowedProducts(projectId) {
+function loadCboqAllowedProducts(projectId) {
+  window.cboqAllowedProductsPromise = loadCboqAllowedProductsInner(projectId);
+  return window.cboqAllowedProductsPromise;
+}
+
+// Saved progress (shared/drafts.js): rows plus the chosen product, so
+// Restore can pick the product again. Restoring the project reloads the
+// product list, which clears the product; re-select it once that load is
+// done (10 Oct 2026). Older drafts saved just the rows array.
+function cboqDraftState() {
+  return {
+    rows: cboqMaterialRows,
+    product: {
+      itemCode: document.getElementById("cboq-product-itemcode")?.value || "",
+      descriptionId: document.getElementById("cboq-description-id")?.value || "",
+      lineId: document.getElementById("cboq-source-po-line-id")?.value || "",
+      name: document.getElementById("cboq-product-name")?.value || "",
+    },
+  };
+}
+
+async function cboqApplyDraftState(state) {
+  const rows = Array.isArray(state) ? state : (state && Array.isArray(state.rows) ? state.rows : []);
+  cboqMaterialRows = rows;
+  renderCBOQMaterialRows();
+  updateCBOQTotals();
+  const p = state && !Array.isArray(state) ? state.product : null;
+  if (!p || !p.itemCode) return;
+  try { await window.cboqAllowedProductsPromise; } catch (_) {}
+  const opts = window.cboqAllowedOptionsByValue || {};
+  const found = opts[p.itemCode + '|' + (p.descriptionId || '') + '|' + (p.lineId || '')]
+    || Object.values(opts).find(o => o.itemCode === p.itemCode && String(o.descriptionId || '') === String(p.descriptionId || ''));
+  if (found) {
+    selectCBOQProductOption(found.itemCode, found.descriptionId || '', found.lineId || '');
+    renderCBOQMaterialRows();
+    updateCBOQTotals();
+  } else {
+    alert(`"${p.name || p.itemCode}" is no longer waiting for a BOQ on this project (it may already have one). Your material rows were restored; pick a product from the list to continue.`);
+  }
+}
+
+async function loadCboqAllowedProductsInner(projectId) {
   const seq = ++cboqAllowedProductsRequestSeq;
   const search = document.getElementById("cboq-product-search");
   const banner = document.getElementById("cboq-pending-products-banner");
