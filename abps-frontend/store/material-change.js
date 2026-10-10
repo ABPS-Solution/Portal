@@ -22,102 +22,148 @@ function mcrFreeFor(itemCode) {
 }
 
 // ctx: { materialName, itemCode, unitType, requestedTotal, totalStock, jcRemaining, existingLine, boqId, restoreAddBtn }
+// The person may replace just the shortfall (rest issued from stock) or the
+// whole request (nothing of the original issued). Replaced qty is capped by
+// what this Job Card still has left of the original material.
 function openMaterialChangePopup(ctx) {
   closeMaterialChangePopup();
-  const kept = Math.max(0, Math.min(ctx.totalStock, ctx.requestedTotal));
-  const shortfall = mcrRound(ctx.requestedTotal - kept);
-  const maxReplace = Math.max(0, mcrRound(Math.min(shortfall, (Number(ctx.jcRemaining) || 0) - kept)));
+  const inStock = Math.max(0, Math.min(ctx.totalStock, ctx.requestedTotal));
+  const minReplace = mcrRound(ctx.requestedTotal - inStock);
+  const maxReplace = Math.max(0, mcrRound(Math.min(ctx.requestedTotal, Number(ctx.jcRemaining) || 0)));
   const alreadyChanging = (dynamicTicketShoppingBasketArray || []).some(r => r.isMaterialChange && r.changeFromItemCode === ctx.itemCode);
-  mcrState = { ...ctx, kept, shortfall, maxReplace, alreadyChanging, rows: [{ itemCode: "", materialName: "", unitType: "", quantity: "" }] };
+  mcrState = { ...ctx, inStock, minReplace, maxReplace, alreadyChanging, replaceQty: Math.min(minReplace, maxReplace),
+    rows: [{ itemCode: "", materialName: "", unitType: "", quantity: "" }] };
 
+  const unit = escapeHtml(ctx.unitType || "");
   const ov = document.createElement("div");
   ov.id = "mcr-overlay";
-  ov.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9000; display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;";
+  ov.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:9000; display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;";
   ov.innerHTML = `
-    <div style="background:#fff; border-radius:8px; width:100%; max-width:820px; box-shadow:0 10px 30px rgba(0,0,0,0.25); border-top:5px solid #b45309;">
-      <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-        <div>
-          <h3 style="margin:0 0 6px 0; color:#b45309; font-size:1.05rem;">Not enough stock</h3>
-          <div style="font-size:0.9rem; color:#1f2937;">${escapeHtml(ctx.materialName)} requested quantity (<strong>${fmtQty(ctx.requestedTotal)}</strong>) exceeds the current total stock in Raw Materials Store (<strong>${fmtQty(ctx.totalStock)}</strong>). Reduce the quantity, or check with Purchase Department on when more will arrive.</div>
-        </div>
-        <button type="button" onclick="closeMaterialChangePopup()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#64748b; width:auto;">×</button>
+    <div style="background:var(--card, #fff); border-radius:var(--radius, 8px); width:100%; max-width:880px; box-shadow:0 12px 32px rgba(0,0,0,0.25); overflow:hidden;">
+      <div style="background:var(--brand); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3 style="margin:0; font-size:1.05rem; color:#fff;">Not enough stock</h3>
+        <button type="button" onclick="closeMaterialChangePopup()" aria-label="Close" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#fff; width:auto; padding:0;">×</button>
       </div>
       <div style="padding:16px 20px;">
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:14px;">
-          <div style="font-weight:700; margin-bottom:8px;">Wait for more stock</div>
-          <div style="font-size:0.85rem; color:#475569; margin-bottom:10px;">${kept > 0 ? `Add only the ${fmtQty(kept)} ${escapeHtml(ctx.unitType || "")} that is in stock now, or close this and change the quantity.` : "There is none in stock now. Close this and wait, or use an alternate material below."}</div>
+        <div style="background:#fff8e6; border-left:4px solid #d97706; border-radius:4px; padding:10px 14px; color:#92400e; font-size:0.9rem; margin-bottom:16px;">
+          <strong>${escapeHtml(ctx.materialName)}</strong> requested quantity (<strong>${fmtQty(ctx.requestedTotal)}</strong>) exceeds the current total stock in Raw Materials Store (<strong>${fmtQty(ctx.totalStock)}</strong>). Reduce the quantity, or check with Purchase Department on when more will arrive.
+        </div>
+
+        <div style="border:1px solid var(--border); border-radius:var(--radius, 6px); padding:14px; margin-bottom:16px;">
+          <div class="sec-label" style="margin:0 0 6px 0;">Option 1: Wait for more stock</div>
+          <div style="font-size:0.85rem; color:#475569; margin-bottom:10px;">${inStock > 0 ? `Add only the ${fmtQty(inStock)} ${unit} in stock now, or close this and change the quantity.` : "None is in stock now. Close this and wait, or use Option 2."}</div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            ${kept > 0 ? `<button type="button" class="nav-btn-styled" style="width:auto; background:#475569; padding:7px 16px;" onclick="mcrAddKeptOnly()">Add ${fmtQty(kept)} only</button>` : ""}
-            <button type="button" class="nav-btn-styled" style="width:auto; background:#94a3b8; padding:7px 16px;" onclick="closeMaterialChangePopup()">No, close</button>
+            ${inStock > 0 ? `<button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:8px 18px; font-weight:700;" onclick="mcrAddKeptOnly()">Add ${fmtQty(inStock)} only</button>` : ""}
+            <button type="button" class="nav-btn-styled" style="width:auto; background:#718096; padding:8px 18px; font-weight:700;" onclick="closeMaterialChangePopup()">No, close</button>
           </div>
         </div>
-        <div style="border:1px solid #fcd34d; background:#fffbeb; border-radius:6px; padding:12px 14px;">
-          <div style="font-weight:700; margin-bottom:6px;">Use alternate material for the shortfall (Material Change Request)</div>
+
+        <div style="border:1px solid var(--border); border-radius:var(--radius, 6px); padding:14px;">
+          <div class="sec-label" style="margin:0 0 6px 0;">Option 2: Use alternate material (Material Change Request)</div>
           ${mcrChangeSectionHtml()}
         </div>
       </div>
     </div>`;
   document.body.appendChild(ov);
-  if (!alreadyChanging && maxReplace > 0) mcrRenderRows();
+  if (!alreadyChanging && maxReplace >= minReplace && maxReplace > 0) { mcrRenderRows(); mcrRefreshSplit(); }
 }
 
 function mcrChangeSectionHtml() {
   const s = mcrState;
+  const unit = escapeHtml(s.unitType || "");
   if (s.alreadyChanging) return `<div style="color:#b45309; font-size:0.85rem;">This basket already has a material change for ${escapeHtml(s.materialName)}. Delete it from the basket first to make a new one.</div>`;
-  if (s.maxReplace <= 0) return `<div style="color:#b45309; font-size:0.85rem;">This Job Card has nothing left of ${escapeHtml(s.materialName)} beyond what is in stock, so there is nothing to replace. More than the Job Card allows needs an Excess Material Request.</div>`;
-  const note = s.maxReplace < s.shortfall
-    ? `<div style="font-size:0.8rem; color:#b45309; margin-top:4px;">Short by ${fmtQty(s.shortfall)}, but this Job Card has only ${fmtQty(s.maxReplace)} left after the ${fmtQty(s.kept)} in stock. The rest needs an Excess Material Request.</div>` : "";
+  if (s.maxReplace <= 0 || s.maxReplace < s.minReplace) return `<div style="color:#b45309; font-size:0.85rem;">This Job Card has only ${fmtQty(Math.max(0, s.maxReplace))} ${unit} of ${escapeHtml(s.materialName)} left, which is not enough to cover the shortfall of ${fmtQty(s.minReplace)}. More than the Job Card allows needs an Excess Material Request.</div>`;
+  const choices = s.inStock > 0 && s.maxReplace > s.minReplace
+    ? `<div style="display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px; font-size:0.88rem;">
+        <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;"><input type="radio" name="mcr-mode" value="short" checked onchange="mcrSetMode('short')" style="width:auto;"> Replace only the shortfall (${fmtQty(s.minReplace)} ${unit}), use the ${fmtQty(s.inStock)} in stock</label>
+        <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;"><input type="radio" name="mcr-mode" value="all" onchange="mcrSetMode('all')" style="width:auto;"> Replace ${fmtQty(s.maxReplace)} ${unit} (${s.requestedTotal - s.maxReplace > 0 ? `issue only ${fmtQty(mcrRound(s.requestedTotal - s.maxReplace))} from stock` : `use none of ${escapeHtml(s.materialName)}`})</label>
+      </div>` : "";
   return `
-    <div style="font-size:0.85rem; color:#475569; margin-bottom:10px;">${s.kept > 0 ? `${fmtQty(s.kept)} of ${escapeHtml(s.materialName)} will be issued from stock. ` : ""}Pick what will be used in place of the rest. Approval is needed in Approve Production Material Change Request.</div>
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <label style="font-weight:600; font-size:0.85rem; margin:0;">Quantity of ${escapeHtml(s.materialName)} being replaced</label>
-      <input type="number" id="mcr-from-qty" min="0" max="${s.maxReplace}" step="any" value="${s.maxReplace}" oninput="mcrClampFromQty(this)"
-        style="width:110px; padding:6px; text-align:center; font-weight:700;"> <span style="font-size:0.85rem; color:#475569;">${escapeHtml(s.unitType || "")} (max ${fmtQty(s.maxReplace)})</span>
+    <div style="font-size:0.85rem; color:#475569; margin-bottom:10px;">Pick what will be used instead. Approval is needed in Approve Production Material Change Request.</div>
+    ${choices}
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+      <label class="field-label" style="margin:0;">Quantity of ${escapeHtml(s.materialName)} being replaced</label>
+      <input type="number" id="mcr-from-qty" min="${s.minReplace}" max="${s.maxReplace}" step="any" value="${s.replaceQty}" oninput="mcrFromQtyInput(this)" onblur="mcrFromQtyBlur(this)"
+        style="width:110px; padding:6px; text-align:center; font-weight:700;"> <span style="font-size:0.85rem; color:#475569;">${unit} (${fmtQty(s.minReplace)} to ${fmtQty(s.maxReplace)})</span>
     </div>
-    ${note}
-    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; margin-top:6px;">
-      <colgroup><col style="width:52%"><col style="width:18%"><col style="width:20%"><col style="width:10%"></colgroup>
-      <thead><tr style="background:#fef3c7;">
-        <th style="border:1px solid var(--border); padding:6px; text-align:left;">Alternate Material</th>
-        <th style="border:1px solid var(--border); padding:6px;">Available</th>
-        <th style="border:1px solid var(--border); padding:6px;">Required Qty</th>
-        <th style="border:1px solid var(--border); padding:6px;"></th>
+    <div id="mcr-split-note" style="font-size:0.82rem; color:#0369a1; font-weight:600; margin-bottom:10px;"></div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; min-width:620px;">
+      <colgroup><col style="width:46%"><col style="width:10%"><col style="width:15%"><col style="width:17%"><col style="width:12%"></colgroup>
+      <thead><tr style="background:var(--highlight-bg);">
+        <th style="border:1px solid var(--border); padding:8px; text-align:left;">Alternate Material</th>
+        <th style="border:1px solid var(--border); padding:8px;">Unit</th>
+        <th style="border:1px solid var(--border); padding:8px;">Available Qty</th>
+        <th style="border:1px solid var(--border); padding:8px;">Required Qty</th>
+        <th style="border:1px solid var(--border); padding:8px;"></th>
       </tr></thead>
       <tbody id="mcr-rows"></tbody>
     </table>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; flex-wrap:wrap;">
-      <button type="button" class="nav-btn-styled" style="width:auto; background:#64748b; padding:6px 14px; font-size:0.8rem;" onclick="mcrAddRow()">+ Add Alternate Row</button>
-      <button type="button" class="nav-btn-styled" style="width:auto; background:#b45309; padding:8px 18px; font-weight:700;" onclick="mcrAddChangeToBasket()">Add to Basket (Change Approval Pending)</button>
     </div>
-    <div id="mcr-error" style="display:none; margin-top:10px; color:#b91c1c; font-weight:700; font-size:0.85rem;"></div>`;
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="nav-btn-styled" style="width:auto; background:var(--brand); padding:7px 16px; font-weight:700;" onclick="mcrAddRow()">+ Add Alternate Row</button>
+      <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:9px 20px; font-weight:700;" onclick="mcrAddChangeToBasket()">Add to Basket (Change Approval Pending)</button>
+    </div>
+    <div id="mcr-error" style="display:none; margin-top:10px; padding:8px 12px; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; font-weight:700; font-size:0.85rem; border-radius:4px;"></div>`;
+}
+
+function mcrSetMode(mode) {
+  const s = mcrState;
+  s.replaceQty = mode === "all" ? s.maxReplace : Math.min(s.minReplace, s.maxReplace);
+  const inp = document.getElementById("mcr-from-qty");
+  if (inp) inp.value = s.replaceQty;
+  mcrRefreshSplit();
+}
+
+function mcrRefreshSplit() {
+  const s = mcrState, note = document.getElementById("mcr-split-note");
+  if (!s || !note) return;
+  const kept = mcrRound(Math.max(0, s.requestedTotal - s.replaceQty));
+  const unit = s.unitType || "";
+  note.textContent = kept > 0
+    ? `${fmtQty(kept)} ${unit} of ${s.materialName} will be issued from stock; ${fmtQty(s.replaceQty)} ${unit} replaced.`
+    : `None of ${s.materialName} will be issued; all ${fmtQty(s.replaceQty)} ${unit} replaced.`;
 }
 
 function mcrRenderRows() {
   const tb = document.getElementById("mcr-rows");
   if (!tb) return;
+  const cell = "border:1px solid var(--border); padding:6px;";
   tb.innerHTML = mcrState.rows.map((r, i) => {
     const avail = r.itemCode ? mcrFreeFor(r.itemCode) : null;
     return `<tr>
-      <td style="border:1px solid var(--border); padding:6px;">
+      <td style="${cell}">
         <input type="text" id="mcr-search-${i}" value="${escapeHtml(r.materialName)}" placeholder="Type to search material..." autocomplete="off"
-          oninput="mcrSearch(${i}, this.value)" onfocus="mcrSearch(${i}, this.value)" style="width:100%; padding:6px;">
+          oninput="mcrSearch(${i}, this.value)" onfocus="mcrSearch(${i}, this.value)" onclick="mcrSearch(${i}, this.value)" style="width:100%; padding:6px;">
       </td>
-      <td style="border:1px solid var(--border); padding:6px; text-align:center; font-weight:700; color:#0369a1;">${avail === null ? "—" : fmtQty(avail) + " " + escapeHtml(r.unitType || "")}</td>
-      <td style="border:1px solid var(--border); padding:6px; text-align:center;">
+      <td style="${cell} text-align:center; font-weight:600;">${r.unitType ? escapeHtml(r.unitType) : "—"}</td>
+      <td style="${cell} text-align:center; font-weight:700; color:#0369a1;">${avail === null ? "—" : fmtQty(avail)}</td>
+      <td style="${cell} text-align:center;">
         <input type="number" id="mcr-qty-${i}" min="0" step="any" value="${escapeHtml(String(r.quantity))}" ${r.itemCode ? "" : "disabled"}
-          oninput="mcrQtyInput(${i}, this)" style="width:90px; padding:5px; text-align:center; font-weight:700;">
+          oninput="mcrQtyInput(${i}, this)" style="width:95px; padding:5px; text-align:center; font-weight:700;">
       </td>
-      <td style="border:1px solid var(--border); padding:6px; text-align:center;">
-        <button type="button" class="nav-btn-styled" style="width:auto; background:#e53e3e; padding:2px 8px; font-size:0.75rem;" onclick="mcrRemoveRow(${i})">Remove</button>
+      <td style="${cell} text-align:center;">
+        <button type="button" class="nav-btn-styled" style="width:auto; background:#e53e3e; padding:3px 10px; font-size:0.75rem;" onclick="mcrRemoveRow(${i})">Remove</button>
       </td>
     </tr>`;
   }).join("");
 }
 
-function mcrClampFromQty(inp) {
+function mcrFromQtyInput(inp) {
+  const v = mcrNum(inp.value);
+  if (v > mcrState.maxReplace) inp.value = mcrState.maxReplace;
+  mcrState.replaceQty = Math.min(Math.max(mcrNum(inp.value), 0), mcrState.maxReplace);
+  mcrRefreshSplit();
+}
+function mcrFromQtyBlur(inp) {
   let v = mcrNum(inp.value);
-  if (v > mcrState.maxReplace) { v = mcrState.maxReplace; inp.value = v; }
-  if (v < 0) { inp.value = 0; }
+  if (v < mcrState.minReplace) v = mcrState.minReplace;
+  if (v > mcrState.maxReplace) v = mcrState.maxReplace;
+  inp.value = v; mcrState.replaceQty = v;
+  const all = document.querySelector('input[name="mcr-mode"][value="all"]');
+  const sh = document.querySelector('input[name="mcr-mode"][value="short"]');
+  if (all && sh) { all.checked = v === mcrState.maxReplace; sh.checked = v === mcrState.minReplace; }
+  mcrRefreshSplit();
 }
 
 function mcrQtyInput(i, inp) {
@@ -141,45 +187,52 @@ function mcrDropdownEl() {
   if (!dd) {
     dd = document.createElement("div");
     dd.id = "mcr-search-dropdown";
-    dd.style.cssText = "position:fixed; z-index:9100; background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.18); max-height:260px; overflow-y:auto; display:none;";
+    dd.style.cssText = "position:fixed; z-index:9100; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.18); max-height:280px; overflow-y:auto; display:none;";
     document.body.appendChild(dd);
   }
   return dd;
 }
 function mcrHideDropdown() { const dd = document.getElementById("mcr-search-dropdown"); if (dd) dd.style.display = "none"; }
 
+// Lists every Raw Materials Store material matching the text; those with no
+// free stock are shown greyed out so the person can see why they can't pick them.
 function mcrSearch(i, text) {
   const inp = document.getElementById("mcr-search-" + i);
   if (!inp || !mcrState) return;
   const used = new Set(mcrState.rows.filter((r, j) => j !== i && r.itemCode).map(r => r.itemCode));
   const pool = (window.cachedInventoryStockCollection || cachedInventoryStockCollection || [])
-    .filter(it => it.itemCode && it.itemCode !== mcrState.itemCode && !used.has(it.itemCode) && mcrFreeFor(it.itemCode) > 0);
-  const list = (text || "").trim()
-    ? materialSearch(pool, text, 40, it => [it.materialName, it.make, it.itemCode])
-    : pool.slice(0, 40);
+    .filter(it => it.itemCode && it.itemCode !== mcrState.itemCode && !used.has(it.itemCode));
+  const q = (text || "").trim();
+  let list = q ? materialSearch(pool, q, 60, it => [it.materialName, it.make, it.itemCode]) : pool.slice();
+  list = list.map(it => ({ it, free: mcrFreeFor(it.itemCode) }));
+  list.sort((a, b) => (b.free > 0) - (a.free > 0));
+  list = list.slice(0, 50);
   const dd = mcrDropdownEl();
   if (list.length === 0) {
-    dd.innerHTML = `<div style="padding:10px; color:var(--muted); font-size:0.85rem;">No material with free stock matches.</div>`;
+    dd.innerHTML = `<div style="padding:10px; color:var(--muted); font-size:0.85rem;">${q ? "No material in Raw Materials Store matches." : "Raw Materials Store has no other material."}</div>`;
   } else {
-    dd.innerHTML = list.map(it => `<div onmousedown="mcrPick(${i}, ${jsArg(it.itemCode)})" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;"
-        onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+    dd.innerHTML = list.map(({ it, free }) => {
+      const ok = free > 0;
+      return `<div ${ok ? `onmousedown="mcrPick(${i}, ${jsArg(it.itemCode)})"` : ""} style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-size:0.85rem; ${ok ? "cursor:pointer;" : "cursor:not-allowed; opacity:0.55;"}"
+        ${ok ? `onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''"` : ""}>
         <div style="font-weight:600;">${escapeHtml(it.materialName)}${it.make ? ` <span style="color:#64748b;">- Make: ${escapeHtml(it.make)}</span>` : ""}</div>
-        <div style="color:#64748b; font-size:0.78rem;">${escapeHtml(it.itemCode)} · Free: ${fmtQty(mcrFreeFor(it.itemCode))} ${escapeHtml(it.unitType || "")}</div>
-      </div>`).join("");
+        <div style="color:${ok ? "#15803d" : "#b91c1c"}; font-size:0.78rem; font-weight:600;">${escapeHtml(it.itemCode)} · ${ok ? `Free: ${fmtQty(free)} ${escapeHtml(it.unitType || "")}` : "No free stock"}</div>
+      </div>`;
+    }).join("");
   }
   const rect = inp.getBoundingClientRect();
   dd.style.left = rect.left + "px";
   dd.style.top = (rect.bottom + 2) + "px";
-  dd.style.width = Math.max(rect.width, 320) + "px";
+  dd.style.width = Math.max(rect.width, 360) + "px";
   dd.style.display = "block";
 }
 
 function mcrPick(i, itemCode) {
   const it = (window.cachedInventoryStockCollection || cachedInventoryStockCollection || []).find(x => x.itemCode === itemCode);
-  if (!it) return;
+  if (!it || mcrFreeFor(itemCode) <= 0) return;
   const r = mcrState.rows[i];
   r.itemCode = it.itemCode;
-  r.materialName = it.materialName + (it.make ? " - Make: " + it.make : "");
+  r.materialName = it.materialName + (it.make && !/Make:/i.test(it.materialName) ? " - Make: " + it.make : "");
   r.unitType = it.unitType || "";
   r.quantity = "";
   mcrHideDropdown();
@@ -201,21 +254,22 @@ function closeMaterialChangePopup() {
   mcrState = null;
 }
 
-// Puts the in-stock part of the original material into the basket as a normal line.
-function mcrPutKeptLine() {
+// Puts `kept` of the original material into the basket as a normal line
+// (or removes the existing line when nothing of it is kept).
+function mcrPutKeptLine(kept) {
   const s = mcrState;
-  if (s.kept <= 0) {
+  if (kept <= 0) {
     if (s.existingLine) dynamicTicketShoppingBasketArray.splice(dynamicTicketShoppingBasketArray.indexOf(s.existingLine), 1);
     return;
   }
-  const over = s.kept > (Number(s.jcRemaining) || 0);
+  const over = kept > (Number(s.jcRemaining) || 0);
   if (s.existingLine) {
-    s.existingLine.quantity = s.kept;
+    s.existingLine.quantity = kept;
     s.existingLine.requiresBOQIncreaseFlag = over;
     s.existingLine.allottedRemainingLimit = Number(s.jcRemaining) || 0;
   } else {
     dynamicTicketShoppingBasketArray.push({
-      materialName: s.materialName, quantity: s.kept, unitType: s.unitType || "NOS",
+      materialName: s.materialName, quantity: kept, unitType: s.unitType || "NOS",
       requiresBOQIncreaseFlag: over, allottedRemainingLimit: Number(s.jcRemaining) || 0,
       itemCode: s.itemCode, boqId: s.boqId || "",
     });
@@ -231,7 +285,7 @@ function mcrFinish() {
   if (typeof cmitDraftSaveSoon === "function") cmitDraftSaveSoon();
 }
 
-function mcrAddKeptOnly() { mcrPutKeptLine(); mcrFinish(); }
+function mcrAddKeptOnly() { mcrPutKeptLine(mcrState.inStock); mcrFinish(); }
 
 function mcrAddChangeToBasket() {
   const s = mcrState;
@@ -240,6 +294,7 @@ function mcrAddChangeToBasket() {
   err.style.display = "none";
   const fromQty = mcrRound(mcrNum(document.getElementById("mcr-from-qty").value));
   if (!(fromQty > 0)) return fail("Enter the quantity being replaced.");
+  if (fromQty < s.minReplace - 1e-9) return fail(`At least ${fmtQty(s.minReplace)} must be replaced (that is what is short).`);
   if (fromQty > s.maxReplace + 1e-9) return fail(`At most ${fmtQty(s.maxReplace)} can be replaced.`);
   const alts = [];
   for (const r of s.rows) {
@@ -251,7 +306,7 @@ function mcrAddChangeToBasket() {
     alts.push({ itemCode: r.itemCode, materialName: r.materialName, unitType: r.unitType, quantity: q });
   }
   if (alts.length === 0) return fail("Add at least one alternate material.");
-  mcrPutKeptLine();
+  mcrPutKeptLine(mcrRound(Math.max(0, s.requestedTotal - fromQty)));
   dynamicTicketShoppingBasketArray.push({
     isMaterialChange: true, changeFromItemCode: s.itemCode, changeFromMaterialName: s.materialName,
     changeFromUnit: s.unitType || "", changeFromQty: fromQty, alternates: alts,
