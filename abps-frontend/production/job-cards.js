@@ -310,10 +310,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px;">${fmtQty(totalStockCount)} ${escapeHtml(unitToken)}</span>
           </div>
-          <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button type="button" class="nav-btn-styled" style="width:auto; padding:5px 12px; font-size:0.82rem; background:#7c3aed;"
-              onclick="ticketOpenConsumableRequest(${jsArg(jcmMatch.itemCode)}, ${jsArg(jcmMatch.materialName)}, ${jsArg(unitToken)})">Production Memo for Purchase</button>
-          </div>
+          <div style="margin-top:4px; font-size:0.8rem; font-weight:600; color:#5b21b6;">Ask for more than is in stock: the rest is sent as Production Memo for Purchase.</div>
         </div>`;
     } else if (inventoryMatch && jcmMatch) {
       let styleClass = "pill-stock-healthy";

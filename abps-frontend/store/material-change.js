@@ -347,10 +347,14 @@ function materialChangeConflictMessage(itemCode, newNormalTotal, jcRemaining) {
 // Excess Material Request; memo rows as Production Memo purchase requests.
 function basketNormalItems() { return (dynamicTicketShoppingBasketArray || []).filter(r => !r.isMaterialChange && !r.isMemoPurchase); }
 function basketIsExcessRow(r, store) { return !!r.requiresBOQIncreaseFlag && (store || "Raw Materials Store") === "Raw Materials Store"; }
-function basketIssueItems(store) { return basketNormalItems().filter(r => !basketIsExcessRow(r, store)); }
+function basketIssueItems(store) {
+  return basketNormalItems().filter(r => !basketIsExcessRow(r, store) && Number(r.quantity) > 0)
+    .map(r => { const c = { ...r }; delete c.memoQty; return c; });
+}
 function basketExcessItems(store) { return basketNormalItems().filter(r => basketIsExcessRow(r, store)); }
 function basketMemoPurchaseItems() {
-  return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMemoPurchase).map(r => ({ itemCode: r.itemCode, quantity: r.quantity }));
+  return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMemoPurchase || Number(r.memoQty) > 0)
+    .map(r => ({ itemCode: r.itemCode, quantity: r.isMemoPurchase ? r.quantity : r.memoQty }));
 }
 function basketMaterialChanges() {
   return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMaterialChange).map(r => ({

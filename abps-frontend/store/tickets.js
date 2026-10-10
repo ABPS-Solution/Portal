@@ -658,19 +658,25 @@ async function addItemToShoppingBasketRow() {
       r.isConsumable && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     if (consMatch) {
       const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
-      const totalCons = quantity + (existingCons ? existingCons.quantity : 0);
-      const canIssue = Number(consMatch.remainingQty) || 0;
-      if (totalCons > canIssue) {
+      // What is in stock is issued now; the rest becomes the Production Memo
+      // purchase quantity on the same row (memoQty, migration 249).
+      const totalCons = quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0);
+      const canIssue = Math.max(0, Number(consMatch.remainingQty) || 0);
+      const issueQty = Math.min(totalCons, canIssue);
+      const memoQty = Math.round((totalCons - issueQty) * 1000) / 1000;
+      const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
+      if (memoQty > 0 && !["Reactor", "Capacitor", "Panel", "Service"].includes(deptForMemo)) {
         restoreAddBtn();
-        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} can be issued now. Reduce the quantity, or use "Production Memo for Purchase" for the rest.`);
+        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Production Memo purchase can be asked only for Reactor, Capacitor, Panel or Service.`);
         return;
       }
       if (existingCons) {
-        existingCons.quantity = totalCons;
+        existingCons.quantity = issueQty;
+        existingCons.memoQty = memoQty;
         existingCons.allottedRemainingLimit = canIssue;
       } else {
         dynamicTicketShoppingBasketArray.push({
-          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: totalCons,
+          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty,
           unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
           allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
         });
@@ -842,9 +848,10 @@ function renderDraftBasketTableViewportRows() {
       <td style="font-weight:600; padding:10px 8px;">
         ${escapeHtml(rowItem.materialName)} 
         ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
+        ${Number(rowItem.memoQty) > 0 ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase: ${fmtQty(rowItem.memoQty)}</span>` : ''}
       </td>
       <td style="text-align:center; font-weight:700; font-size:0.95rem;">${rowItem.unitType}</td>
-      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${rowItem.quantity}</td>
+      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${fmtQty(rowItem.quantity)}${Number(rowItem.memoQty) > 0 ? ` <span style="color:#5b21b6;">(${fmtQty(rowItem.memoQty)})</span>` : ""}</td>
       <td style="text-align:center;">
         <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
       </td>

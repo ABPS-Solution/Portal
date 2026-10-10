@@ -25,7 +25,7 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
     const pending = data.pending || [];
     const recent = data.recent || [];
     feed.innerHTML = `
-      ${pending.length ? pending.map(cprRenderPendingCard).join('') : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}
+      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}
       ${recent.length ? `
         <div style="margin-top:18px; font-weight:800; color:var(--brand);">Recently actioned</div>
         <div style="overflow-x:auto;"><table class="grid-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:760px;">
@@ -51,35 +51,60 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
 
 function cprRenderPendingCard(r) {
   const id = r.requestId;
+  const th = (t, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"};">${t}</th>`;
+  const td = (h, al) => `<td style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; font-weight:600;">${h}</td>`;
+  const req = Number(r.requestedQty) || 0;
   return `
-    <div style="border:1.5px solid #94a3b8; border-radius:var(--radius); padding:14px 16px; background:#fff;">
-      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
-        <div>
-          <div style="font-weight:800; color:var(--brand);">#${id} · ${escapeHtml(r.materialName || r.itemCode)}</div>
-          <div style="font-size:0.85rem; color:#334155; margin-top:2px;">${escapeHtml(r.department)} · ${escapeHtml(cprTargetLabel(r))}${r.companyName ? ' · ' + escapeHtml(r.companyName) : ''}</div>
-          <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">Requested by ${escapeHtml(r.requestedBy || '')} · ${escapeHtml(formatOrdinalDateTime(r.requestedAt))}</div>
-          ${r.reason ? `<div style="font-size:0.85rem; margin-top:6px;"><strong>Reason:</strong> ${escapeHtml(r.reason)}</div>` : ''}
-        </div>
-        <div style="font-size:0.82rem; text-align:right; color:#334155;">
-          Requested: <strong>${fmtQty(r.requestedQty)} ${escapeHtml(r.unit || '')}</strong><br>
-          In store now: ${fmtQty(r.totalStock)} (free ${fmtQty(Math.max(0, Number(r.freeStock) || 0))})
+    <div class="contact-summary-card-parent" style="border-left:4px solid #7c3aed;">
+      <div class="contact-summary-header-row" onclick="document.getElementById('cpr-card-body-${id}').style.display = document.getElementById('cpr-card-body-${id}').style.display === 'none' ? 'block' : 'none'" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
+        <div class="contact-summary-title-info" style="width:100%;">
+          <div class="meta-row-line-block">
+            <span style="font-family:monospace; font-weight:800; background:#ede9fe; color:#5b21b6; padding:3px 8px; font-size:0.85rem; border-radius:3px;">#${id}</span>
+            <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${escapeHtml(r.jobCardNumber || r.projectId || r.legacyCompanyName || "")}</strong>
+          </div>
+          <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
+            <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(r.projectId || "—")}</strong>
+            ${r.companyName ? `<span style="margin-left:8px;">|</span> <strong style="color:#111827; margin-left:8px;">${escapeHtml(r.companyName)}</strong>` : ""}
+            <span style="margin-left:8px;">|</span>
+            <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${escapeHtml(r.requestedBy || "")}</strong>
+            <span style="margin-left:8px;">|</span>
+            <strong style="color:#111827; margin-left:8px;">${escapeHtml(formatOrdinalDateTime(r.requestedAt))}</strong>
+            <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(r.department || "—")}</strong>
+          </div>
         </div>
       </div>
-      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-top:12px;">
-        <div><label class="field-label" style="margin-top:0;">Approved quantity</label>
-          <input type="number" min="0" step="any" id="cpr-qty-${id}" value="${escapeHtml(String(Number(r.requestedQty)))}" style="width:140px; padding:7px;"></div>
-        <div style="flex:1 1 220px;"><label class="field-label" style="margin-top:0;">Rejection reason (if rejecting)</label>
-          <input type="text" id="cpr-rej-${id}" style="width:100%; padding:7px;"></div>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#15803d;" onclick="cprAction(${id}, 'Approve')">Approve</button>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#b91c1c;" onclick="cprAction(${id}, 'Reject')">Reject</button>
+      <div id="cpr-card-body-${id}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
+        <div style="overflow-x:auto; margin-bottom:14px;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; min-width:640px;">
+            <colgroup><col style="width:46%"><col style="width:9%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>
+            <thead><tr style="background:var(--highlight-bg);">
+              ${th("Material Name", "left")}${th("Unit")}${th("Already Used in this JC")}${th("Purchase Qty Requested")}${th("Approved Qty")}
+            </tr></thead>
+            <tbody><tr>
+              ${td(escapeHtml(r.materialName || r.itemCode), "left")}
+              ${td(escapeHtml(r.unit || ""))}
+              ${td(r.jobCardNumber ? fmtQty(r.usedInJobCard) : "—")}
+              ${td(`<span style="color:#5b21b6; font-weight:700;">${fmtQty(req)}</span>`)}
+              <td style="border:1px solid var(--border); padding:8px; text-align:center;">
+                <input type="number" min="0" max="${req}" step="any" id="cpr-qty-${id}" value="${req}"
+                  oninput="if (parseFloat(this.value) > ${req}) this.value = ${req}; if (parseFloat(this.value) < 0) this.value = 0;"
+                  style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;">
+              </td>
+            </tr></tbody>
+          </table>
+        </div>
+        <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">Approved Qty can be lowered, not raised. Approving lists it in List of Material to Raise Purchase Order under this project (no PRN, never reserved; it arrives as free stock).</div>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" style="width:auto; padding:8px 20px; background:#b91c1c; font-weight:700;" onclick="cprAction(${id}, 'Reject')">Reject</button>
+          <button class="nav-btn-styled" style="width:auto; padding:8px 20px; background:var(--accent); font-weight:700;" onclick="cprAction(${id}, 'Approve')">Approve</button>
+        </div>
       </div>
-      <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Approving lists it in List of Material to Raise Purchase Order under this project as Production Memo Purchase Material (no PRN, never reserved; it arrives as free stock).</div>
     </div>`;
 }
 
 async function cprAction(requestId, decision) {
   const qty = document.getElementById(`cpr-qty-${requestId}`)?.value;
-  const rejectionReason = document.getElementById(`cpr-rej-${requestId}`)?.value || '';
+  const rejectionReason = '';
   const ok = await abpsConfirm(decision === 'Approve'
     ? `Approve request #${requestId} for ${qty}?` : `Reject request #${requestId}?`,
     { okLabel: decision });
