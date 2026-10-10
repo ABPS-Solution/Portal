@@ -204,7 +204,7 @@ function renderFGDedicatedDocZone(fgId, docType, required) {
   const label = FG_DOC_TYPE_LABELS[docType];
   const existing = st.docs.filter(d => d.docType === docType);
   const fileListHtml = existing.length
-    ? existing.map(d => `<div style="font-size:0.78rem; margin-top:4px;"><a href="${driveLink(d.url)}" target="_blank" style="color:var(--brand); font-weight:600;">${d.fileName || d.docLabel}</a></div>`).join("")
+    ? existing.map(d => `<div style="font-size:0.78rem; margin-top:4px;"><a href="${escapeHtml(driveLink(d.url))}" target="_blank" style="color:var(--brand); font-weight:600;">${escapeHtml(d.fileName || d.docLabel)}</a></div>`).join("")
     : `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">No file attached yet.</div>`;
   return `
     <div>
@@ -277,7 +277,7 @@ function renderFGDocTable(fgId) {
   const existingRows = st.docs.map(d => `
     <tr>
       <td style="padding:8px; border-bottom:2px solid #94a3b8;">${d.docLabel}</td>
-      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8;"><a href="${driveLink(d.url)}" target="_blank" style="color:var(--brand); font-weight:600;">${d.fileName || d.docLabel}</a></td>
+      <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8;"><a href="${escapeHtml(driveLink(d.url))}" target="_blank" style="color:var(--brand); font-weight:600;">${escapeHtml(d.fileName || d.docLabel)}</a></td>
       <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.78rem; color:var(--muted); white-space:nowrap;">${formatFGUploadTime(d.createdAt)}</td>
       <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center;">
         <input type="checkbox" class="fg-approval-doc-check" data-fgid="${fgId}" ${d.qaChecked ? "checked" : ""} style="width:18px; height:18px; cursor:pointer;" onchange="handleFGDocCheckChange(${fgId}, ${d.documentId}, this.checked)" />

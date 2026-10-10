@@ -1150,7 +1150,7 @@ async function togglePinvDocuments(invoiceId) {
     if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error || "Failed to load documents.")}</span>`; return; }
     if (!(data.documents || []).length) { zone.innerHTML = "No documents attached to this invoice."; return; }
     zone.innerHTML = data.documents.map(d =>
-      `<div style="margin-bottom:2px;">${d.docLabel}${d.fileName ? ` — ${d.fileName}` : ""}: <a href="${driveLink(d.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
+      `<div style="margin-bottom:2px;">${escapeHtml(d.docLabel)}${d.fileName ? ` — ${escapeHtml(d.fileName)}` : ""}: <a href="${escapeHtml(driveLink(d.url))}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
     ).join("");
   } catch(e) {
     zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;

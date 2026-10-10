@@ -224,16 +224,16 @@ async function refreshServerRoleFlags() {
 // any other link in the app (including Accounts' own document links, which
 // use the same proxy and are covered the same way).
 let _fileTokenCache = null; // { token, mintedAt }
-async function ensureFileToken() {
+async function ensureFileToken(fileId) {
   // Reuse a just-minted token for a burst of clicks (e.g. opening several
   // documents from a search results table in a row) — refresh with margin
   // well before the server-side ~120s expiry rather than cutting it close.
-  if (_fileTokenCache && (Date.now() - _fileTokenCache.mintedAt) < 60_000) {
+  if (_fileTokenCache && _fileTokenCache.fileId === fileId && (Date.now() - _fileTokenCache.mintedAt) < 60_000) {
     return _fileTokenCache.token;
   }
-  const data = await apFetch({ action: "mintFileToken" });
+  const data = await apFetch({ action: "mintFileToken", fileId });
   if (!data.success) throw new Error(data.error || "Could not open document.");
-  _fileTokenCache = { token: data.fileToken, mintedAt: Date.now() };
+  _fileTokenCache = { token: data.fileToken, fileId, mintedAt: Date.now() };
   return data.fileToken;
 }
 
@@ -246,7 +246,8 @@ document.addEventListener("click", async (e) => {
   // — then point it at the real URL once the token is minted.
   const w = window.open('', '_blank');
   try {
-    const ft = await ensureFileToken();
+    const fileId = (a.href.split('/api/driveFile/')[1] || '').split(/[?#/]/)[0];
+    const ft = await ensureFileToken(fileId);
     const href = a.href + (a.href.includes("?") ? "&" : "?") + "ft=" + encodeURIComponent(ft);
     if (w) w.location = href; else window.open(href, '_blank');
   } catch (err) {
