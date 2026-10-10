@@ -1,6 +1,7 @@
 // marketing/new-leads-report.js — "New Leads Report" view on Search Leads by
-// ABPS Engineer Name and Status (10 Oct 2026). Lists every lead CREATED in a
-// date range (not leads in 'New Lead' status). Engineer / Status pills are
+// ABPS Engineer Name and Status (10 Oct 2026). Lists leads by the date they
+// were CREATED (not leads in 'New Lead' status); with no dates it lists all
+// leads for the chosen engineers / statuses. Engineer / Status pills are
 // shared with the Lead Cards view. Backend: lib/newLeadsReport.js.
 
 function nlrIstToday() {
@@ -12,7 +13,7 @@ function switchLeadMatrixView(view) {
   const on = (b) => { b.style.color = "var(--brand)"; b.style.borderBottomColor = "var(--brand)"; b.style.fontWeight = "800"; };
   const off = (b) => { b.style.color = "var(--muted)"; b.style.borderBottomColor = "transparent"; b.style.fontWeight = "700"; };
   const c = document.getElementById("lms-tab-cards"), r = document.getElementById("lms-tab-report");
-  isReport ? (on(r), off(c)) : (on(c), off(r));
+  if (c && r) isReport ? (on(r), off(c)) : (on(c), off(r));
   document.getElementById("lms-report-filters").style.display = isReport ? "" : "none";
   document.getElementById("nlr-run-btn").style.display = isReport ? "" : "none";
   document.getElementById("lead-matrix-search-submit-btn").style.display = isReport ? "none" : "";
@@ -27,35 +28,40 @@ function switchLeadMatrixView(view) {
     if (mc) mc.innerHTML = "";
   }
   if (isReport) {
-    const from = document.getElementById("nlr-from"), to = document.getElementById("nlr-to");
-    if (from && !from.value) nlrQuickRange('week');
+    const from = document.getElementById("nlr-from");
+    if (from && !from.value && !window._nlrAllTime) nlrQuickRange('week');
   } else {
     document.getElementById("nlr-output").innerHTML = "";
   }
 }
 
 function nlrQuickRange(kind) {
-  const today = nlrIstToday();
-  const d = new Date(today + "T00:00:00Z");
-  let from = today;
-  if (kind === 'week') {
-    const dow = d.getUTCDay(); // Sunday = 0; week starts Monday
-    const back = dow === 0 ? 6 : dow - 1;
-    from = new Date(d.getTime() - back * 86400000).toISOString().slice(0, 10);
-  } else if (kind === 'month') {
-    from = today.slice(0, 8) + "01";
-  } else if (kind === 'yesterday') {
-    from = new Date(d.getTime() - 86400000).toISOString().slice(0, 10);
+  const fromEl = document.getElementById("nlr-from"), toEl = document.getElementById("nlr-to");
+  window._nlrAllTime = kind === 'all';
+  if (kind === 'all') {
+    fromEl.value = ""; toEl.value = "";
+  } else {
+    const today = nlrIstToday();
+    const d = new Date(today + "T00:00:00Z");
+    let from = today;
+    if (kind === 'week') {
+      const dow = d.getUTCDay(); // Sunday = 0; week starts Monday
+      from = new Date(d.getTime() - (dow === 0 ? 6 : dow - 1) * 86400000).toISOString().slice(0, 10);
+    } else if (kind === 'month') {
+      from = today.slice(0, 8) + "01";
+    } else if (kind === 'yesterday') {
+      from = new Date(d.getTime() - 86400000).toISOString().slice(0, 10);
+    }
+    fromEl.value = from;
+    toEl.value = kind === 'yesterday' ? from : today;
   }
-  const to = kind === 'yesterday' ? from : today;
-  document.getElementById("nlr-from").value = from;
-  document.getElementById("nlr-to").value = to;
   // Programmatic .value doesn't fire change; refresh the DD/MM overlay.
-  ["nlr-from", "nlr-to"].forEach(id => document.getElementById(id).dispatchEvent(new Event("input", { bubbles: true })));
+  [fromEl, toEl].forEach(el => el.dispatchEvent(new Event("input", { bubbles: true })));
   nlrMarkQuick(kind);
 }
 
 function nlrMarkQuick(kind) {
+  if (kind === null) window._nlrAllTime = false;
   document.querySelectorAll(".nlr-quick-btn").forEach(b => b.classList.toggle("active", b.dataset.range === kind));
 }
 
@@ -68,103 +74,177 @@ function nlrReadFilters() {
   };
 }
 
-function nlrPlanHtml(plan) {
-  if (!plan.length) return '<span style="color:var(--muted);">None ticked</span>';
-  const color = { done: '#15803d', overdue: '#b91c1c', open: '#b45309', 'no task': 'var(--muted)' };
-  return plan.map(a => `<div style="color:${color[a.state] || 'inherit'}; font-weight:600; margin-bottom:3px;">${escapeHtml(a.text)}</div>`).join("");
+function nlrRangeText(f) {
+  if (!f.startDate && !f.endDate) return "All time";
+  if (f.startDate === f.endDate) return formatOrdinalDate(f.startDate);
+  return `${formatOrdinalDate(f.startDate)} to ${formatOrdinalDate(f.endDate)}`;
+}
+
+function nlrFilterText(f) {
+  const parts = ["Created: " + nlrRangeText(f)];
+  if (f.engineers.length) parts.push("Engineers: " + engineerEmailsToNames(f.engineers).join(", "));
+  if (f.statuses.length) parts.push("Status: " + f.statuses.join(", "));
+  return parts.join(" | ");
 }
 
 async function runNewLeadsReport() {
   const f = nlrReadFilters();
-  if (!f.startDate || !f.endDate) { alert("Please choose a From and To date."); return; }
+  if (!!f.startDate !== !!f.endDate) { alert("Please choose both a From and a To date, or click All Time."); return; }
+  if (!f.startDate && !f.engineers.length && !f.statuses.length) {
+    alert("For All Time, please select at least one Engineer or Status.");
+    return;
+  }
   const btn = document.getElementById("nlr-run-btn");
   const out = document.getElementById("nlr-output");
   btn.classList.add("loading"); btn.textContent = "Loading...";
-  out.innerHTML = `<div style="color:var(--muted); padding:10px 0;">Loading new leads...</div>`;
+  out.innerHTML = `<div class="nlr-filtering">Filtering for → ${escapeHtml(nlrFilterText(f))}</div><div style="color:var(--muted); padding:10px 0;">Loading leads...</div>`;
   try {
     const data = await apFetch({ action: "fetchNewLeadsReport", ...f });
-    if (!data.success) { out.innerHTML = `<div style="color:var(--warn); font-weight:700;">${escapeHtml(data.error || "Could not load the report.")}</div>`; return; }
+    if (!data.success) {
+      out.innerHTML = `<div class="nlr-filtering">Filtering for → ${escapeHtml(nlrFilterText(f))}</div><div style="color:var(--warn); font-weight:700;">${escapeHtml(data.error || "Could not load the report.")}</div>`;
+      return;
+    }
     window._nlrLastFilters = f;
     out.innerHTML = nlrRenderReport(data, f);
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED") out.innerHTML = `<div style="color:var(--warn); font-weight:700;">${escapeHtml(e.message)}</div>`;
   } finally {
-    btn.classList.remove("loading"); btn.textContent = "Run New Leads Report";
+    btn.classList.remove("loading"); btn.textContent = "Run Leads Search";
   }
+}
+
+const NLR_STATE_META = {
+  done:      { label: "Done",    cls: "nlr-st-done" },
+  overdue:   { label: "Overdue", cls: "nlr-st-overdue" },
+  open:      { label: "Due",     cls: "nlr-st-open" },
+  'no task': { label: "No task", cls: "nlr-st-none" },
+};
+
+function nlrPlanHtml(plan) {
+  if (!plan.length) return '<span class="nlr-none">None</span>';
+  return plan.map(a => {
+    const m = NLR_STATE_META[a.state] || NLR_STATE_META['no task'];
+    const when = a.state === 'overdue' ? `since ${formatOrdinalDate(a.due)}`
+      : (a.state === 'open' && a.due ? formatOrdinalDate(a.due) : "");
+    return `<div class="nlr-plan-item ${m.cls}">
+      <div class="nlr-plan-name">${escapeHtml(a.action)}</div>
+      <div class="nlr-plan-state"><span class="nlr-plan-badge">${m.label}</span>${when ? `<span class="nlr-plan-when">${escapeHtml(when)}</span>` : ""}</div>
+    </div>`;
+  }).join("");
+}
+
+function nlrActivityHtml(r) {
+  const row = (label, n) => `<div class="nlr-act-row"><span>${label}</span><strong>${n}</strong></div>`;
+  return `<div class="nlr-act">
+    ${row("Follow-ups", r.followUpCount)}${row("Tasks", r.taskCount)}${row("Offers sent", r.offersSent)}
+    ${r.lastActivity ? `<div class="nlr-act-last">Last activity: ${escapeHtml(formatOrdinalDate(r.lastActivity))}</div>` : ""}
+  </div>`;
+}
+
+function nlrContactName(v) {
+  const t = (v || "").trim();
+  return (!t || /^tbd$/i.test(t)) ? "" : t;
 }
 
 function nlrRenderReport(data, f) {
   const t = data.totals;
-  const range = `${formatOrdinalDate(f.startDate)} to ${formatOrdinalDate(f.endDate)}`;
+  const filtering = `<div class="nlr-filtering">Filtering for → ${escapeHtml(nlrFilterText(f))}</div>`;
   if (!data.rows.length) {
-    return `<div style="color:var(--warn); font-weight:700; padding:10px 0;">No leads were created ${escapeHtml(range)} for these filters.</div>`;
+    return filtering + `<div style="color:var(--warn); font-weight:700; padding:10px 0;">No leads found for these filters.</div>`;
   }
-  const engChips = t.byEngineer.map(e => `<span style="display:inline-block; background:#fff; border:1px solid var(--border); border-radius:999px; padding:3px 10px; margin:3px 4px 0 0; font-size:0.78rem;">${escapeHtml(e.name)}: <strong>${e.count}</strong></span>`).join("");
+  const engChips = t.byEngineer.map(e =>
+    `<span class="nlr-eng-chip"><span>${escapeHtml(e.name)}</span><strong>${e.count}</strong></span>`).join("");
   const strip = `
-    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; margin:14px 0 10px;">
-      <div style="background:var(--highlight-bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px; min-width:150px;">
-        <div style="font-size:0.75rem; color:var(--muted); font-weight:700;">New leads, ${escapeHtml(range)}</div>
-        <div style="font-size:1.5rem; font-weight:800; color:var(--brand);">${t.leads}</div>
+    <div class="nlr-strip">
+      <div class="nlr-stat">
+        <div class="nlr-stat-label">New leads, ${escapeHtml(nlrRangeText(f))}</div>
+        <div class="nlr-stat-value">${t.leads}</div>
       </div>
-      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; min-width:150px;">
-        <div style="font-size:0.75rem; color:#991b1b; font-weight:700;">Action plan not started</div>
-        <div style="font-size:1.5rem; font-weight:800; color:#b91c1c;">${t.actionPlanPending}</div>
+      <div class="nlr-stat nlr-stat-warn">
+        <div class="nlr-stat-label">No Action Plan</div>
+        <div class="nlr-stat-value">${t.actionPlanPending}</div>
       </div>
-      <div style="flex:1; min-width:220px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-        <div style="font-size:0.75rem; color:var(--muted); font-weight:700;">By ABPS Engineer</div>
-        <div>${engChips}</div>
+      <div class="nlr-stat nlr-stat-eng">
+        <div class="nlr-stat-label">ABPS Engineer</div>
+        <div class="nlr-eng-chips">${engChips}</div>
       </div>
-      <div style="display:flex; align-items:center;">
-        <button class="btn" style="width:auto; background:#15803d; padding:10px 16px;" id="nlr-download-btn" onclick="downloadNewLeadsReport()">Download Excel</button>
-      </div>
+      <button type="button" class="nlr-download" id="nlr-download-btn" onclick="downloadNewLeadsReport()">Download Excel</button>
     </div>`;
-  const td = 'padding:8px; border:1px solid var(--border); vertical-align:top;';
-  const rows = data.rows.map(r => `
-    <tr style="cursor:pointer;" onclick="nlrToggleLead(${jsArg(r.leadId)})" title="Click to open this lead">
-      <td style="${td} white-space:nowrap;">${escapeHtml(formatOrdinalDate(r.createdDate))}<div style="color:var(--muted); font-size:0.75rem;">${escapeHtml(r.leadId)}</div></td>
-      <td style="${td}"><strong>${escapeHtml(r.companyName)}</strong>${r.city || r.state ? `<div style="color:var(--muted); font-size:0.75rem;">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}</td>
-      <td style="${td}">${escapeHtml(r.contactPerson)}${r.position ? `<div style="color:var(--muted); font-size:0.75rem;">${escapeHtml(r.position)}</div>` : ""}${r.phone ? `<div style="font-size:0.75rem;">${escapeHtml(r.phone)}</div>` : ""}</td>
-      <td style="${td}">${escapeHtml(r.engineerName)}</td>
-      <td style="${td}">${escapeHtml(r.status)}</td>
-      <td style="${td}">${nlrPlanHtml(r.actionPlan)}</td>
-      <td style="${td} font-size:0.8rem;">Follow-ups: <strong>${r.followUpCount}</strong><br>Tasks: <strong>${r.taskCount}</strong><br>Offers sent: <strong>${r.offersSent}</strong>${r.lastActivity ? `<div style="color:var(--muted); margin-top:3px;">Last: ${escapeHtml(formatOrdinalDate(r.lastActivity))}</div>` : ""}</td>
-      <td style="${td} font-size:0.8rem;">${escapeHtml(r.summary) || '<span style="color:var(--muted);">No details entered</span>'}</td>
+  const rows = data.rows.map(r => {
+    const contact = nlrContactName(r.contactPerson);
+    const id = escapeHtml(r.leadId);
+    return `
+    <tr class="nlr-row" id="nlr-row-${id}" onclick="nlrToggleLead(${jsArg(r.leadId)})" title="Click to open this lead">
+      <td>${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
+      <td><span class="nlr-status">${escapeHtml(r.status)}</span></td>
+      <td><strong>${escapeHtml(r.companyName)}</strong>${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}</td>
+      <td>${contact ? escapeHtml(contact) : '<span class="nlr-none">None</span>'}${contact && r.position ? `<div class="nlr-sub">${escapeHtml(r.position)}</div>` : ""}${contact && r.phone ? `<div class="nlr-sub">${escapeHtml(r.phone)}</div>` : ""}</td>
+      <td>${escapeHtml(r.engineerName) || '<span class="nlr-none">None</span>'}</td>
+      <td>${nlrPlanHtml(r.actionPlan)}</td>
+      <td>${nlrActivityHtml(r)}</td>
+      <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
+      <td class="nlr-exp"><span id="nlr-exp-${id}">▾</span></td>
     </tr>
-    <tr id="nlr-lead-row-${escapeHtml(r.leadId)}" style="display:none;"><td colspan="8" style="padding:0; border:1px solid var(--border);"><div id="nlr-lead-box-${escapeHtml(r.leadId)}" style="padding:10px; background:var(--highlight-bg);"></div></td></tr>`).join("");
-  const th = 'padding:8px; border:1px solid var(--border); background:#e2e8f0; text-align:left; font-size:0.8rem;';
-  return strip + `
+    <tr id="nlr-lead-row-${id}" style="display:none;"><td colspan="9" class="nlr-lead-cell"><div id="nlr-lead-box-${id}"></div></td></tr>`;
+  }).join("");
+  return filtering + strip + `
     <div style="overflow-x:auto;">
-      <table style="width:100%; min-width:1100px; border-collapse:collapse; font-size:0.85rem;">
-        <colgroup><col style="width:9%"><col style="width:13%"><col style="width:12%"><col style="width:10%"><col style="width:9%"><col style="width:17%"><col style="width:10%"><col style="width:20%"></colgroup>
+      <table class="nlr-table">
+        <colgroup><col style="width:9%"><col style="width:8%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:17%"><col style="width:11%"><col style="width:19%"><col style="width:3%"></colgroup>
         <thead><tr>
-          <th style="${th}">Created</th><th style="${th}">Company</th><th style="${th}">Contact Person</th>
-          <th style="${th}">ABPS Engineer</th><th style="${th}">Status</th><th style="${th}">Action Plan</th>
-          <th style="${th}">Activity</th><th style="${th}">Summary</th>
+          <th>Created Date</th><th>Status</th><th>Company Name</th><th>Contact Person</th>
+          <th>ABPS Engineer</th><th>Action Plan</th><th>Activity</th><th>Summary</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
 }
 
+// Opens the lead's full View Details right under its row. The row itself is
+// the header, so the lead card's own header is hidden (its Merge / Delete
+// buttons are kept, at the top of the opened area).
 async function nlrToggleLead(leadId) {
   const row = document.getElementById(`nlr-lead-row-${leadId}`);
   const box = document.getElementById(`nlr-lead-box-${leadId}`);
   if (!row || !box) return;
-  if (row.style.display !== "none") { row.style.display = "none"; box.innerHTML = ""; return; }
-  // Only one open at a time: lead cards use fixed element ids.
+  const wasOpen = row.style.display !== "none";
   document.querySelectorAll('[id^="nlr-lead-row-"]').forEach(el => { el.style.display = "none"; });
   document.querySelectorAll('[id^="nlr-lead-box-"]').forEach(el => { el.innerHTML = ""; });
+  document.querySelectorAll('[id^="nlr-exp-"]').forEach(el => { el.textContent = "▾"; });
+  document.querySelectorAll('.nlr-row.open').forEach(el => el.classList.remove("open"));
+  if (wasOpen) return;
   row.style.display = "";
-  box.innerHTML = `<div style="color:var(--muted);">Loading lead...</div>`;
+  document.getElementById(`nlr-row-${leadId}`)?.classList.add("open");
+  const exp = document.getElementById(`nlr-exp-${leadId}`);
+  if (exp) exp.textContent = "▴";
+  box.innerHTML = `<div style="color:var(--muted); padding:10px;">Loading lead...</div>`;
   try {
     const data = await apFetch({ action: "fetchLeadCardById", leadId });
-    if (!data.success || !data.leads?.length) { box.innerHTML = `<div style="color:var(--warn); font-weight:700;">Lead not found.</div>`; return; }
+    if (!data.success || !data.leads?.length) { box.innerHTML = `<div style="color:var(--warn); font-weight:700; padding:10px;">Lead not found.</div>`; return; }
     globalFollowUpsCacheMap = data.followups;
     globalTasksCacheMap = data.tasks;
+    // Lead cards use fixed element ids; clear the Lead Cards results first.
+    const mc = document.getElementById("multi-contact-records-container");
+    if (mc) mc.innerHTML = "";
     box.innerHTML = `<div id="nlr-lead-cards-${escapeHtml(leadId)}"></div>`;
     buildMultiContactDirectoryInterface(data.leads, "", `nlr-lead-cards-${leadId}`);
+    const lead = data.leads[0];
+    const ref = lead["Lead ID"];
+    const wrapper = document.getElementById(`contact-parent-wrapper-${ref}`);
+    const header = wrapper?.querySelector(".contact-summary-header-row");
+    if (header) {
+      const actions = header.querySelector(".directory-btn-actions-block");
+      document.getElementById(`expand-trigger-${ref}`)?.remove();
+      header.style.display = "none";
+      if (actions && actions.children.length) {
+        actions.style.justifyContent = "flex-end";
+        actions.style.marginBottom = "8px";
+        wrapper.insertBefore(actions, header);
+      }
+    }
+    toggleContactExpansionView(ref, encodeURIComponent(JSON.stringify(lead)));
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") box.innerHTML = `<div style="color:var(--warn); font-weight:700;">${escapeHtml(e.message)}</div>`;
+    if (e.message !== "SESSION_EXPIRED") box.innerHTML = `<div style="color:var(--warn); font-weight:700; padding:10px;">${escapeHtml(e.message)}</div>`;
   }
 }
 

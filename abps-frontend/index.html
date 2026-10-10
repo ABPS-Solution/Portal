@@ -5805,6 +5805,47 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .nlr-quick-btn:hover { background:var(--highlight-bg); color:var(--brand); }
         .nlr-quick-btn.active { background:var(--brand); color:#fff; }
         @media (max-width:640px) { .nlr-quick-group { margin-left:0; width:100%; } .nlr-quick-btn { flex:1; padding:8px 6px; } }
+        .nlr-filtering { font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:10px; }
+        .nlr-strip { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; margin:14px 0 12px; }
+        .nlr-stat { background:#fff; border:1px solid var(--border); border-left:4px solid var(--brand); border-radius:8px; padding:10px 16px; min-width:160px; }
+        .nlr-stat-label { font-size:0.75rem; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:0.3px; }
+        .nlr-stat-value { font-size:1.6rem; font-weight:800; color:var(--brand); line-height:1.2; margin-top:2px; }
+        .nlr-stat-warn { border-left-color:#dc2626; }
+        .nlr-stat-warn .nlr-stat-value { color:#b91c1c; }
+        .nlr-stat-eng { flex:1; min-width:260px; border-left-color:#0891b2; }
+        .nlr-eng-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+        .nlr-eng-chip { display:inline-flex; align-items:center; border:1px solid #a5f3fc; border-radius:999px; overflow:hidden; font-size:0.8rem; background:#ecfeff; }
+        .nlr-eng-chip span { padding:3px 10px; color:#155e75; font-weight:600; }
+        .nlr-eng-chip strong { padding:3px 10px; background:#0891b2; color:#fff; }
+        .nlr-download { width:auto; align-self:center; background:#fff; color:#15803d; border:2px solid #15803d; border-radius:8px; padding:10px 18px; font-weight:800; font-size:0.85rem; cursor:pointer; }
+        .nlr-download:hover { background:#15803d; color:#fff; }
+        .nlr-download:disabled { opacity:0.6; cursor:wait; }
+        .nlr-table { width:100%; min-width:1150px; border-collapse:collapse; font-size:0.85rem; background:#fff; }
+        .nlr-table th, .nlr-table td { border:2px solid #94a3b8; padding:8px 10px; vertical-align:middle; }
+        .nlr-table th { background:#e2e8f0; text-align:left; font-size:0.92rem; font-weight:800; color:#1e293b; }
+        .nlr-row { cursor:pointer; }
+        .nlr-row:hover > td { background:#f8fafc; }
+        .nlr-row.open > td { background:var(--highlight-bg); }
+        .nlr-sub { color:var(--muted); font-size:0.75rem; margin-top:2px; }
+        .nlr-none { color:var(--muted); font-style:italic; }
+        .nlr-status { display:inline-block; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; border-radius:999px; padding:2px 10px; font-size:0.78rem; font-weight:700; }
+        .nlr-summary { font-size:0.8rem; line-height:1.45; }
+        .nlr-plan-item { border-left:3px solid #94a3b8; background:#f8fafc; border-radius:4px; padding:4px 8px; margin:4px 0; }
+        .nlr-plan-name { font-weight:700; font-size:0.8rem; color:#1e293b; }
+        .nlr-plan-state { display:flex; align-items:center; gap:6px; margin-top:2px; font-size:0.74rem; }
+        .nlr-plan-badge { font-weight:800; border-radius:999px; padding:0 8px; font-size:0.68rem; text-transform:uppercase; }
+        .nlr-plan-when { color:var(--muted); }
+        .nlr-st-done { border-left-color:#16a34a; } .nlr-st-done .nlr-plan-badge { background:#dcfce7; color:#15803d; }
+        .nlr-st-overdue { border-left-color:#dc2626; background:#fef2f2; } .nlr-st-overdue .nlr-plan-badge { background:#fee2e2; color:#b91c1c; } .nlr-st-overdue .nlr-plan-when { color:#b91c1c; }
+        .nlr-st-open { border-left-color:#d97706; } .nlr-st-open .nlr-plan-badge { background:#fef3c7; color:#b45309; }
+        .nlr-st-none .nlr-plan-badge { background:#e2e8f0; color:#475569; }
+        .nlr-act { border:1px solid var(--border); border-radius:6px; overflow:hidden; font-size:0.8rem; }
+        .nlr-act-row { display:flex; justify-content:space-between; gap:8px; padding:4px 8px; border-bottom:1px solid var(--border); }
+        .nlr-act-row:last-of-type { border-bottom:none; }
+        .nlr-act-row strong { color:var(--brand); }
+        .nlr-act-last { background:#f8fafc; border-top:1px solid var(--border); padding:4px 8px; color:var(--muted); font-size:0.74rem; }
+        .nlr-exp { text-align:center; color:var(--brand); font-size:1.2rem; font-weight:800; }
+        .nlr-lead-cell { padding:10px !important; background:var(--highlight-bg); }
       </style>
       <div id="lms-report-filters" style="display:none; margin-bottom:16px;">
         <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Created Between</label>
@@ -5817,6 +5858,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button type="button" class="nlr-quick-btn" data-range="yesterday" onclick="nlrQuickRange('yesterday')">Yesterday</button>
             <button type="button" class="nlr-quick-btn" data-range="week" onclick="nlrQuickRange('week')">This Week</button>
             <button type="button" class="nlr-quick-btn" data-range="month" onclick="nlrQuickRange('month')">This Month</button>
+            <button type="button" class="nlr-quick-btn" data-range="all" onclick="nlrQuickRange('all')">All Time</button>
           </div>
         </div>
       </div>
@@ -5836,7 +5878,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
 
       <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>
-      <button class="btn btn-sub" id="nlr-run-btn" style="display:none;" onclick="runNewLeadsReport()">Run New Leads Report</button>
+      <button class="btn btn-sub" id="nlr-run-btn" style="display:none;" onclick="runNewLeadsReport()">Run Leads Search</button>
       <div id="nlr-output" style="display:none;"></div>
       <div id="lead-matrix-active-filters-display" style="display:none; font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-top:8px;"></div>
     </div>
