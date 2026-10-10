@@ -23,26 +23,8 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
     const data = await apFetch({ action: 'fetchConsumablePurchaseRequests' });
     if (!data.success) throw new Error(data.error || 'Could not load requests.');
     const pending = data.pending || [];
-    const recent = data.recent || [];
     feed.innerHTML = `
-      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}
-      ${recent.length ? `
-        <div style="margin-top:18px; font-weight:800; color:var(--brand);">Recently actioned</div>
-        <div style="overflow-x:auto;"><table class="grid-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:760px;">
-          <thead><tr style="background:#f8fafc;">
-            <th style="padding:6px; text-align:left;">Request</th><th style="padding:6px; text-align:left;">Material</th>
-            <th style="padding:6px; text-align:left;">For</th><th style="padding:6px; text-align:center;">Requested</th>
-            <th style="padding:6px; text-align:center;">Approved</th><th style="padding:6px; text-align:center;">Status</th>
-            <th style="padding:6px; text-align:left;">By</th></tr></thead>
-          <tbody>${recent.map(r => `<tr>
-            <td style="padding:6px;">#${r.requestId}</td>
-            <td style="padding:6px;">${escapeHtml(r.materialName || r.itemCode)}</td>
-            <td style="padding:6px;">${escapeHtml(r.department)} · ${escapeHtml(cprTargetLabel(r))}</td>
-            <td style="padding:6px; text-align:center;">${fmtQty(r.requestedQty)} ${escapeHtml(r.unit || '')}</td>
-            <td style="padding:6px; text-align:center;">${r.approvedQty != null ? fmtQty(r.approvedQty) : '—'}</td>
-            <td style="padding:6px; text-align:center; font-weight:700; color:${r.status === 'Rejected' ? '#b91c1c' : '#15803d'};">${escapeHtml(r.status)}${r.orderedPoNo ? ' · ' + escapeHtml(r.orderedPoNo) : ''}</td>
-            <td style="padding:6px;">${escapeHtml(r.actionedBy || '')}${r.actionedAt ? '<br><span style="color:var(--muted); font-size:0.78rem;">' + escapeHtml(formatOrdinalDateTime(r.actionedAt)) + '</span>' : ''}</td>
-          </tr>`).join('')}</tbody></table></div>` : ''}`;
+      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}`;
   } catch (e) {
     if (e.message === 'SESSION_EXPIRED') return;
     feed.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(e.message)}</div>`;
