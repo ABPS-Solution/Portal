@@ -1820,7 +1820,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName;
-          opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
+          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo" : r.materialName;
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
@@ -1992,7 +1992,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
             opt.value = r.materialName;
-            opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
+            opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo" : r.materialName;
             if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }

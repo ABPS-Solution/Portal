@@ -198,7 +198,7 @@ function renderMaterialListByType(materials) {
       card.onclick = () => showMaterialProjectBreakdownModal(item.itemCode, item.materialName, item.unit, item.totalPurchaseQty);
       card.innerHTML = `
         <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
-          ${item.isConsumable ? '<span style="font-size:0.62rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:1px 6px; border-radius:999px; margin-right:4px;">CONSUMABLE</span>' : ''}${escapeHtml(item.materialName)}
+          ${item.isConsumable ? '<span style="font-size:0.62rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:1px 6px; border-radius:999px; margin-right:4px;">PRODUCTION MEMO</span>' : ''}${escapeHtml(item.materialName)}
         </div>
         <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">

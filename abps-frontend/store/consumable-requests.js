@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-// store/consumable-requests.js — Approve Consumable Purchase Requests
+// store/consumable-requests.js — Approve Production Memo Purchase Requests
 // (perm_approve_consumable_purchase, migration 238), plus the Service
 // consumable requests section on List of Material to Raise Purchase Order.
 // Backend: routes/consumables.js.
@@ -25,7 +25,7 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
     const pending = data.pending || [];
     const recent = data.recent || [];
     feed.innerHTML = `
-      ${pending.length ? pending.map(cprRenderPendingCard).join('') : '<div style="color:var(--muted); padding:12px;">No consumable purchase requests are waiting.</div>'}
+      ${pending.length ? pending.map(cprRenderPendingCard).join('') : '<div style="color:var(--muted); padding:12px;">No Production Memo purchase requests are waiting.</div>'}
       ${recent.length ? `
         <div style="margin-top:18px; font-weight:800; color:var(--brand);">Recently actioned</div>
         <div style="overflow-x:auto;"><table class="grid-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:760px;">
@@ -114,7 +114,7 @@ async function renderServiceConsumableRequestsToOrder(mountId) {
     const reqs = (data && data.success && data.requests) || [];
     if (!reqs.length) { mount.innerHTML = ''; return; }
     mount.innerHTML = `
-      <div style="margin:18px 0 8px; font-weight:800; color:#7c3aed;">Service consumable requests (approved, to order)</div>
+      <div style="margin:18px 0 8px; font-weight:800; color:#7c3aed;">Service Production Memo requests (approved, to order)</div>
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">These have no BOQ, so raise an RM PO for the item as usual, then enter its PO number here to close the request. The stock arrives as free stock.</div>
       <div style="overflow-x:auto;"><table class="grid-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:760px;">
         <thead><tr style="background:#f8fafc;">

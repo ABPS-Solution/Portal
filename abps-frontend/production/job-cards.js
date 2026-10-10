@@ -306,7 +306,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:12px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text); text-align:left; line-height:1.6;">
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <span style="font-size:0.78rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:999px;">CONSUMABLE</span>
+            <span style="font-size:0.78rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:999px;">PRODUCTION MEMO</span>
             Raw Material Store Total Stock Count:
             <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px;">${fmtQty(totalStockCount)} ${escapeHtml(unitToken)}</span>
           </div>
