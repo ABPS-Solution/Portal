@@ -257,32 +257,7 @@ async function submitMaterialRequestTicketToBackend() {
       
       // FIXED: Removed the 5-second automatic timeout return redirect entirely
       materialRequestPanelContainer.style.padding = "20px";
-      materialRequestPanelContainer.innerHTML = `
-        <div style="background: #dcfce7; border: 1px solid #15803d; border-left: 4px solid #15803d; color: #15803d; padding: 20px; border-radius: var(--radius); text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-          <div>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 6px; font-weight: 700;">${result.ticketId ? `Success! Material Issue Ticket Created${outwardPurposeVal ? ` for ${outwardPurposeVal}` : ""}.` : "Request Submitted for Approval."}</h3>
-            ${outwardPurposeVal ? `<div style="font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;">Purpose: <strong>${escapeHtml(outwardPurposeVal)}</strong></div>` : ""}
-            <div style="font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-              ${result.ticketId ? `Assigned Reference Tracking ID: 
-              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #15803d; color: #111827; margin-left: 4px; font-size: 1rem;">
-                ${result.ticketId}
-              </span>` : ""}
-            </div>
-            ${result.excessTicketId ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#b45309;">Excess Material Request
-              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #b45309; color: #111827; margin-left: 4px;">${escapeHtml(result.excessTicketId)}</span>
-              is waiting in Approve Excess Material Request.</div>` : ""}
-            ${(result.memoRequestIds || []).length ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#5b21b6;">Production Memo for Purchase request${result.memoRequestIds.length > 1 ? "s" : ""}
-              ${result.memoRequestIds.map(id => `<span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #5b21b6; color: #111827; margin-left: 4px;">#${escapeHtml(String(id))}</span>`).join("")}
-              waiting in Approve Production Memo Purchase Requests.</div>` : ""}
-            ${result.changeTicketId ? `<div style="font-size: 0.92rem; font-weight: 600; margin-top: 8px; color:#b45309;">Material Change Request
-              <span style="font-family: monospace; font-weight: 800; background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #b45309; color: #111827; margin-left: 4px;">${escapeHtml(result.changeTicketId)}</span>
-              is waiting for approval in Approve Production Material Change Request.</div>` : ""}
-          </div>
-          <button class="nav-btn-styled" style="background: #15803d; color: white; padding: 10px 20px; font-weight: 700; font-size: 0.85rem;" onclick="resetStoreCreateTicketToInitialState()">
-            + Create New Ticket
-          </button>
-        </div>
-      `;
+      materialRequestPanelContainer.innerHTML = ticketSubmitSuccessHtml(result, outwardPurposeVal);
     } 
     else {
       if (feedbackBanner) {
@@ -847,11 +822,13 @@ function renderDraftBasketTableViewportRows() {
     tr.innerHTML = `
       <td style="font-weight:600; padding:10px 8px;">
         ${escapeHtml(rowItem.materialName)} 
-        ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">⚠️ EXCEEDS JOB CARD LIMIT</span>' : ''}
-        ${Number(rowItem.memoQty) > 0 ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase: ${fmtQty(rowItem.memoQty)}</span>` : ''}
+        ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">EXCEEDS JOB CARD LIMIT</span>' : ''}
+        ${Number(rowItem.memoQty) > 0 ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase</span>` : ''}
       </td>
       <td style="text-align:center; font-weight:700; font-size:0.95rem;">${rowItem.unitType}</td>
-      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${fmtQty(rowItem.quantity)}${Number(rowItem.memoQty) > 0 ? ` <span style="color:#5b21b6;">(${fmtQty(rowItem.memoQty)})</span>` : ""}</td>
+      <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${Number(rowItem.memoQty) > 0
+        ? `<span style="font-family:inherit; font-size:0.9rem; font-weight:600;">${fmtQty(rowItem.quantity)} Available + <span style="color:#5b21b6;">${fmtQty(rowItem.memoQty)} to Purchase</span> = <strong>${fmtQty(Number(rowItem.quantity) + Number(rowItem.memoQty))}</strong></span>`
+        : fmtQty(rowItem.quantity)}</td>
       <td style="text-align:center;">
         <button class="nav-btn-styled" onclick="removeSingleBasketItemLineAtIndex(${arrayIdx})" style="background:#e53e3e; padding:2px 8px; font-size:0.75rem;">Delete</button>
       </td>
@@ -2554,4 +2531,31 @@ function ticketOpenConsumableRequest(itemCode, materialName, unit) {
     renderDraftBasketTableViewportRows();
     cmitDraftSaveSoon();
   };
+}
+
+// Success panel after Generate Material Ticket: one line per thing raised,
+// each saying where it now waits.
+function ticketSubmitSuccessHtml(result, outwardPurposeVal) {
+  const lines = [];
+  const line = (color, bg, label, ids, where) => lines.push(`
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 12px; background:#fff; border:1px solid var(--border); border-left:4px solid ${color}; border-radius:6px;">
+      <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; background:${bg}; color:${color}; padding:3px 8px; border-radius:999px; white-space:nowrap;">${label}</span>
+      <span style="display:flex; gap:6px; flex-wrap:wrap;">${ids.map(id => `<span style="font-family:monospace; font-weight:800; font-size:0.95rem; color:#111827; background:#f8fafc; border:1px solid var(--border); padding:2px 8px; border-radius:4px;">${escapeHtml(String(id))}</span>`).join("")}</span>
+      <span style="font-size:0.85rem; color:#475569;">${where}</span>
+    </div>`);
+  if (result.ticketId) line("#15803d", "#dcfce7", "Material Issue Ticket", [result.ticketId], "Waiting in <strong>Approve Material Issue Tickets</strong> for Store to hand over.");
+  if (result.excessTicketId) line("#b45309", "#fef3c7", "Excess Material Request", [result.excessTicketId], "Waiting in <strong>Approve Excess Material Request</strong>.");
+  if (result.changeTicketId) line("#b45309", "#fef3c7", "Material Change Request", [result.changeTicketId], "Waiting in <strong>Approve Production Material Change Request</strong>.");
+  if ((result.memoRequestIds || []).length) line("#5b21b6", "#ede9fe", "Production Memo for Purchase", result.memoRequestIds.map(id => "#" + id), "Waiting in <strong>Approve Production Memo Purchase Requests</strong>.");
+  return `
+    <div style="background:var(--card, #fff); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:10px 0;">
+      <div style="background:#15803d; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+          <div style="font-size:1.05rem; font-weight:800;">${result.ticketId ? "Material Issue Ticket created" : "Sent for approval"}</div>
+          <div style="font-size:0.85rem; opacity:0.9; margin-top:2px;">${lines.length} item${lines.length === 1 ? "" : "s"} raised${outwardPurposeVal ? ` · Purpose: ${escapeHtml(outwardPurposeVal)}` : ""}</div>
+        </div>
+        <button class="nav-btn-styled" style="width:auto; background:#fff; color:#15803d; padding:9px 18px; font-weight:800; font-size:0.85rem;" onclick="resetStoreCreateTicketToInitialState()">+ Create New Ticket</button>
+      </div>
+      <div style="padding:14px 18px; display:flex; flex-direction:column; gap:8px; background:#f0fdf4;">${lines.join("")}</div>
+    </div>`;
 }
