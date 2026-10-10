@@ -90,9 +90,10 @@ function nlrFilterText(f) {
   return parts.join(" | ");
 }
 
-async function runNewLeadsReport() {
+// opts.allTime: no dates (used by Daily Timeline to find an engineer's leads).
+async function runNewLeadsReport(opts) {
   const f = nlrReadFilters();
-  if (!f.startDate || !f.endDate) { alert("Please choose a From and a To date."); return; }
+  if (!(opts && opts.allTime) && (!f.startDate || !f.endDate)) { alert("Please choose a From and a To date."); return; }
   const btn = document.getElementById("nlr-run-btn");
   const out = document.getElementById("nlr-output");
   btn.classList.add("loading"); btn.textContent = "Loading...";

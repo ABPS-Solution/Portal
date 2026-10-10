@@ -560,7 +560,7 @@ function dtlApplyLeadEngineerFilterAndSearch(it) {
   dtlWaitForCheckboxes('input[name="leadMatrixEngineerFilter"]', () => {
     document.querySelectorAll('input[name="leadMatrixEngineerFilter"]').forEach(cb => { cb.checked = !!it.ownerKey && cb.value === it.ownerKey; });
     document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => { cb.checked = false; });
-    if (it.ownerKey && typeof executeLeadMatrixFilterSearch === 'function') executeLeadMatrixFilterSearch();
+    if (it.ownerKey && typeof runNewLeadsReport === 'function') { nlrQuickRange('all'); runNewLeadsReport({ allTime: true }); }
   });
 }
 
