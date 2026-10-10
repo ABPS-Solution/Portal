@@ -137,6 +137,7 @@ function tvcRenderCard(v) {
         <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:14px; align-items:center; flex-wrap:wrap;">
           <div style="font-weight:700;">Total Voucher Actual Amount: <span id="tvc-actual-total-${v.voucherId}">${formatINRComma(v.totalAmount)}</span></div>
           <div style="font-weight:700;">Total Voucher Amount Difference: <span id="tvc-diff-${v.voucherId}">0</span></div>
+          <button class="nav-btn-styled" onclick="tvcDeleteVoucher(${v.voucherId}, ${jsArg(v.voucherNumber)})" style="background:#fee2e2; color:#b91c1c;">Delete</button>
           <button class="nav-btn-styled" onclick="submitTourVoucherCheck(${v.voucherId})">Submit</button>
         </div>
       </div>
@@ -274,6 +275,17 @@ function tvcRecalcTotals(voucherId) {
   });
   document.getElementById(`tvc-actual-total-${voucherId}`).textContent = formatINRComma(actualTotal);
   document.getElementById(`tvc-diff-${voucherId}`).textContent = formatINRComma(claimedTotal - actualTotal);
+}
+
+async function tvcDeleteVoucher(voucherId, voucherNumber) {
+  if (!await abpsConfirm("Delete voucher " + voucherNumber + "? This cannot be undone. The employee will need to submit it again.")) return;
+  showBlockingOverlay("Deleting voucher...");
+  try {
+    const data = await acFetch("deleteTourVoucher", { voucherId });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    loadVoucherCheckQueue();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }
 
 async function submitTourVoucherCheck(voucherId) {

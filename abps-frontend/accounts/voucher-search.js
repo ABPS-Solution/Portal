@@ -453,7 +453,7 @@ function tvsRenderCard(v) {
             </div>
             <span style="display:flex; align-items:center; gap:8px;">
               <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
-              ${isAdminUser && v.status === 'Unchecked' ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : ''}
+              ${v.status === 'Unchecked' ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : ''}
             </span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
