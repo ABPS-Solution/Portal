@@ -5823,7 +5823,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .nlr-table { width:100%; min-width:1150px; border-collapse:collapse; font-size:0.85rem; background:#fff; }
         .nlr-table th, .nlr-table td { border:2px solid #94a3b8; padding:8px 10px; vertical-align:middle; }
         .nlr-table th { background:#e2e8f0; text-align:left; font-size:0.92rem; font-weight:800; color:#1e293b; }
-        .nlr-row { cursor:pointer; }
+        .nlr-table th.nlr-center { text-align:center; }
+        .nlr-exp-btn { width:auto; border:1px solid var(--border); background:#fff; color:var(--brand); border-radius:6px; font-size:1rem; font-weight:800; padding:2px 8px; cursor:pointer; }
+        .nlr-exp-btn:hover { background:var(--highlight-bg); }
         .nlr-row:hover > td { background:#f8fafc; }
         .nlr-row.open > td { background:var(--highlight-bg); }
         .nlr-sub { color:var(--muted); font-size:0.75rem; margin-top:2px; }
@@ -5858,7 +5860,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <button type="button" class="nlr-quick-btn" data-range="yesterday" onclick="nlrQuickRange('yesterday')">Yesterday</button>
             <button type="button" class="nlr-quick-btn" data-range="week" onclick="nlrQuickRange('week')">This Week</button>
             <button type="button" class="nlr-quick-btn" data-range="month" onclick="nlrQuickRange('month')">This Month</button>
-            <button type="button" class="nlr-quick-btn" data-range="all" onclick="nlrQuickRange('all')">All Time</button>
+            <button type="button" class="nlr-quick-btn" data-range="quarter" onclick="nlrQuickRange('quarter')">This Quarter</button>
           </div>
         </div>
       </div>

@@ -47,6 +47,9 @@ function nlrQuickRange(kind) {
     if (kind === 'week') {
       const dow = d.getUTCDay(); // Sunday = 0; week starts Monday
       from = new Date(d.getTime() - (dow === 0 ? 6 : dow - 1) * 86400000).toISOString().slice(0, 10);
+    } else if (kind === 'quarter') {
+      const m = Number(today.slice(5, 7));
+      from = today.slice(0, 5) + String(m - ((m - 1) % 3)).padStart(2, "0") + "-01";
     } else if (kind === 'month') {
       from = today.slice(0, 8) + "01";
     } else if (kind === 'yesterday') {
@@ -89,11 +92,7 @@ function nlrFilterText(f) {
 
 async function runNewLeadsReport() {
   const f = nlrReadFilters();
-  if (!!f.startDate !== !!f.endDate) { alert("Please choose both a From and a To date, or click All Time."); return; }
-  if (!f.startDate && !f.engineers.length && !f.statuses.length) {
-    alert("For All Time, please select at least one Engineer or Status.");
-    return;
-  }
+  if (!f.startDate || !f.endDate) { alert("Please choose a From and a To date."); return; }
   const btn = document.getElementById("nlr-run-btn");
   const out = document.getElementById("nlr-output");
   btn.classList.add("loading"); btn.textContent = "Loading...";
@@ -174,7 +173,7 @@ function nlrRenderReport(data, f) {
     const contact = nlrContactName(r.contactPerson);
     const id = escapeHtml(r.leadId);
     return `
-    <tr class="nlr-row" id="nlr-row-${id}" onclick="nlrToggleLead(${jsArg(r.leadId)})" title="Click to open this lead">
+    <tr class="nlr-row" id="nlr-row-${id}">
       <td>${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
       <td><span class="nlr-status">${escapeHtml(r.status)}</span></td>
       <td><strong>${escapeHtml(r.companyName)}</strong>${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}</td>
@@ -183,17 +182,17 @@ function nlrRenderReport(data, f) {
       <td>${nlrPlanHtml(r.actionPlan)}</td>
       <td>${nlrActivityHtml(r)}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
-      <td class="nlr-exp"><span id="nlr-exp-${id}">▾</span></td>
+      <td class="nlr-exp"><button type="button" class="nlr-exp-btn" id="nlr-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)})">▾</button></td>
     </tr>
     <tr id="nlr-lead-row-${id}" style="display:none;"><td colspan="9" class="nlr-lead-cell"><div id="nlr-lead-box-${id}"></div></td></tr>`;
   }).join("");
   return filtering + strip + `
     <div style="overflow-x:auto;">
       <table class="nlr-table">
-        <colgroup><col style="width:9%"><col style="width:8%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:17%"><col style="width:11%"><col style="width:19%"><col style="width:3%"></colgroup>
+        <colgroup><col style="width:8%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:17%"><col style="width:13%"><col style="width:17%"><col style="width:3%"></colgroup>
         <thead><tr>
-          <th>Created Date</th><th>Status</th><th>Company Name</th><th>Contact Person</th>
-          <th>ABPS Engineer</th><th>Action Plan</th><th>Activity</th><th>Summary</th><th></th>
+          <th>Created Date</th><th class="nlr-center">Status</th><th>Company Name</th><th>Contact Person</th>
+          <th>ABPS Engineer</th><th>Action Plan</th><th class="nlr-center">Activity</th><th>Summary</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -201,8 +200,8 @@ function nlrRenderReport(data, f) {
 }
 
 // Opens the lead's full View Details right under its row. The row itself is
-// the header, so the lead card's own header is hidden (its Merge / Delete
-// buttons are kept, at the top of the opened area).
+// the header, so the lead card's own header (with Merge / Delete) is hidden.
+// Only the expand button opens / closes it.
 async function nlrToggleLead(leadId) {
   const row = document.getElementById(`nlr-lead-row-${leadId}`);
   const box = document.getElementById(`nlr-lead-box-${leadId}`);
@@ -232,16 +231,7 @@ async function nlrToggleLead(leadId) {
     const ref = lead["Lead ID"];
     const wrapper = document.getElementById(`contact-parent-wrapper-${ref}`);
     const header = wrapper?.querySelector(".contact-summary-header-row");
-    if (header) {
-      const actions = header.querySelector(".directory-btn-actions-block");
-      document.getElementById(`expand-trigger-${ref}`)?.remove();
-      header.style.display = "none";
-      if (actions && actions.children.length) {
-        actions.style.justifyContent = "flex-end";
-        actions.style.marginBottom = "8px";
-        wrapper.insertBefore(actions, header);
-      }
-    }
+    if (header) header.style.display = "none";
     toggleContactExpansionView(ref, encodeURIComponent(JSON.stringify(lead)));
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED") box.innerHTML = `<div style="color:var(--warn); font-weight:700; padding:10px;">${escapeHtml(e.message)}</div>`;
