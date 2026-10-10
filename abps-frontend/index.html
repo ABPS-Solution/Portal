@@ -5224,8 +5224,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-sub">Technical Discussion / Inquire Received / Offer Sent</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Leads With Zero Follow-Up</div>
-            <div class="dd-stat-val" id="md-s-zerofollowup" style="color:#b91c1c;">—</div>
+            <div class="dd-stat-label">Leads With No Open Task</div>
+            <div class="dd-stat-val" id="md-s-noopentask" style="color:#b91c1c;">—</div>
           </div>
         </div>
 
@@ -5743,6 +5743,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="workspace-searchCompany" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search by Company Name</h2>
+      <div id="cdup-admin-wrap" style="display:none; margin-bottom:14px;">
+        <button type="button" id="cdup-toggle-btn" class="nav-btn-styled" style="width:auto; padding:6px 16px; background:#475569;" onclick="cdupToggle()">Find Duplicate Companies</button>
+        <div id="cdup-output" style="display:none;"></div>
+      </div>
       <div id="company-dropdown-selector-block">
         <label class="field-label">Select Company Name</label>
         <div style="margin-bottom: 6px;">
@@ -6203,30 +6207,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
 <div id="reusable-child-modules-template" style="display:none;">
   <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; position:relative;">
-    <button class="nav-btn-styled trigger-fup-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Log Follow-Up</button>
-    <button class="nav-btn-styled trigger-fup-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
-    <span class="fup-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:1.15rem;">Logging Follow-up</span>
-  </div>
-  
-  <div class="template-fup-form" style="display:none; grid-template-columns:repeat(4,1fr); gap:8px; background:#f8fafc; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
-    <input type="hidden" class="fup-is-edit-flag" value="false">
-    <input type="hidden" class="fup-leadid-input">
-    <input type="hidden" class="fup-num-input">
-    <div><label class="field-label">Interaction Outcome</label><select class="fup-outcome-select"><option value="">— Select —</option><option value="Positive">Positive</option><option value="Neutral">Neutral</option><option value="Negative">Negative</option><option value="No Response">No Response</option></select></div>
-    <div><label class="field-label">Interaction Mode</label><select class="fup-mode-select"><option value="">— Select —</option><option value="Phone Call">Phone Call</option><option value="Email">Email</option><option value="WhatsApp">WhatsApp</option><option value="In-Person Visit">In-Person Visit</option><option value="Video Call">Video Call</option></select></div>
-    <div><label class="field-label">Objection Raised</label><input type="text" class="fup-objection-input" placeholder="e.g. Price, Timeline, Already has a supplier..." /></div>
-    <div><label class="field-label">Next Action Type</label><input type="text" class="fup-nextaction-input" placeholder="e.g. Send Offer, Site Visit..." /></div>
-    <div style="grid-column:span 4;"><label class="field-label">Interaction Notes *</label><textarea class="fup-notes-input" style="min-height:50px;"></textarea></div>
-    <div style="grid-column:span 4; display:flex; justify-content:flex-end;">
-      <button class="nav-btn-styled commit-fup-btn-trigger" style="background:var(--accent); padding:8px 20px;">Save Follow-Up</button>
-    </div>
-  </div>
-
-  <div class="template-timeline-box" style="margin-bottom:12px;"></div>
-
-  <div style="height:3px; background:var(--border); margin:8px 0;"></div>
-  
-  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; position:relative;">
     <button class="nav-btn-styled trigger-task-open" style="background:var(--accent); width:auto; padding:6px 20px;">+ Add Task</button>
     <button class="nav-btn-styled trigger-task-close" style="display:none; background:#718096; width:auto; padding:6px 20px;">Cancel</button>
     <span class="task-status-label" style="display:none; position:absolute; left:50%; transform:translateX(-50%); font-weight:700; color:var(--brand); font-size:1.15rem;">Creating Task</span>
@@ -6274,6 +6254,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="project/email-inboxes.js"></script>
 <script src="marketing/leads.js"></script>
 <script src="marketing/new-leads-report.js"></script>
+<script src="marketing/company-duplicates.js"></script>
 <script src="marketing/companies.js"></script>
 <script src="marketing/tasks-followups.js"></script>
 <script src="marketing/email-processing.js"></script>

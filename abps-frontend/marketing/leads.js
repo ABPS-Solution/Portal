@@ -396,7 +396,7 @@ async function triggerCityStateQuerySearchExecution() {
           </div>
         `;
         
-        globalFollowUpsCacheMap = data.followups; 
+        
         globalTasksCacheMap = data.tasks;
         buildMultiContactDirectoryInterface(data.leads, "");
         
@@ -793,41 +793,12 @@ function toggleContactExpansionView(leadRef, encodedLeadMap) {
     setupIsolatedModuleTriggersAndActions(leadRef, templateClone);
     mountPoint.appendChild(templateClone);
     
-    currentFollowUpCount = globalFollowUpsCacheMap[leadRef] ? globalFollowUpsCacheMap[leadRef].length : 0;
-    renderIsolatedFollowUpTimeline(leadRef, globalFollowUpsCacheMap[leadRef] || [], templateClone);
     renderIsolatedTaskItemsList(leadRef, globalTasksCacheMap[leadRef] || [], templateClone);
     renderIsolatedDocumentInfoSection(leadRef, leadMap["Lead ID"] || leadRef, templateClone);
   }
 }
 
 function setupIsolatedModuleTriggersAndActions(leadRef, nodeScope) {
-  const fupForm = nodeScope.querySelector(".template-fup-form");
-  const fupOpen = nodeScope.querySelector(".trigger-fup-open");
-  const fupClose = nodeScope.querySelector(".trigger-fup-close");
-
-  fupOpen.onclick = function() {
-    fupForm.querySelector(".fup-is-edit-flag").value = "false";
-    fupForm.querySelector(".fup-num-input").value = currentFollowUpCount + 1;
-    fupForm.querySelector(".fup-leadid-input").value = leadRef;
-    // Full reset — this same form node is reused for both "+ Log
-    // Follow-Up" and Edit, so anything an Edit populated (Outcome, Mode,
-    // Next Action Type, Objection Raised) was otherwise still sitting
-    // there on a fresh "+ Log Follow-Up" open.
-    fupForm.querySelector(".fup-notes-input").value = "";
-    fupForm.querySelector(".fup-outcome-select").value = "";
-    fupForm.querySelector(".fup-mode-select").value = "";
-    fupForm.querySelector(".fup-nextaction-input").value = "";
-    fupForm.querySelector(".fup-objection-input").value = "";
-    fupForm.style.display = "grid"; fupOpen.style.display = "none"; fupClose.style.display = "inline-flex";
-    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) { fupLabel.textContent = "Logging Follow-up"; fupLabel.style.display = "inline"; }
-  };
-  
-  fupClose.onclick = function() {
-    fupForm.style.display = "none"; fupOpen.style.display = "inline-flex"; fupClose.style.display = "none";
-    const fupLabel = nodeScope.querySelector(".fup-status-label"); if (fupLabel) fupLabel.style.display = "none";
-  };
-  nodeScope.querySelector(".commit-fup-btn-trigger").onclick = function() { commitIsolatedFollowUpItem(leadRef, nodeScope); };
-
   const taskForm = nodeScope.querySelector(".template-task-form");
   const taskOpen = nodeScope.querySelector(".trigger-task-open");
   const taskClose = nodeScope.querySelector(".trigger-task-close");
@@ -1641,7 +1612,7 @@ async function submitLead() {
             contactName: targetPersonNameParam 
           });
           if (refreshData.success) {
-            globalFollowUpsCacheMap = refreshData.followups; 
+            
             globalTasksCacheMap = refreshData.tasks;
             
             const canvasNode = document.getElementById("step2-inline-interaction-canvas");
@@ -1713,7 +1684,7 @@ async function triggerQualificationSearch() {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Types of Customer: ${selected.join(" and ")}</div>`;
             document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-            globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
+            globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
             canvasLastParentWorkspaceId = "workspace-searchQualification";
             canvas.style.display = "block"; document.getElementById("workspace-searchQualification").appendChild(canvas);
@@ -1733,7 +1704,7 @@ async function triggerStatusSearch() {
             const canvas = document.getElementById("step2-inline-interaction-canvas");
             document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Status: ${statusVal}</div>`;
             document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-            globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
+            globalTasksCacheMap = data.tasks;
             buildMultiContactDirectoryInterface(data.leads, "");
             canvasLastParentWorkspaceId = "workspace-searchStatus";
             canvas.style.display = "block"; document.getElementById("workspace-searchStatus").appendChild(canvas);
@@ -1758,7 +1729,7 @@ async function triggerEngineerSearch() {
           const canvas = document.getElementById("step2-inline-interaction-canvas");
           document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar" style="width: 100%;">Engineer: ${escapeHtml(engDisplayName)}</div>`;
           document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-          globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
+          globalTasksCacheMap = data.tasks;
           buildMultiContactDirectoryInterface(data.leads, "");
           canvasLastParentWorkspaceId = "workspace-searchEngineer";
           canvas.style.display = "block"; document.getElementById("workspace-searchEngineer").appendChild(canvas);
@@ -1820,7 +1791,7 @@ async function executeLeadMatrixFilterSearch() {
     if (data.success) {
       const canvas = document.getElementById("step2-inline-interaction-canvas");
       
-      globalFollowUpsCacheMap = data.followups;
+      
       globalTasksCacheMap = data.tasks;
 
       if (data.leads.length === 0) {
@@ -1883,7 +1854,10 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   if (!mountEl) return;
   const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
-  if (!formTemplateSource) return;
+  if (!formTemplateSource) { alert("The New Lead form could not be opened. Please refresh the page."); return; }
+  if (!window._sharedLeadFormHome && !formTemplateSource.closest('[id^="email-nested-inline-database-workspace-anchor-"]')) {
+    window._sharedLeadFormHome = { parent: formTemplateSource.parentNode, next: formTemplateSource.nextSibling };
+  }
 
   formTemplateSource.style.display = "block";
   mountEl.appendChild(formTemplateSource);
@@ -1976,17 +1950,39 @@ function openEmailLeadCreateEntryFormUnderExisting(index) {
   });
 }
 
+// The New Lead form (#step2-new-entry-dropdown) is one shared element that
+// gets moved into whichever card is using it. Clearing a card with
+// innerHTML while it is inside destroys it; this puts it back first.
+function parkSharedLeadForm() {
+  const form = document.getElementById("step2-new-entry-dropdown");
+  if (!form) return;
+  const home = window._sharedLeadFormHome;
+  if (home && home.parent && document.body.contains(home.parent)) {
+    if (form.parentNode !== home.parent) home.parent.insertBefore(form, home.next && home.next.parentNode === home.parent ? home.next : null);
+  } else if (form.closest('[id^="email-nested-inline-database-workspace-anchor-"], [id^="email-lead-wrapper-node-"]')) {
+    document.body.appendChild(form);
+  }
+  form.style.display = "none";
+}
+
 async function triggerEmailLeadDatabaseActionPipeline(index) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   const nestedWorkspace = document.getElementById(`email-nested-inline-database-workspace-anchor-${index}`);
   const actionBtn = document.getElementById(`email-form-toggle-btn-text-${index}`);
   if (!nestedWorkspace || !actionBtn) return;
+  if (!mailObject) {
+    // The list changed under this card (e.g. another email was just filed); redraw it.
+    if (typeof applyEmailLeadsCompanySearchAndRender === "function") applyEmailLeadsCompanySearchAndRender();
+    return;
+  }
 
   // Toggle: if already open, collapse
   if (nestedWorkspace.style.display === "block") {
+    parkSharedLeadForm();
+    window._emailLeadFormCancelCleanup = null; activeEmailLeadContextIndex = null;
     nestedWorkspace.style.display = "none";
     nestedWorkspace.innerHTML = "";
-    actionBtn.textContent = "Add in CRM / Log Follow-up";
+    actionBtn.textContent = "Add in CRM / Create Task";
     actionBtn.style.display = "inline-flex";
     actionBtn.disabled = false;
     // Ensure global buttons stay hidden — email leads never use them
@@ -2000,10 +1996,14 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   actionBtn.textContent = "Checking Database...";
 
   try {
+    // Another spelling of a company we already have? (lib/companyMatch.js)
+    const resolvedCompany = await resolveCompanyNameForSearch(mailObject.extractedCompany, {
+      email: mailObject.senderEmail, city: mailObject.extractedCity, contactName: mailObject.extractedContactName });
+    if (resolvedCompany && resolvedCompany !== mailObject.extractedCompany) mailObject.matchedCompanyName = resolvedCompany;
     const data = await apFetch({
       action: "searchCompanyData",
       activeEngineer: appActiveOperatorIdentityString,
-      companyName: mailObject.extractedCompany,
+      companyName: resolvedCompany || mailObject.extractedCompany,
       contactName: mailObject.extractedContactName
     });
 
@@ -2024,7 +2024,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').style.display='none';
               document.getElementById('email-nested-inline-database-workspace-anchor-${index}').innerHTML='';
               const ab = document.getElementById('email-form-toggle-btn-text-${index}');
-              if(ab){ab.textContent='Add in CRM / Log Follow-up';ab.style.display='inline-flex';ab.disabled=false;}
+              if(ab){ab.textContent='Add in CRM / Create Task';ab.style.display='inline-flex';ab.disabled=false;}
               document.getElementById('global-direct-inline-create-entry-btn').style.display='none';
               document.getElementById('canvas-back-btn-enclosure-row').innerHTML='';
             ">Collapse</button>
@@ -2035,7 +2035,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       `;
       nestedWorkspace.style.display = "block";
 
-      globalFollowUpsCacheMap = data.followups;
+      
       globalTasksCacheMap = data.tasks;
 
       // Build contacts inline WITHOUT moving the global canvas
@@ -2064,10 +2064,11 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
 
       const targetFormMountNode = nestedWorkspace.querySelector(`#nested-email-creation-form-mount-${index}`);
       openEmailLeadCreateEntryForm(index, targetFormMountNode, () => {
+        parkSharedLeadForm();
         nestedWorkspace.style.display = "none";
         nestedWorkspace.innerHTML = "";
         const ab = document.getElementById(`email-form-toggle-btn-text-${index}`);
-        if (ab) { ab.textContent = "Create New Entry"; ab.style.display = "inline-flex"; ab.disabled = false; }
+        if (ab) { ab.textContent = "Add in CRM / Create Task"; ab.style.display = "inline-flex"; ab.disabled = false; }
         document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
         document.getElementById("canvas-back-btn-enclosure-row").innerHTML = "";
       });
@@ -2075,7 +2076,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   } catch(e) {
     alert("Error: " + e.message);
     actionBtn.disabled = false;
-    actionBtn.textContent = "Create New Entry";
+    actionBtn.textContent = "Add in CRM / Create Task";
     actionBtn.style.display = "inline-flex";
   }
 }
@@ -3549,7 +3550,7 @@ async function openMergeLeadPicker(targetLeadId, encodedCompany) {
   const others = (r.leads || []).filter(l => l.leadId !== targetLeadId);
   if (!others.length) { alert("This company has no other lead without a PO to merge into this one."); return; }
   const list = others.map((l, i) => `${i + 1}. ${l.leadName || l.leadId} (${l.leadId})${l.contacts ? " - " + l.contacts : ""}`).join("\n");
-  const pick = prompt(`Merge which lead INTO ${targetLeadId}? Its contacts, follow-ups, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
+  const pick = prompt(`Merge which lead INTO ${targetLeadId}? Its contacts, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
   const idx = parseInt(pick, 10) - 1;
   if (isNaN(idx) || !others[idx]) return;
   const source = others[idx];

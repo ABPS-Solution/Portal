@@ -484,17 +484,6 @@ function dtlOpenItem(it) {
           return;
         }
         break;
-      case 'followUp':
-        // Follow-ups live inside a Lead's own View Details, not a
-        // dedicated board — the closest real screen is Search Leads by
-        // ABPS Engineer Name and Status, filtered to this follow-up's
-        // owner so the right Lead is easy to find among the results.
-        if (typeof navigateToModule === 'function' && userPermissions && userPermissions.searchStatus) {
-          navigateToModule('searchStatus');
-          dtlApplyLeadEngineerFilterAndSearch(it);
-          return;
-        }
-        break;
       case 'query':
         // Land on Current Pending Queries specifically, not whatever tab
         // the screen defaults to — that's where an open, undone query

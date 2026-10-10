@@ -1167,7 +1167,7 @@ async function togglePermissionMatrixPill(dbColumn) {
 async function submitRemoveUserFromSystem(personKey) {
   const u = saAllPinUsers.find(x => x.personKey === personKey);
   const name = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : personKey;
-  if (!await abpsConfirm(`Permanently delete ${name} from the system?\n\nThey are logged out everywhere and can never log in again. This cannot be undone. Old leads, tasks and follow-ups they are named on will show their user ID (${personKey}) instead of their name.`)) return;
+  if (!await abpsConfirm(`Permanently delete ${name} from the system?\n\nThey are logged out everywhere and can never log in again. This cannot be undone. Old leads and tasks they are named on will show their user ID (${personKey}) instead of their name.`)) return;
   try {
     const data = await apFetch({ action: "removeUserFromSystem", personKey });
     if (!data.success) { showBOQBanner("sa-feedback", data.error || "Could not remove this person.", "error"); return; }

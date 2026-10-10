@@ -46,6 +46,9 @@ async function triggerSequentialSearch(triggerSourceMode) {
     const headerRowEnclosure = document.getElementById("canvas-back-btn-enclosure-row");
     if (headerRowEnclosure) headerRowEnclosure.innerHTML = "";
 
+    // Typed names (New Leads Details) may be another spelling of a company we have.
+    if (triggerSourceMode === "CARD") comp = await resolveCompanyNameForSearch(comp, { contactName: targetName });
+
     const data = await apFetch({ 
       action: "searchCompanyData", 
       activeEngineer: appActiveOperatorIdentityString,
@@ -64,7 +67,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     
     if (data.success) {
       activeSearchCompany = comp.toString().trim();
-      globalFollowUpsCacheMap = data.followups;
+      
       globalTasksCacheMap = data.tasks;
 
       // A prior "Create New Entry"/"Create New Lead" click for a different
@@ -154,6 +157,36 @@ async function triggerSequentialSearch(triggerSourceMode) {
   }
 }
 
+// resolveCompanyNameForSearch (10 Oct 2026) — before looking a typed /
+// extracted company name up, ask the server whether it is a company we
+// already have under another spelling (lib/companyMatch.js). An exact
+// match (same standard key or a remembered alias) is used silently; an AI
+// suggestion is shown to the person to confirm, and a "yes" is remembered
+// as an alias. Always returns a name to search with, never throws.
+async function resolveCompanyNameForSearch(rawName, clues) {
+  const name = String(rawName || "").trim();
+  if (!name) return name;
+  try {
+    const m = await apFetch({ action: "matchCompanyName", companyName: name,
+      email: (clues && clues.email) || "", city: (clues && clues.city) || "", contactName: (clues && clues.contactName) || "" });
+    if (!m || !m.success) return name;
+    if (m.exact) return m.exact.companyName;
+    if (m.suggestion) {
+      const same = await abpsConfirm(
+        `"${name}" looks like a company already in the system:\n\n${m.suggestion.companyName}${m.suggestion.reason ? "\n(" + m.suggestion.reason + ")" : ""}\n\nIs it the same company?`,
+        { title: "Same company?", okLabel: "Yes, same company", cancelLabel: "No, a different company" });
+      if (same) {
+        apFetch({ action: "confirmCompanyMatch", companyId: m.suggestion.companyId, aliasName: name }).catch(() => {});
+        return m.suggestion.companyName;
+      }
+    }
+  } catch (e) {
+    if (e.message === "SESSION_EXPIRED") throw e;
+    console.error("matchCompanyName failed:", e);
+  }
+  return name;
+}
+
 async function globalExecutionScopeReloader(leadRef, scopeNode) {
   try {
     const data = await apFetch({ 
@@ -161,7 +194,7 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
       activeEngineer: appActiveOperatorIdentityString,
       companyName: activeSearchCompany 
     });
-    if (data.success) { globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks; currentFollowUpCount = data.followups[leadRef] ? data.followups[leadRef].length : 0; renderIsolatedFollowUpTimeline(leadRef, data.followups[leadRef] || [], scopeNode); renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
+    if (data.success) { globalTasksCacheMap = data.tasks;  renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
   } catch(e) { console.error(e.message); }
 }
 
@@ -275,7 +308,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       return;
     }
 
-    globalFollowUpsCacheMap = data.followups;
+    
     globalTasksCacheMap = data.tasks;
 
     // Sort — matching person first

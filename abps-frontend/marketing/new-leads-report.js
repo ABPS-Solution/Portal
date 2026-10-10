@@ -136,7 +136,7 @@ function nlrPlanHtml(plan) {
 function nlrActivityHtml(r) {
   const row = (label, n) => `<div class="nlr-act-row"><span>${label}</span><strong>${n}</strong></div>`;
   return `<div class="nlr-act">
-    ${row("Follow-ups", r.followUpCount)}${row("Tasks", r.taskCount)}${row("Offers sent", r.offersSent)}
+    ${row("Tasks", r.taskCount)}${row("Offers sent", r.offersSent)}
     ${r.lastActivity ? `<div class="nlr-act-last">Last activity: ${escapeHtml(formatOrdinalDate(r.lastActivity))}</div>` : ""}
   </div>`;
 }
@@ -221,7 +221,7 @@ async function nlrToggleLead(leadId) {
   try {
     const data = await apFetch({ action: "fetchLeadCardById", leadId });
     if (!data.success || !data.leads?.length) { box.innerHTML = `<div style="color:var(--warn); font-weight:700; padding:10px;">Lead not found.</div>`; return; }
-    globalFollowUpsCacheMap = data.followups;
+    
     globalTasksCacheMap = data.tasks;
     // Lead cards use fixed element ids; clear the Lead Cards results first.
     const mc = document.getElementById("multi-contact-records-container");

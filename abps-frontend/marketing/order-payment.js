@@ -517,7 +517,7 @@ async function oppToggleLeadExpand(projectId, encodedCompany) {
       return;
     }
 
-    globalFollowUpsCacheMap = data.followups;
+    
     globalTasksCacheMap = data.tasks;
 
     const cardsHtml = data.leads.map(lead => {

@@ -1,72 +1,3 @@
-let currentFollowUpCount = 0;
-let globalFollowUpsCacheMap = {};
-let globalTasksCacheMap = {};
-async function commitIsolatedFollowUpItem(leadRef, scopeNode) {
-  const form = scopeNode.querySelector(".template-fup-form");
-  const btn = scopeNode.querySelector(".commit-fup-btn-trigger");
-  const followUpData = {
-    isEdit: form.querySelector(".fup-is-edit-flag").value === "true",
-    num: form.querySelector(".fup-num-input").value,
-    leadRef: leadRef, company: activeSearchCompany,
-    notes: form.querySelector(".fup-notes-input").value,
-    outcome: form.querySelector(".fup-outcome-select").value, mode: form.querySelector(".fup-mode-select").value,
-    nextActionType: form.querySelector(".fup-nextaction-input").value, objectionRaised: form.querySelector(".fup-objection-input").value
-  };
-  if (!followUpData.notes) return alert("Interaction Notes required.");
-  
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
-  try {
-    const r = await apFetch({ 
-      action: "saveFollowUp", 
-      activeEngineer: appActiveOperatorIdentityString,
-      followUpData 
-    });
-    if (r.success) { 
-      form.style.display = "none"; 
-      scopeNode.querySelector(".trigger-fup-open").style.display = "inline-flex"; 
-      scopeNode.querySelector(".trigger-fup-close").style.display = "none";
-      const fupLabelDone = scopeNode.querySelector(".fup-status-label"); if (fupLabelDone) fupLabelDone.style.display = "none";
-      const timelineBox = scopeNode.querySelector(".template-timeline-box");
-      if (timelineBox) timelineBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new follow-up...</div>';
-      await globalExecutionScopeReloader(leadRef, scopeNode);
-      markEmailLeadActionedIfInEmailContext(scopeNode);
-    }
-  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Follow-Up"; }
-}
-
-async function removeIsolatedFollowUpItem(leadRef, fNum, event) {
-  if(!await abpsConfirm("Confirm deletion?")) return;
-  
-  const btn = event.target;
-  btn.disabled = true;
-  btn.textContent = "Deleting...";
-  
-  const fupId = fNum; // fNum is now the real follow_up_id (see renderIsolatedFollowUpTimeline), not a composite string
-  try {
-    const r = await apFetch({ 
-      action: "deleteFollowUp", 
-      activeEngineer: appActiveOperatorIdentityString,
-      fupId: fupId 
-    });
-    
-    // FIXED: Catch backend authorization block
-    if (!r.success) {
-        alert(r.error || "An unexpected error occurred.");
-        btn.disabled = false;
-        btn.textContent = "Delete Follow-Up";
-        return;
-    }
-    
-    const activeScopeNode = document.getElementById('active-modules-clone-' + leadRef); 
-    await globalExecutionScopeReloader(leadRef, activeScopeNode); 
-    
-  } catch(e) { 
-    alert("Deletion failed: " + e.message); 
-    btn.disabled = false;
-    btn.textContent = "Delete Follow-Up";
-  }
-}
-
 // Table, not stacked cards — a wrapper card easily holds a dozen+ tasks,
 // and each task-item-card was taking a full block of vertical space.
 // Column widths sum to 100%; wrapped in overflow-x:auto so it degrades to
@@ -252,7 +183,7 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
   const btn = scopeNode.querySelector(".commit-task-btn-trigger");
   const editId = form.querySelector(".task-edit-id").value;
   const taskData = {
-    id: editId || "NEW", isNew: !editId, fupNum: currentFollowUpCount, leadRef: leadRef, company: activeSearchCompany,
+    id: editId || "NEW", isNew: !editId, leadRef: leadRef, company: activeSearchCompany,
     engineer: form.querySelector(".task-eng-select").value,
     type: form.querySelector(".task-type-select").value, desc: form.querySelector(".task-desc-input").value,
     shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value,
@@ -564,13 +495,11 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
         return;
     }
     
-    if (cardNode) cardNode.remove();
-    
     cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== messageId);
     try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
-
-    const remainingCards = document.getElementById("email-leads-inbound-feed-canvas").children.length;
-    if (remainingCards === 0) { renderEmailLeadsFeedInterface([]); }
+    // Redraw so the remaining cards are renumbered against the new list.
+    if (typeof applyEmailLeadsCompanySearchAndRender === "function") applyEmailLeadsCompanySearchAndRender();
+    else if (cardNode) cardNode.remove();
     
   } catch(e) {
     alert("Connection Error: Deletion parameter could not be tracked: " + e.message);

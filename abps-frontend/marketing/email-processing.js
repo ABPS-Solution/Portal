@@ -379,6 +379,10 @@ const EMAIL_LEAD_AGE_COLORS = {
 function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
   const canvas = document.getElementById("email-leads-inbound-feed-canvas");
   if (!canvas) return;
+  // The shared New Lead form may be sitting inside a card; move it out
+  // before the cards are wiped, or it is destroyed and "Add in CRM" stops
+  // working until a page reload (10 Oct 2026).
+  if (typeof parkSharedLeadForm === "function") parkSharedLeadForm();
   canvas.innerHTML = "";
 
   if (emailLeadsList.length === 0) {
@@ -394,7 +398,9 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
   // CHRONOLOGICAL SORT MATRIX: Newest First tracking using Unix Epoch value weights
   emailLeadsList.sort((a, b) => b.rawUnixTimestampValue - a.rawUnixTimestampValue);
   
-  emailLeadsList.forEach((mail, mIdx) => {
+  emailLeadsList.forEach((mail, listIdx) => {
+    const fullIdx = cachedInboundEmailLeadsArray.indexOf(mail);
+    const mIdx = fullIdx >= 0 ? fullIdx : listIdx;
     let card = document.createElement("div");
     card.className = "contact-summary-card-parent";
     card.id = `email-lead-wrapper-node-${mIdx}`;
@@ -481,7 +487,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
 
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">
         ${deleteActionHtml}
-        <button class="btn btn-sub" style="width:auto; font-size:0.82rem; padding:9px 18px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Log Follow-up</button>
+        <button class="btn btn-sub" style="width:auto; font-size:0.82rem; padding:9px 18px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Create Task</button>
       </div>
 
       <div id="email-nested-inline-database-workspace-anchor-${mIdx}" style="display:none; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border);"></div>
@@ -530,10 +536,10 @@ async function markEmailLeadActionedAndRemoveCard(idx) {
   }
   cachedInboundEmailLeadsArray = cachedInboundEmailLeadsArray.filter(item => item.messageIdReference !== messageId);
   try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
-  const cardNode = document.getElementById(`email-lead-wrapper-node-${idx}`);
-  if (cardNode) cardNode.remove();
-  if (document.getElementById("email-leads-inbound-feed-canvas")?.children.length === 0) {
-    renderEmailLeadsFeedInterface([]);
+  if (typeof applyEmailLeadsCompanySearchAndRender === "function") applyEmailLeadsCompanySearchAndRender();
+  else {
+    const cardNode = document.getElementById(`email-lead-wrapper-node-${idx}`);
+    if (cardNode) cardNode.remove();
   }
 }
 

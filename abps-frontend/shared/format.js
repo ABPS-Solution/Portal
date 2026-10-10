@@ -94,13 +94,6 @@ function formatPlainTimeOfDay(rawStr) {
 
 // Combines a plain event_date + event_time pair (see formatPlainTimeOfDay)
 // into "h:mm am/pm DD-MM-YYYY" for a created/last-edited timestamp column.
-function formatFollowUpTimestamp(dateVal, timeVal) {
-  const datePart = formatCleanDateOnly(dateVal);
-  const timePart = formatPlainTimeOfDay(timeVal);
-  if (!datePart && !timePart) return "";
-  return `${timePart} ${datePart}`.trim();
-}
-
 // Extracts the YYYY-MM-DD portion from a raw date/timestamp value so it can
 // be assigned directly to a native <input type="date">.value — that input
 // ONLY accepts YYYY-MM-DD; assigning it a DD-MM-YYYY string (e.g. from

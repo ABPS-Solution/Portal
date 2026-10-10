@@ -268,7 +268,7 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // Needed by toggleContactExpansionView (leads.js) the moment a person's
   // lead-wrapper card is clicked, below — same convention
   // marketing/companies.js's toggleTaskCompanyExpand uses.
-  window.globalFollowUpsCacheMap = facts.followupsByLead || {};
+  
   window.globalTasksCacheMap = facts.tasksByLead || {};
 
   // ── AI brief block — 4 distinct mini-cards (colored top border, own
@@ -302,7 +302,6 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // ── At a glance ─────────────────────────────────────────────────────
   const glanceTiles = [
     ["Days Since Last Contact", ag.daysSinceLastContact === null ? "Never" : ag.daysSinceLastContact],
-    ["Total Follow-Ups", ag.totalFollowUpCount],
     ["Overdue Tasks", ag.overdueTaskCount],
     ["Upcoming Tasks", ag.upcomingTaskCount],
     ["Completed Tasks", ag.completedTaskCount],
@@ -352,7 +351,6 @@ function mprepRenderBrief(facts, aiBrief, aiError) {
   // ── Open items ──────────────────────────────────────────────────────
   const openItemsHtml = mprepBulletList([
     ...oi.overdueTasks.map(t => `<strong>Overdue task</strong> (due ${escapeHtml(formatOrdinalDate(t.targetDate))}, assigned to ${escapeHtml(t.eng || "-")}): ${escapeHtml(t.desc || "")}`),
-    ...oi.pendingFollowUps.map(f => `<strong>Follow-up due</strong> ${escapeHtml(formatOrdinalDate(f.nextDate))}: ${escapeHtml(f.nextActionType || "")} (${escapeHtml(f.eng || "-")})`),
     ...oi.openQueries.map(q => `<strong>${q.breached ? "Breached" : "Open"} customer query</strong>: ${escapeHtml(q.stageName || "")}, target ${escapeHtml(q.targetClosingDate ? formatOrdinalDate(q.targetClosingDate) : "-")}, owner ${escapeHtml(q.responsiblePerson || "-")}`),
     ...oi.lateProjects.map(p => `<strong>Project past delivery</strong>: ${escapeHtml(p.projectId)} (PO ${escapeHtml(p.poNumber || "-")}), promised ${escapeHtml(p.promisedDate ? formatOrdinalDate(p.promisedDate) : "-")}`),
   ], "Nothing outstanding right now.");
