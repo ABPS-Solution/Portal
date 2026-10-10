@@ -76,7 +76,7 @@ function adRenderDashboard(data) {
     ? "queue clear" : `oldest ${stats.oldestUncheckedDays ?? 0}d waiting`;
 
   document.getElementById("ad-s-openadv").textContent = stats.openAdvances;
-  document.getElementById("ad-s-openadv-sub").textContent = adFmtINR(stats.openAdvanceAmount) + " out";
+  document.getElementById("ad-s-openadv-sub").textContent = adFmtINR(stats.openAdvanceAmount) + " given, voucher not closed yet";
 
   document.getElementById("ad-s-unactioned").textContent = stats.unactionedTravellers;
   document.getElementById("ad-s-unactioned-sub").textContent = adFmtINR(stats.unactionedTravelAmount) + " unreconciled"
@@ -98,7 +98,7 @@ function adRenderDashboard(data) {
   document.getElementById("ad-s-totalexp").textContent = adFmtINR(stats.totalExpense);
   document.getElementById("ad-s-tourpaid").textContent = adFmtINR(stats.tourPaid);
   document.getElementById("ad-s-dailyspent").textContent = adFmtINR(stats.cashSpent);
-  document.getElementById("ad-s-dailyspent-sub").textContent = stats.onlineSpent > 0 ? `${adFmtINR(stats.onlineSpent)} online` : '';
+  document.getElementById("ad-s-dailyspent-sub").textContent = stats.onlineSpent > 0 ? `incl. ${adFmtINR(stats.onlineSpent)} paid online` : '';
   document.getElementById("ad-s-travelpaid").textContent = adFmtINR(stats.travelPaid);
   document.getElementById("ad-s-travelpaid-sub").textContent =
     `${stats.travelTicketCount} ticket${stats.travelTicketCount === 1 ? '' : 's'} · ${stats.travelHotelCount} hotel${stats.travelHotelCount === 1 ? '' : 's'}`;

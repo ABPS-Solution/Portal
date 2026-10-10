@@ -35,7 +35,26 @@ async function initializeAuthorizeBOQPanel(mode) {
     }
 
     cardsFeed.innerHTML = "";
-    drafts.forEach(draft => {
+    // One block per project (10 Oct 2026), projects in the order their
+    // oldest BOQ came in, BOQs oldest-first inside each.
+    const groups = new Map();
+    drafts.forEach(d => { if (!groups.has(d.projectId)) groups.set(d.projectId, []); groups.get(d.projectId).push(d); });
+    groups.forEach((list, projectId) => {
+      const group = document.createElement("div");
+      group.className = "auth-boq-project-group";
+      group.style.cssText = "border:2px solid #94a3b8; border-radius:8px; margin-bottom:16px; background:#f8fafc; overflow:hidden;";
+      group.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; background:#e2e8f0; border-bottom:1px solid #94a3b8;">
+          <div style="min-width:0;">
+            <div style="font-weight:800; font-size:1rem; color:#1e293b;">${escapeHtml(list[0].customerName || "")}</div>
+            <div style="font-size:0.82rem; color:var(--brand); font-weight:700; overflow-wrap:anywhere;">${escapeHtml(projectId || "")}</div>
+          </div>
+          <span style="flex-shrink:0; background:var(--brand); color:#fff; border-radius:999px; padding:3px 12px; font-size:0.78rem; font-weight:800;">${list.length} BOQ${list.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="auth-boq-project-group-body" style="padding:10px;"></div>`;
+      cardsFeed.appendChild(group);
+      const groupBody = group.querySelector(".auth-boq-project-group-body");
+      list.forEach(draft => {
       const card = document.createElement("div");
       card.className = "contact-summary-card-parent";
       card.id = `auth-boq-card-${mode}-${draft.boqId.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -59,7 +78,8 @@ async function initializeAuthorizeBOQPanel(mode) {
         </div>
         <div id="auth-boq-card-body-${mode}-${draft.boqId.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       `;
-      cardsFeed.appendChild(card);
+      groupBody.appendChild(card);
+      });
     });
   } catch(e) {
     cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
