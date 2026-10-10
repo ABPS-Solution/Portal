@@ -390,22 +390,17 @@ function renderMaterialChangeCard(t) {
   card.className = "contact-summary-card-parent";
   card.id = `mcr-card-${t.ticketId}`;
   card.style.borderLeft = "4px solid #b45309";
-  const th = (txt, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"};">${txt}</th>`;
-  const td = (html, al, extra) => `<td style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; ${extra || ""}">${html}</td>`;
-  const groupsHtml = (t.groups || []).map(g => {
-    const rows = g.alternates.map((a, ai) => `<tr>
-      ${ai === 0 ? td(`<div style="font-weight:700;">${escapeHtml(g.fromMaterialName)}</div><div style="font-size:0.78rem; color:#64748b;">Store now: ${fmtQty(g.fromStockNow)} · JC Allotted ${fmtQty(g.jcAllotted)} · Used ${fmtQty(g.jcUsed)} · Remaining ${fmtQty(g.jcRemaining)}</div>`, "left", `vertical-align:top;" rowspan="${g.alternates.length}`) : ""}
-      ${ai === 0 ? td(`<strong>${fmtQty(g.fromQty)}</strong> ${escapeHtml(g.fromUnit || "")}`, "center", `vertical-align:top;" rowspan="${g.alternates.length}`) : ""}
-      ${td(`<div style="font-weight:600;">${escapeHtml(a.materialName)}</div><div style="font-size:0.78rem; color:#64748b;">${escapeHtml(a.itemCode)}</div>`, "left")}
-      ${td(`${fmtQty(a.quantity)} ${escapeHtml(a.unitType || "")}`)}
+  const th = (txt, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${txt}</th>`;
+  const td = (html, al, rowspan) => `<td ${rowspan > 1 ? `rowspan="${rowspan}"` : ""} style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${html}</td>`;
+  const groupsHtml = (t.groups || []).map(g => g.alternates.map((a, ai) => `<tr>
+      ${ai === 0 ? td(`<div style="font-weight:700;">${escapeHtml(g.fromMaterialName)}</div><div style="font-size:0.78rem; color:#64748b; margin-top:2px;">JC Allotted ${fmtQty(g.jcAllotted)} · Used ${fmtQty(g.jcUsed)} · Remaining ${fmtQty(g.jcRemaining)}</div>`, "left", g.alternates.length) : ""}
+      ${ai === 0 ? td(`<strong>${fmtQty(g.fromQty)}</strong> ${escapeHtml(g.fromUnit || "")}`, "center", g.alternates.length) : ""}
+      ${td(`<div style="font-weight:700;">${escapeHtml(a.materialName)}</div>`, "left")}
+      ${td(`<strong>${fmtQty(a.quantity)}</strong> ${escapeHtml(a.unitType || "")}`)}
       ${td(`<input type="number" min="0" max="${a.quantity}" step="any" value="${a.quantity}" data-group="${g.group}" data-itemcode="${escapeHtml(a.itemCode)}"
             class="mcr-approve-qty" oninput="if(parseFloat(this.value)>${a.quantity})this.value=${a.quantity}; if(parseFloat(this.value)<0)this.value=0;"
-            style="width:90px; padding:5px; text-align:center; font-weight:700; border:2px solid #64748b; border-radius:4px;">`)}
-      ${ai === 0 ? td(`<label style="display:flex; align-items:center; gap:6px; justify-content:center; margin:0; font-weight:700;">
-            <input type="checkbox" class="mcr-approve-group" data-group="${g.group}" checked style="width:auto;"> Approve</label>`, "center", `vertical-align:top;" rowspan="${g.alternates.length}`) : ""}
-    </tr>`).join("");
-    return rows;
-  }).join("");
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;">`)}
+    </tr>`).join("")).join("");
   card.innerHTML = `
     <div class="contact-summary-header-row" onclick="toggleMaterialChangeCardBody(${jsArg(t.ticketId)})" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
       <div class="contact-summary-title-info" style="width:100%;">
@@ -427,14 +422,13 @@ function renderMaterialChangeCard(t) {
     <div id="mcr-body-${t.ticketId}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; min-width:760px;">
-          <colgroup><col style="width:28%"><col style="width:10%"><col style="width:28%"><col style="width:11%"><col style="width:12%"><col style="width:11%"></colgroup>
+          <colgroup><col style="width:34%"><col style="width:11%"><col style="width:31%"><col style="width:12%"><col style="width:12%"></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
-            ${th("Change From", "left")}${th("Qty")}${th("Change To", "left")}${th("Asked Qty")}${th("Approved Qty")}${th("Decision")}
+            ${th("Change From Material", "left")}${th("Qty")}${th("Change To Material", "left")}${th("Asked Qty")}${th("Approved Qty")}
           </tr></thead>
           <tbody>${groupsHtml}</tbody>
         </table>
       </div>
-      <div style="font-size:0.8rem; color:#475569; margin-bottom:10px;">Untick Approve to reject that change. Approved Qty can be lowered, not raised. Approved changes go to Approve Material Issue Tickets for Store to hand over.</div>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button class="nav-btn-styled" onclick="submitMaterialChangeDecision(${jsArg(t.ticketId)}, false)" style="width:auto; background:#b91c1c; padding:8px 20px; font-weight:700;">Reject All</button>
         <button class="nav-btn-styled" onclick="submitMaterialChangeDecision(${jsArg(t.ticketId)}, true)" style="width:auto; background:var(--accent); padding:8px 20px; font-weight:700;">Submit Decision</button>
@@ -459,9 +453,9 @@ async function submitMaterialChangeDecision(ticketId, useTicks) {
     fb.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   const decisions = [];
-  card.querySelectorAll(".mcr-approve-group").forEach(cb => {
-    const group = Number(cb.dataset.group);
-    const approve = useTicks && cb.checked;
+  const groups = [...new Set([...card.querySelectorAll(".mcr-approve-qty")].map(i => Number(i.dataset.group)))];
+  groups.forEach(group => {
+    const approve = !!useTicks;
     const alternates = [];
     card.querySelectorAll(`.mcr-approve-qty[data-group="${group}"]`).forEach(inp => {
       alternates.push({ itemCode: inp.dataset.itemcode, quantity: parseFloat(inp.value) || 0 });

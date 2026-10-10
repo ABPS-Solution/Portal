@@ -51,16 +51,15 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
 
 function cprRenderPendingCard(r) {
   const id = r.requestId;
-  const th = (t, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"};">${t}</th>`;
-  const td = (h, al) => `<td style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; font-weight:600;">${h}</td>`;
+  const th = (t, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${t}</th>`;
+  const td = (h, al) => `<td style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle; font-weight:600;">${h}</td>`;
   const req = Number(r.requestedQty) || 0;
   return `
     <div class="contact-summary-card-parent" style="border-left:4px solid #7c3aed;">
       <div class="contact-summary-header-row" onclick="document.getElementById('cpr-card-body-${id}').style.display = document.getElementById('cpr-card-body-${id}').style.display === 'none' ? 'block' : 'none'" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block">
-            <span style="font-family:monospace; font-weight:800; background:#ede9fe; color:#5b21b6; padding:3px 8px; font-size:0.85rem; border-radius:3px;">#${id}</span>
-            <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${escapeHtml(r.jobCardNumber || r.projectId || r.legacyCompanyName || "")}</strong>
+            <strong style="color:var(--brand); font-size:0.9rem;">${escapeHtml(r.jobCardNumber || r.projectId || r.legacyCompanyName || "")}</strong>
           </div>
           <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
             <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(r.projectId || "—")}</strong>
@@ -75,17 +74,17 @@ function cprRenderPendingCard(r) {
       </div>
       <div id="cpr-card-body-${id}" style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:8px;">
         <div style="overflow-x:auto; margin-bottom:14px;">
-          <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; min-width:640px;">
+          <table class="cpr-grid" style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed; min-width:640px;">
             <colgroup><col style="width:46%"><col style="width:9%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>
             <thead><tr style="background:var(--highlight-bg);">
-              ${th("Material Name", "left")}${th("Unit")}${th("Already Used in this JC")}${th("Purchase Qty Requested")}${th("Approved Qty")}
+              ${th("Material Name", "left")}${th("Unit")}${th("Already Used in this JC")}${th("Purchase Qty Requested")}${th("Approve Purchase Qty")}
             </tr></thead>
             <tbody><tr>
               ${td(escapeHtml(r.materialName || r.itemCode), "left")}
               ${td(escapeHtml(r.unit || ""))}
               ${td(r.jobCardNumber ? fmtQty(r.usedInJobCard) : "—")}
               ${td(`<span style="color:#5b21b6; font-weight:700;">${fmtQty(req)}</span>`)}
-              <td style="border:1px solid var(--border); padding:8px; text-align:center;">
+              <td style="border:1px solid var(--border); padding:8px; text-align:center; vertical-align:middle;">
                 <input type="number" min="0" max="${req}" step="any" id="cpr-qty-${id}" value="${req}"
                   oninput="if (parseFloat(this.value) > ${req}) this.value = ${req}; if (parseFloat(this.value) < 0) this.value = 0;"
                   style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;">
@@ -93,7 +92,6 @@ function cprRenderPendingCard(r) {
             </tr></tbody>
           </table>
         </div>
-        <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">Approved Qty can be lowered, not raised. Approving lists it in List of Material to Raise Purchase Order under this project (no PRN, never reserved; it arrives as free stock).</div>
         <div style="display:flex; justify-content:flex-end; gap:10px;">
           <button class="nav-btn-styled" style="width:auto; padding:8px 20px; background:#b91c1c; font-weight:700;" onclick="cprAction(${id}, 'Reject')">Reject</button>
           <button class="nav-btn-styled" style="width:auto; padding:8px 20px; background:var(--accent); font-weight:700;" onclick="cprAction(${id}, 'Approve')">Approve</button>
