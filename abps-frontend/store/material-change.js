@@ -394,12 +394,12 @@ function renderMaterialChangeCard(t) {
   const td = (html, al, rowspan) => `<td ${rowspan > 1 ? `rowspan="${rowspan}"` : ""} style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${html}</td>`;
   const groupsHtml = (t.groups || []).map(g => g.alternates.map((a, ai) => `<tr>
       ${ai === 0 ? td(`<div style="font-weight:700;">${escapeHtml(g.fromMaterialName)}</div><div style="font-size:0.78rem; color:#64748b; margin-top:2px;">JC Allotted ${fmtQty(g.jcAllotted)} · Used ${fmtQty(g.jcUsed)} · Remaining ${fmtQty(g.jcRemaining)}</div>`, "left", g.alternates.length) : ""}
-      ${ai === 0 ? td(`<strong>${fmtQty(g.fromQty)}</strong> ${escapeHtml(g.fromUnit || "")}`, "center", g.alternates.length) : ""}
+      ${ai === 0 ? td(`<strong style="font-size:1.15rem;">${fmtQty(g.fromQty)}</strong> ${escapeHtml(g.fromUnit || "")}`, "center", g.alternates.length) : ""}
       ${td(`<div style="font-weight:700;">${escapeHtml(a.materialName)}</div>`, "left")}
-      ${td(`<strong>${fmtQty(a.quantity)}</strong> ${escapeHtml(a.unitType || "")}`)}
+      ${td(`<strong style="font-size:1.15rem;">${fmtQty(a.quantity)}</strong> ${escapeHtml(a.unitType || "")}`)}
       ${td(`<input type="number" min="0" max="${a.quantity}" step="any" value="${a.quantity}" data-group="${g.group}" data-itemcode="${escapeHtml(a.itemCode)}"
             class="mcr-approve-qty" oninput="if(parseFloat(this.value)>${a.quantity})this.value=${a.quantity}; if(parseFloat(this.value)<0)this.value=0;"
-            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;">`)}
+            style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.15rem; border:2px solid #64748b; border-radius:4px;">`)}
     </tr>`).join("")).join("");
   card.innerHTML = `
     <div class="contact-summary-header-row" onclick="toggleMaterialChangeCardBody(${jsArg(t.ticketId)})" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
