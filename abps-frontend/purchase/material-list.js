@@ -197,7 +197,7 @@ function renderMaterialListByType(materials) {
       card.onclick = () => showMaterialProjectBreakdownModal(item.itemCode, item.materialName, item.unit, item.totalPurchaseQty);
       card.innerHTML = `
         <div style="font-size:0.78rem; font-weight:700; color:#334155; line-height:1.35; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:1;">
-          ${item.isConsumable ? '<span style="font-size:0.62rem; font-weight:800; background:#ede9fe; color:#5b21b6; padding:1px 6px; border-radius:999px; margin-right:4px;">PRODUCTION MEMO PURCHASE MATERIAL</span>' : ''}${escapeHtml(item.materialName)}
+          ${escapeHtml(item.materialName)}
         </div>
         <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -230,7 +230,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   const reqDatesByPrn = {};
   filteredRows.forEach(r => {
     // Production Memo Purchase Material (migration 249) has no PRN.
-    const pid = r.prnId || (r.isMemoPurchase ? `Production Memo Purchase Material (${r.memoTarget || r.projectId || ""})` : "Unassigned");
+    const pid = r.prnId || (r.isMemoPurchase ? `Production Memo Purchase Material for ${r.projectId || r.memoTarget || ""}` : "Unassigned");
     const qty = Math.max(0, Number(r.stillToOrderQty) || 0);
     if (qty <= 0) return;
     if (!byPrn[pid]) byPrn[pid] = 0;
