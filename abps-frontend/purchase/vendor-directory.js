@@ -80,7 +80,7 @@ function vdRenderCards() {
     const done = (Number(v.onTime) || 0) + (Number(v.late) || 0);
     const onTimePct = done ? Math.round((Number(v.onTime) || 0) * 100 / done) + "%" : "—";
     return `
-    <div onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; background:#fff; border:2px solid #94a3b8; border-left:5px solid ${v.status === "Active" ? "#7c3aed" : "#94a3b8"}; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;"
+    <div onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; background:#fff; border:2px solid #94a3b8; border-left:5px solid ${v.status === "Active" ? "var(--brand)" : "#94a3b8"}; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;"
       onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='#94a3b8'">
       <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
         <div style="font-weight:800; color:var(--brand); line-height:1.3;">${vdEsc(v.vendorName)}</div>
@@ -222,7 +222,7 @@ function vdProfileHtml(d) {
     : `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:2px dashed #cbd5e1; border-radius:8px;">${empty}</div>`;
   const section = (title, count, body) => `<div style="margin-top:16px;">
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-        <div class="sec-label" style="margin:0;">${title}</div>${count != null ? pillTag(count, "#ede9fe", "#5b21b6") : ""}</div>${body}</div>`;
+        <div class="sec-label" style="margin:0;">${title}</div>${count != null ? pillTag(count, "var(--highlight-bg)", "var(--brand)") : ""}</div>${body}</div>`;
 
   const mats = d.materials.map(m => `<tr>${td(`<div style="font-weight:700;">${vdEsc(m.materialName)}</div><div style="font-size:0.75rem; color:#64748b;">${vdEsc(m.itemCode)}</div>`, "left")}
       ${td(vdEsc(m.unit))}${td(fmtQty(m.totalQty))}${td(m.poCount)}${td(`<strong>${vdMoney(m.lastRate)}</strong>`)}${td(`${vdMoney(m.minRate)} – ${vdMoney(m.maxRate)}`)}${td(formatOrdinalDate(m.lastPoDate))}</tr>`);
@@ -232,14 +232,14 @@ function vdProfileHtml(d) {
   const btn = (label, bg, onclick) => `<button type="button" class="nav-btn-styled" style="width:auto; background:${bg}; padding:7px 16px; font-weight:700; font-size:0.85rem;" onclick="${onclick}">${label}</button>`;
 
   return `
-    <div style="margin-top:18px; background:#f8fafc; border:${B}; border-left:6px solid #7c3aed; border-radius:10px; overflow:hidden;">
+    <div style="margin-top:18px; background:#f8fafc; border:${B}; border-left:6px solid var(--brand); border-radius:10px; overflow:hidden;">
       <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:14px 16px; background:#fff; border-bottom:${B};">
         <div style="min-width:0;">
           <div style="font-size:1.25rem; font-weight:800; color:var(--brand); line-height:1.25;">${vdEsc(v.vendorName)}</div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-            ${v.status === "Active" ? pillTag("ACTIVE", "#dcfce7", "#15803d") : pillTag("INACTIVE", "#e2e8f0", "#475569")}
-            ${v.incomplete ? pillTag("DETAILS INCOMPLETE", "#fef3c7", "#b45309") : ""}
-            ${v.typeOfVendor ? pillTag(vdEsc(v.typeOfVendor).toUpperCase(), "#e0e7ff", "#3730a3") : ""}
+            ${v.status === "Active" ? pillTag("ACTIVE", "#dcfce7", "var(--brand)") : pillTag("INACTIVE", "#e2e8f0", "#475569")}
+            ${v.incomplete ? pillTag("DETAILS INCOMPLETE", "#fef3c7", "var(--brand)") : ""}
+            ${v.typeOfVendor ? pillTag(vdEsc(v.typeOfVendor).toUpperCase(), "var(--highlight-bg)", "var(--brand)") : ""}
           </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -253,18 +253,18 @@ function vdProfileHtml(d) {
         ${v.incomplete ? `<div style="background:#fffbeb; border-left:4px solid #d97706; color:#92400e; padding:9px 12px; border-radius:4px; font-size:0.85rem; margin-bottom:12px;">Some details are missing. Click <strong>Edit</strong> to add the GSTIN and address so this vendor's POs print correctly.</div>` : ""}
         ${section("Vendor Details", null, details)}
         ${section("Purchase", null, tiles(
-          tile("Authorized POs", p.authorized || 0, p.pending ? `${p.pending} waiting authorization` : "", "#2563eb")
-          + tile("PO Value (This FY)", vdMoney(p.value_fy), "", "#2563eb")
-          + tile("PO Value (All Time)", vdMoney(p.value_all), "", "#2563eb")
-          + tile("POs Still Delivering", p.open_deliveries || 0, "", "#2563eb")
-          + tile("Last PO", p.last_po ? formatOrdinalDate(p.last_po) : "—", "", "#2563eb")))}
+          tile("Authorized POs", p.authorized || 0, p.pending ? `${p.pending} waiting authorization` : "", "var(--brand)")
+          + tile("PO Value (This FY)", vdMoney(p.value_fy), "", "var(--brand)")
+          + tile("PO Value (All Time)", vdMoney(p.value_all), "", "var(--brand)")
+          + tile("POs Still Delivering", p.open_deliveries || 0, "", "var(--brand)")
+          + tile("Last PO", p.last_po ? formatOrdinalDate(p.last_po) : "—", "", "var(--brand)")))}
         ${section("Delivery & Quality", null, tiles(
-          tile("On-Time Deliveries", onTime, done ? `${perf.on_time_deliveries || 0} on time · ${perf.late_deliveries || 0} late` : "No deliveries tracked yet", "#15803d")
-          + tile("Average Days Late", perf.average_days_late != null ? fmtQty(perf.average_days_late) : "—", "", "#15803d")
-          + tile("Q/A Rejected", rejPct, recv ? `${fmtQty(perf.qa_rejected_quantity)} of ${fmtQty(recv)} received` : "", "#b91c1c")
-          + tile("Transit Rejected", perf.transit_rejected_quantity != null ? fmtQty(perf.transit_rejected_quantity) : "—", "", "#b91c1c")
-          + tile("Open Rejected / Missing", rej.open_lines || 0, rej.open_lines ? `${fmtQty(rej.open_qty)} still pending` : "", "#b45309")
-          + tile("Last Delivery", perf.last_delivery_date ? formatOrdinalDate(perf.last_delivery_date) : "—", "", "#15803d")))}
+          tile("On-Time Deliveries", onTime, done ? `${perf.on_time_deliveries || 0} on time · ${perf.late_deliveries || 0} late` : "No deliveries tracked yet", "var(--brand)")
+          + tile("Average Days Late", perf.average_days_late != null ? fmtQty(perf.average_days_late) : "—", "", "var(--brand)")
+          + tile("Q/A Rejected", rejPct, recv ? `${fmtQty(perf.qa_rejected_quantity)} of ${fmtQty(recv)} received` : "", "var(--brand)")
+          + tile("Transit Rejected", perf.transit_rejected_quantity != null ? fmtQty(perf.transit_rejected_quantity) : "—", "", "var(--brand)")
+          + tile("Open Rejected / Missing", rej.open_lines || 0, rej.open_lines ? `${fmtQty(rej.open_qty)} still pending` : "", "var(--brand)")
+          + tile("Last Delivery", perf.last_delivery_date ? formatOrdinalDate(perf.last_delivery_date) : "—", "", "var(--brand)")))}
         ${section("Materials Supplied", d.materials.length || null, table(th("Material", "left") + th("Unit") + th("Total Ordered") + th("POs") + th("Last Rate") + th("Rate Range") + th("Last PO"), mats, "No authorized POs with this vendor yet."))}
         ${section("Recent Purchase Orders", d.recentPos.length || null, table(th("PO No", "left") + th("Order Date") + th("Status") + th("Grand Total"), pos, "No POs with this vendor yet."))}
         ${section("Recent GRNs", d.grns.length || null, table(th("GRN", "left") + th("Date") + th("PO") + th("Lines") + th("OK") + th("Not OK") + th("Missing"), grns, "No GRNs from this vendor yet."))}
