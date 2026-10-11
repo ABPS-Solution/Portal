@@ -599,9 +599,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
   if (document.getElementById("mod-search-vendor-costing-info")) document.getElementById("mod-search-vendor-costing-info").style.display = canSearchVendorCostingInfo ? "block" : "none";
+  if (document.getElementById("mod-vendor-directory")) document.getElementById("mod-vendor-directory").style.display = userPermissionsObject.vendorDirectory === true ? "block" : "none";
   const purchaseHeaderBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseHeaderBlock) {
-    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
+    purchaseHeaderBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.vendorDirectory === true || userPermissionsObject.viewPurchaseDashboard === true) ? "block" : "none";
   }
 
   // Production Department block visibility
