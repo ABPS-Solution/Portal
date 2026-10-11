@@ -47,7 +47,7 @@ function vdRenderList() {
     <div id="vd-feedback" style="display:none;"></div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
       <input type="text" id="vd-search" placeholder="Search name, GSTIN, city, contact, phone, email..." autocomplete="off"
-        oninput="vdRenderCards()" style="flex:1 1 280px; padding:9px; font-weight:600;">
+        oninput="vdRenderCards()" style="flex:1 1 280px; padding:9px; font-weight:600; border:2px solid #94a3b8; border-radius:6px;">
       <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:9px 18px; font-weight:700;" onclick="vdOpenForm(null)">+ Add Vendor</button>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">${["Active", "Incomplete", "Inactive", "All"].map(pill).join("")}</div>
@@ -80,8 +80,8 @@ function vdRenderCards() {
     const done = (Number(v.onTime) || 0) + (Number(v.late) || 0);
     const onTimePct = done ? Math.round((Number(v.onTime) || 0) * 100 / done) + "%" : "—";
     return `
-    <div onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; background:#fff; border:1.5px solid var(--border); border-left:4px solid ${v.status === "Active" ? "#7c3aed" : "#94a3b8"}; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;"
-      onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; background:#fff; border:2px solid #94a3b8; border-left:5px solid ${v.status === "Active" ? "#7c3aed" : "#94a3b8"}; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;"
+      onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='#94a3b8'">
       <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
         <div style="font-weight:800; color:var(--brand); line-height:1.3;">${vdEsc(v.vendorName)}</div>
         ${v.status !== "Active" ? `<span style="font-size:0.68rem; font-weight:800; background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:999px;">INACTIVE</span>`
@@ -89,7 +89,7 @@ function vdRenderCards() {
       </div>
       <div style="font-size:0.8rem; color:#475569;">${[v.typeOfVendor, [v.city, v.state].filter(Boolean).join(", ")].filter(Boolean).map(vdEsc).join(" · ") || "&nbsp;"}</div>
       ${v.gstin ? `<div style="font-size:0.78rem; font-family:monospace; color:#334155;">GSTIN ${vdEsc(v.gstin)}</div>` : ""}
-      <div style="display:flex; gap:14px; flex-wrap:wrap; border-top:1px dashed var(--border); padding-top:6px; font-size:0.78rem; color:#334155;">
+      <div style="display:flex; gap:14px; flex-wrap:wrap; border-top:1.5px solid #cbd5e1; padding-top:6px; font-size:0.78rem; color:#334155;">
         <span><strong>${Number(v.poCount) || 0}</strong> POs</span>
         <span><strong>${vdMoney(v.poValue)}</strong></span>
         <span>On time <strong>${onTimePct}</strong></span>
@@ -195,13 +195,13 @@ function vdProfileHtml(d) {
   const onTime = done ? Math.round((Number(perf.on_time_deliveries) || 0) * 100 / done) + "%" : "—";
   const recv = Number(perf.total_quantity_received) || 0;
   const rejPct = recv ? (Math.round((Number(perf.qa_rejected_quantity) || 0) * 1000 / recv) / 10) + "%" : "—";
-  const tile = (label, value, sub) => `<div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
+  const tile = (label, value, sub) => `<div style="background:#fff; border:2px solid #94a3b8; border-radius:8px; padding:10px 12px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#64748b;">${label}</div>
       <div style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-top:2px;">${value}</div>
       ${sub ? `<div style="font-size:0.75rem; color:#64748b;">${sub}</div>` : ""}</div>`;
   const kv = (k, val) => `<div><span style="color:#64748b; font-size:0.78rem;">${k}</span><div style="font-weight:600;">${val ? vdEsc(val) : "—"}</div></div>`;
-  const th = (t, al) => `<th style="border:1px solid var(--border); padding:7px; text-align:${al || "center"}; background:var(--highlight-bg);">${t}</th>`;
-  const td = (h, al) => `<td style="border:1px solid var(--border); padding:7px; text-align:${al || "center"}; vertical-align:middle;">${h}</td>`;
+  const th = (t, al) => `<th style="padding:8px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800;">${t}</th>`;
+  const td = (h, al) => `<td style="padding:8px; text-align:${al || "center"}; vertical-align:middle;">${h}</td>`;
   const tableWrap = (head, rows, empty) => rows.length
     ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; min-width:620px;"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`
     : `<div style="color:var(--muted); padding:8px 0;">${empty}</div>`;
@@ -211,7 +211,7 @@ function vdProfileHtml(d) {
   const pos = d.recentPos.map(r => `<tr>${td(`<strong>${vdEsc(r.poNo)}</strong>`, "left")}${td(formatOrdinalDate(r.orderDate))}${td(vdEsc(r.status))}${td(vdMoney(r.grandTotal))}</tr>`);
   const grns = d.grns.map(g => `<tr>${td(`<strong>${vdEsc(g.grnNumber)}</strong>`, "left")}${td(formatOrdinalDate(g.date))}${td(vdEsc(g.poNos || "—"))}${td(g.lines)}${td(fmtQty(g.ok))}${td(fmtQty(g.notOk))}${td(fmtQty(g.missing))}</tr>`);
   return `
-    <div style="margin-top:18px; background:#f8fafc; border:1.5px solid #94a3b8; border-left:5px solid #7c3aed; border-radius:8px; padding:14px 16px;">
+    <div style="margin-top:18px; background:#f8fafc; border:2px solid #94a3b8; border-left:5px solid #7c3aed; border-radius:8px; padding:14px 16px;">
       <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
         <div>
           <div style="font-size:1.15rem; font-weight:800; color:var(--brand);">${vdEsc(v.vendorName)}</div>

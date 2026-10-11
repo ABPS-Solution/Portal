@@ -940,7 +940,7 @@
 #cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 .prn-view-table, .prn-view-table th, .prn-view-table td { border:2px solid #94a3b8 !important; }
-#canvas-module-boq-increase-approvals table, #canvas-module-boq-increase-approvals table th, #canvas-module-boq-increase-approvals table td, #canvas-module-material-change-approvals table, #canvas-module-material-change-approvals table th, #canvas-module-material-change-approvals table td, #cpr-queue-feed .cpr-grid, #cpr-queue-feed .cpr-grid th, #cpr-queue-feed .cpr-grid td, #canvas-module-production-planning table, #canvas-module-production-planning table th, #canvas-module-production-planning table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
+#canvas-module-boq-increase-approvals table, #canvas-module-boq-increase-approvals table th, #canvas-module-boq-increase-approvals table td, #canvas-module-purchase-vendor-directory table, #canvas-module-purchase-vendor-directory table th, #canvas-module-purchase-vendor-directory table td, #canvas-module-material-change-approvals table, #canvas-module-material-change-approvals table th, #canvas-module-material-change-approvals table td, #cpr-queue-feed .cpr-grid, #cpr-queue-feed .cpr-grid th, #cpr-queue-feed .cpr-grid td, #canvas-module-production-planning table, #canvas-module-production-planning table th, #canvas-module-production-planning table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
 #canvas-module-store-manager-approvals table thead th, #canvas-module-assign-material-requirement-date table thead th, #canvas-module-revise-material-requirement-date table thead th { background:#eef2f7 !important; }
 #canvas-module-store-gate-entry table, #canvas-module-store-gate-entry table th, #canvas-module-store-gate-entry table td, #canvas-module-store-entry table, #canvas-module-store-entry table th, #canvas-module-store-entry table td, #canvas-module-store-grn table, #canvas-module-store-grn table th, #canvas-module-store-grn table td, #canvas-module-store-repair-qa table, #canvas-module-store-repair-qa table th, #canvas-module-store-repair-qa table td, #canvas-module-assign-current-stock table, #canvas-module-assign-current-stock table th, #canvas-module-assign-current-stock table td, #canvas-module-store-material-request table, #canvas-module-store-material-request table th, #canvas-module-store-material-request table td, #canvas-module-store-manager-approvals table, #canvas-module-store-manager-approvals table th, #canvas-module-store-manager-approvals table td, #canvas-module-purchase-rejected-material table, #canvas-module-purchase-rejected-material table th, #canvas-module-purchase-rejected-material table td, [id^="canvas-module-"][id$="-dashboard"] table, [id^="canvas-module-"][id$="-dashboard"] table th, [id^="canvas-module-"][id$="-dashboard"] table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
 .rpo-mode-pill { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border:1.5px solid var(--border); border-radius:999px; background:#fff; font-size:0.82rem; font-weight:700; color:#475569; cursor:pointer; white-space:nowrap; }
@@ -1364,7 +1364,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-search-vendor-costing-info" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-costing')"><span class="mc-label">Search Vendor Costing Information</span></div>
-        <div class="menu-card" id="mod-vendor-directory" style="display:none;" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-directory')"><span class="mc-label">Vendor Directory</span></div>
+        <div class="menu-card" id="mod-vendor-directory" style="display:none;" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-directory')"><span class="mc-label">Vendor List</span></div>
       </div>
       <div class="sec-label">Store Inward Rejected & Missing Material</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -4340,7 +4340,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
 
     <div id="canvas-module-purchase-vendor-directory" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Vendor Directory</h2>
+      <h2 class="panel-title">Vendor List</h2>
       <div id="vd-root"></div>
     </div>
 
