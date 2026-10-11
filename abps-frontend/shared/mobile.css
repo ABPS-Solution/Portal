@@ -1,0 +1,95 @@
+/* shared/mobile.css — phone layer for every screen (12 Oct 2026).
+   Loaded after index.html's own <style>, so it only adds what phones need.
+   Rules: nothing wider than the screen; wide tables scroll sideways inside
+   their own panel instead of the whole page; multi-column form grids stack;
+   inputs are 16px (no iOS zoom); buttons are big enough to tap; pop-ups fit. */
+
+@media (max-width: 640px) {
+  html, body { overflow-x: hidden; }
+  body { -webkit-text-size-adjust: 100%; }
+
+  /* Long IDs (Job Card numbers, Project IDs, file names) wrap instead of
+     pushing their box wider than the phone. */
+  .workspace-panel, [id^="canvas-module-"], [id^="workspace-"] { overflow-wrap: break-word; }
+  .contact-summary-card-parent, .contact-summary-title-info, .contact-summary-header-row { min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .workspace-panel > div, [id^="canvas-module-"] > div { max-width: 100%; }
+  .meta-row-line-block [style*="monospace"], .meta-row-line-block strong { overflow-wrap: anywhere; }
+  td .nav-btn-styled, td button { white-space: nowrap; }
+  td { overflow-wrap: normal; }
+  .workspace-panel th, [id^="canvas-module-"] th { white-space: nowrap; }
+
+  /* Header rows above a screen: hidden side controls take no room */
+  .navigation-action-header-row { flex-wrap: wrap; gap: 8px; margin-bottom: 10px !important; }
+  .navigation-action-header-row > [style*="visibility: hidden"], .navigation-action-header-row > [style*="visibility:hidden"] { display: none !important; }
+
+  /* Header and department tabs */
+  #main-global-nav-header-bar, .main-global-nav-header-bar { flex-wrap: wrap; gap: 6px; padding-left: 10px !important; padding-right: 10px !important; }
+  #dept-tabs-bar, .dept-tabs-bar { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  #dept-tabs-bar > *, .dept-tabs-bar > * { flex: 0 0 auto; }
+
+  /* Main dashboard: two compact columns */
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .menu-card { min-height: 58px !important; padding: 10px 8px !important; border-radius: 8px; }
+  .menu-card .mc-label { font-size: 0.82rem !important; line-height: 1.25; }
+  .sec-label { font-size: 0.72rem; }
+
+  /* Screens */
+  .workspace-panel, [id^="canvas-module-"], [id^="workspace-"] {
+    padding-left: 10px !important; padding-right: 10px !important; max-width: 100%; box-sizing: border-box; overflow-x: auto;
+  }
+  .panel-title { font-size: 1.2rem !important; margin-bottom: 12px !important; line-height: 1.25; }
+  h2 { font-size: 1.15rem; }
+  h3 { font-size: 1rem; }
+
+  /* Multi-column form grids written inline stack into one column
+     (dashboards keep their own tile layout). */
+  .workspace-panel [style*="grid-template-columns"]:not([class*="dd-"]):not(.keep-grid),
+  [id^="canvas-module-"] [style*="grid-template-columns"]:not([class*="dd-"]):not(.keep-grid) {
+    grid-template-columns: 1fr !important;
+  }
+  .workspace-panel [style*="grid-column"], [id^="canvas-module-"] [style*="grid-column"] { grid-column: auto !important; }
+
+  /* Rows of controls wrap instead of running off the screen */
+  .workspace-panel [style*="display:flex"], .workspace-panel [style*="display: flex"],
+  [id^="canvas-module-"] [style*="display:flex"], [id^="canvas-module-"] [style*="display: flex"] { flex-wrap: wrap; }
+  .workspace-panel [style*="flex:"], [id^="canvas-module-"] [style*="flex:"] { min-width: 0; }
+  /* A flex item never grows past its row just because something inside is wide
+     (a wide table then scrolls inside its own box). */
+  .workspace-panel [style*="display:flex"] > *, .workspace-panel [style*="display: flex"] > *,
+  [id^="canvas-module-"] [style*="display:flex"] > *, [id^="canvas-module-"] [style*="display: flex"] > * { min-width: 0; max-width: 100%; }
+
+  /* Tables scroll sideways inside their box */
+  .workspace-panel div[style*="overflow-x"], [id^="canvas-module-"] div[style*="overflow-x"] { -webkit-overflow-scrolling: touch; }
+  .workspace-panel table, [id^="canvas-module-"] table { font-size: 0.8rem; }
+  .workspace-panel th, .workspace-panel td, [id^="canvas-module-"] th, [id^="canvas-module-"] td { padding: 6px 6px !important; }
+
+  /* Inputs: full width, 16px so iOS does not zoom */
+  input[type="text"], input[type="number"], input[type="email"], input[type="tel"], input[type="url"],
+  input[type="date"], input[type="time"], input[type="password"], input[type="search"], select, textarea {
+    font-size: 16px !important; max-width: 100%; box-sizing: border-box;
+  }
+  td input[type="number"], td input[type="text"] { min-width: 64px; }
+
+  /* Buttons easy to tap */
+  .nav-btn-styled, .btn, button.nav-btn-styled { min-height: 38px; }
+  .nav-btn-styled { white-space: normal; }
+
+  /* Request / approval cards */
+  .contact-summary-card-parent { padding: 10px !important; }
+  .meta-row-line-block { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+  .meta-row-line-block > span[style*="margin-left"], .meta-row-line-block > strong[style*="margin-left"] { margin-left: 0 !important; }
+
+  /* Pop-ups (fixed full-screen overlays) fit the phone */
+  div[style*="position:fixed"][style*="inset:0"], div[style*="position: fixed"][style*="inset: 0"] { padding: 8px !important; align-items: flex-start !important; }
+  div[style*="position:fixed"][style*="inset:0"] > div, div[style*="position: fixed"][style*="inset: 0"] > div {
+    max-width: 100% !important; width: 100% !important; max-height: calc(100vh - 16px); overflow-y: auto; margin-top: 4px;
+  }
+
+  /* Body-level floating dropdowns (typeaheads) never wider than the screen */
+  body > div[style*="position:fixed"][id$="dropdown"], body > div[style*="position: fixed"][id$="dropdown"],
+  #mcr-search-dropdown { max-width: calc(100vw - 16px) !important; }
+}
+
+@media (max-width: 360px) {
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+}
