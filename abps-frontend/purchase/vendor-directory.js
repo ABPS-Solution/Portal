@@ -195,55 +195,80 @@ function vdProfileHtml(d) {
   const onTime = done ? Math.round((Number(perf.on_time_deliveries) || 0) * 100 / done) + "%" : "—";
   const recv = Number(perf.total_quantity_received) || 0;
   const rejPct = recv ? (Math.round((Number(perf.qa_rejected_quantity) || 0) * 1000 / recv) / 10) + "%" : "—";
-  const tile = (label, value, sub) => `<div style="background:#fff; border:2px solid #94a3b8; border-radius:8px; padding:10px 12px;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#64748b;">${label}</div>
-      <div style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-top:2px;">${value}</div>
-      ${sub ? `<div style="font-size:0.75rem; color:#64748b;">${sub}</div>` : ""}</div>`;
-  const kv = (k, val) => `<div><span style="color:#64748b; font-size:0.78rem;">${k}</span><div style="font-weight:600;">${val ? vdEsc(val) : "—"}</div></div>`;
+  const B = "2px solid #94a3b8";
+  const pillTag = (txt, bg, fg) => `<span style="font-size:0.72rem; font-weight:800; background:${bg}; color:${fg}; padding:3px 10px; border-radius:999px; white-space:nowrap;">${txt}</span>`;
+
+  // Details: label / value grid with lines; missing values flagged.
+  const missing = `<span style="color:#b45309; font-weight:600;">Not set</span>`;
+  const cell = (label, val, span) => `<div style="${span ? "grid-column:1/-1;" : ""} padding:9px 12px; border-right:1.5px solid #cbd5e1; border-bottom:1.5px solid #cbd5e1; min-width:0;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.3px;">${label}</div>
+      <div style="font-weight:600; color:#0f172a; margin-top:2px; overflow-wrap:break-word;">${val ? vdEsc(val) : missing}</div></div>`;
+  const gst = [v.cgstPercent != null ? "CGST " + Number(v.cgstPercent) + "%" : "", v.sgstPercent != null ? "SGST " + Number(v.sgstPercent) + "%" : "", v.igstPercent != null ? "IGST " + Number(v.igstPercent) + "%" : ""].filter(Boolean).join(" · ");
+  const details = `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); border:${B}; border-radius:8px; background:#fff; overflow:hidden;">
+      ${cell("GSTIN", v.gstin)}${cell("Type of Vendor", v.typeOfVendor)}${cell("Contact Person", v.contactPerson)}${cell("Phone", v.phoneNumber)}
+      ${cell("Email", v.email)}${cell("City", v.city)}${cell("State", [v.state, v.stateCode ? "(" + v.stateCode + ")" : ""].filter(Boolean).join(" "))}${cell("GST %", gst)}
+      ${cell("Address", v.address, true)}</div>`;
+
+  const tile = (label, value, sub, accent) => `<div style="background:#fff; border:${B}; border-top:4px solid ${accent || "#94a3b8"}; border-radius:8px; padding:10px 12px; min-width:0;">
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.3px; line-height:1.3;">${label}</div>
+      <div style="font-size:1.3rem; font-weight:800; color:#0f172a; margin-top:4px; line-height:1.2;">${value}</div>
+      <div style="font-size:0.74rem; color:#64748b; margin-top:2px; min-height:1em;">${sub || ""}</div></div>`;
+  const tiles = (html) => `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">${html}</div>`;
+
   const th = (t, al) => `<th style="padding:8px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800;">${t}</th>`;
   const td = (h, al) => `<td style="padding:8px; text-align:${al || "center"}; vertical-align:middle;">${h}</td>`;
-  const tableWrap = (head, rows, empty) => rows.length
-    ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; min-width:620px;"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`
-    : `<div style="color:var(--muted); padding:8px 0;">${empty}</div>`;
-  const section = (title, body) => `<div style="margin-top:16px;"><div class="sec-label" style="margin:0 0 8px 0;">${title}</div>${body}</div>`;
-  const mats = d.materials.map(m => `<tr>${td(`<div style="font-weight:600;">${vdEsc(m.materialName)}</div><div style="font-size:0.75rem; color:#64748b;">${vdEsc(m.itemCode)}</div>`, "left")}
-      ${td(vdEsc(m.unit))}${td(fmtQty(m.totalQty))}${td(m.poCount)}${td(vdMoney(m.lastRate))}${td(`${vdMoney(m.minRate)} – ${vdMoney(m.maxRate)}`)}${td(formatOrdinalDate(m.lastPoDate))}</tr>`);
-  const pos = d.recentPos.map(r => `<tr>${td(`<strong>${vdEsc(r.poNo)}</strong>`, "left")}${td(formatOrdinalDate(r.orderDate))}${td(vdEsc(r.status))}${td(vdMoney(r.grandTotal))}</tr>`);
-  const grns = d.grns.map(g => `<tr>${td(`<strong>${vdEsc(g.grnNumber)}</strong>`, "left")}${td(formatOrdinalDate(g.date))}${td(vdEsc(g.poNos || "—"))}${td(g.lines)}${td(fmtQty(g.ok))}${td(fmtQty(g.notOk))}${td(fmtQty(g.missing))}</tr>`);
+  const table = (head, rows, empty) => rows.length
+    ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:620px; background:#fff;"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`
+    : `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:2px dashed #cbd5e1; border-radius:8px;">${empty}</div>`;
+  const section = (title, count, body) => `<div style="margin-top:16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div class="sec-label" style="margin:0;">${title}</div>${count != null ? pillTag(count, "#ede9fe", "#5b21b6") : ""}</div>${body}</div>`;
+
+  const mats = d.materials.map(m => `<tr>${td(`<div style="font-weight:700;">${vdEsc(m.materialName)}</div><div style="font-size:0.75rem; color:#64748b;">${vdEsc(m.itemCode)}</div>`, "left")}
+      ${td(vdEsc(m.unit))}${td(fmtQty(m.totalQty))}${td(m.poCount)}${td(`<strong>${vdMoney(m.lastRate)}</strong>`)}${td(`${vdMoney(m.minRate)} – ${vdMoney(m.maxRate)}`)}${td(formatOrdinalDate(m.lastPoDate))}</tr>`);
+  const pos = d.recentPos.map(r => `<tr>${td(`<strong>${vdEsc(r.poNo)}</strong>`, "left")}${td(formatOrdinalDate(r.orderDate))}${td(vdEsc(r.status))}${td(`<strong>${vdMoney(r.grandTotal)}</strong>`)}</tr>`);
+  const grns = d.grns.map(g => `<tr>${td(`<strong>${vdEsc(g.grnNumber)}</strong>`, "left")}${td(formatOrdinalDate(g.date))}${td(vdEsc(g.poNos || "—"))}${td(g.lines)}
+      ${td(`<strong style="color:#15803d;">${fmtQty(g.ok)}</strong>`)}${td(Number(g.notOk) ? `<strong style="color:#b91c1c;">${fmtQty(g.notOk)}</strong>` : "0")}${td(Number(g.missing) ? `<strong style="color:#b45309;">${fmtQty(g.missing)}</strong>` : "0")}</tr>`);
+  const btn = (label, bg, onclick) => `<button type="button" class="nav-btn-styled" style="width:auto; background:${bg}; padding:7px 16px; font-weight:700; font-size:0.85rem;" onclick="${onclick}">${label}</button>`;
+
   return `
-    <div style="margin-top:18px; background:#f8fafc; border:2px solid #94a3b8; border-left:5px solid #7c3aed; border-radius:8px; padding:14px 16px;">
-      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
-        <div>
-          <div style="font-size:1.15rem; font-weight:800; color:var(--brand);">${vdEsc(v.vendorName)}</div>
-          <div style="font-size:0.82rem; color:#475569;">${[v.typeOfVendor, v.status === "Active" ? "Active" : "Inactive"].filter(Boolean).map(vdEsc).join(" · ")}${v.incomplete ? ` · <span style="color:#b45309; font-weight:700;">Details incomplete</span>` : ""}</div>
+    <div style="margin-top:18px; background:#f8fafc; border:${B}; border-left:6px solid #7c3aed; border-radius:10px; overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:14px 16px; background:#fff; border-bottom:${B};">
+        <div style="min-width:0;">
+          <div style="font-size:1.25rem; font-weight:800; color:var(--brand); line-height:1.25;">${vdEsc(v.vendorName)}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+            ${v.status === "Active" ? pillTag("ACTIVE", "#dcfce7", "#15803d") : pillTag("INACTIVE", "#e2e8f0", "#475569")}
+            ${v.incomplete ? pillTag("DETAILS INCOMPLETE", "#fef3c7", "#b45309") : ""}
+            ${v.typeOfVendor ? pillTag(vdEsc(v.typeOfVendor).toUpperCase(), "#e0e7ff", "#3730a3") : ""}
+          </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="nav-btn-styled" style="width:auto; background:var(--brand); padding:7px 16px; font-weight:700;" onclick="vdOpenForm(${jsArg(v.vendorName)})">Edit</button>
-          <button type="button" class="nav-btn-styled" style="width:auto; background:${v.status === "Active" ? "#b45309" : "var(--accent)"}; padding:7px 16px; font-weight:700;" onclick="vdSetStatus(${jsArg(v.vendorName)}, '${v.status === "Active" ? "Inactive" : "Active"}')">${v.status === "Active" ? "Deactivate" : "Activate"}</button>
-          <button type="button" class="nav-btn-styled" style="width:auto; background:#b91c1c; padding:7px 16px; font-weight:700;" onclick="vdDelete(${jsArg(v.vendorName)})">Delete</button>
-          <button type="button" class="nav-btn-styled" style="width:auto; background:#718096; padding:7px 16px; font-weight:700;" onclick="document.getElementById('vd-detail').innerHTML=''">Close</button>
+          ${btn("Edit", "var(--brand)", `vdOpenForm(${jsArg(v.vendorName)})`)}
+          ${btn(v.status === "Active" ? "Deactivate" : "Activate", v.status === "Active" ? "#b45309" : "var(--accent)", `vdSetStatus(${jsArg(v.vendorName)}, '${v.status === "Active" ? "Inactive" : "Active"}')`)}
+          ${btn("Delete", "#b91c1c", `vdDelete(${jsArg(v.vendorName)})`)}
+          ${btn("Close", "#718096", "document.getElementById('vd-detail').innerHTML=''")}
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px 16px; margin-top:12px; font-size:0.86rem;">
-        ${kv("GSTIN", v.gstin)}${kv("Contact Person", v.contactPerson)}${kv("Phone", v.phoneNumber)}${kv("Email", v.email)}
-        ${kv("City", v.city)}${kv("State", [v.state, v.stateCode].filter(Boolean).join(" · "))}
-        ${kv("GST %", [v.cgstPercent != null ? "CGST " + Number(v.cgstPercent) : "", v.sgstPercent != null ? "SGST " + Number(v.sgstPercent) : "", v.igstPercent != null ? "IGST " + Number(v.igstPercent) : ""].filter(Boolean).join(", "))}
-        <div style="grid-column:1/-1;">${kv("Address", v.address)}</div>
+      <div style="padding:14px 16px 18px;">
+        ${v.incomplete ? `<div style="background:#fffbeb; border-left:4px solid #d97706; color:#92400e; padding:9px 12px; border-radius:4px; font-size:0.85rem; margin-bottom:12px;">Some details are missing. Click <strong>Edit</strong> to add the GSTIN and address so this vendor's POs print correctly.</div>` : ""}
+        ${section("Vendor Details", null, details)}
+        ${section("Purchase", null, tiles(
+          tile("Authorized POs", p.authorized || 0, p.pending ? `${p.pending} waiting authorization` : "", "#2563eb")
+          + tile("PO Value (This FY)", vdMoney(p.value_fy), "", "#2563eb")
+          + tile("PO Value (All Time)", vdMoney(p.value_all), "", "#2563eb")
+          + tile("POs Still Delivering", p.open_deliveries || 0, "", "#2563eb")
+          + tile("Last PO", p.last_po ? formatOrdinalDate(p.last_po) : "—", "", "#2563eb")))}
+        ${section("Delivery & Quality", null, tiles(
+          tile("On-Time Deliveries", onTime, done ? `${perf.on_time_deliveries || 0} on time · ${perf.late_deliveries || 0} late` : "No deliveries tracked yet", "#15803d")
+          + tile("Average Days Late", perf.average_days_late != null ? fmtQty(perf.average_days_late) : "—", "", "#15803d")
+          + tile("Q/A Rejected", rejPct, recv ? `${fmtQty(perf.qa_rejected_quantity)} of ${fmtQty(recv)} received` : "", "#b91c1c")
+          + tile("Transit Rejected", perf.transit_rejected_quantity != null ? fmtQty(perf.transit_rejected_quantity) : "—", "", "#b91c1c")
+          + tile("Open Rejected / Missing", rej.open_lines || 0, rej.open_lines ? `${fmtQty(rej.open_qty)} still pending` : "", "#b45309")
+          + tile("Last Delivery", perf.last_delivery_date ? formatOrdinalDate(perf.last_delivery_date) : "—", "", "#15803d")))}
+        ${section("Materials Supplied", d.materials.length || null, table(th("Material", "left") + th("Unit") + th("Total Ordered") + th("POs") + th("Last Rate") + th("Rate Range") + th("Last PO"), mats, "No authorized POs with this vendor yet."))}
+        ${section("Recent Purchase Orders", d.recentPos.length || null, table(th("PO No", "left") + th("Order Date") + th("Status") + th("Grand Total"), pos, "No POs with this vendor yet."))}
+        ${section("Recent GRNs", d.grns.length || null, table(th("GRN", "left") + th("Date") + th("PO") + th("Lines") + th("OK") + th("Not OK") + th("Missing"), grns, "No GRNs from this vendor yet."))}
       </div>
-      ${section("Purchase", `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">
-        ${tile("Authorized POs", p.authorized || 0, p.pending ? `${p.pending} waiting authorization` : "")}
-        ${tile("PO value (this FY)", vdMoney(p.value_fy))}${tile("PO value (all time)", vdMoney(p.value_all))}
-        ${tile("POs still delivering", p.open_deliveries || 0)}${tile("Last PO", p.last_po ? formatOrdinalDate(p.last_po) : "—")}</div>`)}
-      ${section("Delivery & Quality", `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">
-        ${tile("On-time deliveries", onTime, done ? `${perf.on_time_deliveries || 0} on time, ${perf.late_deliveries || 0} late` : "")}
-        ${tile("Average days late", perf.average_days_late != null ? fmtQty(perf.average_days_late) : "—")}
-        ${tile("Q/A rejected", rejPct, recv ? `${fmtQty(perf.qa_rejected_quantity)} of ${fmtQty(recv)} received` : "")}
-        ${tile("Transit rejected", perf.transit_rejected_quantity != null ? fmtQty(perf.transit_rejected_quantity) : "—")}
-        ${tile("Open rejected / missing", rej.open_lines || 0, rej.open_lines ? `${fmtQty(rej.open_qty)} still pending` : "")}
-        ${tile("Last delivery", perf.last_delivery_date ? formatOrdinalDate(perf.last_delivery_date) : "—")}</div>`)}
-      ${section("Materials Supplied", tableWrap(th("Material", "left") + th("Unit") + th("Total Ordered") + th("POs") + th("Last Rate") + th("Rate Range") + th("Last PO"), mats, "No authorized POs yet."))}
-      ${section("Recent Purchase Orders", tableWrap(th("PO No", "left") + th("Order Date") + th("Status") + th("Grand Total"), pos, "No POs yet."))}
-      ${section("Recent GRNs", tableWrap(th("GRN", "left") + th("Date") + th("PO") + th("Lines") + th("OK") + th("Not OK") + th("Missing"), grns, "No GRNs yet."))}
     </div>`;
 }
 
