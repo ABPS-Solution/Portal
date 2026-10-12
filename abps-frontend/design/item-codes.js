@@ -826,6 +826,7 @@ function updateIcfNewPreview() {
       const ratingVals = icfRatingGetValues ? icfRatingGetValues() : [];
       let ratingText = icfRenderTemplate(icfSelectedFormat.ratingTemplate, ratingVals) || "—";
       ratingText = icfApplyFiberGlassTieRodThreading(icfSelectedFormat.ratingTemplate, ratingVals, ratingText);
+      ratingText = icfApplyCtIdRule(icfSelectedFormat.ratingTemplate, ratingVals, ratingText);
       ratingEl.textContent = ratingText;
     } else {
       ratingEl.textContent = "—";

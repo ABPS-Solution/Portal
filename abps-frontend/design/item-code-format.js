@@ -141,6 +141,8 @@ function icfValidateValues(template, values) {
     return !isNaN(lVal) && lVal <= 1000;
   })();
   const tieRodThreadsPh = tieRodShape ? placeholders[tieRodShape.threadsIndex] : null;
+  const ctIdShape = icfCtIdNotNeeded(segments, vals);
+  const ctIdPh = ctIdShape ? placeholders[ctIdShape.idIndex] : null;
 
   for (const ph of placeholders) {
     const raw = vals[ph.index];
@@ -164,6 +166,7 @@ function icfValidateValues(template, values) {
     const v = raw == null ? '' : String(raw).trim();
     if (!v) {
       if (ph === tieRodThreadsPh && threadsIsOptional) continue;
+      if (ph === ctIdPh) continue;
       return `"${ph.label}" is required.`;
     }
     if ((ph.kind === 'number' || ph.kind === 'mirror') && !icfIsValidNumericPlaceholderValue(v, ph.label)) {
@@ -548,6 +551,39 @@ function icfApplyFiberGlassTieRodThreading(template, values, rendered) {
   const diaVal = values[shape.diaIndex] == null ? '' : String(values[shape.diaIndex]).trim();
   if (!diaVal) return rendered;
   return `${diaVal} mm Dia, ${lVal} mm L, with Full Threading`;
+}
+
+// Client mirror of lib/itemCodeFormat.js matchCtIdShape. Current Transformer (CT): from 3.3 kV Class up, a CT has
+// no inner hole size (CT ID), so "CT ID tph mm" is neither required nor
+// shown (12 Oct 2026, team rule). STRUCTURAL match: the first placeholder is
+// a number followed by "kV Class", and a text placeholder sits between a
+// literal ending "CT ID" and one starting "mm". Returns {kvIndex, idIndex}
+// or null.
+const ICF_CT_ID_NOT_NEEDED_FROM_KV = 3.3;
+function icfMatchCtIdShape(segments) {
+  const first = segments[0], second = segments[1];
+  if (!first || first.kind !== 'number' || !second || second.kind !== 'literal' || !/^\s*kV Class\b/i.test(second.text)) return null;
+  for (let i = 1; i + 1 < segments.length; i++) {
+    const before = segments[i - 1], ph = segments[i], after = segments[i + 1];
+    if (ph.kind === 'text' && before.kind === 'literal' && /CT ID\s*$/i.test(before.text) &&
+        after.kind === 'literal' && /^\s*mm\b/i.test(after.text)) {
+      return { kvIndex: first.index, idIndex: ph.index };
+    }
+  }
+  return null;
+}
+function icfCtIdNotNeeded(segments, values) {
+  const shape = icfMatchCtIdShape(segments);
+  if (!shape) return null;
+  const kv = parseFloat(Array.isArray(values) ? values[shape.kvIndex] : '');
+  return (!isNaN(kv) && kv >= ICF_CT_ID_NOT_NEEDED_FROM_KV) ? shape : null;
+}
+// applyCtIdRule — removes "CT ID ... mm, " from the rendered rating when
+// ctIdNotNeeded. Runs on the rendered string, like the tie rod rule.
+function icfApplyCtIdRule(template, values, rendered) {
+  const { segments, error } = icfParseTemplate(template);
+  if (error || !icfCtIdNotNeeded(segments, values)) return rendered;
+  return rendered.replace(/,?\s*CT ID\b[^,]*?\bmm\b,?/i, ',').replace(/,\s*,/g, ',').replace(/,\s*$/, '').replace(/\s+/g, ' ').trim();
 }
 
 // ── Form builder — renders the fill-in inputs for one template into a
