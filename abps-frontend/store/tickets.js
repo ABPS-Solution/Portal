@@ -640,9 +640,9 @@ async function addItemToShoppingBasketRow() {
       const issueQty = Math.min(totalCons, canIssue);
       const memoQty = Math.round((totalCons - issueQty) * 1000) / 1000;
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
-      if (memoQty > 0 && !["Reactor", "Capacitor", "Panel", "Service"].includes(deptForMemo)) {
+      if (memoQty > 0 && !deptForMemo) {
         restoreAddBtn();
-        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Production Memo purchase can be asked only for Reactor, Capacitor, Panel or Service.`);
+        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Choose the Outgoing Use department first, so the rest can be asked through Production Memo.`);
         return;
       }
       if (existingCons) {
@@ -2024,7 +2024,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // must never appear here.
       const isProcessingDept = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Processing";
       const rawRecordsForCard = (jcmFetch.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !(isProcessingDept && r.isConsumable)
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
       );
 
       if (jcmFetch.success && rawRecordsForCard.length > 0) {

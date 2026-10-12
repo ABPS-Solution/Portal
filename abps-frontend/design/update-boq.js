@@ -673,7 +673,18 @@ function updateUBOQTotals() {
 
 // Add uboq to selectBOQRowMaterial
 // Find existing selectBOQRowMaterial and add uboq branch:
+// Production Memo materials (is_consumable, or any Spray Paint) never go on a
+// BOQ (12 Oct 2026); the server refuses them too (lib/consumables.js memoRowsError).
+function boqIsMemoMaterial(item) {
+  return !!(item && (item.isConsumable || /^spray paint/i.test(item.productName || '')));
+}
+
 function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
+  const memoHit = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+  if (boqIsMemoMaterial(memoHit)) {
+    alert(`${productName} comes only through Production Memo, so it can't be added to a BOQ.`);
+    return;
+  }
   const rowsMap = { cboq: cboqMaterialRows, eboq: eboqMaterialRows, uboq: uboqMaterialRows, boqrev: uboqRevRows };
   const renderMap = { cboq: renderCBOQMaterialRows, eboq: renderEBOQMaterialRows, uboq: renderUBOQMaterialRows, boqrev: () => renderBOQRevisionRows(uboqRevExpandedId) };
   const feedbackMap = { cboq: "create-boq-feedback", eboq: "auth-boq-feedback", uboq: "update-boq-feedback", boqrev: "auth-boq-upd-feedback" };

@@ -805,6 +805,16 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     // string. The dropdown suggestion itself still SHOWS combinedName (with
     // Make) so the picker remains unambiguous.
     const bareNameRating = item.productName + (item.rating ? ' - ' + item.rating : '');
+    if (boqIsMemoMaterial(item)) {
+      return `
+    <div style="padding:9px 12px; border-bottom:1px solid #f1f5f9; font-size:0.82rem; background:#faf5ff; cursor:not-allowed;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-weight:600; color:#6b7280; flex:1;">${escapeHtml(item.combinedName || item.productName)}</span>
+        <span style="font-size:0.68rem; font-weight:800; color:#5b21b6; background:#ede9fe; padding:2px 8px; border-radius:999px; white-space:nowrap;">PRODUCTION MEMO</span>
+      </div>
+      <div style="font-size:0.74rem; color:#5b21b6; margin-top:3px;">This material comes only through Production Memo, so it can't be added to a BOQ. Production raises it on the Material Issue Ticket.</div>
+    </div>`;
+    }
     return `
     <div onclick="selectBOQRowMaterial(${rowIdx}, ${jsArg(bareNameRating)}, '${item.itemCode}', '${formPrefix}')"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
