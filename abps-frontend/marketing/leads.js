@@ -920,7 +920,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         [
-          "New Lead", "Technical Discussion", "Inquire Received", "Offer Sent", 
+          "New Lead", "Inquire Received", "Offer Sent", 
           "Order Received", "Order Dispatched", "Product Commissioned", "Lead Failed", "Order not Received"
         ].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);

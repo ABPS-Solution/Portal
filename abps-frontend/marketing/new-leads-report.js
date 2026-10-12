@@ -154,15 +154,17 @@ function nlrRenderReport(data, f) {
   }
   const engChips = t.byEngineer.map(e =>
     `<span class="nlr-eng-chip"><span>${escapeHtml(e.name)}</span><strong>${e.count}</strong></span>`).join("");
+  const statusChips = (t.byStatus || []).map(x =>
+    `<span class="nlr-eng-chip"><span>${escapeHtml(x.status)}</span><strong>${x.count}</strong></span>`).join("");
   const strip = `
     <div class="nlr-strip">
       <div class="nlr-stat">
-        <div class="nlr-stat-label">New leads, ${escapeHtml(nlrRangeText(f))}</div>
+        <div class="nlr-stat-label">All leads, ${escapeHtml(nlrRangeText(f))}</div>
         <div class="nlr-stat-value">${t.leads}</div>
       </div>
-      <div class="nlr-stat nlr-stat-warn">
-        <div class="nlr-stat-label">No Action Plan</div>
-        <div class="nlr-stat-value">${t.actionPlanPending}</div>
+      <div class="nlr-stat nlr-stat-eng">
+        <div class="nlr-stat-label">Lead Status</div>
+        <div class="nlr-eng-chips">${statusChips}</div>
       </div>
       <div class="nlr-stat nlr-stat-eng">
         <div class="nlr-stat-label">ABPS Engineer</div>
