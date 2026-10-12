@@ -128,6 +128,7 @@ async function checkVendorOpenRejections() {
   } catch(e) { banner.style.display = "none"; }
 }
 
+// Unused since the Oct 2026 typeahead (qaRevSuggest) — flagged, not deleted.
 function handleQARevVendorSearch(query) {
   clearTimeout(qaRevVendorDebounce);
   const drop = document.getElementById("qarev-vendor-drop");
@@ -141,6 +142,60 @@ function handleQARevVendorSearch(query) {
       drop.style.display = "block";
     } catch(e) { if (drop) drop.style.display = "none"; }
   }, 250);
+}
+
+// ── Q/A Revision filter typeahead (Oct 2026) ─────────────────────────────
+// GRN Number / Vendor Name / Material Name suggest as you type, from the
+// GRNs that finished Q/A. One shared list element on document.body,
+// position:fixed under the box (same pattern as the GRN screen's pickers).
+window._qaRevOptions = { grnNumbers: [], vendors: [], materials: [] };
+async function qaRevLoadFilterOptions() {
+  try {
+    const data = await apFetch({ action: "fetchQARevisionFilterOptions" });
+    if (data.success) window._qaRevOptions = data;
+  } catch (e) { /* the boxes still work as plain text */ }
+}
+
+function qaRevSuggestEl() {
+  let el = document.getElementById("qarev-suggest");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "qarev-suggest";
+    el.style.cssText = "display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:260px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    document.body.appendChild(el);
+    window.addEventListener("scroll", qaRevHideSuggest, true);
+  }
+  return el;
+}
+
+function qaRevHideSuggest() { const el = document.getElementById("qarev-suggest"); if (el) el.style.display = "none"; }
+function qaRevHideSuggestSoon() { setTimeout(qaRevHideSuggest, 150); }
+
+function qaRevSuggest(kind, input) {
+  const q = (input.value || "").trim();
+  const o = window._qaRevOptions || {};
+  const norm = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  let items = [];
+  if (kind === "material") {
+    const list = o.materials || [];
+    items = (q ? materialSearch(list, q, 40, m => [m.materialName, m.itemCode]) : list.slice(0, 40))
+      .map(m => ({ value: m.materialName, html: `${escapeHtml(m.materialName)}${m.itemCode ? ` <span style="color:var(--muted); font-size:0.75rem;">(${escapeHtml(m.itemCode)})</span>` : ""}` }));
+  } else {
+    const list = kind === "grn" ? (o.grnNumbers || []) : (o.vendors || []);
+    const nq = norm(q);
+    items = list.filter(v => !nq || norm(v).includes(nq)).slice(0, 40).map(v => ({ value: v, html: escapeHtml(v) }));
+  }
+  const el = qaRevSuggestEl();
+  if (!items.length) { el.style.display = "none"; return; }
+  el.innerHTML = items.map(it => `<div data-value="${escapeHtml(it.value)}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.88rem;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${it.html}</div>`).join("");
+  el.querySelectorAll("[data-value]").forEach(d => {
+    d.onmousedown = (e) => { e.preventDefault(); input.value = d.dataset.value; qaRevHideSuggest(); };
+  });
+  const r = input.getBoundingClientRect();
+  el.style.left = r.left + "px";
+  el.style.top = (r.bottom + 2) + "px";
+  el.style.width = Math.max(r.width, 260) + "px";
+  el.style.display = "block";
 }
 
 async function runQARevisionSearch() {
@@ -164,6 +219,7 @@ async function runQARevisionSearch() {
             <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${r.grnNumber}</span>
             <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${escapeHtml(r.vendorName)}</span>
             ${r.poNo ? `<span style="background:#e0f2fe; color:#0369a1; margin-left:4px; font-weight:700; padding:3px 8px;">PO: ${r.poNo}</span>` : ''}
+            ${gateDocLinksHtml(r.docUrls, r.invoiceNumber, r.challanNumber)}
           </div>
           <div style="font-size:0.78rem; color:var(--muted); font-weight:600;">${r.lineCount} line(s) · Q/A by ${escapeHtml(r.qaPerson || '—')} · ${formatOrdinalDateTime(r.qaTimestamp)}</div>
         </div>

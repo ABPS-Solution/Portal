@@ -849,19 +849,16 @@ async function renderQARevisionSearchPanel(feed, toggleBar) {
   feed.innerHTML = toggleBar + `
     <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px;">
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; align-items:end;">
-        <div><label class="field-label">GRN Number</label><input type="text" id="qarev-grn" placeholder="e.g. GRN-XXXX" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
-        <div style="position:relative;">
-          <label class="field-label">Vendor Name</label>
-          <input type="text" id="qarev-vendor" placeholder="Search vendor..." autocomplete="off" oninput="handleQARevVendorSearch(this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-          <div id="qarev-vendor-drop" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; max-height:180px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-        </div>
-        <div><label class="field-label">Product / Item Code</label><input type="text" id="qarev-product" placeholder="Material or item code..." style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">GRN Number</label><input type="text" id="qarev-grn" placeholder="Type a GRN number..." autocomplete="off" oninput="qaRevSuggest('grn', this)" onfocus="qaRevSuggest('grn', this)" onblur="qaRevHideSuggestSoon()" onkeydown="if(event.key==='Enter'){qaRevHideSuggest(); runQARevisionSearch();}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Vendor Name</label><input type="text" id="qarev-vendor" placeholder="Type a vendor..." autocomplete="off" oninput="qaRevSuggest('vendor', this)" onfocus="qaRevSuggest('vendor', this)" onblur="qaRevHideSuggestSoon()" onkeydown="if(event.key==='Enter'){qaRevHideSuggest(); runQARevisionSearch();}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
+        <div><label class="field-label">Material Name</label><input type="text" id="qarev-product" placeholder="Type a material or item code..." autocomplete="off" oninput="qaRevSuggest('material', this)" onfocus="qaRevSuggest('material', this)" onblur="qaRevHideSuggestSoon()" onkeydown="if(event.key==='Enter'){qaRevHideSuggest(); runQARevisionSearch();}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label">Q/A Date From</label><input type="date" id="qarev-date-from" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
         <div><label class="field-label">Q/A Date To</label><input type="date" id="qarev-date-to" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>
         <div><button class="nav-btn-styled" style="background:#15803d; width:100%;" onclick="runQARevisionSearch()">Search</button></div>
       </div>
     </div>
     <div id="qarev-results"></div>`;
+  qaRevLoadFilterOptions();
 }
 
 let qaRevVendorDebounce = null;

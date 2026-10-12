@@ -175,10 +175,12 @@ function handleEmailLeadsCompanySearchInput(value) {
 // fetchEmailLeadsList with the currently-selected filters, no Gmail poll
 // (fetchAndProcessInboundEmailLeads is expensive/quota-bound and has no
 // reason to re-run just because the operator changed a filter dropdown).
-async function refetchEmailLeadsListWithFilters() {
+// opts.silent: quiet refresh without the Loading message (shared/liveUpdates.js).
+async function refetchEmailLeadsListWithFilters(opts) {
+  const silent = !!(opts && opts.silent);
   updateEmailLeadsFilteringForText();
   const feedCanvas = document.getElementById("email-leads-inbound-feed-canvas");
-  if (feedCanvas) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem;">Loading...</div>`;
+  if (feedCanvas && !silent) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem;">Loading...</div>`;
   const { engineerEmail, dateFilter } = getCurrentEmailLeadsFilters();
   try {
     const data = await apFetch({ action: "fetchEmailLeadsList", engineerEmail, dateFilter });

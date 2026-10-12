@@ -248,15 +248,17 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
   }
 }
 
-async function executeTaskMatrixSearch() {
+// opts.live: quiet re-run of the last search (shared/liveUpdates.js).
+async function executeTaskMatrixSearch(opts) {
+  const live = !!(opts && opts.live && window._taskMatrixLast);
   const btn = document.getElementById("task-matrix-search-btn");
   const outputNode = document.getElementById("task-matrix-results-output-node");
   if (!outputNode) return;
 
-  const checkedEngineers = Array.from(document.querySelectorAll('input[name="taskMatrixEngineer"]:checked')).map(i => i.value);
-  const checkedStatuses = Array.from(document.querySelectorAll('input[name="taskMatrixStatus"]:checked')).map(i => i.value);
   const dateFilterChecked = document.querySelector('input[name="taskMatrixDate"]:checked');
-  const dateFilter = dateFilterChecked ? dateFilterChecked.value : "";
+  const checkedEngineers = live ? window._taskMatrixLast.engineers : Array.from(document.querySelectorAll('input[name="taskMatrixEngineer"]:checked')).map(i => i.value);
+  const checkedStatuses = live ? window._taskMatrixLast.statuses : Array.from(document.querySelectorAll('input[name="taskMatrixStatus"]:checked')).map(i => i.value);
+  const dateFilter = live ? window._taskMatrixLast.dateFilter : (dateFilterChecked ? dateFilterChecked.value : "");
   const dateFilterLabels = { Overdue: "Overdue", Today: "Today", ThisWeek: "This Week", NextWeek: "Next Week", ThisMonth: "This Month" };
 
   if (checkedEngineers.length === 0 && checkedStatuses.length === 0 && !dateFilter) {
@@ -264,7 +266,7 @@ async function executeTaskMatrixSearch() {
     return;
   }
 
-  btn.classList.add("loading"); btn.textContent = "Filtering Tasks...";
+  if (!live) { btn.classList.add("loading"); btn.textContent = "Filtering Tasks..."; }
 
   const buildFilterParts = () => {
     const parts = [];
@@ -294,6 +296,7 @@ async function executeTaskMatrixSearch() {
     });
 
     if (data.success) {
+      window._taskMatrixLast = { engineers: checkedEngineers, statuses: checkedStatuses, dateFilter };
       outputNode.innerHTML = "";
 
       if (data.tasks.length === 0) {
@@ -357,7 +360,7 @@ async function executeTaskMatrixSearch() {
         document.getElementById(`matrix-edit-task-btn-${t.id}`).onclick = function() { injectMatrixInlineTaskForm(t, card); };
       });
     }
-  } catch(e) { alert("Task matrix engine fetch error: " + e.message); } 
+  } catch(e) { if (live) throw e; alert("Task matrix engine fetch error: " + e.message); } 
   finally { btn.classList.remove("loading"); btn.textContent = "Run Tasks Search"; }
 }
 

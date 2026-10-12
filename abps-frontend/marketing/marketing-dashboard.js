@@ -21,9 +21,13 @@ function mdLoadCustom() {
   mdLoadDashboard(val);
 }
 
-async function mdLoadDashboard(customVal) {
+// opts.silent: quiet refresh, no placeholders or alerts (shared/liveUpdates.js).
+async function mdLoadDashboard(customVal, opts) {
+  const silent = !!(opts && opts.silent);
+  window._mdLastCustomVal = customVal;
   const body = document.getElementById("md-body");
   if (!body) return;
+  if (!silent)
   ["md-s-newleads","md-s-inprogress","md-s-winrate","md-s-avgdays",
    "md-s-emailleads","md-s-opentasks","md-s-noopentask","md-s-pouploads","md-s-offerssent","md-s-coldemails"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
@@ -35,10 +39,10 @@ async function mdLoadDashboard(customVal) {
       periodType:  mdCurrentPeriod,
       periodValue: customVal || ""
     });
-    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { if (!silent) alert("Dashboard load failed: " + data.error); return; }
     mdRenderDashboard(data);
   } catch(e) {
-    alert("Dashboard error: " + e.message);
+    if (!silent) alert("Dashboard error: " + e.message);
   }
 }
 

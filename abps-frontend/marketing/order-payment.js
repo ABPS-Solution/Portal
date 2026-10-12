@@ -73,9 +73,10 @@ async function initializeOrderPaymentPanel() {
   oppLoadAggregate();
 }
 
-async function oppLoadList() {
+// opts.silent: quiet refresh without the Loading message (shared/liveUpdates.js).
+async function oppLoadList(opts) {
   const listEl = document.getElementById("opp-list");
-  listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
+  if (!(opts && opts.silent)) listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
   try {
     // Fully-paid POs are never fetched at all now -- there's no toggle to
     // reveal them, they're simply not relevant to a payment-tracking list.
