@@ -116,7 +116,7 @@ function pcostRender() {
   };
   const ratio = (a, b) => b > 0 ? (a / b) * 100 : null;
 
-  let html = `<table class="prn-view-table pcost-table"><colgroup>
+  let html = `<div class="pcost-box"><table class="prn-view-table pcost-table"><colgroup>
       <col style="width:4%"><col style="width:17%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
       <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
     </colgroup><thead><tr>
@@ -126,14 +126,15 @@ function pcostRender() {
   rows.forEach((r, i) => {
     const open = pcostOpen.has(r.projectId);
     const design = r.designCosting != null ? pcostMoney(r.designCosting)
-      : `<span class="pcost-muted">BOQs pending (${r.boqAuthorized}/${r.boqTotal})</span>`;
+      : r.boqTotal === 0 ? `<span class="pcost-muted">No BOQs yet</span>`
+      : `${r.designSoFar > 0 ? `<span class="pcost-muted">${pcostMoney(r.designSoFar)} so far</span><br>` : ""}<span class="pcost-flag">${r.boqPending} BOQ${r.boqPending === 1 ? "" : "s"} pending (${r.boqAuthorized}/${r.boqTotal} authorized)</span>`;
     const diff = r.difference == null ? "" :
       `<span style="color:${r.difference > 0 ? "#b91c1c" : "#15803d"}; font-weight:600;">${r.difference > 0 ? "+" : ""}${pcostMoney(r.difference).replace("₹-", "-₹")}</span>`;
     const pay = `${pcostMoney(r.paymentReceived)}${r.paymentPct != null ? `<div class="pcost-muted">${pcostPct(r.paymentPct)} of ${pcostMoney(r.poTotalWithGst)}</div>` : ""}`;
     const actual = r.status === "Complete" ? `<strong>${pcostPct(r.actualMsr)}</strong>${r.dispatchDate ? `<div class="pcost-muted">${formatOrdinalDate(r.dispatchDate)}</div>` : ""}` : `<span class="pcost-muted">Not dispatched</span>`;
     html += `<tr class="${r.status === "Complete" ? "pcost-done" : ""}">
       <td style="text-align:center;"><button class="pcost-sr" onclick="pcostToggle(${jsArg(r.projectId)})">${open ? "▾" : "▸"} ${i + 1}</button></td>
-      <td><div style="font-weight:600;">${escapeHtml(r.companyName || "")}</div><div class="pcost-muted" style="word-break:break-all;">${escapeHtml(r.projectId)}</div></td>
+      <td class="pcost-left"><div style="font-weight:600;">${escapeHtml(r.companyName || "")}</div><div class="pcost-muted" style="word-break:break-all;">${escapeHtml(r.projectId)}</div></td>
       <td>${pcostMoney(r.poValue)}</td><td>${design}</td><td>${pcostPct(r.designMsr)}</td>
       <td>${pcostMoney(r.rmPoCosting)}</td><td>${pcostMoney(r.memoCosting)}</td><td><strong>${pcostMoney(r.currentCosting)}</strong>${r.poValue > 0 ? `<div class="pcost-muted">${pcostPct(ratio(r.currentCosting, r.poValue))} of PO</div>` : ""}</td>
       <td>${diff}</td><td>${pay}</td><td>${actual}</td></tr>`;
@@ -144,7 +145,7 @@ function pcostRender() {
     <td>${pcostMoney(tot.rm)}</td><td>${pcostMoney(tot.memo)}</td><td>${pcostMoney(tot.cur)}</td>
     <td>${designRows.length ? pcostMoney(tot.diff).replace("₹-", "-₹") : ""}</td>
     <td>${pcostMoney(tot.recv)}<div class="pcost-muted">${pcostPct(ratio(tot.recv, tot.poGst))}</div></td>
-    <td>${pcostPct(ratio(tot.actCost, tot.actPo))}</td></tr></tbody></table>`;
+    <td>${pcostPct(ratio(tot.actCost, tot.actPo))}</td></tr></tbody></table></div>`;
   wrap.innerHTML = html;
   rows.filter(r => pcostOpen.has(r.projectId)).forEach(r => pcostLoadBreakdown(r.projectId));
 }
@@ -161,16 +162,20 @@ async function pcostLoadBreakdown(projectId) {
     const data = await pcostCall("fetchProjectCostingBreakdown", { projectId });
     if (!data.success) throw new Error(data.error || "Could not load BOQs.");
     const boqs = data.boqs || [];
-    if (!boqs.length) { cell.innerHTML = `<span class="pcost-muted">No BOQs yet.</span>`; return; }
-    cell.innerHTML = `<table class="prn-view-table" style="width:100%; table-layout:fixed; font-size:12px;">
+    if (!boqs.length && !(data.pending || []).length) { cell.innerHTML = `<span class="pcost-muted">No BOQs yet.</span>`; return; }
+    const pending = data.pending || [];
+    const pendHtml = pending.length ? `<div style="margin-bottom:8px; text-align:left;"><span class="pcost-flag">Pending BOQs</span> ` +
+      pending.map(p => `${escapeHtml(p.name || p.itemCode)}${p.isFg ? " (Finished Goods)" : ""}`).join(", ") + `</div>` : "";
+    cell.innerHTML = pendHtml + `<div class="pcost-box"><table class="prn-view-table pcost-table" style="font-size:12px;">
       <thead><tr><th style="width:40%">BOQ</th><th>Status</th><th>Design Costing</th><th>RM PO Costing</th><th>Production Memo Costing</th><th>Total Current</th><th>Current vs Design</th></tr></thead><tbody>` +
       boqs.map(b => {
         const d = b.currentCosting - b.designCosting;
-        return `<tr><td style="word-break:break-all;">${escapeHtml(b.boqId)}</td><td>${escapeHtml(b.status)}</td>
-          <td>${pcostMoney(b.designCosting)}</td><td>${pcostMoney(b.rmPoCosting)}</td><td>${pcostMoney(b.memoCosting)}</td>
+        const fg = b.isFg ? `<div class="pcost-muted">Finished Goods BOQ: its cost is already inside the main BOQ, so it is not added to Design Estimated Costing</div>` : "";
+        return `<tr><td class="pcost-left" style="word-break:break-all;">${escapeHtml(b.boqId)}${fg}</td><td>${escapeHtml(b.status)}</td>
+          <td${b.isFg ? ' style="color:var(--muted);"' : ""}>${pcostMoney(b.designCosting)}</td><td>${pcostMoney(b.rmPoCosting)}</td><td>${pcostMoney(b.memoCosting)}</td>
           <td>${pcostMoney(b.currentCosting)}</td>
           <td style="color:${d > 0 ? "#b91c1c" : "#15803d"};">${d > 0 ? "+" : ""}${pcostMoney(d).replace("₹-", "-₹")}</td></tr>`;
-      }).join("") + `</tbody></table>`;
+      }).join("") + `</tbody></table></div>`;
   } catch (err) {
     if (err && err.message === "SESSION_EXPIRED") return;
     cell.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(err.message || String(err))}</span>`;

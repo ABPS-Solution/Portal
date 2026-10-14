@@ -947,9 +947,12 @@
 .pcost-pill.active { background:#0f766e; color:#fff; border-color:#0f766e; }
 .pcost-period { display:flex; gap:6px; }
 .pcost-period select { width:auto; flex:none; }
-.pcost-table { width:100%; table-layout:fixed; font-size:13px; }
-.pcost-table th { background:#f1f5f9; font-size:12px; }
-.pcost-table td { vertical-align:top; word-wrap:break-word; }
+.pcost-box { overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); }
+.pcost-table { width:100%; table-layout:fixed; font-size:13px; border-collapse:collapse; background:#fff; }
+.pcost-table th { background:#f8fafc; font-size:0.72rem; padding:8px 6px; text-align:center; vertical-align:middle; }
+.pcost-table td { padding:8px 6px; text-align:center; vertical-align:middle; word-wrap:break-word; }
+.pcost-table td.pcost-left { text-align:left; }
+.pcost-flag { display:inline-block; margin-top:3px; padding:2px 6px; border-radius:4px; background:#fef3c7; color:#92400e; font-size:11px; font-weight:600; }
 .pcost-table tr.pcost-done td { background:#f0fdf4; }
 .pcost-table tr.pcost-total td { background:#e2e8f0; font-weight:700; }
 .pcost-muted { color:var(--muted); font-size:11px; }
@@ -3332,7 +3335,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div><label>Search</label><input id="pcost-search" type="text" placeholder="Company or Project ID" oninput="pcostRender()"></div>
       </div>
       <div class="pcost-muted" style="margin:6px 0 10px;">PO value is without GST. MSR = material cost as a % of PO value. Period: Internal MFC date for active projects, final invoice date for completed ones.</div>
-      <div id="pcost-table-wrap" style="overflow-x:auto;"></div>
+      <div id="pcost-table-wrap"></div>
     </div>
   </div>
   <div id="canvas-module-cash-expenses" class="workspace-panel" style="display:none;">
