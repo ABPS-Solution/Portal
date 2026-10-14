@@ -688,10 +688,12 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";
       const canCashExpenses = userPermissionsObject.cashExpenses === true;
       if (document.getElementById("mod-cash-expenses")) document.getElementById("mod-cash-expenses").style.display = canCashExpenses ? "block" : "none";
+      const canProjectCosting = userPermissionsObject.projectCosting === true;
+      if (document.getElementById("mod-project-costing")) document.getElementById("mod-project-costing").style.display = canProjectCosting ? "block" : "none";
       const canTravelTickets = userPermissionsObject.travelTickets === true;
       if (document.getElementById("mod-travel-tickets")) document.getElementById("mod-travel-tickets").style.display = canTravelTickets ? "block" : "none";
       const accountsHeaderBlock = document.getElementById("dashboard-accounts-department-header-block");
-      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets || userPermissionsObject.viewAccountsDashboard === true) ? "block" : "none";
+      if (accountsHeaderBlock) accountsHeaderBlock.style.display = (canTourExpense || canCashExpenses || canProjectCosting || canTravelTickets || userPermissionsObject.viewAccountsDashboard === true) ? "block" : "none";
 
   // A department's sub-heading (.sec-label) sits right before its own
   // .dashboard-grid of .menu-card tiles — every card's display was just
@@ -1234,6 +1236,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const ceCanvas = document.getElementById("canvas-module-cash-expenses");
     if (ceCanvas) { ceCanvas.style.display = "block"; initializeCashExpensesPanel(); }
+  } else if (targetCanvasModuleId === 'project-costing') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const pcCanvas = document.getElementById("canvas-module-project-costing");
+    if (pcCanvas) { pcCanvas.style.display = "block"; initializeProjectCostingPanel(); }
   } else if (targetCanvasModuleId === 'travel-tickets') {
     document.getElementById("dashboard-view").style.display = "none";
     const ttkCanvas = document.getElementById("canvas-module-travel-tickets");

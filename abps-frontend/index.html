@@ -940,6 +940,21 @@
 #cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 .prn-view-table, .prn-view-table th, .prn-view-table td { border:2px solid #94a3b8 !important; }
+.pcost-filters { display:grid; grid-template-columns:auto auto 1fr; gap:16px; align-items:end; padding:12px; border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc; }
+.pcost-filters label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; }
+.pcost-pills { display:flex; gap:6px; }
+.pcost-pill { width:auto; padding:6px 14px; border:1px solid var(--border); border-radius:999px; background:#fff; cursor:pointer; font-size:13px; }
+.pcost-pill.active { background:#0f766e; color:#fff; border-color:#0f766e; }
+.pcost-period { display:flex; gap:6px; }
+.pcost-period select { width:auto; flex:none; }
+.pcost-table { width:100%; table-layout:fixed; font-size:13px; }
+.pcost-table th { background:#f1f5f9; font-size:12px; }
+.pcost-table td { vertical-align:top; word-wrap:break-word; }
+.pcost-table tr.pcost-done td { background:#f0fdf4; }
+.pcost-table tr.pcost-total td { background:#e2e8f0; font-weight:700; }
+.pcost-muted { color:var(--muted); font-size:11px; }
+.pcost-sr { width:auto; padding:2px 6px; border:none; background:none; cursor:pointer; font-weight:600; }
+@media (max-width:900px) { .pcost-filters { grid-template-columns:1fr; } }
 #canvas-module-boq-increase-approvals table, #canvas-module-boq-increase-approvals table th, #canvas-module-boq-increase-approvals table td, #canvas-module-purchase-vendor-directory table, #canvas-module-purchase-vendor-directory table th, #canvas-module-purchase-vendor-directory table td, #canvas-module-material-change-approvals table, #canvas-module-material-change-approvals table th, #canvas-module-material-change-approvals table td, #cpr-queue-feed .cpr-grid, #cpr-queue-feed .cpr-grid th, #cpr-queue-feed .cpr-grid td, #canvas-module-production-planning table, #canvas-module-production-planning table th, #canvas-module-production-planning table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
 #canvas-module-store-manager-approvals table thead th, #canvas-module-assign-material-requirement-date table thead th, #canvas-module-revise-material-requirement-date table thead th { background:#eef2f7 !important; }
 #canvas-module-store-gate-entry table, #canvas-module-store-gate-entry table th, #canvas-module-store-gate-entry table td, #canvas-module-store-entry table, #canvas-module-store-entry table th, #canvas-module-store-entry table td, #canvas-module-store-grn table, #canvas-module-store-grn table th, #canvas-module-store-grn table td, #canvas-module-store-repair-qa table, #canvas-module-store-repair-qa table th, #canvas-module-store-repair-qa table td, #canvas-module-assign-current-stock table, #canvas-module-assign-current-stock table th, #canvas-module-assign-current-stock table td, #canvas-module-store-material-request table, #canvas-module-store-material-request table th, #canvas-module-store-material-request table td, #canvas-module-store-manager-approvals table, #canvas-module-store-manager-approvals table th, #canvas-module-store-manager-approvals table td, #canvas-module-purchase-rejected-material table, #canvas-module-purchase-rejected-material table th, #canvas-module-purchase-rejected-material table td, [id^="canvas-module-"][id$="-dashboard"] table, [id^="canvas-module-"][id$="-dashboard"] table th, [id^="canvas-module-"][id$="-dashboard"] table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
@@ -1504,6 +1519,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-travel-tickets" onclick="switchActiveDashboardModule('travel-tickets')"><span class="mc-label">Travel Ticket / Hotel Booking</span></div>
         <div class="menu-card" id="mod-tour-expense" onclick="switchActiveDashboardModule('tour-expense')"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cash-expenses" onclick="switchActiveDashboardModule('cash-expenses')"><span class="mc-label">Daily Cash / UPI / Online Expenses</span></div>
+        <div class="menu-card" id="mod-project-costing" onclick="switchActiveDashboardModule('project-costing')"><span class="mc-label">Project Costing</span></div>
       </div>
     </div>
     
@@ -3301,6 +3317,24 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
+  <div id="canvas-module-project-costing" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Project Costing</h2>
+      <div class="pcost-filters">
+        <div><label>Projects</label><div id="pcost-status-pills" class="pcost-pills"></div></div>
+        <div><label>Period</label><div class="pcost-period">
+          <select id="pcost-period-type" onchange="pcostPeriodTypeChange(); pcostLoad();"><option value="">All time</option><option value="month">Month</option><option value="quarter">Quarter</option><option value="year">Year</option></select>
+          <span id="pcost-period-values" class="pcost-period"></span></div></div>
+        <div><label>Search</label><input id="pcost-search" type="text" placeholder="Company or Project ID" oninput="pcostRender()"></div>
+      </div>
+      <div class="pcost-muted" style="margin:6px 0 10px;">PO value is without GST. MSR = material cost as a % of PO value. Period: Internal MFC date for active projects, final invoice date for completed ones.</div>
+      <div id="pcost-table-wrap" style="overflow-x:auto;"></div>
+    </div>
+  </div>
   <div id="canvas-module-cash-expenses" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -6406,6 +6440,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="accounts/cash-expense-employees.js"></script>
 <script src="accounts/travel-tickets.js"></script>
 <script src="accounts/accounts-dashboard.js"></script>
+<script src="accounts/project-costing.js"></script>
 <script src="shared/sw-register.js"></script>
 <!-- Live updates: loads LAST, it wraps apFetch and buildMultiContactDirectoryInterface. -->
 <script src="shared/liveUpdates.js"></script>
