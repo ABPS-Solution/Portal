@@ -940,13 +940,18 @@
 #cmit-main-section .cmit-basket-table td { padding:8px 10px; font-size:0.9rem; }
 .prn-bordered-table th, .prn-bordered-table td { border:1px solid var(--border) !important; }
 .prn-view-table, .prn-view-table th, .prn-view-table td { border:2px solid #94a3b8 !important; }
-.pcost-filters { display:grid; grid-template-columns:auto auto 1fr; gap:16px; align-items:end; padding:12px; border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc; }
-.pcost-filters label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; }
-.pcost-pills { display:flex; gap:6px; }
-.pcost-pill { width:auto; padding:6px 14px; border:1px solid var(--border); border-radius:999px; background:#fff; cursor:pointer; font-size:13px; }
-.pcost-pill.active { background:#0f766e; color:#fff; border-color:#0f766e; }
-.pcost-period { display:flex; gap:6px; }
-.pcost-period select { width:auto; flex:none; }
+.pcost-filters { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:#f8fafc; }
+.pcost-filters > div { display:flex; flex-direction:column; }
+.pcost-filters > div:last-child { flex:1; min-width:220px; }
+.pcost-filters label { display:block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.pcost-pills { display:inline-flex; height:38px; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff; }
+.pcost-pill { width:auto; height:100%; padding:0 18px; border:none; border-right:1px solid var(--border); border-radius:0; background:#fff; color:#334155; cursor:pointer; font-size:13px; font-weight:600; margin:0; }
+.pcost-pill:last-child { border-right:none; }
+.pcost-pill:hover:not(.active) { background:#f1f5f9; }
+.pcost-pill.active { background:#0f766e; color:#fff; }
+.pcost-period { display:flex; gap:8px; }
+.pcost-period select { width:auto; flex:none; height:38px; min-width:120px; margin:0; border-radius:8px; }
+#pcost-search { height:38px; margin:0; border-radius:8px; padding:0 12px; }
 .pcost-box { overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); }
 .pcost-table { width:100%; table-layout:fixed; font-size:13px; border-collapse:collapse; background:#fff; }
 .pcost-table th { background:#f8fafc; font-size:0.72rem; padding:8px 6px; text-align:center; vertical-align:middle; }
@@ -957,7 +962,7 @@
 .pcost-table tr.pcost-total td { background:#e2e8f0; font-weight:700; }
 .pcost-muted { color:var(--muted); font-size:11px; }
 .pcost-sr { width:auto; padding:2px 6px; border:none; background:none; cursor:pointer; font-weight:600; }
-@media (max-width:900px) { .pcost-filters { grid-template-columns:1fr; } }
+@media (max-width:900px) { .pcost-filters > div { width:100%; } }
 #canvas-module-boq-increase-approvals table, #canvas-module-boq-increase-approvals table th, #canvas-module-boq-increase-approvals table td, #canvas-module-purchase-vendor-directory table, #canvas-module-purchase-vendor-directory table th, #canvas-module-purchase-vendor-directory table td, #canvas-module-material-change-approvals table, #canvas-module-material-change-approvals table th, #canvas-module-material-change-approvals table td, #cpr-queue-feed .cpr-grid, #cpr-queue-feed .cpr-grid th, #cpr-queue-feed .cpr-grid td, #canvas-module-production-planning table, #canvas-module-production-planning table th, #canvas-module-production-planning table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
 #canvas-module-store-manager-approvals table thead th, #canvas-module-assign-material-requirement-date table thead th, #canvas-module-revise-material-requirement-date table thead th { background:#eef2f7 !important; }
 #canvas-module-store-gate-entry table, #canvas-module-store-gate-entry table th, #canvas-module-store-gate-entry table td, #canvas-module-store-entry table, #canvas-module-store-entry table th, #canvas-module-store-entry table td, #canvas-module-store-grn table, #canvas-module-store-grn table th, #canvas-module-store-grn table td, #canvas-module-store-repair-qa table, #canvas-module-store-repair-qa table th, #canvas-module-store-repair-qa table td, #canvas-module-assign-current-stock table, #canvas-module-assign-current-stock table th, #canvas-module-assign-current-stock table td, #canvas-module-store-material-request table, #canvas-module-store-material-request table th, #canvas-module-store-material-request table td, #canvas-module-store-manager-approvals table, #canvas-module-store-manager-approvals table th, #canvas-module-store-manager-approvals table td, #canvas-module-purchase-rejected-material table, #canvas-module-purchase-rejected-material table th, #canvas-module-purchase-rejected-material table td, [id^="canvas-module-"][id$="-dashboard"] table, [id^="canvas-module-"][id$="-dashboard"] table th, [id^="canvas-module-"][id$="-dashboard"] table td { border:2px solid #94a3b8 !important; border-collapse:collapse; }
