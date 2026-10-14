@@ -125,10 +125,10 @@ function mmCountsTableHtml(data) {
       onclick="mmSetCellFilter(${jsArg(engKey)}, ${jsArg(c.key)})" title="Show these leads">${n}</td>`;
   };
   const rows = data.byEngineer.map(e => `<tr><th class="mm-eng-name">${escapeHtml(e.name)}</th>${MM_COUNTS.map(c => cell(e.engineerKey, c, e[c.key])).join("")}</tr>`).join("");
-  const total = `<tr class="mm-total"><th>Total</th>${MM_COUNTS.map(c => cell(null, c, data.totals[c.key])).join("")}</tr>`;
+  const total = `<tr class="mm-total"><th>Total</th>${MM_COUNTS.map(c => cell("__ALL__", c, data.totals[c.key])).join("")}</tr>`;
   return `<div style="overflow-x:auto; margin:12px 0 16px;">
     <table class="nlr-table mm-counts">
-      <thead><tr><th>ABPS Employee</th>${MM_COUNTS.map(c => `<th class="nlr-center">${c.label}</th>`).join("")}</tr></thead>
+      <thead><tr><th>ABPS Engineer</th>${MM_COUNTS.map(c => `<th class="nlr-center">${c.label}</th>`).join("")}</tr></thead>
       <tbody>${rows}${total}</tbody>
     </table></div>`;
 }
@@ -159,11 +159,11 @@ function mmRender() {
   let rows = data.rows;
   if (mmCellFilter) {
     const test = MM_TESTS[mmCellFilter.countKey];
-    rows = rows.filter(r => (mmCellFilter.engineerKey === null || r.engineerKey === mmCellFilter.engineerKey) && test(r));
+    rows = rows.filter(r => (mmCellFilter.engineerKey === "__ALL__" || r.engineerKey === mmCellFilter.engineerKey) && test(r));
   }
   const changed = data.rows.filter(r => r.changedSinceLastMeeting).length;
   const filterNote = mmCellFilter
-    ? `<div class="nlr-filtering">Showing: ${escapeHtml(MM_COUNTS.find(c => c.key === mmCellFilter.countKey).label)}${mmCellFilter.engineerKey !== null
+    ? `<div class="nlr-filtering">Showing: ${escapeHtml(MM_COUNTS.find(c => c.key === mmCellFilter.countKey).label)}${mmCellFilter.engineerKey !== "__ALL__"
         ? " · " + escapeHtml((data.byEngineer.find(e => e.engineerKey === mmCellFilter.engineerKey) || {}).name || "") : ""} (${rows.length})
         <button type="button" class="mm-clear" onclick="mmSetCellFilter(${jsArg(mmCellFilter.engineerKey)}, ${jsArg(mmCellFilter.countKey)})">Show all</button></div>`
     : "";
@@ -187,7 +187,7 @@ function mmRender() {
       <table class="nlr-table mm-table">
         <colgroup><col style="width:6%"><col style="width:10%"><col style="width:9%"><col style="width:16%"><col style="width:24%"><col style="width:19%"><col style="width:7%"><col style="width:9%"></colgroup>
         <thead><tr>
-          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>ABPS Employee</th>
+          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>ABPS Engineer</th>
           <th>Customer Name</th><th>Information Summary</th><th>Progress</th>
           <th class="nlr-center">Days in Stage</th><th>Reason for Order Lost</th>
         </tr></thead>
