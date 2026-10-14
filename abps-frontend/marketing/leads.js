@@ -921,11 +921,20 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         [
           "New Lead", "Inquire Received", "Offer Sent", 
-          "Order Received", "Order Dispatched", "Product Commissioned", "Lead Failed", "Order not Received"
+          "Order Received", "Order Dispatched", "Product Commissioned", "Order not Received"
         ].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
         });
-        cell.appendChild(sel);  
+        cell.appendChild(sel);
+        // Order not Received needs a reason (server refuses a blank one).
+        let reason = document.createElement("textarea"); reason.rows = 2;
+        reason.className = 'live-lead-field-input-' + leadRef; reason.dataset.headerKey = "Reason for Order Lost";
+        reason.placeholder = "Reason the order was not received (required)";
+        reason.value = leadMap["Reason for Order Lost"] || "";
+        reason.style.cssText = "margin-top:6px; width:100%; box-sizing:border-box; border:1.5px solid #b91c1c;";
+        const syncReason = () => { reason.style.display = sel.value === "Order not Received" ? "" : "none"; };
+        sel.addEventListener("change", syncReason); syncReason();
+        cell.appendChild(reason);
       } 
       else if (key === "Date of Meeting") {
         let inp = document.createElement("input"); inp.type = "date"; inp.className = 'live-lead-field-input-' + leadRef; inp.dataset.headerKey = key;
@@ -1237,6 +1246,9 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
 
   // Compulsory field checks — same rule as lead creation, enforced here too so an
   // edit can't silently blank out a required field.
+  if (fieldsPayload["Status"] === "Order not Received" && !(fieldsPayload["Reason for Order Lost"] || "").trim()) {
+    alert("Please enter the reason the order was not received before saving."); return;
+  }
   if (!fieldsPayload["ABPS Business Vertical"]) { alert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
 
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
@@ -3140,7 +3152,7 @@ function isMarketingAccessRestrictedToCardDetailsOnly() {
   if (userPermissions.cardDetails !== true) return false;
   const broaderMarketingPerms = [
     "searchCompany", "searchTasks", "searchStatus", "searchQualification",
-    "searchCityState", "emailLeads", "meetingPreparation",
+    "searchCityState", "emailLeads", "meetingPreparation", "morningMeeting",
     "orderPaymentProgress", "commissioningReport", "purchaseOrder", "uploadRevisedPo"
   ];
   return !broaderMarketingPerms.some(key => userPermissions[key] === true);

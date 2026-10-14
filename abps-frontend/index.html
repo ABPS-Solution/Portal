@@ -1253,6 +1253,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><span class="mc-label">Create New Leads Details</span></div>
         <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')"><span class="mc-label">Leads Received through Email</span></div>
         <div class="menu-card" id="mod-meeting-prep" onclick="navigateToModule('meetingPreparation')"><span class="mc-label">Meeting Preparation</span></div>
+        <div class="menu-card" id="mod-morning-meeting" onclick="navigateToModule('morningMeeting')"><span class="mc-label">Morning Meeting Discussion</span></div>
       </div>
       <div class="sec-label">Upload Documents</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -5736,6 +5737,47 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="purchase-order-review-zone" style="display:none;"></div>
     </div>
 
+    <div id="workspace-morningMeeting" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Morning Meeting Discussion</h2>
+      <style>
+        .mm-counts { min-width:900px; }
+        .mm-counts td.mm-count { text-align:center; font-weight:800; font-size:1rem; cursor:pointer; }
+        .mm-counts td.mm-count:hover { background:var(--highlight-bg); }
+        .mm-counts td.mm-count-bad { color:#b91c1c; }
+        .mm-counts td.mm-count-good { color:#15803d; }
+        .mm-counts td.mm-count-active { outline:3px solid var(--brand); outline-offset:-3px; background:var(--highlight-bg); }
+        .mm-counts th.mm-eng-name { text-align:left; background:#f8fafc; }
+        .mm-counts tr.mm-total th, .mm-counts tr.mm-total td { background:#e2e8f0; }
+        .mm-table { min-width:2000px; }
+        .mm-table td.mm-date { text-align:center; white-space:nowrap; }
+        .mm-table td.mm-blank { color:var(--muted); }
+        .mm-table td.mm-overdue { background:#fee2e2; color:#b91c1c; font-weight:800; }
+        .mm-table tr.mm-changed > td:first-child { border-left:5px solid #f59e0b; }
+        .mm-new { display:inline-block; margin-top:4px; font-size:0.65rem; font-weight:800; color:#92400e; background:#fef3c7; border-radius:999px; padding:1px 6px; }
+        .mm-clear { width:auto; margin-left:10px; border:1px solid var(--brand); background:#fff; color:var(--brand); border-radius:6px; padding:2px 10px; font-weight:700; cursor:pointer; }
+      </style>
+      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Created Between</label>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;">
+        <div style="width:170px; flex:none;"><input type="date" id="mm-from"></div>
+        <span style="color:var(--muted); font-weight:700;">to</span>
+        <div style="width:170px; flex:none;"><input type="date" id="mm-to"></div>
+        <div class="nlr-quick-group">
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="today" onclick="mmQuickRange('today')">Today</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="yesterday" onclick="mmQuickRange('yesterday')">Yesterday</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="week" onclick="mmQuickRange('week')">This Week</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="month" onclick="mmQuickRange('month')">This Month</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="quarter" onclick="mmQuickRange('quarter')">This Quarter</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="year" onclick="mmQuickRange('year')">This Year (FY)</button>
+          <button type="button" class="nlr-quick-btn mm-quick-btn" data-range="all" onclick="mmQuickRange('all')">All Time</button>
+        </div>
+      </div>
+      <label class="field-label" style="font-size:0.8rem; color: var(--brand); margin-top:14px;">ABPS Employee</label>
+      <div class="pill-group" id="mm-eng-pills" style="margin:8px 0 12px;"></div>
+      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Status</label>
+      <div class="pill-group" id="mm-status-pills" style="margin:8px 0 12px;"></div>
+      <button type="button" class="btn" id="mm-run-btn" style="width:auto; padding:10px 28px;" onclick="runMorningMeeting()">Show</button>
+      <div id="mm-output" style="margin-top:12px;"></div>
+    </div>
     <div id="workspace-meetingPreparation" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Meeting Preparation</h2>
       <div id="mprep-error-banner" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:4px; padding:8px 12px; font-size:0.85rem; margin-bottom:12px;"></div>
@@ -5887,7 +5929,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <input type="checkbox" name="leadMatrixStatusFilter" value="Order Received" id="lms_st5"><label for="lms_st5">Order Received</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6"><label for="lms_st6">Order Dispatched</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7"><label for="lms_st7">Product Commissioned</label>
-        <input type="checkbox" name="leadMatrixStatusFilter" value="Lead Failed" id="lms_st8"><label for="lms_st8">Lead Failed</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9"><label for="lms_st9">Order not Received</label>
       </div>
 
@@ -5974,7 +6015,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <option value="Order Received">Order Received</option>
               <option value="Order Dispatched">Order Dispatched</option>
               <option value="Product Commissioned">Product Commissioned</option>
-              <option value="Lead Failed">Lead Failed</option>
               <option value="Order not Received">Order not Received</option>
             </select>
           </div>
@@ -6271,6 +6311,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="marketing/business-card.js"></script>
 <script src="marketing/marketing-dashboard.js"></script>
 <script src="marketing/meeting-prep.js"></script>
+<script src="marketing/morning-meeting.js"></script>
 <script src="marketing/order-payment.js"></script>
 <script src="marketing/revised-po.js"></script>
 <script src="design/item-code-format.js"></script>

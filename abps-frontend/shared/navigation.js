@@ -215,6 +215,8 @@ async function navigateToModule(key) {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") {
       executeInboundEmailSyncPipelineFetch();
+    } else if (key === "morningMeeting") {
+      if (typeof mmInit === "function") mmInit();
     } else if (key === "meetingPreparation") {
       if (typeof mprepResetScreen === "function") mprepResetScreen();
       triggerCompanyDropdownArrayFetch();
@@ -395,6 +397,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
+  const canMorningMeeting         = userPermissionsObject.morningMeeting === true;
   const canOrderPaymentProgress    = userPermissionsObject.orderPaymentProgress === true;
 
   // 2. EXTRACT RAW WAREHOUSE ACCESS PRIVILEGES MATRIX
@@ -470,6 +473,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-city-state")) {
     document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
   }
+  if (document.getElementById("mod-morning-meeting")) document.getElementById("mod-morning-meeting").style.display = canMorningMeeting ? "block" : "none";
   if (document.getElementById("mod-meeting-prep")) {
     document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
   }
@@ -653,7 +657,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
