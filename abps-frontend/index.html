@@ -1248,12 +1248,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <button class="dept-dash-pill" id="mod-marketing-dashboard" onclick="navigateToMarketingDashboard()" style="background:#fdf2f8; color:#be185d;">📊 Dashboard</button>
         </div>
       </div>
+      <div class="sec-label">Morning Meeting</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-morning-meeting" onclick="navigateToModule('morningMeeting')"><span class="mc-label">Morning Meeting Discussion</span></div>
+      </div>
       <div class="sec-label">Lead Source</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-card" onclick="navigateToModule('cardDetails')"><span class="mc-label">Create New Leads Details</span></div>
         <div class="menu-card" id="mod-email-whatsapp" onclick="navigateToModule('emailLeads')"><span class="mc-label">Leads Received through Email</span></div>
         <div class="menu-card" id="mod-meeting-prep" onclick="navigateToModule('meetingPreparation')"><span class="mc-label">Meeting Preparation</span></div>
-        <div class="menu-card" id="mod-morning-meeting" onclick="navigateToModule('morningMeeting')"><span class="mc-label">Morning Meeting Discussion</span></div>
       </div>
       <div class="sec-label">Upload Documents</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -5751,12 +5754,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .mm-counts tr.mm-total th, .mm-counts tr.mm-total td { background:#e2e8f0; }
         .mm-table { min-width:0; width:100%; table-layout:fixed; }
         .mm-table th, .mm-table td { padding:6px 7px !important; font-size:0.8rem; }
-        .mm-steps { display:grid; grid-template-columns:auto 1fr; font-size:0.75rem; line-height:1.35; }
-        .mm-step { display:contents; }
-        .mm-step span { color:var(--muted); padding-right:6px; white-space:nowrap; }
-        .mm-step strong { font-weight:700; color:#64748b; }
-        .mm-step-done strong { color:#15803d; }
-        .mm-step-late span, .mm-step-late strong { color:#b91c1c; font-weight:800; }
+        .mm-steps { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+        .mm-step { display:flex; flex-direction:column; border:1px solid #cbd5e1; border-left:4px solid #cbd5e1; background:#f8fafc; border-radius:5px; padding:3px 6px; line-height:1.25; min-width:0; }
+        .mm-step span { font-size:0.68rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .mm-step strong { font-size:0.78rem; font-weight:700; color:#94a3b8; }
+        .mm-step-done { border-left-color:#16a34a; background:#f0fdf4; }
+        .mm-step-done span { color:#15803d; } .mm-step-done strong { color:#14532d; }
+        .mm-step-late { border-left-color:#dc2626; background:#fef2f2; }
+        .mm-step-late span, .mm-step-late strong { color:#b91c1c; }
         .nlr-exp-btn { font-size:0.85rem; padding:2px 6px; }
         .mm-table td { word-wrap:break-word; }
         .mm-table tr.mm-ordered > td { background:#dcfce7; }
