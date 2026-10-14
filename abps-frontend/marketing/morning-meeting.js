@@ -202,3 +202,23 @@ function mmRender() {
         <tbody>${body}</tbody>
       </table></div>` : `<div style="color:var(--warn); font-weight:700; padding:10px 0;">No leads for these filters.</div>`}`;
 }
+
+// After a lead is saved from an opened row: update its Lead Status / lost
+// reason in the Morning Meeting and New Leads Report rows straight away.
+function mmPatchLeadAfterSave(leadId, fields) {
+  const status = fields["Status"];
+  if (!status) return;
+  const reason = fields["Reason for Order Lost"];
+  ["mm", "nlr"].forEach(p => {
+    const badge = document.querySelector(`#${p}-row-${CSS.escape(leadId)} .nlr-status`);
+    if (badge) badge.textContent = status;
+  });
+  const row = mmData && mmData.rows.find(x => x.leadId === leadId);
+  if (row) {
+    row.status = status;
+    if (reason !== undefined) row.lostReason = status === "Order not Received" ? (reason || "").trim() : row.lostReason;
+    const tr = document.getElementById(`mm-row-${leadId}`);
+    const reasonCell = tr && tr.lastElementChild;
+    if (reasonCell) reasonCell.textContent = row.lostReason || "";
+  }
+}

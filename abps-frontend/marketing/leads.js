@@ -1324,6 +1324,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
       // FIXED: Point to renamed structural data attributes identifiers
       const updatedStatusText = fieldsPayload["Status"] || "N/A";
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
+      if (typeof mmPatchLeadAfterSave === "function") mmPatchLeadAfterSave(leadRef, fieldsPayload);
 
       // The collapse/expand toggle re-reads leadMap from a JSON blob baked
       // into this card's onclick attribute at search-render time — closing

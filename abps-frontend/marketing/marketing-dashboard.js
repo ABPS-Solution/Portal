@@ -29,7 +29,7 @@ async function mdLoadDashboard(customVal, opts) {
   if (!body) return;
   if (!silent)
   ["md-s-newleads","md-s-inprogress","md-s-winrate","md-s-avgdays",
-   "md-s-emailleads","md-s-opentasks","md-s-noopentask","md-s-pouploads","md-s-offerssent","md-s-coldemails"].forEach(id => {
+   "md-s-emailleads","md-s-overduetasks","md-s-scheduledtasks","md-s-noopentask","md-s-pouploads","md-s-offerssent","md-s-coldemails"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
 
@@ -54,7 +54,8 @@ function mdRenderDashboard(data) {
   document.getElementById("md-s-winrate").textContent        = stats.winRatePct !== null ? stats.winRatePct + "%" : "—";
   document.getElementById("md-s-avgdays").textContent        = stats.avgConversionDays !== null ? stats.avgConversionDays : "—";
   document.getElementById("md-s-emailleads").textContent     = stats.emailLeadsAwaitingAction;
-  document.getElementById("md-s-opentasks").textContent      = stats.openTasks;
+  document.getElementById("md-s-overduetasks").textContent = stats.overdueTasks ?? "—";
+  document.getElementById("md-s-scheduledtasks").textContent = stats.scheduledTasks ?? "—";
   document.getElementById("md-s-noopentask").textContent    = stats.noOpenTaskLeads;
   document.getElementById("md-s-pouploads").textContent      = stats.poUploads;
   document.getElementById("md-s-offerssent").textContent     = stats.distinctOffersSent;

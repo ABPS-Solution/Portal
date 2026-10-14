@@ -5230,14 +5230,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="md-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Email Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Pending Tasks</div>
-            <div class="dd-stat-val" id="md-s-opentasks">—</div>
+            <div class="dd-stat-label">Overdue Tasks</div>
+            <div class="dd-stat-val" id="md-s-overduetasks" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Scheduled Tasks</div>
+            <div class="dd-stat-val" id="md-s-scheduledtasks">—</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Leads Currently In Progress</div>
