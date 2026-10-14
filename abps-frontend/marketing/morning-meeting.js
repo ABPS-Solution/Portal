@@ -32,22 +32,28 @@ const MM_TESTS = {
 
 let mmData = null;
 let mmCellFilter = null; // { engineerKey|null, countKey }
+let mmRunTimer = null;
+
+// Every filter change reloads the table (no Show button).
+function mmScheduleRun() {
+  clearTimeout(mmRunTimer);
+  mmRunTimer = setTimeout(runMorningMeeting, 350);
+}
 
 function mmInit() {
   const eng = document.getElementById("mm-eng-pills");
   if (eng) {
     eng.innerHTML = (cachedEngineers || []).map(e => {
       const id = "mm_eng_" + e.personKey.replace(/[^a-zA-Z0-9]/g, "_");
-      return `<input type="checkbox" name="mmEngineerFilter" value="${escapeHtml(e.personKey)}" id="${id}"><label for="${id}">${escapeHtml(e.name)}</label>`;
+      return `<input type="checkbox" name="mmEngineerFilter" value="${escapeHtml(e.personKey)}" id="${id}" onchange="mmScheduleRun()"><label for="${id}">${escapeHtml(e.name)}</label>`;
     }).join("");
   }
   const st = document.getElementById("mm-status-pills");
   if (st) {
     st.innerHTML = MM_STATUSES.map((s, i) =>
-      `<input type="checkbox" name="mmStatusFilter" value="${escapeHtml(s)}" id="mm_st_${i}"><label for="mm_st_${i}">${escapeHtml(s)}</label>`).join("");
+      `<input type="checkbox" name="mmStatusFilter" value="${escapeHtml(s)}" id="mm_st_${i}" onchange="mmScheduleRun()"><label for="mm_st_${i}">${escapeHtml(s)}</label>`).join("");
   }
   mmQuickRange("month");
-  runMorningMeeting();
 }
 
 function mmQuickRange(kind) {
@@ -65,6 +71,13 @@ function mmQuickRange(kind) {
   fromEl.value = from; toEl.value = to;
   [fromEl, toEl].forEach(el => el.dispatchEvent(new Event("input", { bubbles: true })));
   document.querySelectorAll(".mm-quick-btn").forEach(b => b.classList.toggle("active", b.dataset.range === kind));
+  mmScheduleRun();
+}
+
+function mmDateChanged() {
+  document.querySelectorAll(".mm-quick-btn").forEach(b => b.classList.remove("active"));
+  const f = mmReadFilters();
+  if (f.startDate && f.endDate) mmScheduleRun();
 }
 
 function mmReadFilters() {
@@ -78,10 +91,8 @@ function mmReadFilters() {
 
 async function runMorningMeeting() {
   const f = mmReadFilters();
-  if ((f.startDate && !f.endDate) || (!f.startDate && f.endDate)) { alert("Please choose both a From and a To date."); return; }
+  if ((f.startDate && !f.endDate) || (!f.startDate && f.endDate)) return;
   const out = document.getElementById("mm-output");
-  const btn = document.getElementById("mm-run-btn");
-  btn.classList.add("loading"); btn.textContent = "Loading...";
   out.innerHTML = `<div style="color:var(--muted); padding:10px 0;">Loading leads...</div>`;
   try {
     const data = await apFetch({ action: "fetchMorningMeeting", ...f });
@@ -90,8 +101,6 @@ async function runMorningMeeting() {
     mmRender();
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED") out.innerHTML = `<div style="color:var(--warn); font-weight:700;">${escapeHtml(e.message)}</div>`;
-  } finally {
-    btn.classList.remove("loading"); btn.textContent = "Show";
   }
 }
 
@@ -145,31 +154,34 @@ function mmRender() {
         ? " · " + escapeHtml((data.byEngineer.find(e => e.engineerKey === mmCellFilter.engineerKey) || {}).name || "") : ""} (${rows.length})
         <button type="button" class="mm-clear" onclick="mmSetCellFilter(${jsArg(mmCellFilter.engineerKey)}, ${jsArg(mmCellFilter.countKey)})">Show all</button></div>`
     : "";
-  const body = rows.map((r, i) => `
-    <tr class="${r.changedSinceLastMeeting ? "mm-changed" : ""}">
-      <td style="text-align:center;">${i + 1}${r.changedSinceLastMeeting ? '<div class="mm-new" title="Changed since the last meeting">NEW</div>' : ""}</td>
+  const body = rows.map((r, i) => { const id = escapeHtml(r.leadId); return `
+    <tr class="nlr-row${r.changedSinceLastMeeting ? " mm-changed" : ""}${r.orderDate ? " mm-ordered" : ""}" id="mm-row-${id}">
+      <td style="text-align:center;"><button type="button" class="nlr-exp-btn" id="mm-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)}, 'mm')">${i + 1} ▾</button>${r.changedSinceLastMeeting ? '<div class="mm-new" title="Changed since the last meeting">NEW</div>' : ""}</td>
       <td style="text-align:center;"><span class="nlr-status">${escapeHtml(r.status)}</span></td>
       <td class="mm-date">${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
       <td>${escapeHtml(r.engineerName) || '<span class="nlr-none">None</span>'}</td>
-      <td><strong>${escapeHtml(r.companyName)}</strong>${r.leadName ? `<div class="nlr-sub">${escapeHtml(r.leadName)}</div>` : ""}</td>
+      <td><strong>${escapeHtml(r.companyName)}</strong>${r.contactPerson && !/^tbd$/i.test(r.contactPerson) ? `<div>${escapeHtml(r.contactPerson)}</div>` : ""}${r.leadName ? `<div class="nlr-sub">${escapeHtml(r.leadName)}</div>` : ""}</td>
       <td>${escapeHtml([r.city, r.state].filter(Boolean).join(", ")) || "-"}</td>
       <td>${escapeHtml(r.businessVertical) || "-"}</td>
-      <td>${escapeHtml(r.typeOfCustomer) || "-"}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
       ${mmDateCell(r, "profileDate")}${mmDateCell(r, "talkedDate")}${mmDateCell(r, "visitedDate")}
       ${mmDateCell(r, "enquiryDate")}${mmDateCell(r, "firstOfferDate")}${mmDateCell(r, "orderDate")}
       <td style="text-align:center;"><div style="font-weight:700;">${r.daysInStage} day${r.daysInStage === 1 ? "" : "s"}</div><div class="nlr-sub">${escapeHtml(r.stage)}</div></td>
       <td>${escapeHtml(r.lostReason) || ""}</td>
-    </tr>`).join("");
+    </tr>
+    <tr id="mm-lead-row-${id}" style="display:none;"><td colspan="16" class="nlr-lead-cell"><div id="mm-lead-box-${id}"></div></td></tr>`; }).join("");
   out.innerHTML = `
     <div class="nlr-filtering">Leads created: ${escapeHtml(mmRangeText())} · Last meeting: ${escapeHtml(formatOrdinalDateTime(data.lastMeeting))} · ${changed} changed since then</div>
     ${mmCountsTableHtml(data)}
     ${filterNote}
     ${rows.length ? `<div style="overflow-x:auto;">
       <table class="nlr-table mm-table">
+        <colgroup><col style="width:70px"><col style="width:120px"><col style="width:105px"><col style="width:130px"><col style="width:200px">
+          <col style="width:120px"><col style="width:120px"><col style="width:240px"><col style="width:105px"><col style="width:105px"><col style="width:105px">
+          <col style="width:105px"><col style="width:105px"><col style="width:105px"><col style="width:105px"><col style="width:170px"></colgroup>
         <thead><tr>
-          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>Lead Created</th><th>ABPS Employee (Owner)</th>
-          <th>Customer Name</th><th>City, State</th><th>Business Vertical</th><th>Type of Customer</th><th>Information Summary</th>
+          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>Lead Created</th><th>ABPS Employee</th>
+          <th>Customer Name</th><th>City, State</th><th>Business Vertical</th><th>Information Summary</th>
           <th class="nlr-center">Company Profile Mailed</th><th class="nlr-center">Talked to Customer</th><th class="nlr-center">Visited Customer</th>
           <th class="nlr-center">Enquiry Received</th><th class="nlr-center">1st Offer Sent</th><th class="nlr-center">Order Received</th>
           <th class="nlr-center">Days in Stage</th><th>Reason for Order Lost</th>

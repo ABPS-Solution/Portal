@@ -172,11 +172,12 @@ function nlrRenderReport(data, f) {
       </div>
       <button type="button" class="nlr-download" id="nlr-download-btn" onclick="downloadNewLeadsReport()">Download Excel</button>
     </div>`;
-  const rows = data.rows.map(r => {
+  const rows = data.rows.map((r, i) => {
     const contact = nlrContactName(r.contactPerson);
     const id = escapeHtml(r.leadId);
     return `
     <tr class="nlr-row" id="nlr-row-${id}">
+      <td class="nlr-exp"><button type="button" class="nlr-exp-btn" id="nlr-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)})">${i + 1} ▾</button></td>
       <td>${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
       <td style="text-align:center;"><span class="nlr-status">${escapeHtml(r.status)}</span></td>
       <td><strong>${escapeHtml(r.companyName)}</strong>${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}</td>
@@ -185,17 +186,16 @@ function nlrRenderReport(data, f) {
       <td>${nlrPlanHtml(r.tasks || [])}</td>
       <td>${nlrActivityHtml(r)}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
-      <td class="nlr-exp"><button type="button" class="nlr-exp-btn" id="nlr-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)})">▾</button></td>
     </tr>
     <tr id="nlr-lead-row-${id}" style="display:none;"><td colspan="9" class="nlr-lead-cell"><div id="nlr-lead-box-${id}"></div></td></tr>`;
   }).join("");
   return filtering + strip + `
     <div style="overflow-x:auto;">
       <table class="nlr-table">
-        <colgroup><col style="width:8%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:17%"><col style="width:13%"><col style="width:17%"><col style="width:3%"></colgroup>
+        <colgroup><col style="width:5%"><col style="width:8%"><col style="width:9%"><col style="width:12%"><col style="width:11%"><col style="width:9%"><col style="width:16%"><col style="width:13%"><col style="width:17%"></colgroup>
         <thead><tr>
-          <th>Created Date</th><th class="nlr-center">Status</th><th>Company Name</th><th>Contact Person</th>
-          <th>ABPS Engineer</th><th class="nlr-center">Tasks</th><th class="nlr-center">Activity</th><th>Summary</th><th></th>
+          <th class="nlr-center">Sr No</th><th>Created Date</th><th class="nlr-center">Status</th><th>Company Name</th><th>Contact Person</th>
+          <th>ABPS Engineer</th><th class="nlr-center">Tasks</th><th class="nlr-center">Activity</th><th>Summary</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -205,20 +205,22 @@ function nlrRenderReport(data, f) {
 // Opens the lead's full View Details right under its row. The row itself is
 // the header, so the lead card's own header (with Merge / Delete) is hidden.
 // Only the expand button opens / closes it.
-async function nlrToggleLead(leadId) {
-  const row = document.getElementById(`nlr-lead-row-${leadId}`);
-  const box = document.getElementById(`nlr-lead-box-${leadId}`);
+// prefix: "nlr" (New Leads Report) or "mm" (Morning Meeting); the expand
+// button shows the row's Sr No followed by an arrow.
+async function nlrToggleLead(leadId, prefix = "nlr") {
+  const row = document.getElementById(`${prefix}-lead-row-${leadId}`);
+  const box = document.getElementById(`${prefix}-lead-box-${leadId}`);
   if (!row || !box) return;
   const wasOpen = row.style.display !== "none";
-  document.querySelectorAll('[id^="nlr-lead-row-"]').forEach(el => { el.style.display = "none"; });
-  document.querySelectorAll('[id^="nlr-lead-box-"]').forEach(el => { el.innerHTML = ""; });
-  document.querySelectorAll('[id^="nlr-exp-"]').forEach(el => { el.textContent = "▾"; });
+  document.querySelectorAll('[id^="nlr-lead-row-"], [id^="mm-lead-row-"]').forEach(el => { el.style.display = "none"; });
+  document.querySelectorAll('[id^="nlr-lead-box-"], [id^="mm-lead-box-"]').forEach(el => { el.innerHTML = ""; });
+  document.querySelectorAll('[id^="nlr-exp-"], [id^="mm-exp-"]').forEach(el => { el.textContent = el.textContent.replace("▴", "▾"); });
   document.querySelectorAll('.nlr-row.open').forEach(el => el.classList.remove("open"));
   if (wasOpen) return;
   row.style.display = "";
-  document.getElementById(`nlr-row-${leadId}`)?.classList.add("open");
-  const exp = document.getElementById(`nlr-exp-${leadId}`);
-  if (exp) exp.textContent = "▴";
+  document.getElementById(`${prefix}-row-${leadId}`)?.classList.add("open");
+  const exp = document.getElementById(`${prefix}-exp-${leadId}`);
+  if (exp) exp.textContent = exp.textContent.replace("▾", "▴");
   box.innerHTML = `<div style="color:var(--muted); padding:10px;">Loading lead...</div>`;
   try {
     const data = await apFetch({ action: "fetchLeadCardById", leadId });
