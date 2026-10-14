@@ -5740,7 +5740,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="workspace-morningMeeting" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Morning Meeting Discussion</h2>
       <style>
-        .mm-counts { min-width:900px; }
+        .mm-counts { min-width:0; table-layout:fixed; }
+        .mm-counts th, .mm-counts td { padding:6px 6px !important; font-size:0.8rem; }
         .mm-counts td.mm-count { text-align:center; font-weight:800; font-size:1rem; cursor:pointer; }
         .mm-counts td.mm-count:hover { background:var(--highlight-bg); }
         .mm-counts td.mm-count-bad { color:#b91c1c; }
@@ -5748,7 +5749,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .mm-counts td.mm-count-active { outline:3px solid var(--brand); outline-offset:-3px; background:var(--highlight-bg); }
         .mm-counts th.mm-eng-name { text-align:left; background:#f8fafc; }
         .mm-counts tr.mm-total th, .mm-counts tr.mm-total td { background:#e2e8f0; }
-        .mm-table { min-width:2010px; width:2010px; table-layout:fixed; }
+        .mm-table { min-width:0; width:100%; table-layout:fixed; }
+        .mm-table th, .mm-table td { padding:6px 7px !important; font-size:0.8rem; }
+        .mm-steps { display:grid; grid-template-columns:auto 1fr; font-size:0.75rem; line-height:1.35; }
+        .mm-step { display:contents; }
+        .mm-step span { color:var(--muted); padding-right:6px; white-space:nowrap; }
+        .mm-step strong { font-weight:700; color:#64748b; }
+        .mm-step-done strong { color:#15803d; }
+        .mm-step-late span, .mm-step-late strong { color:#b91c1c; font-weight:800; }
+        .nlr-exp-btn { font-size:0.85rem; padding:2px 6px; }
         .mm-table td { word-wrap:break-word; }
         .mm-table tr.mm-ordered > td { background:#dcfce7; }
         .mm-filters { background:var(--highlight-bg); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:130px 1fr; gap:12px 16px; align-items:center; }
@@ -5911,25 +5920,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .nlr-exp { text-align:center; color:var(--brand); font-size:1.2rem; font-weight:800; }
         .nlr-lead-cell { padding:10px !important; background:var(--highlight-bg); }
       </style>
-      <div id="lms-report-filters" style="display:none; margin-bottom:16px;">
-        <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Lead Created Between</label>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;">
-          <div style="width:170px; flex:none;"><input type="date" id="nlr-from" onchange="nlrMarkQuick(null)"></div>
-          <span style="color:var(--muted); font-weight:700;">to</span>
-          <div style="width:170px; flex:none;"><input type="date" id="nlr-to" onchange="nlrMarkQuick(null)"></div>
-          <div class="nlr-quick-group">
+      <div class="mm-filters" style="margin-bottom:14px;">
+      <div id="lms-report-filters" style="display:none;">
+        <div class="mm-flabel">Lead Created</div>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+          <div class="nlr-quick-group" style="margin-left:0;">
             <button type="button" class="nlr-quick-btn" data-range="today" onclick="nlrQuickRange('today')">Today</button>
             <button type="button" class="nlr-quick-btn" data-range="yesterday" onclick="nlrQuickRange('yesterday')">Yesterday</button>
             <button type="button" class="nlr-quick-btn" data-range="week" onclick="nlrQuickRange('week')">This Week</button>
             <button type="button" class="nlr-quick-btn" data-range="month" onclick="nlrQuickRange('month')">This Month</button>
             <button type="button" class="nlr-quick-btn" data-range="quarter" onclick="nlrQuickRange('quarter')">This Quarter</button>
           </div>
+          <div style="width:160px; flex:none;"><input type="date" id="nlr-from" onchange="nlrMarkQuick(null)"></div>
+          <span style="color:var(--muted); font-weight:700;">to</span>
+          <div style="width:160px; flex:none;"><input type="date" id="nlr-to" onchange="nlrMarkQuick(null)"></div>
         </div>
       </div>
-      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Engineers</label>
-      <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount" style="margin:8px 0 16px;"></div>
-      <label class="field-label" style="font-size:0.8rem; color: var(--brand);">Filter By Lead Status</label>
-      <div class="pill-group" id="lead-matrix-status-checkboxes-mount" style="margin:8px 0 16px;">
+      <div class="mm-flabel">ABPS Engineer</div>
+      <div class="pill-group" id="lead-matrix-engineer-checkboxes-mount"></div>
+      <div class="mm-flabel">Lead Status</div>
+      <div class="pill-group" id="lead-matrix-status-checkboxes-mount">
         <input type="checkbox" name="leadMatrixStatusFilter" value="New Lead" id="lms_st1"><label for="lms_st1">New Lead</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Inquire Received" id="lms_st3"><label for="lms_st3">Inquire Received</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Offer Sent" id="lms_st4"><label for="lms_st4">Offer Sent</label>
@@ -5937,6 +5947,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <input type="checkbox" name="leadMatrixStatusFilter" value="Order Dispatched" id="lms_st6"><label for="lms_st6">Order Dispatched</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Product Commissioned" id="lms_st7"><label for="lms_st7">Product Commissioned</label>
         <input type="checkbox" name="leadMatrixStatusFilter" value="Order not Received" id="lms_st9"><label for="lms_st9">Order not Received</label>
+      </div>
       </div>
 
       <button class="btn btn-sub" id="lead-matrix-search-submit-btn" onclick="executeLeadMatrixFilterSearch()">Run Leads Search</button>

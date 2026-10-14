@@ -133,6 +133,19 @@ function mmCountsTableHtml(data) {
     </table></div>`;
 }
 
+const MM_STEP_LABELS = [
+  ["profileDate", "Company profile"], ["talkedDate", "Talked"], ["visitedDate", "Visited"],
+  ["enquiryDate", "Enquiry"], ["firstOfferDate", "1st offer"], ["orderDate", "Order"],
+];
+
+function mmProgressHtml(r) {
+  return '<div class="mm-steps">' + MM_STEP_LABELS.map(([k, label]) => {
+    const late = !r[k] && (r.overdue || []).includes(k);
+    const val = r[k] ? escapeHtml(formatOrdinalDate(r[k])) : (late ? "Overdue" : "-");
+    return `<div class="mm-step${r[k] ? " mm-step-done" : ""}${late ? " mm-step-late" : ""}"><span>${label}</span><strong>${val}</strong></div>`;
+  }).join("") + "</div>";
+}
+
 function mmDateCell(r, key) {
   if (r[key]) return `<td class="mm-date">${escapeHtml(formatOrdinalDate(r[key]))}</td>`;
   if ((r.overdue || []).includes(key)) return `<td class="mm-date mm-overdue">Overdue</td>`;
@@ -157,33 +170,25 @@ function mmRender() {
   const body = rows.map((r, i) => { const id = escapeHtml(r.leadId); return `
     <tr class="nlr-row${r.changedSinceLastMeeting ? " mm-changed" : ""}${r.orderDate ? " mm-ordered" : ""}" id="mm-row-${id}">
       <td style="text-align:center;"><button type="button" class="nlr-exp-btn" id="mm-exp-${id}" title="Open / close this lead" onclick="nlrToggleLead(${jsArg(r.leadId)}, 'mm')">${i + 1} ▾</button>${r.changedSinceLastMeeting ? '<div class="mm-new" title="Changed since the last meeting">NEW</div>' : ""}</td>
-      <td style="text-align:center;"><span class="nlr-status">${escapeHtml(r.status)}</span></td>
-      <td class="mm-date">${escapeHtml(formatOrdinalDate(r.createdDate))}</td>
+      <td style="text-align:center;"><span class="nlr-status">${escapeHtml(r.status)}</span><div class="nlr-sub">Created ${escapeHtml(formatOrdinalDate(r.createdDate))}</div></td>
       <td>${escapeHtml(r.engineerName) || '<span class="nlr-none">None</span>'}</td>
-      <td><strong>${escapeHtml(r.companyName)}</strong>${r.contactPerson && !/^tbd$/i.test(r.contactPerson) ? `<div>${escapeHtml(r.contactPerson)}</div>` : ""}${r.leadName ? `<div class="nlr-sub">${escapeHtml(r.leadName)}</div>` : ""}</td>
-      <td>${escapeHtml([r.city, r.state].filter(Boolean).join(", ")) || "-"}</td>
-      <td>${escapeHtml(r.businessVertical) || "-"}</td>
+      <td><strong>${escapeHtml(r.companyName)}</strong>${r.contactPerson && !/^tbd$/i.test(r.contactPerson) ? `<div>${escapeHtml(r.contactPerson)}</div>` : ""}${r.leadName ? `<div class="nlr-sub">${escapeHtml(r.leadName)}</div>` : ""}${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}${r.businessVertical ? `<div class="nlr-sub">${escapeHtml(r.businessVertical)}</div>` : ""}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
-      ${mmDateCell(r, "profileDate")}${mmDateCell(r, "talkedDate")}${mmDateCell(r, "visitedDate")}
-      ${mmDateCell(r, "enquiryDate")}${mmDateCell(r, "firstOfferDate")}${mmDateCell(r, "orderDate")}
+      <td>${mmProgressHtml(r)}</td>
       <td style="text-align:center;"><div style="font-weight:700;">${r.daysInStage} day${r.daysInStage === 1 ? "" : "s"}</div><div class="nlr-sub">${escapeHtml(r.stage)}</div></td>
       <td>${escapeHtml(r.lostReason) || ""}</td>
     </tr>
-    <tr id="mm-lead-row-${id}" style="display:none;"><td colspan="16" class="nlr-lead-cell"><div id="mm-lead-box-${id}"></div></td></tr>`; }).join("");
+    <tr id="mm-lead-row-${id}" style="display:none;"><td colspan="8" class="nlr-lead-cell"><div id="mm-lead-box-${id}"></div></td></tr>`; }).join("");
   out.innerHTML = `
     <div class="nlr-filtering">Leads created: ${escapeHtml(mmRangeText())} · Last meeting: ${escapeHtml(formatOrdinalDateTime(data.lastMeeting))} · ${changed} changed since then</div>
     ${mmCountsTableHtml(data)}
     ${filterNote}
     ${rows.length ? `<div style="overflow-x:auto;">
       <table class="nlr-table mm-table">
-        <colgroup><col style="width:70px"><col style="width:120px"><col style="width:105px"><col style="width:130px"><col style="width:200px">
-          <col style="width:120px"><col style="width:120px"><col style="width:240px"><col style="width:105px"><col style="width:105px"><col style="width:105px">
-          <col style="width:105px"><col style="width:105px"><col style="width:105px"><col style="width:105px"><col style="width:170px"></colgroup>
+        <colgroup><col style="width:6%"><col style="width:10%"><col style="width:9%"><col style="width:16%"><col style="width:24%"><col style="width:19%"><col style="width:7%"><col style="width:9%"></colgroup>
         <thead><tr>
-          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>Lead Created</th><th>ABPS Employee</th>
-          <th>Customer Name</th><th>City, State</th><th>Business Vertical</th><th>Information Summary</th>
-          <th class="nlr-center">Company Profile Mailed</th><th class="nlr-center">Talked to Customer</th><th class="nlr-center">Visited Customer</th>
-          <th class="nlr-center">Enquiry Received</th><th class="nlr-center">1st Offer Sent</th><th class="nlr-center">Order Received</th>
+          <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th>ABPS Employee</th>
+          <th>Customer Name</th><th>Information Summary</th><th>Progress</th>
           <th class="nlr-center">Days in Stage</th><th>Reason for Order Lost</th>
         </tr></thead>
         <tbody>${body}</tbody>

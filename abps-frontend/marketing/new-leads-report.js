@@ -14,7 +14,7 @@ function switchLeadMatrixView(view) {
   const off = (b) => { b.style.color = "var(--muted)"; b.style.borderBottomColor = "transparent"; b.style.fontWeight = "700"; };
   const c = document.getElementById("lms-tab-cards"), r = document.getElementById("lms-tab-report");
   if (c && r) isReport ? (on(r), off(c)) : (on(c), off(r));
-  document.getElementById("lms-report-filters").style.display = isReport ? "" : "none";
+  document.getElementById("lms-report-filters").style.display = isReport ? "contents" : "none";
   document.getElementById("nlr-run-btn").style.display = isReport ? "" : "none";
   document.getElementById("lead-matrix-search-submit-btn").style.display = isReport ? "none" : "";
   document.getElementById("nlr-output").style.display = isReport ? "" : "none";
