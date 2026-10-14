@@ -28,7 +28,7 @@ async function mdLoadDashboard(customVal, opts) {
   const body = document.getElementById("md-body");
   if (!body) return;
   if (!silent)
-  ["md-s-newleads","md-s-inprogress","md-s-winrate","md-s-avgdays",
+  ["md-s-newleads","md-s-inprogress","md-s-completedtasks","md-s-avgdays",
    "md-s-emailleads","md-s-overduetasks","md-s-scheduledtasks","md-s-noopentask","md-s-pouploads","md-s-offerssent","md-s-coldemails"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
@@ -51,7 +51,7 @@ function mdRenderDashboard(data) {
 
   document.getElementById("md-s-newleads").textContent       = stats.newLeads;
   document.getElementById("md-s-inprogress").textContent     = stats.inProgress;
-  document.getElementById("md-s-winrate").textContent        = stats.winRatePct !== null ? stats.winRatePct + "%" : "—";
+  document.getElementById("md-s-completedtasks").textContent = stats.completedTasks ?? "—";
   document.getElementById("md-s-avgdays").textContent        = stats.avgConversionDays !== null ? stats.avgConversionDays : "—";
   document.getElementById("md-s-emailleads").textContent     = stats.emailLeadsAwaitingAction;
   document.getElementById("md-s-overduetasks").textContent = stats.overdueTasks ?? "—";
