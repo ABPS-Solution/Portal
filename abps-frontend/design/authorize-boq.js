@@ -352,9 +352,11 @@ function renderEBOQForm(containerId) {
           ${eboqMode === "authorize-update"
             ? `<input type="text" id="eboq-department" value="${escapeHtml(draft.department)}" readonly style="padding:8px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" />`
             : `<select id="eboq-department" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                ${draft.department ? "" : '<option value="" selected>Select department...</option>'}
                 <option value="Reactor" ${draft.department==="Reactor"?"selected":""}>Reactor</option>
                 <option value="Capacitor" ${draft.department==="Capacitor"?"selected":""}>Capacitor</option>
                 <option value="Panel" ${draft.department==="Panel"?"selected":""}>Panel</option>
+                <option value="Spares" ${draft.department==="Spares"?"selected":""}>Spares</option>
               </select>`
           }
         </div>

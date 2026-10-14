@@ -371,9 +371,7 @@ function pplanRenderLaneInitialPlanForm(lane) {
     </div>
     <div style="margin-top:12px;">
       <button class="nav-btn-styled" ${dis} style="${!canWrite ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
-      <button class="nav-btn-styled" ${dis} style="margin-left:8px; background:#475569;${!canWrite ? ' opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSetPurchasedOutside('${lane.boqId}', true)">Purchasing from Outside</button>
-    </div>
-    <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Choose <strong>Purchasing from Outside</strong> if this product is bought complete from a vendor: it then needs no production steps and is done when the unit is approved into FG Store.</div>`;
+    </div>`;
 }
 
 // A product bought complete from outside: no production steps, one step
@@ -390,13 +388,14 @@ function pplanRenderPurchasedOutside(lane, c) {
       <div style="font-weight:800; color:${c}; margin-bottom:4px;">Purchasing from Outside</div>
       <div>This product is bought complete, so it has no production steps. It is done when the unit is approved into FG Store.</div>
       <div style="margin-top:8px; display:flex; gap:18px; flex-wrap:wrap;">
-        <span><strong>Target in FG Store:</strong> ${target ? escapeHtml(formatOrdinalDate(target)) : '—'} <span style="color:var(--muted);">(from Material Requirement Date)</span></span>
+        <span><strong>Target in FG Store:</strong> ${target ? escapeHtml(formatOrdinalDate(target)) : '—'} <span style="color:var(--muted);">(set at Manufacturing Clearance as Build Type: Purchased from Outside)</span></span>
         <span><strong>Status:</strong> ${done ? 'In FG Store on ' + escapeHtml(formatOrdinalDate(s.actual)) : escapeHtml(s.chip || 'Waiting for FG Store')}</span>
       </div>
-      ${canWrite && !done ? `<button class="nav-btn-styled" style="margin-top:10px; width:auto; padding:6px 14px; background:#b91c1c;" onclick="pplanSetPurchasedOutside('${lane.boqId}', false)">Undo Purchasing from Outside</button>` : ''}
     </div>`;
 }
 
+// Unused since 14 Oct 2026: Purchased from Outside is chosen in Manufacturing
+// Clearance (Build Type). Flagged, not deleted.
 async function pplanSetPurchasedOutside(boqId, on) {
   const lane = (pplanData.lanes || []).find(l => l.boqId === boqId);
   const name = lane ? [lane.productName, lane.productRating].filter(Boolean).join(" ") : boqId;

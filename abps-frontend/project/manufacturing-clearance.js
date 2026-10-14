@@ -222,6 +222,7 @@ async function loadMcLineItems(projectId) {
         currentMfcQuantity: li.mfcQuantity || 0,
         onHold: !!li.onHold, holdReason: li.holdReason || "",
         boqIds: li.boqIds || [],
+        buildType: li.buildType || (li.needsBoqJc === false ? "No BOQ" : "Made in ABPS"),
         needsBoqJc: li.needsBoqJc !== false,
       };
       mcLineItemMeta[projectId][li.lineId] = {
@@ -271,9 +272,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
     // Product" button below) can change it from here on.
     const hasBoq = (state.boqIds || []).length > 0;
     const productSearchDisabledAttr = hasBoq ? "disabled" : rowDisabledAttr;
-    const needsBoqJc = state.needsBoqJc !== false;
-    const toggleLocked = !(gatingComplete && !isHeld) || (needsBoqJc && hasBoq);
-    const toggleTitle = (needsBoqJc && hasBoq) ? "This product already has a BOQ, so it must keep BOQ / Job Card" : (needsBoqJc ? "Click to mark this row as not needing a BOQ / Job Card" : "Click to mark this row as needing a BOQ / Job Card");
+    const toggleLocked = !(gatingComplete && !isHeld) || hasBoq;
+    const toggleTitle = hasBoq ? "This product already has a BOQ, so its Build Type cannot be changed" : "";
     const productSearchStyleExtra = hasBoq ? " background:#f1f5f9; cursor:not-allowed;" : ((gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;");
     return `
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
@@ -301,9 +301,11 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${escapeHtml(itemCodeUnitVal || "—")}</td>
         ${mcMfcQtyCellsHtml(projectId, safeId, li.lineId, state, li.quantity, li.mfcQuantity, gatingComplete && !isHeld)}
         <td style="padding:8px; text-align:center; vertical-align:middle;">
-          <button type="button" data-mc-boq-toggle data-locked="${toggleLocked ? 1 : 0}" ${toggleLocked ? "disabled" : ""} title="${toggleTitle}"
-            onclick="toggleMcNeedsBoqJc('${projectId}', ${li.lineId}, this)"
-            style="min-width:58px; padding:5px 10px; border:none; border-radius:12px; font-weight:800; font-size:0.75rem; color:#fff; background:${needsBoqJc ? '#15803d' : '#b91c1c'};${toggleLocked ? ' opacity:0.6; cursor:not-allowed;' : ' cursor:pointer;'}">${needsBoqJc ? 'YES' : 'NO'}</button>
+          <select data-mc-boq-toggle ${toggleLocked ? "disabled" : ""} title="${toggleTitle}"
+            onchange="setMcBuildType('${projectId}', ${li.lineId}, this)"
+            style="width:100%; min-width:0; padding:5px 6px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--border); border-radius:4px; color:${MC_BUILD_TYPE_COLORS[state.buildType] || '#111827'};${toggleLocked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}">
+            ${MC_BUILD_TYPES.map(t => `<option value="${t}" ${state.buildType === t ? "selected" : ""}>${t}</option>`).join("")}
+          </select>
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           ${isAdmin ? (isHeld
@@ -335,7 +337,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px; text-align:center;">Current MFC Quantity</th>
               <th style="padding:8px; text-align:center;">Pending MFC Quantity</th>
               <th style="padding:8px; text-align:center;">New MFC Quantity</th>
-              <th style="padding:8px; text-align:center;">Needs BOQ / JC</th>
+              <th style="padding:8px; text-align:center;">Build Type</th>
               <th style="padding:8px; text-align:center;">Hold</th>
             </tr>
           </thead>
@@ -378,7 +380,7 @@ function setMcTableEnabled(projectId, enabled) {
       el.style.cursor = rowEnabled ? '' : 'not-allowed';
     });
     const tog = tr.querySelector('[data-mc-boq-toggle]');
-    if (tog) tog.disabled = !rowEnabled || (state[lineId] && state[lineId].needsBoqJc !== false && (state[lineId].boqIds || []).length > 0);
+    if (tog) tog.disabled = !rowEnabled || (state[lineId] && (state[lineId].boqIds || []).length > 0);
   });
   wrap.querySelectorAll('button:not([data-mc-hold-btn]):not([data-mc-boq-toggle])').forEach(el => { el.disabled = !enabled; });
 }
@@ -608,13 +610,17 @@ function mcRefreshMfcQtyCells(projectId, lineId) {
   ["cur", "pend", "new"].forEach((k, i) => { const old = document.getElementById(`mc-${k}-${safeId}-${lineId}`); if (old) old.replaceWith(fresh[i]); });
 }
 
-function toggleMcNeedsBoqJc(projectId, lineId, btn) {
+// Build Type: Made in ABPS = normal BOQ; Purchased from Outside = BOQ created
+// automatically on submit (authorized manually, no production planning);
+// No BOQ = billed by hand on the Dispatch Invoice.
+const MC_BUILD_TYPES = ["Made in ABPS", "Purchased from Outside", "No BOQ"];
+const MC_BUILD_TYPE_COLORS = { "Made in ABPS": "#15803d", "Purchased from Outside": "#1d4ed8", "No BOQ": "#b91c1c" };
+function setMcBuildType(projectId, lineId, sel) {
   const st = mcLineItemState[projectId] && mcLineItemState[projectId][lineId];
-  if (!st || btn.disabled) return;
-  st.needsBoqJc = st.needsBoqJc === false;
-  btn.textContent = st.needsBoqJc ? "YES" : "NO";
-  btn.style.background = st.needsBoqJc ? "#15803d" : "#b91c1c";
-  btn.title = st.needsBoqJc ? "Click to mark this row as not needing a BOQ / Job Card" : "Click to mark this row as needing a BOQ / Job Card";
+  if (!st || sel.disabled || !MC_BUILD_TYPES.includes(sel.value)) return;
+  st.buildType = sel.value;
+  st.needsBoqJc = sel.value !== "No BOQ";
+  sel.style.color = MC_BUILD_TYPE_COLORS[sel.value];
   mcRefreshMfcQtyCells(projectId, lineId);
 }
 
@@ -633,6 +639,7 @@ async function submitMcClearance(projectId) {
     standardProductRating: state[lineId].standardProductRating,
     newMfcQuantity: state[lineId].needsBoqJc === false ? state[lineId].orderQuantity : state[lineId].newMfcQuantity,
     needsBoqJc: state[lineId].needsBoqJc !== false,
+    buildType: state[lineId].buildType,
   }));
   if (rows.length === 0) {
     alert("Every product row on this project is currently On Hold — nothing to submit.");
@@ -643,6 +650,16 @@ async function submitMcClearance(projectId) {
   if (missing.length > 0) {
     alert("Standard Product Name is required for every product row that needs a BOQ / JC before submitting.");
     return;
+  }
+
+  const mixedBuild = {};
+  for (const r of rows) {
+    if (!r.needsBoqJc || !r.standardItemCode) continue;
+    if (mixedBuild[r.standardItemCode] && mixedBuild[r.standardItemCode] !== r.buildType) {
+      alert(`"${r.standardProductName}" is on more than one row with different Build Types. Rows of the same product share one BOQ, so give them the same Build Type.`);
+      return;
+    }
+    mixedBuild[r.standardItemCode] = r.buildType;
   }
 
   if (!rows.some(r => Number(r.newMfcQuantity) > 0)) {
@@ -671,7 +688,7 @@ async function submitMcClearance(projectId) {
       const summaryRows = rows.map(r => {
         const before = meta[r.lineId] ? meta[r.lineId].currentMfcQuantity : 0;
         const label = r.standardProductName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`;
-        if (!r.needsBoqJc) return { label, raw: true, before: "Needs BOQ / JC", after: "No (no BOQ / Job Card, billed on the Dispatch Invoice)" };
+        if (!r.needsBoqJc) return { label, raw: true, before: "Build Type", after: "No BOQ (billed on the Dispatch Invoice)" };
         return { label, before, after: r.newMfcQuantity };
       });
 
@@ -703,7 +720,8 @@ async function submitMcClearance(projectId) {
       delete mcLineItemState[projectId];
       delete mcLineItemMeta[projectId];
       delete mcGatingInitialSnapshot[projectId];
-      renderMcSubmitSuccess(projectId, [...gatingChangeRows, ...summaryRows]);
+      const createdRows = (data.createdBoqIds || []).map(id => ({ label: "BOQ created (Purchased from Outside)", raw: true, before: "—", after: id + " (pending authorization, set its Department in Authorize BOQ)" }));
+      renderMcSubmitSuccess(projectId, [...gatingChangeRows, ...summaryRows, ...createdRows]);
     } else {
       alert(data.error || "Failed to submit Manufacturing Clearance.");
     }
