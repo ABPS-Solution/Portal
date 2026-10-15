@@ -1048,6 +1048,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   .ddoc-btn-dl { background:#15803d; border-color:#15803d; color:#fff; }
   .ddoc-btn-ghost { border-color:#cbd5e1; color:#334155; background:#f8fafc; }
   .ddoc-versions { border-top:1px dashed var(--border); background:#f8fafc; padding:6px 12px; border-radius:0 0 8px 8px; }
+  .ddoc-has-versions { border-left:4px solid #15803d; }
+  .ddoc-ver-badge { display:inline-block; margin-right:8px; padding:1px 8px; border-radius:10px; font-size:0.74rem; font-weight:700; background:#e2e8f0; color:#334155; vertical-align:1px; }
+  .ddoc-ver-current { background:#dcfce7; color:#15803d; }
+  .ddoc-versions-title { font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.3px; margin:4px 0 2px; }
+  .ddoc-old-row { border-top:1px solid #e2e8f0; }
+  .ddoc-old-row:first-of-type { border-top:none; }
+  .ddoc-old-row .ddoc-doc-title { font-weight:500; color:#475569; }
   .ddoc-version { display:flex; gap:10px; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.85rem; color:#334155; flex-wrap:wrap; }
   .ddoc-loading, .ddoc-empty { color:#64748b; padding:14px 0; }
   .ddoc-error { color:#b91c1c; padding:14px 0; font-weight:700; }
@@ -1085,6 +1092,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   .ddoc-versions .ddoc-doc-title { font-weight:600; color:#334155; font-size:0.88rem; }
   .ddoc-version-group { margin-bottom:16px; display:flex; flex-direction:column; gap:6px; }
   .ddoc-version-group .ddoc-doc { margin-bottom:0; }
+  .ddoc-doc-main { grid-template-columns:minmax(0,1fr) auto; }
+  .ddoc-doc-info .ddoc-doc-meta { text-align:left; margin-top:3px; }
   .ddoc-doc.ddoc-current { border:2px solid #16a34a; box-shadow:0 0 0 3px rgba(22,163,74,0.10); }
   @media (max-width:760px) {
     .ddoc-doc-main { grid-template-columns:1fr; gap:8px; }

@@ -241,29 +241,33 @@ function ddocRenderDocument(d, showGroup, expandVersions) {
   const latest = d.versions[0];
   const older = d.versions.slice(1);
   const hasVersions = older.length > 0;
-  const metaOf = (v, isTop) => [showGroup && isTop ? ddocGroupLabel(d.group) : "", ddocVersionLabel(v, false), v.date ? formatOrdinalDateTime(v.date) : ""]
+  // 15 Oct 2026: one card per document (every type). The card shows the
+  // latest file with a clear current-version badge; older versions sit
+  // behind "See Older Versions", newest first.
+  const hasVer = (v) => v.version !== null && v.version !== undefined;
+  const metaOf = (v, isTop) => [showGroup && isTop ? ddocGroupLabel(d.group) : "", v.date ? formatOrdinalDateTime(v.date) : ""]
     .filter(Boolean).map(escapeHtml).join(" · ");
+  const badge = (v, isTop) => hasVer(v)
+    ? `<span class="ddoc-ver-badge${isTop ? " ddoc-ver-current" : ""}">${isTop ? "Current: " : ""}V${escapeHtml(String(v.version))}</span>`
+    : (isTop && hasVersions ? `<span class="ddoc-ver-badge ddoc-ver-current">Latest</span>` : "");
   const row = (v, isTop, extraActions) => `
       <div class="ddoc-doc-main">
-        <div class="ddoc-doc-title">${escapeHtml(isTop ? d.title : (v.title || d.title))}</div>
-        <div class="ddoc-doc-meta">${metaOf(v, isTop)}</div>
-        <div class="ddoc-doc-actions">${extraActions || ""}${ddocFileButtons(v)}</div>
+        <div class="ddoc-doc-info">
+          <div class="ddoc-doc-title">${badge(v, isTop)}${escapeHtml(isTop ? d.title : (v.title || d.title))}</div>
+          <div class="ddoc-doc-meta">${metaOf(v, isTop)}</div>
+        </div>
+        <div class="ddoc-doc-actions">${ddocFileButtons(v)}${extraActions || ""}</div>
       </div>`;
-  // By Type: every version as its own row, newest first; the one in use is green.
-  if (expandVersions && hasVersions) {
-    return `
-    <div class="ddoc-version-group">
-      ${d.versions.map((v, i) => `<div class="ddoc-doc ${v.current ? "ddoc-current" : ""}">${row(v, i === 0)}</div>`).join("")}
-    </div>`;
-  }
+  void expandVersions;
   const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
-  const toggle = hasVersions ? `<button class="ddoc-btn ddoc-btn-ghost" onclick="ddocToggleVersions('${id}', this)">${older.length} older version${older.length === 1 ? "" : "s"} ▾</button>` : "";
+  const toggle = hasVersions ? `<button class="ddoc-btn ddoc-btn-ghost ddoc-older-btn" onclick="ddocToggleVersions('${id}', this)">See Older Versions (${older.length}) ▾</button>` : "";
   return `
-    <div class="ddoc-doc ${hasVersions && latest.current ? "ddoc-current" : ""}">
+    <div class="ddoc-doc${hasVersions ? " ddoc-has-versions" : ""}">
       ${row(latest, true, toggle)}
       ${hasVersions ? `
         <div class="ddoc-versions" id="${id}" style="display:none;">
-          ${older.map(v => row(v, false)).join("")}
+          <div class="ddoc-versions-title">Older versions (newest first)</div>
+          ${older.map(v => `<div class="ddoc-old-row">${row(v, false)}</div>`).join("")}
         </div>` : ""}
     </div>`;
 }
