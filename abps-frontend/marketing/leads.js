@@ -867,7 +867,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
     { type: "CARD", keys: ["Company Name", "Website", "City", "State", "Country", "Company Address"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
-    { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Inquire", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
+    { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Enquiry", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
     { type: "SEC4", keys: ["Existing Project", "Products Discussed", "Expected Tender / RFQ Date", "Approx Requirement", "Technical Discussion Summary", "Competitor Details", "Approx Business Potential"] },
     // SEC5 (Send Company Profile / Send Technical Presentation / Arrange
     // Site Visit / Get Enquiry / Send Offer / Follow-Up Required) removed
@@ -921,7 +921,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         sel.dataset.original = leadMap[key] || "";
         [
-          "New Lead", "Inquire Received", "Offer Sent", 
+          "New Lead", "Enquiry Received", "Offer Sent", 
           "Order Received", "Order Dispatched", "Product Commissioned", "Order not Received"
         ].forEach(st => {
           let op = document.createElement("option"); op.textContent = st; if(leadMap[key] === st) op.selected = true; sel.appendChild(op);
@@ -1077,18 +1077,18 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
         cell.appendChild(wrapper);
       }
 
-      // FIXED DESIGN BLOCK: Repositioned Tender + Purchase inquiries to line up at the start of the clean row matrix line item
-      else if (key === "Tender Inquire") {
+      // FIXED DESIGN BLOCK: Repositioned Tender + Purchase enquiries to line up at the start of the clean row matrix line item
+      else if (key === "Tender Enquiry") {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; width:100%;";
         wrapper.innerHTML = `
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Inquire Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Tender Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Tender Inquire"] || "")}</textarea></div>
-          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Inquire Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Inquire" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Purchase Inquire"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Tender Enquiry Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Tender Enquiry" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Tender Enquiry"] || "")}</textarea></div>
+          <div><span style="font-size:0.58rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Purchase Enquiry Contact Person</span><textarea rows="1" class="live-lead-field-input-${leadRef}" data-header-key="Purchase Enquiry" placeholder="Name of End User" oninput="autoGrowPoField(this)" onfocus="autoGrowPoField(this)">${escapeHtml(leadMap["Purchase Enquiry"] || "")}</textarea></div>
         `;
         cell.appendChild(wrapper);
       }
 
-      // FIXED DESIGN BLOCK: Positioned directly adjacent to the inquiries cell block wrapper panel element
+      // FIXED DESIGN BLOCK: Positioned directly adjacent to the enquiries cell block wrapper panel element
       else if (key === "Existing System Details") {
         label.style.display = "none";
         let wrapper = document.createElement("div"); wrapper.style.cssText = "display: flex; flex-direction: column; gap: 6px; width:100%;";
@@ -1198,7 +1198,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       }
       
       // Suppress standalone rendering of child items that are nested into parent compound objects boxes
-      if (["Type of Industry", "Purchase Inquire", "Problem Observed"].indexOf(key) === -1) {
+      if (["Type of Industry", "Purchase Enquiry", "Problem Observed"].indexOf(key) === -1) {
         gridWrapper.appendChild(cell);
       }
     });

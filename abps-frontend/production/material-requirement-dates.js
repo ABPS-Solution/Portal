@@ -95,7 +95,7 @@ async function loadMRDNeedQueue() {
       g.items.push(item);
     });
     const groupsHtml = groups.map(g => `
-      <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
+      <div style="padding:6px 12px; background:#fef3c7; border-bottom:1px solid #d97706; border-top:2px solid #b45309;">
         <span style="font-family:monospace; font-weight:700; font-size:0.92rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
         <span style="font-size:0.88rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
       </div>

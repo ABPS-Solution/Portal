@@ -4,7 +4,7 @@
 // days in the current stage and rows changed since the last meeting.
 // Backend: lib/morningMeeting.js (route fetchMorningMeeting).
 
-const MM_STATUSES = ["New Lead", "Technical Discussion", "Inquire Received", "Offer Sent", "Order Received",
+const MM_STATUSES = ["New Lead", "Technical Discussion", "Enquiry Received", "Offer Sent", "Order Received",
   "Order Dispatched", "Product Commissioned", "Order not Received"];
 
 const MM_COUNTS = [
