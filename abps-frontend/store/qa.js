@@ -267,6 +267,7 @@ async function openQARevisionDetail(grnNumber) {
             <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
             <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
             <option value="Under Deviation" ${line.actionForRejectedMaterial==='Under Deviation'?'selected':''}>Under Deviation</option>
+            <option value="Scrap" ${line.actionForRejectedMaterial==='Scrap'?'selected':''}>Scrap</option>
           </select>
         </td>
       </tr>`;
@@ -545,6 +546,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
                 <option value="Ask Vendor to repair at ABPS">Ask Vendor to repair at ABPS</option>
                 <option value="Ask ABPS to Repair at ABPS">Ask ABPS to Repair at ABPS</option>
                 <option value="Under Deviation">Under Deviation</option>
+                <option value="Scrap">Scrap</option>
               </select>
             </td>
             <td style="width:60px; padding:6px; text-align:center; vertical-align:middle;">
@@ -806,7 +808,7 @@ async function initializeRejectedMaterialPanel(toggle) {
 
   const cleanVendor = (window.rejMaterialVendorFilter || "").toString().trim();
   const selectedActions = window.rejMaterialActionFilter || [];
-  const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS", "Under Deviation"];
+  const ALL_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS", "Under Deviation", "Scrap"];
 
   const filterSummaryText = isCompleted
     ? `Filtering for ${selectedActions.length === 0 ? "All Action for Rejected" : selectedActions.join(", or ")}${cleanVendor ? ` • Vendor: "${cleanVendor}"` : ""}`
@@ -880,13 +882,10 @@ async function initializeRejectedMaterialPanel(toggle) {
           <td style="width:170px; padding:8px 6px;">
             ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
               isEditable ? `
-              <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; font-size:0.76rem; padding:3px 2px;">
-                <option value="Return to Vendor for Replacement" ${line.actionForRejectedMaterial==='Return to Vendor for Replacement'?'selected':''}>Return to Vendor for Replacement</option>
-                <option value="Return to Vendor for Repair" ${line.actionForRejectedMaterial==='Return to Vendor for Repair'?'selected':''}>Return to Vendor for Repair</option>
-                <option value="Ask Vendor to repair at ABPS" ${line.actionForRejectedMaterial==='Ask Vendor to repair at ABPS'?'selected':''}>Ask Vendor to repair at ABPS</option>
-                <option value="Ask ABPS to Repair at ABPS" ${line.actionForRejectedMaterial==='Ask ABPS to Repair at ABPS'?'selected':''}>Ask ABPS to Repair at ABPS</option>
-                <option value="Under Deviation" ${line.actionForRejectedMaterial==='Under Deviation'?'selected':''}>Under Deviation</option>
-              </select>` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+              <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" data-pending="${Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0}" onchange="rejUpdateSplitRest('${line.rejectionId}')" style="width:100%; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml(line.actionForRejectedMaterial)}</select>
+              <div id="rej-split-rest-${line.rejectionId}" style="display:none; font-size:0.72rem; color:#475569; margin-top:3px;"></div>
+              <div id="rej-splits-${line.rejectionId}"></div>
+              ${(Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0) > 0 ? `<button type="button" class="btn" style="width:auto; margin-top:4px; padding:2px 8px; font-size:0.72rem; background:#eff6ff; color:var(--brand); border:1px solid #bfdbfe;" onclick="rejAddSplit('${line.rejectionId}')">+ Split quantity</button>` : ''}` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
           </td>
         </tr>`;
       });
@@ -940,22 +939,72 @@ async function initializeRejectedMaterialPanel(toggle) {
   } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
+const REJ_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS", "Under Deviation", "Scrap"];
+function rejActionOptionsHtml(selected) {
+  return REJ_ACTIONS.map(a => `<option value="${a}" ${a === selected ? "selected" : ""}>${a}</option>`).join("");
+}
+
+// Partial actions: part of a row's Not OK quantity can take a different
+// action (e.g. 40 Scrap, 25 repaired at ABPS, rest replaced by the vendor).
+function rejAddSplit(rejId) {
+  const box = document.getElementById(`rej-splits-${rejId}`);
+  const row = document.createElement("div");
+  row.className = "rej-split-row";
+  row.style.cssText = "display:flex; gap:4px; align-items:center; margin-top:4px;";
+  row.innerHTML = `<input type="number" class="rej-split-qty" min="0" step="any" placeholder="Qty" oninput="rejUpdateSplitRest('${rejId}')" style="width:62px; font-size:0.76rem; padding:3px;">
+    <select class="rej-split-action" style="flex:1; min-width:0; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml("Scrap")}</select>
+    <button type="button" title="Remove this split" onclick="this.parentElement.remove(); rejUpdateSplitRest('${rejId}')" style="border:none; background:none; color:#b91c1c; font-weight:700; cursor:pointer;">×</button>`;
+  box.appendChild(row);
+  rejUpdateSplitRest(rejId);
+}
+
+function rejUpdateSplitRest(rejId) {
+  const sel = document.querySelector(`select[data-rejid="${rejId}"]`);
+  const note = document.getElementById(`rej-split-rest-${rejId}`);
+  if (!sel || !note) return;
+  const rows = document.querySelectorAll(`#rej-splits-${rejId} .rej-split-row`);
+  if (!rows.length) { note.style.display = "none"; return; }
+  const pending = Number(sel.dataset.pending) || 0;
+  const used = Array.from(rows).reduce((a, r) => a + (Number(r.querySelector(".rej-split-qty").value) || 0), 0);
+  const rest = Math.round((pending - used) * 1000) / 1000;
+  note.style.display = "block";
+  note.style.color = rest > 0 ? "#475569" : "#b91c1c";
+  note.textContent = rest > 0 ? `Rest: ${rest} of ${pending} → ${sel.value}` : `Splits use ${used} of ${pending}; leave some for the first action.`;
+}
+
 async function commitRejectedMaterialActionToBackend(grnNum, btn) {
   const banner = document.getElementById('rejected-material-feedback-banner');
   banner.style.display = "none";
 
   const lineItems = [];
+  let splitError = "";
   document.querySelectorAll(`.rej-action-${grnNum}`).forEach(sel => {
-    lineItems.push({ rejectionId: sel.dataset.rejid, actionForRejectedMaterial: sel.value });
+    const rejId = sel.dataset.rejid;
+    const splits = Array.from(document.querySelectorAll(`#rej-splits-${rejId} .rej-split-row`)).map(row => ({
+      quantity: Number(row.querySelector(".rej-split-qty").value) || 0,
+      action: row.querySelector(".rej-split-action").value,
+    }));
+    if (splits.length) {
+      const pending = Number(sel.dataset.pending) || 0;
+      const total = splits.reduce((a, s) => a + s.quantity, 0);
+      if (splits.some(s => !(s.quantity > 0))) splitError = "Enter a quantity above 0 for every split.";
+      else if (total >= pending) splitError = `Split quantities (${total}) must add up to less than the Not OK pending quantity (${pending}). The rest stays on the first action.`;
+    }
+    lineItems.push({ rejectionId: rejId, actionForRejectedMaterial: sel.value, splits });
   });
   if (lineItems.length === 0) return;
+  if (splitError) {
+    banner.style.cssText = "display: block; background: #fef2f2; border-left: 4px solid #dc2626; color: #b91c1c; padding: 16px; border-radius: var(--radius); margin-bottom:15px; font-weight:700;";
+    banner.textContent = splitError;
+    return;
+  }
 
   // "Under Deviation" is selectable by anyone (it's just flagging the row
   // for review), but the actual submission from THIS screen is gated to
   // admin users — checked client-side for a fast/clear message, and again
   // server-side (authoritative — never trust this check alone).
   const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true";
-  if (!isAdmin && lineItems.some(li => li.actionForRejectedMaterial === "Under Deviation")) {
+  if (!isAdmin && lineItems.some(li => li.actionForRejectedMaterial === "Under Deviation" || li.splits.some(s => s.action === "Under Deviation"))) {
     banner.style.cssText = "display: block; background: #fef2f2; border-left: 4px solid #dc2626; color: #b91c1c; padding: 16px; border-radius: var(--radius); margin-bottom:15px; font-weight:700;";
     banner.textContent = 'One or more rows are marked "Under Deviation" — discuss with Alok Sir first. Submission with this action can only be done by an admin user in this section.';
     return;
