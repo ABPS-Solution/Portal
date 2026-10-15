@@ -145,11 +145,22 @@ function mmEnquiryName(r) {
   return n;
 }
 
+// A step not yet done: overdue with a task (task date), overdue with no task
+// (when it was expected), or a future task (its target completion date).
+function mmPendingText(r, k) {
+  const p = (r.pending || {})[k];
+  if (!p) return null;
+  const d = escapeHtml(formatOrdinalDate(p.date));
+  if (p.state === "taskOverdue") return { cls: "late", html: `Overdue<em><br>task was due ${d}</em>` };
+  if (p.state === "noTaskOverdue") return { cls: "late", html: `Overdue<em><br>no task, due ${d}</em>` };
+  return { cls: "plan", html: `Due ${d}` };
+}
+
 function mmProgressHtml(r) {
   return '<div class="mm-steps">' + MM_STEP_LABELS.map(([k, label]) => {
-    const late = !r[k] && (r.overdue || []).includes(k);
-    const val = r[k] ? escapeHtml(formatOrdinalDate(r[k])) : (late ? "Overdue" : "-");
-    return `<div class="mm-step${r[k] ? " mm-step-done" : ""}${late ? " mm-step-late" : ""}"><span>${r[k] ? "✓ " : ""}${label}</span><strong>${val}</strong></div>`;
+    const p = r[k] ? null : mmPendingText(r, k);
+    const val = r[k] ? escapeHtml(formatOrdinalDate(r[k])) : (p ? p.html : "-");
+    return `<div class="mm-step${r[k] ? " mm-step-done" : ""}${p ? " mm-step-" + p.cls : ""}"><span>${r[k] ? "✓ " : ""}${label}</span><strong>${val}</strong></div>`;
   }).join("") + "</div>";
 }
 

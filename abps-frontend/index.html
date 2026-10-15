@@ -5808,6 +5808,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         .mm-step-done span { color:#15803d; } .mm-step-done strong { color:#14532d; }
         .mm-step-late { border-left-color:#dc2626; background:#fef2f2; }
         .mm-step-late span, .mm-step-late strong { color:#b91c1c; }
+        .mm-step-plan { border-left-color:#2563eb; background:#eff6ff; }
+        .mm-step-plan span, .mm-step-plan strong { color:#1d4ed8; }
+        .mm-step em { font-style:normal; font-size:0.68rem; font-weight:600; }
         .nlr-exp-btn { font-size:0.85rem; padding:2px 6px; }
         .mm-table td { word-wrap:break-word; }
         .mm-table tr.mm-ordered > td { background:#dcfce7; }
@@ -6335,7 +6338,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   <div class="template-task-form" style="display:none; grid-template-columns:repeat(6,1fr); gap:8px; background:#f0fdf4; padding:10px; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px;">
     <input type="hidden" class="task-edit-id">
     <div><label class="field-label">Task Status</label><select class="task-status-select"><option value="Assigned">Assigned</option><option value="Completed">Completed</option></select></div>
-    <div><label class="field-label">Task Type</label><select class="task-type-select"><option value="">— Select —</option><option value="Site Visit">Site Visit</option><option value="Call">Call</option><option value="Email">Email</option><option value="Meeting">Meeting</option><option value="Proposal">Proposal</option><option value="Payment">Payment</option><option value="Other">Other</option></select></div>
+    <div><label class="field-label">Task Type</label><select class="task-type-select"><option value="">— Select —</option><option value="Site Visit">Site Visit</option><option value="Call">Call</option><option value="Send Company Profile">Send Company Profile</option><option value="Meeting">Meeting</option><option value="Proposal">Proposal</option><option value="Payment">Payment</option><option value="Other">Other</option></select></div>
     <div><label class="field-label">Assigned To (ABPS Engineer) *</label><select class="task-eng-select"></select></div>
     <div><label class="field-label">Target Completion Time</label><select class="task-shift-select"><option value="">— Select —</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
     <div><label class="field-label">Target Date *</label><input type="date" class="task-targetdate-input"></div>
