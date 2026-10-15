@@ -42,6 +42,7 @@ async function initializeAuthorizeBOQPanel(mode) {
     groups.forEach((list, projectId) => {
       const group = document.createElement("div");
       group.className = "auth-boq-project-group";
+      group.dataset.search = ((list[0].customerName || "") + " " + (projectId || "")).toLowerCase();
       group.style.cssText = "border:2px solid #94a3b8; border-radius:8px; margin-bottom:16px; background:#f8fafc; overflow:hidden;";
       group.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; background:#e2e8f0; border-bottom:1px solid #94a3b8;">
@@ -81,6 +82,7 @@ async function initializeAuthorizeBOQPanel(mode) {
       groupBody.appendChild(card);
       });
     });
+    filterAuthBoqByCompany();
   } catch(e) {
     cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
   }
@@ -94,6 +96,18 @@ async function initializeAuthorizeBOQPanel(mode) {
 let uboqRevList = [];          // cached pending requests from the server
 let uboqRevExpandedId = null;  // currently expanded updateId
 let uboqRevRows = [];          // editable working copy of the expanded request's rows
+
+// Search Company Name: hides project blocks whose company / Project ID does not match.
+function filterAuthBoqByCompany() {
+  const q = ((document.getElementById("auth-boq-company-search") || {}).value || "").trim().toLowerCase();
+  const groups = document.querySelectorAll("#auth-boq-queue-cards-feed .auth-boq-project-group");
+  let shown = 0;
+  groups.forEach(g => { const ok = !q || (g.dataset.search || "").includes(q); g.style.display = ok ? "" : "none"; if (ok) shown++; });
+  let note = document.getElementById("auth-boq-search-empty");
+  const feed = document.getElementById("auth-boq-queue-cards-feed");
+  if (!note && feed) { note = document.createElement("div"); note.id = "auth-boq-search-empty"; note.style.cssText = "padding:16px; color:var(--muted); text-align:center;"; feed.after(note); }
+  if (note) { note.textContent = groups.length && !shown ? "No pending BOQs for this company." : ""; note.style.display = groups.length && !shown ? "" : "none"; }
+}
 
 async function initializeAuthorizeBOQRevisionPanel() {
   const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");

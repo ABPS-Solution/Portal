@@ -267,7 +267,7 @@ function renderBOQRevisionRows(updateId) {
     <div style="margin-bottom:8px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand);">Material Rows *</div>
     </div>
-    ${removedRows.length ? `<div style="margin-bottom:8px; padding:8px 12px; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:var(--radius); font-size:0.82rem; color:#991b1b;"><strong>Removed in this revision:</strong> ${removedRows.map(r => escapeHtml(boqRowMaterialDisplayText(r)) + ' (' + formatQtyTrimmed(r.quantityFor1Set) + ' ' + escapeHtml(r.unit || '') + ' / set)').join('; ')}</div>` : ''}
+    
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
       <table class="store-basket-data-table boq-material-table" style="width:100%; min-width:1050px; border-collapse:collapse;">
         <thead>
