@@ -107,7 +107,7 @@ function pcostRender() {
   const designRows = rows.filter(r => r.designCosting != null);
   const doneRows = rows.filter(r => r.actualMsr != null);
   const tot = {
-    po: sum("poValue"), rm: sum("rmPoCosting"), memo: sum("memoCosting"), cur: sum("currentCosting"),
+    po: sum("poValue"), rm: sum("rmPoCosting"), memo: sum("memoCosting"), tr: sum("transportCosting"), cur: sum("currentCosting"),
     design: designRows.reduce((a, r) => a + r.designCosting, 0),
     designPo: designRows.reduce((a, r) => a + r.poValue, 0),
     diff: designRows.reduce((a, r) => a + r.difference, 0),
@@ -117,11 +117,11 @@ function pcostRender() {
   const ratio = (a, b) => b > 0 ? (a / b) * 100 : null;
 
   let html = `<div class="pcost-box"><table class="prn-view-table pcost-table"><colgroup>
-      <col style="width:4%"><col style="width:17%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
-      <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
+      <col style="width:4%"><col style="width:15%"><col style="width:8%"><col style="width:9%"><col style="width:6%">
+      <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
     </colgroup><thead><tr>
       <th>Sr No</th><th>Project</th><th>PO Value (Basic)</th><th>Design Estimated Costing</th><th>Design MSR</th>
-      <th>Current RM PO Costing</th><th>Current Production Memo Costing</th><th>Total Current Costing</th>
+      <th>Current RM PO Costing</th><th>Current Production Memo Costing</th><th>Current Transport Costing</th><th>Total Current Costing</th>
       <th>Current vs Design</th><th>Payment Received</th><th>Actual MSR</th></tr></thead><tbody>`;
   rows.forEach((r, i) => {
     const open = pcostOpen.has(r.projectId);
@@ -136,13 +136,13 @@ function pcostRender() {
       <td style="text-align:center;"><button class="pcost-sr" onclick="pcostToggle(${jsArg(r.projectId)})">${open ? "▾" : "▸"} ${i + 1}</button></td>
       <td class="pcost-left"><div style="font-weight:600;">${escapeHtml(r.companyName || "")}</div><div class="pcost-muted" style="word-break:break-all;">${escapeHtml(r.projectId)}</div></td>
       <td>${pcostMoney(r.poValue)}</td><td>${design}</td><td>${pcostPct(r.designMsr)}</td>
-      <td>${pcostMoney(r.rmPoCosting)}</td><td>${pcostMoney(r.memoCosting)}</td><td><strong>${pcostMoney(r.currentCosting)}</strong>${r.poValue > 0 ? `<div class="pcost-muted">${pcostPct(ratio(r.currentCosting, r.poValue))} of PO</div>` : ""}</td>
+      <td>${pcostMoney(r.rmPoCosting)}</td><td>${pcostMoney(r.memoCosting)}</td><td>${pcostMoney(r.transportCosting)}</td><td><strong>${pcostMoney(r.currentCosting)}</strong>${r.poValue > 0 ? `<div class="pcost-muted">${pcostPct(ratio(r.currentCosting, r.poValue))} of PO</div>` : ""}</td>
       <td>${diff}</td><td>${pay}</td><td>${actual}</td></tr>`;
-    if (open) html += `<tr><td colspan="11" id="pcost-bd-${CSS.escape(r.projectId)}" style="background:#f8fafc;">Loading BOQs...</td></tr>`;
+    if (open) html += `<tr><td colspan="12" id="pcost-bd-${CSS.escape(r.projectId)}" style="background:#f8fafc;">Loading BOQs...</td></tr>`;
   });
   html += `<tr class="pcost-total"><td></td><td>Total (${rows.length})</td><td>${pcostMoney(tot.po)}</td>
     <td>${pcostMoney(tot.design)}</td><td>${pcostPct(ratio(tot.design, tot.designPo))}</td>
-    <td>${pcostMoney(tot.rm)}</td><td>${pcostMoney(tot.memo)}</td><td>${pcostMoney(tot.cur)}</td>
+    <td>${pcostMoney(tot.rm)}</td><td>${pcostMoney(tot.memo)}</td><td>${pcostMoney(tot.tr)}</td><td>${pcostMoney(tot.cur)}</td>
     <td>${designRows.length ? pcostMoney(tot.diff).replace("₹-", "-₹") : ""}</td>
     <td>${pcostMoney(tot.recv)}<div class="pcost-muted">${pcostPct(ratio(tot.recv, tot.poGst))}</div></td>
     <td>${pcostPct(ratio(tot.actCost, tot.actPo))}</td></tr></tbody></table></div>`;

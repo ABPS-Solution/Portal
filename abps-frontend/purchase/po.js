@@ -364,6 +364,7 @@ function renderSrchPOResultsAsPOCards(list) {
           <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
           <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
+          ${po.poType === "Transport" ? `<span style="margin-left:8px; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:999px; background:#ede9fe; color:#6d28d9;">Transport${po.completedAt ? " · Completed" : ""}</span>` : ""}
         </div>
         <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
@@ -395,8 +396,23 @@ async function toggleSrchPOCard(poNo) {
   } catch(e) { expandDiv.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
+async function markTransportPOCompleted(poNo, btn) {
+  if (!await abpsConfirm(`Mark ${poNo} as Completed? Do this once the transporter has delivered.`, { title: "Mark Completed", okLabel: "Mark Completed" })) return;
+  btn.disabled = true; btn.textContent = "Saving...";
+  try {
+    const data = await apFetch({ action: "markTransportPOCompleted", poNo });
+    if (!data.success) throw new Error(data.error || "Could not mark it Completed.");
+    btn.outerHTML = `<span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:#dcfce7; color:#15803d;">Completed</span>`;
+  } catch (e) {
+    if (e.message === "SESSION_EXPIRED") return;
+    btn.disabled = false; btn.textContent = "Mark Completed";
+    alert(e.message);
+  }
+}
+
 function renderRMPOViewOnlyDetail(po, lineItems) {
   const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
+  const isTransportPO = po.poType === "Transport";
   const field = (label, val) => `
     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">
       <div style="font-size:0.66rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:3px;">${label}</div>
@@ -408,7 +424,9 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     // Extra = ordered qty not tied to any PRN, mirroring Create PO's allot chips.
     const allocSum = allocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 100) / 100;
-    const projectChips = allocs.length
+    const projectChips = isTransportPO
+      ? `<div style="display:inline-block; background:#ede9fe; color:#6d28d9; font-size:0.72rem; padding:2px 8px; border-radius:4px;">${escapeHtml(l.projectId || "")}</div>`
+      : allocs.length
       ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")}: <strong>${fmt(a.quantity)}</strong></div>`).join("")
         + (extraQty > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${fmt(extraQty)}</strong></div>` : "")
       : (extraQty > 0
@@ -432,7 +450,13 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.05em;">Purchase Order Header (View Only)</div>
           <div style="font-family:monospace; font-weight:800; font-size:1.05rem; color:var(--brand); margin-top:2px;">${escapeHtml(po.poNo || "")}</div>
         </div>
-        <span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:${po.status === "Authorized" ? "#dcfce7" : "#fef3c7"}; color:${po.status === "Authorized" ? "#15803d" : "#92400e"};">${escapeHtml(po.status || "")}</span>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          ${isTransportPO ? `<span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:#ede9fe; color:#6d28d9;">Transport</span>` : ""}
+          <span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:${po.status === "Authorized" ? "#dcfce7" : "#fef3c7"}; color:${po.status === "Authorized" ? "#15803d" : "#92400e"};">${escapeHtml(po.status || "")}</span>
+          ${isTransportPO ? (po.completedAt
+            ? `<span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:#dcfce7; color:#15803d;" title="By ${escapeHtml(po.completedBy || "")}">Completed ${escapeHtml(formatOrdinalDate(po.completedAt))}</span>`
+            : `<button class="nav-btn-styled" onclick="event.stopPropagation(); markTransportPOCompleted('${po.poNo}', this)" style="background:#15803d; color:#fff; font-weight:700; padding:5px 14px; font-size:0.78rem;">Mark Completed</button>`) : ""}
+        </div>
       </div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; padding:14px 16px;">
         ${field("Vendor Name", po.vendorName)}
@@ -446,7 +470,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     </div>
 
     <div style="margin-bottom:16px; overflow-x:auto;">
-      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Material Rows</div>
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">${isTransportPO ? "Transport Rows" : "Material Rows"}</div>
       <table class="prn-view-table" style="width:100%; border-collapse:collapse; background:#fff; font-size:0.82rem; table-layout:fixed;">
         <colgroup>
           <col style="width:24.5%;">
@@ -459,13 +483,13 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
         </colgroup>
         <thead>
           <tr style="background:#f1f5f9; text-align:left;">
-            <th style="padding:8px;">Material Name</th>
+            <th style="padding:8px;">${isTransportPO ? "Description" : "Material Name"}</th>
             <th style="padding:8px; text-align:center;">Unit</th>
             <th style="padding:8px; text-align:center;">Quantity</th>
             <th style="padding:8px; text-align:center;">Rate/Qty</th>
             <th style="padding:8px; text-align:center;">Disc %</th>
             <th style="padding:8px; text-align:center;">Amount</th>
-            <th style="padding:8px;">PRNs / Projects</th>
+            <th style="padding:8px;">${isTransportPO ? "Project" : "PRNs / Projects"}</th>
           </tr>
         </thead>
         <tbody>${rowsHtml || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No line items.</td></tr>`}</tbody>
@@ -556,6 +580,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   const draft = (window.cpoMode === 'create') ? loadCPODraft() : null;
   window.cpoMaterialRows = (draft && draft.materialRows) || [];
   window.cpoRowSeq = (draft && draft.rowSeq) || 0;
+  window.cpoPoType = (draft && draft.poType) || "Material";
 
   const [vendorRes, projRes] = await Promise.allSettled([
     apFetch({ action: "fetchVendorList" }),
@@ -593,6 +618,15 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
   body.innerHTML = `
     <div class="po-section" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">Purchase Order Header</div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <label class="field-label" style="margin:0;">PO Type</label>
+        ${isExisting
+          ? `<span id="cpo-po-type-badge" style="font-weight:800; font-size:0.85rem; padding:4px 12px; border-radius:999px; background:#e0f2fe; color:var(--brand);">Material</span>`
+          : `<select id="cpo-po-type" onchange="onCPOPoTypeChange()" style="width:auto; padding:7px 10px; border:1.5px solid var(--border); border-radius:var(--radius); font-weight:700;">
+              <option value="Material">Material</option><option value="Transport">Transport</option>
+            </select>`}
+        <span id="cpo-po-type-note" style="font-size:0.78rem; color:var(--muted);"></span>
+      </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Vendor Name *</label>
@@ -626,7 +660,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 
     <div style="margin-bottom:16px;">
       <div style="margin-bottom:10px;">
-        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows</div>
+        <div id="cpo-rows-heading" style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows</div>
       </div>
       <div id="cpo-rows-body"></div>
       <!-- Moved below the rows, 16 Sep 2026 — with many material rows on
@@ -711,6 +745,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       // form (rendered above) with nothing populated, with no error shown.
       if (data.success && data.po) {
         const po = data.po;
+        window.cpoPoType = po.poType || "Material";
         document.getElementById("cpo-vendor").value = po.vendorName || "";
         handleCPOVendorChange();
         if (po.supplierRef) document.getElementById("cpo-supplier-ref").value = po.supplierRef;
@@ -743,6 +778,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
             id: window.cpoRowSeq, description: li.description || "", additionalDescription: li.additionalDescription || "", itemCode: li.itemCode || "",
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
             projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [],
+            projectId: li.projectId || "", lineKey: li.lineKey || "",
             _allocationTouched: true, _allocatedForQty: qty,
             designRatePerQuantity: li.designRatePerQuantity != null ? Number(li.designRatePerQuantity) : null,
           };
@@ -784,8 +820,114 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       document.getElementById("cpo-po-number-override").value = draft.poNumberOverride;
     }
   }
+  cpoApplyPoTypeLabels();
   renderCPOMaterialRows();
   recalcCPOTotals();
+}
+
+// ── Transport PO (15 Oct 2026) ──────────────────────────────────────────
+// Same form, same flow. Rows are free text with a Project ID each: no item
+// code, no PRN allocation, nothing received into stock.
+function cpoIsTransport() { return window.cpoPoType === "Transport"; }
+
+function cpoApplyPoTypeLabels() {
+  const t = cpoIsTransport();
+  const sel = document.getElementById("cpo-po-type");
+  if (sel) sel.value = window.cpoPoType || "Material";
+  const badge = document.getElementById("cpo-po-type-badge");
+  if (badge) badge.textContent = t ? "Transport" : "Material";
+  const note = document.getElementById("cpo-po-type-note");
+  if (note) note.textContent = t ? "Rows are free text with a Project ID each. Nothing is received into stock; mark it Completed once the trip is done." : "";
+  const head = document.getElementById("cpo-rows-heading");
+  if (head) head.textContent = t ? "Transport Rows" : "Material Rows";
+  const add = document.getElementById("cpo-add-row-btn");
+  if (add) add.textContent = t ? "+ Add Transport Row" : "+ Add Material Row";
+}
+
+async function onCPOPoTypeChange() {
+  const sel = document.getElementById("cpo-po-type");
+  const next = sel.value;
+  if (next === window.cpoPoType) return;
+  if ((window.cpoMaterialRows || []).length &&
+      !await abpsConfirm("Changing the PO Type clears the rows already added. Continue?", { title: "Change PO Type", okLabel: "Clear rows" })) {
+    sel.value = window.cpoPoType;
+    return;
+  }
+  window.cpoPoType = next;
+  window.cpoMaterialRows = [];
+  cpoApplyPoTypeLabels();
+  renderCPOMaterialRows();
+  recalcCPOTotals();
+  persistCPODraft();
+}
+
+function cpoTransportRowHtml(row, idx) {
+  const esc = (t) => (t || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
+  const inp = "width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1rem; text-align:center;";
+  const units = ["Trip", "Lump Sum", "KM", "Truck", "Nos"];
+  const unitOpts = (units.includes(row.unit) || !row.unit ? units : [row.unit, ...units])
+    .map(u => `<option value="${esc(u)}" ${(row.unit || "Trip") === u ? "selected" : ""}>${esc(u)}</option>`).join("");
+  const projOpts = (window.cpoActiveProjects || []).map(p => `<option value="${esc(p)}"></option>`).join("");
+  return `<div data-rowid="${row.id}" style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px; overflow:hidden;">
+      <div class="cpo-row-head" data-rowid="${row.id}" style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; ${cpoRowHeadStyle(row)}">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}</span>
+        <span class="cpo-row-status" data-rowid="${row.id}" style="font-size:0.78rem; font-weight:700;">${cpoRowStatusHtml(row)}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span class="cpo-amount" data-rowid="${row.id}">0</span></strong></span>
+        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:28px; height:28px; border-radius:4px;">✕</button>
+      </div>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:grid; grid-template-columns:minmax(220px, 1fr) 3fr; gap:10px;">
+          <div>
+            <div style="${lbl}">Project ID *</div>
+            <input type="text" list="cpo-proj-list-${row.id}" value="${esc(row.projectId)}" placeholder="Type or pick a Project ID" autocomplete="off"
+              oninput="updateCPORowField(${row.id},'projectId',this.value.trim()); cpoRefreshRowStatus(${row.id});"
+              style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid ${row.projectId ? "#cbd5e1" : "#f59e0b"}; border-radius:4px; font-size:0.88rem; font-family:monospace;">
+            <datalist id="cpo-proj-list-${row.id}">${projOpts}</datalist>
+          </div>
+          <div>
+            <div style="${lbl}">Description *</div>
+            <textarea rows="1" placeholder="e.g. Truck 32 ft, ABPS works to Raipur site, 1 trip"
+              oninput="updateCPORowField(${row.id},'additionalDescription',this.value); cpoRefreshRowStatus(${row.id}); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+              style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.88rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.additionalDescription)}</textarea>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
+          <div style="padding:8px 10px; text-align:center;"><div style="${lbl}">Quantity *</div>
+            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${esc(row.quantity)}" oninput="updateCPORowField(${row.id},'quantity',this.value)" style="${inp}"></div>
+          <div style="padding:8px 10px; text-align:center; border-left:1px solid #cbd5e1;"><div style="${lbl}">Unit</div>
+            <select onchange="updateCPORowField(${row.id},'unit',this.value)" style="${inp}">${unitOpts}</select></div>
+          <div style="padding:8px 10px; text-align:center; border-left:1px solid #cbd5e1;"><div style="${lbl}">Rate *</div>
+            <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${esc(row.rate)}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="${inp}"></div>
+          <div style="padding:8px 10px; text-align:center; border-left:1px solid #cbd5e1;"><div style="${lbl}">Disc %</div>
+            <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${esc(row.discountPercent)}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="${inp}"></div>
+          <div style="padding:8px 10px; text-align:center; background:#f1f5f9; border-left:1px solid #cbd5e1;"><div style="${lbl}">Amount</div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:1.1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function cpoTransportRowsError(rows) {
+  const known = new Set(window.cpoActiveProjects || []);
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i], n = i + 1;
+    if (!(r.projectId || "").trim()) return `Row ${n}: choose the Project ID.`;
+    if (known.size && !known.has(r.projectId.trim())) return `Row ${n}: ${r.projectId} is not an Active project.`;
+    if (!(r.additionalDescription || "").trim()) return `Row ${n}: Description is required.`;
+    if (!(parseFloat(r.quantity) > 0)) return `Row ${n}: Quantity must be greater than 0.`;
+    if (!(parseFloat(r.rate) > 0)) return `Row ${n}: Rate must be greater than 0.`;
+  }
+  return "";
+}
+
+function cpoTransportPayloadRows() {
+  return window.cpoMaterialRows.map(r => ({
+    description: (r.additionalDescription || "").trim(), additionalDescription: (r.additionalDescription || "").trim(),
+    projectId: (r.projectId || "").trim(), lineKey: r.lineKey || "",
+    quantity: parseFloat(r.quantity) || 0, unit: r.unit || "Trip", rate: parseFloat(r.rate) || 0,
+    discountPercent: parseFloat(r.discountPercent) || 0, amount: Number(r.amount) || 0,
+  }));
 }
 
 // ── Create PO draft persistence ─────────────────────────────────────────
@@ -821,6 +963,7 @@ function persistCPODraft() {
       poNumberOverride: document.getElementById("cpo-po-number-override")?.value || "",
       materialRows: window.cpoMaterialRows || [],
       rowSeq: window.cpoRowSeq || 0,
+      poType: window.cpoPoType || "Material",
     };
     abpsDraftSave("createPO", draft);
   } catch (e) { /* storage unavailable/full — resume just won't work, not fatal */ }
@@ -870,7 +1013,9 @@ function handleCPOVendorChange() {
 
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
-  window.cpoMaterialRows.push({ id, description: "", additionalDescription: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
+  window.cpoMaterialRows.push(cpoIsTransport()
+    ? { id, description: "", additionalDescription: "", itemCode: "", projectId: "", lineKey: "", quantity: "", unit: "Trip", rate: "", discountPercent: "", allocations: [] }
+    : { id, description: "", additionalDescription: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
   renderCPOMaterialRows();
   persistCPODraft();
 }
@@ -885,7 +1030,9 @@ function removeCPOMaterialRow(id) {
 function renderCPOMaterialRows() {
   const body = document.getElementById("cpo-rows-body");
   if (window.cpoMaterialRows.length === 0) {
-    body.innerHTML = `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows yet. Click "+ Add Material Row".</div>`;
+    body.innerHTML = cpoIsTransport()
+      ? `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No transport rows yet. Click "+ Add Transport Row".</div>`
+      : `<div style="padding:14px; text-align:center; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:var(--radius);">No material rows yet. Click "+ Add Material Row".</div>`;
     return;
   }
   const esc = (t) => (t || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -895,6 +1042,7 @@ function renderCPOMaterialRows() {
   const inputCss = 'width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1.02rem; text-align:center;';
 
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
+    if (cpoIsTransport()) return cpoTransportRowHtml(row, idx);
     const allocList = row.allocations || [];
     const allocSum = allocList.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const lineQtyNow = parseFloat(row.quantity) || 0;
@@ -1007,6 +1155,13 @@ function cpoGrowNameBox(el) {
 // What a row still needs before the PO can be submitted.
 function cpoRowMissing(row) {
   const missing = [];
+  if (cpoIsTransport()) {
+    if (!(row.projectId || "").trim()) missing.push("Project ID");
+    if (!(row.additionalDescription || "").trim()) missing.push("description");
+    if (!(parseFloat(row.quantity) > 0)) missing.push("quantity");
+    if (!(parseFloat(row.rate) > 0)) missing.push("Rate");
+    return missing;
+  }
   if (!row.itemCode) missing.push('material');
   if (!(parseFloat(row.quantity) > 0)) missing.push('quantity');
   if (!row._allocationTouched) missing.push('PRN allocation');
@@ -1358,7 +1513,9 @@ async function submitCreatePO() {
     return showErr(`Manual PO Number must be a number from 1 to 99999 (saved as ${cpoCurrentPOPrefix()}00001).`);
   }
 
-  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+  const transportErr = cpoIsTransport() ? cpoTransportRowsError(window.cpoMaterialRows) : "";
+  if (transportErr) return showErr(transportErr);
+  for (let i = 0; i < (cpoIsTransport() ? 0 : window.cpoMaterialRows.length); i++) {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
@@ -1382,6 +1539,7 @@ async function submitCreatePO() {
 
   const payload = {
     vendorName,
+    poType: window.cpoPoType || "Material",
     poNumber: poNumberOverrideVal || undefined,
     supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
     orderDate: document.getElementById("cpo-order-date").value.trim(),
@@ -1411,6 +1569,7 @@ async function submitCreatePO() {
     notes: document.getElementById("cpo-notes").value.trim(),
     preparedBy: appActiveOperatorIdentityString || ""
   };
+  if (cpoIsTransport()) payload.lineItems = cpoTransportPayloadRows();
 
   const btn = document.getElementById("cpo-submit-btn");
   btn.disabled = true; btn.textContent = "Submitting...";
@@ -1620,7 +1779,11 @@ function buildCPOEditPayload(banner) {
     }
   }
 
-  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+  if (cpoIsTransport()) {
+    const err = cpoTransportRowsError(window.cpoMaterialRows);
+    if (err) { showErr(err); return null; }
+  }
+  for (let i = 0; i < (cpoIsTransport() ? 0 : window.cpoMaterialRows.length); i++) {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
     if (!row.itemCode) { showErr(`Row ${n}: select a material from the search (item code required).`); return null; }
@@ -1640,7 +1803,7 @@ function buildCPOEditPayload(banner) {
     poNo,
     supplierRef: document.getElementById("cpo-supplier-ref").value.trim(),
     deliveryDate,
-    lineItems: window.cpoMaterialRows.map(r => ({
+    lineItems: cpoIsTransport() ? cpoTransportPayloadRows() : window.cpoMaterialRows.map(r => ({
       description: r.description, additionalDescription: r.additionalDescription || "",
       itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,

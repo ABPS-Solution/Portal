@@ -191,6 +191,13 @@ async function openPORevisionForEdit(requestId, poNo) {
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, requestId });
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
+    if (data.po && data.po.poType === "Transport") {
+      await rpoEnsureProjects();
+      window.rpoActive = { po: data.po, lineItems: (data.lineItems || []).map(l => ({ ...l })),
+        kind: data.editingRevisionKind || "Standalone", editMode: true, requestId: data.editingRequestId || requestId };
+      renderPORevisionCard();
+      return;
+    }
     const lineItems = (data.lineItems || []).map(li => ({
       ...li,
       quantity: li.draftQty != null ? li.draftQty : li.orderedQty,
@@ -213,6 +220,10 @@ async function updatePORevisionUI() {
   const st = window.rpoActive;
   if (!st || !st.editMode) return;
   const lines = collectRPOLines();
+  if (st.po && st.po.poType === "Transport") {
+    const tErr = rpoTransportError(lines);
+    if (tErr) return showPurchaseFeedback("rpo-feedback", "⚠️ " + tErr, "error");
+  }
 
   for (const l of lines) {
     if (l._removed) continue;
@@ -497,6 +508,12 @@ async function openPORevision(poNo, changedOnly) {
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, changedOnly });
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
+    if (data.po && data.po.poType === "Transport") {
+      await rpoEnsureProjects();
+      window.rpoActive = { po: data.po, lineItems: (data.lineItems || []).map(l => ({ ...l })), kind: "Standalone" };
+      renderPORevisionCard();
+      return;
+    }
     const lineItems = (data.lineItems || []).map(li => ({
       ...li,
       quantity: li.orderedQty, // Vendor Discussed Qty starts at the PO's existing ordered qty, editable from there
@@ -520,7 +537,8 @@ function renderPORevisionCard() {
   const { po, lineItems, kind } = st;
   const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 
-  const rowsHtml = lineItems.map((li, idx) => {
+  const isTransportRev = po.poType === "Transport";
+  const rowsHtml = isTransportRev ? rpoTransportRowsHtml(lineItems) : lineItems.map((li, idx) => {
     if (kind === "PRN Driven" && !li.changed && !li._removed && !li.isNew) return ""; // unchanged — not shown, but still counted in the totals below
 
     // Same item code on several rows (different descriptions): pooled after
@@ -643,15 +661,15 @@ function renderPORevisionCard() {
 
       ${prnSummaryHtml}
 
-      <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
+      <div style="display:${isTransportRev ? "none" : "block"}; background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
         <strong>Vendor Discussed Purchase Quantity</strong> is what you actually agreed with the vendor, and is required on every row. It cannot go below what has already been received. Anything you don't allocate to a PRN is ordered as extra stock and lands in the Raw Material store.
       </div>
 
       ${kind === "PRN Driven" ? `<div style="font-size:0.72rem; color:var(--muted); margin-bottom:8px;">Showing only materials whose required quantity changed and not every material in this PO.</div>` : ""}
       <div id="rpo-lines-wrap">${rowsHtml}</div>
       <div style="margin:4px 0 6px;">
-        <button onclick="openRPOAddMaterialModal()" style="font-size:0.8rem; padding:7px 16px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); border-radius:6px; cursor:pointer; font-weight:700;">+ Add Material</button>
-        <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">Adds a material still to be ordered on an authorized PRN to this PO.</span>
+        <button onclick="${isTransportRev ? "rpoAddTransportRow()" : "openRPOAddMaterialModal()"}" style="font-size:0.8rem; padding:7px 16px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); border-radius:6px; cursor:pointer; font-weight:700;">${isTransportRev ? "+ Add Row" : "+ Add Material"}</button>
+        <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">${isTransportRev ? "Adds a transport row with its own Project ID." : "Adds a material still to be ordered on an authorized PRN to this PO."}</span>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
@@ -948,6 +966,17 @@ function saveRPOAllocationModal(idx) {
 
 function collectRPOLines() {
   const st = window.rpoActive;
+  if (st.po && st.po.poType === "Transport") {
+    // Shaped so the shared material checks in submit / update pass through;
+    // rpoTransportError does the real checks for these rows.
+    return st.lineItems.filter(l => !l._removed).map(l => ({
+      lineKey: l.lineKey || "", projectId: (l.projectId || "").trim(), description: (l.description || "").trim(),
+      additionalDescription: (l.description || "").trim(), unit: l.unit || "Trip",
+      quantity: parseFloat(l.quantity) || 0, vendorDiscussedQty: parseFloat(l.quantity) || 0,
+      rate: parseFloat(l.rate) || 0, discountPercent: parseFloat(l.discountPercent) || 0,
+      allocations: [], _sourceAllocations: [], _allocationTouched: true, _received: 0,
+    }));
+  }
   return st.lineItems
     .map((li, idx) => ({ li, idx }))
     .filter(({ idx }) => document.getElementById(`rpo-amount-${idx}`)) // skip unchanged/unrendered lines
@@ -968,6 +997,10 @@ async function submitPORevisionUI() {
   const st = window.rpoActive;
   if (!st) return;
   const lines = collectRPOLines();
+  if (st.po && st.po.poType === "Transport") {
+    const tErr = rpoTransportError(lines);
+    if (tErr) return showPurchaseFeedback("rpo-feedback", "⚠️ " + tErr, "error");
+  }
 
   for (const l of lines) {
     if (l._removed) continue;
@@ -1061,6 +1094,124 @@ async function submitPORevisionUI() {
     btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
     showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
   }
+}
+
+
+// ── Transport PO revisions (15 Oct 2026) ────────────────────────────────
+// A Transport PO's rows are free text with a Project ID each. The revision
+// carries the full new row list; authorizing it replaces the PO's rows.
+async function rpoEnsureProjects() {
+  if (Array.isArray(window.cpoActiveProjects) && window.cpoActiveProjects.length) return;
+  try {
+    const res = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    window.cpoActiveProjects = (res && res.success ? (res.projects || res.projectCodes || []) : [])
+      .map(p => (typeof p === "string" ? p : (p.projectId || p.projectCode || ""))).filter(Boolean);
+  } catch (e) { window.cpoActiveProjects = window.cpoActiveProjects || []; }
+}
+
+function rpoTransportRowsHtml(lineItems) {
+  const esc = (t) => (t == null ? "" : String(t)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
+  const inp = "width:100%; height:34px; box-sizing:border-box; padding:5px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; text-align:center;";
+  const projOpts = (window.cpoActiveProjects || []).map(p => `<option value="${esc(p)}"></option>`).join("");
+  const units = ["Trip", "Lump Sum", "KM", "Truck", "Nos"];
+  const rows = lineItems.map((li, idx) => {
+    if (li._removed) return "";
+    const unitList = units.includes(li.unit) || !li.unit ? units : [li.unit, ...units];
+    return `<div style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; background:${li.lineKey ? "#e0f2fe" : "#dbeafe"};">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}${li.lineKey ? "" : " (new)"}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong>₹<span id="rpo-amount-${idx}">0</span></strong></span>
+        <button onclick="rpoRemoveTransportRow(${idx})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:28px; height:28px; border-radius:4px;">✕</button>
+      </div>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:grid; grid-template-columns:minmax(220px, 1fr) 3fr; gap:10px;">
+          <div><div style="${lbl}">Project ID *</div>
+            <input type="text" list="rpo-proj-list" value="${esc(li.projectId)}" autocomplete="off" oninput="updateRPORowField(${idx},'projectId',this.value.trim())"
+              style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-family:monospace;"></div>
+          <div><div style="${lbl}">Description *</div>
+            <textarea rows="1" oninput="updateRPORowField(${idx},'description',this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+              style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-family:inherit; resize:none; overflow:hidden;">${esc(li.description)}</textarea></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px;">
+          <div><div style="${lbl}">Quantity *</div><input type="number" min="0" step="any" value="${esc(li.quantity)}" oninput="updateRPORowField(${idx},'quantity',this.value)" style="${inp}"></div>
+          <div><div style="${lbl}">Unit</div><select onchange="updateRPORowField(${idx},'unit',this.value)" style="${inp}">${unitList.map(u => `<option ${(li.unit || "Trip") === u ? "selected" : ""}>${esc(u)}</option>`).join("")}</select></div>
+          <div><div style="${lbl}">Rate *</div><input type="number" min="0" step="any" value="${esc(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)" style="${inp}"></div>
+          <div><div style="${lbl}">Disc %</div><input type="number" min="0" max="100" step="any" value="${esc(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)" style="${inp}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<datalist id="rpo-proj-list">${projOpts}</datalist>` + (rows || `<div style="padding:14px; text-align:center; color:var(--muted);">No rows. Click "+ Add Row".</div>`);
+}
+
+function rpoAddTransportRow() {
+  const st = window.rpoActive;
+  if (!st) return;
+  st.lineItems.push({ projectId: "", description: "", quantity: "", unit: "Trip", rate: "", discountPercent: 0 });
+  renderPORevisionCard();
+}
+
+function rpoRemoveTransportRow(idx) {
+  const st = window.rpoActive;
+  if (!st || !st.lineItems[idx]) return;
+  st.lineItems[idx]._removed = true;
+  renderPORevisionCard();
+}
+
+function rpoTransportError(lines) {
+  if (!lines.length) return "Keep at least one row. To cancel the whole PO, use Cancel this PO entirely.";
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (!(l.projectId || "").trim()) return `Row ${i + 1}: choose the Project ID.`;
+    if (!(l.description || "").trim()) return `Row ${i + 1}: Description is required.`;
+    if (!(Number(l.quantity) > 0)) return `Row ${i + 1}: Quantity must be greater than 0.`;
+    if (!(Number(l.rate) > 0)) return `Row ${i + 1}: Rate must be greater than 0.`;
+  }
+  return "";
+}
+
+function aporTransportSummary(r) {
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const curByKey = Object.fromEntries((r.currentLines || []).map(l => [l.lineKey, l]));
+  const revKeys = new Set((r.revisedLineItems || []).map(l => l.lineKey));
+  const out = [];
+  (r.revisedLineItems || []).forEach(l => {
+    const cur = curByKey[l.lineKey];
+    const label = `${escapeHtml(l.projectId || "")}: ${escapeHtml(l.description || "")}`;
+    if (!cur) { out.push(`<li><span style="font-weight:800; color:#1e3a8a;">New row:</span> <strong>${label}</strong>, ${fmt(l.quantity)} at ${fmt(l.rate)}</li>`); return; }
+    const changes = [];
+    if ((cur.projectId || "") !== (l.projectId || "")) changes.push(`project ${escapeHtml(cur.projectId || "")} → ${escapeHtml(l.projectId || "")}`);
+    if ((cur.description || cur.additionalDescription || "") !== (l.description || "")) changes.push("description changed");
+    if (Math.abs((Number(cur.quantity) || 0) - (Number(l.quantity) || 0)) > 1e-9) changes.push(`qty ${fmt(cur.quantity)} → ${fmt(l.quantity)}`);
+    if (Math.abs((Number(cur.rate) || 0) - (Number(l.rate) || 0)) > 1e-9) changes.push(`rate ${fmt(cur.rate)} → ${fmt(l.rate)}`);
+    if (Math.abs((Number(cur.discountPercent) || 0) - (Number(l.discountPercent) || 0)) > 1e-9) changes.push(`disc ${fmt(cur.discountPercent)}% → ${fmt(l.discountPercent)}%`);
+    if (changes.length) out.push(`<li><strong>${label}</strong>: ${changes.join(", ")}</li>`);
+  });
+  (r.currentLines || []).filter(c => !revKeys.has(c.lineKey)).forEach(c => {
+    out.push(`<li><span style="font-weight:800; color:#991b1b;">Row removed:</span> <strong>${escapeHtml(c.projectId || "")}: ${escapeHtml(c.description || "")}</strong></li>`);
+  });
+  return out;
+}
+
+function aporTransportRowsHtml(r) {
+  const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const rid = r.requestId;
+  const rows = (r.revisedLineItems || []).map((l, idx) => `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px; font-family:monospace; font-size:0.8rem;">${escapeHtml(l.projectId || "")}</td>
+      <td style="padding:8px;">${escapeHtml(l.description || "")}</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.quantity)}</td>
+      <td style="padding:8px; text-align:center;">${escapeHtml(l.unit || "")}</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.rate)}</td>
+      <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
+      <td style="padding:8px; text-align:right; font-weight:700;"><span id="apor-amount-${rid}-${idx}">0</span></td>
+    </tr>`).join("");
+  return `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Transport rows after this revision</div>
+    <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.85rem;">
+      <thead><tr style="background:#f1f5f9;"><th style="padding:8px; text-align:left;">Project</th><th style="padding:8px; text-align:left;">Description</th>
+        <th style="padding:8px;">Qty</th><th style="padding:8px;">Unit</th><th style="padding:8px;">Rate</th><th style="padding:8px;">Disc</th><th style="padding:8px; text-align:right;">Amount</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="7" style="padding:12px; text-align:center; color:var(--muted);">No rows.</td></tr>`}</tbody>
+    </table>`;
 }
 
 async function cancelPOEntirely(poNo) {
@@ -1200,10 +1351,11 @@ function renderAPORCard(r) {
   const isCancel = r.revisionKind === "Cancellation";
   const hc = r.headerChanges || {};
   const rid = r.requestId;
+  const isTransportRev = r.poType === "Transport";
 
   // PO Change Summary — every line the draft actually touches, in the
   // same bullet style as Revise PO's own "PRN Change Summary".
-  const summaryLines = revised.map(line => {
+  const summaryLines = isTransportRev ? aporTransportSummary(r) : revised.map(line => {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0, newQty = Number(line.quantity) || 0;
     const oldRate = Number(cur.rate) || 0, newRate = Number(line.rate) || 0;
@@ -1288,7 +1440,7 @@ function renderAPORCard(r) {
   // / Already Received / Unit / Vendor Discussed Qty / Rate / Qty / Disc %
   // / Costing Diff / Amount, then an Allocate to PRNs button + chips strip
   // below) instead of this screen's own bespoke table.
-  const rows = revised.map((line, idx) => {
+  const rows = isTransportRev ? aporTransportRowsHtml(r) : revised.map((line, idx) => {
     const cur = currentByItem[line.itemCode] || {};
     const oldQty = Number(cur.quantity) || 0;
     const received = Number(cur.received) || 0;
@@ -1368,7 +1520,7 @@ function renderAPORCard(r) {
 
       ${summaryHtml}
 
-      <div style="background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
+      <div style="display:${isTransportRev ? "none" : "block"}; background:#f8fafc; border-left:3px solid var(--brand); padding:9px 12px; border-radius:4px; font-size:0.75rem; color:#334155; margin-bottom:12px;">
         <strong>Vendor Discussed Purchase Quantity</strong> is what was actually agreed with the vendor. It cannot go below what has already been received. Anything not allocated to a PRN is ordered as extra stock and lands in the Raw Material store.
       </div>
 
