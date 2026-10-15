@@ -84,6 +84,36 @@ function selectUploadDrawingsType(drawingType) {
   refreshUploadDrawingsList(projectId, drawingType);
 }
 
+// Sends the file straight to Google Drive in 8 MB pieces (no size or 60s
+// limit), then the server records it. Each piece is retried up to 3 times.
+async function uploadDrawingDirect(file, projectId, drawingType, onProgress) {
+  const mimeType = file.type || "application/octet-stream";
+  const start = await apFetch({ action: "startDrawingUpload", projectId, drawingType, fileName: file.name, mimeType, size: file.size });
+  if (!start.success) return start;
+  const CHUNK = 8 * 1024 * 1024;
+  let fileId = null;
+  for (let off = 0; off < file.size || (file.size === 0 && off === 0); off += CHUNK) {
+    const end = Math.min(off + CHUNK, file.size);
+    let resp = null, lastErr = null;
+    for (let attempt = 0; attempt < 3 && !resp; attempt++) {
+      try {
+        const r = await fetch(start.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Range": file.size ? `bytes ${off}-${end - 1}/${file.size}` : "bytes */0" },
+          body: file.slice(off, end),
+        });
+        if (r.status === 308 || r.ok) resp = r; else lastErr = new Error("Drive upload failed (" + r.status + ")");
+      } catch (e) { lastErr = e; await new Promise(res => setTimeout(res, 1500 * (attempt + 1))); }
+    }
+    if (!resp) throw lastErr || new Error("Drive upload failed.");
+    if (onProgress) onProgress(Math.round((end / (file.size || 1)) * 100));
+    if (resp.ok) { fileId = (await resp.json()).id; break; }
+    if (file.size === 0) break;
+  }
+  if (!fileId) throw new Error("Drive did not confirm the upload.");
+  return apFetch({ action: "finishDrawingUpload", projectId, drawingType, fileId, fileName: file.name });
+}
+
 async function refreshUploadDrawingsList(projectId, drawingType) {
   const listZone = document.getElementById("upload-drawings-existing-list");
   const mount    = document.getElementById("upload-drawings-list-mount");
@@ -144,15 +174,8 @@ async function submitUploadDrawing() {
         ? `Uploading drawing ${i + 1} of ${files.length}...`
         : "Uploading drawing document...");
       try {
-        const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
-        const data = await apFetch({
-          action: "uploadDrawingDocument",
-          projectId,
-          drawingType: uploadDrawingsSelectedType,
-          fileName: f.name,
-          base64Data: b64,
-          mimeType: f.type || "application/octet-stream"
-        });
+        const data = await uploadDrawingDirect(f, projectId, uploadDrawingsSelectedType, (pct) =>
+          showBlockingOverlay((files.length > 1 ? `Uploading drawing ${i + 1} of ${files.length}` : "Uploading drawing document") + ` (${pct}%)...`));
         if (data.success) uploaded.push(data.fileName || f.name);
         else failed.push(`${f.name} (${data.error || "upload failed"})`);
       } catch (e) {
