@@ -532,6 +532,20 @@ function emailLeadOwnerNames(mail) {
   if (mail.assignedTo) return emailLeadSplitNames(emailLeadAssigneeName(mail.assignedTo));
   return emailLeadSplitNames(resolveEmailLeadEngineerName(mail.destinationInboxAccount));
 }
+// Chip a card counts under: the assignee, or the mailbox owner(s) if not
+// assigned. A person who shares a mailbox ("Pavan Avhad and Balaji Paikrao")
+// always counts under that shared chip, so they never appear twice.
+function emailLeadChipLabel(m) {
+  const groupOf = name => {
+    for (const e of cachedEmailLeadsEngineerDirectory) {
+      const names = emailLeadSplitNames(e.engineerName);
+      if (names.length > 1 && names.some(n => n.toLowerCase() === String(name).toLowerCase())) return names.join(" and ");
+    }
+    return name;
+  };
+  if (m.assignedTo) return groupOf(emailLeadAssigneeName(m.assignedTo));
+  return emailLeadSplitNames(resolveEmailLeadEngineerName(m.destinationInboxAccount)).join(" and ");
+}
 function renderEmailLeadsEngineerCounts(list) {
   const box = document.getElementById("email-leads-engineer-counts");
   if (!box) return;
@@ -539,7 +553,7 @@ function renderEmailLeadsEngineerCounts(list) {
   (list || []).forEach(m => {
     // A shared mailbox stays one chip ("Pavan Avhad and Balaji Paikrao");
     // an assigned card counts for the person it was assigned to.
-    const names = m.assignedTo ? [emailLeadAssigneeName(m.assignedTo)] : [emailLeadSplitNames(resolveEmailLeadEngineerName(m.destinationInboxAccount)).join(" and ")].filter(Boolean);
+    const names = [emailLeadChipLabel(m)].filter(Boolean);
     (names.length ? names : ["Unassigned"]).forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
   });
   const chips = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
