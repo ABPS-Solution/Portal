@@ -537,7 +537,9 @@ function renderEmailLeadsEngineerCounts(list) {
   if (!box) return;
   const counts = new Map();
   (list || []).forEach(m => {
-    const names = emailLeadOwnerNames(m);
+    // A shared mailbox stays one chip ("Pavan Avhad and Balaji Paikrao");
+    // an assigned card counts for the person it was assigned to.
+    const names = m.assignedTo ? [emailLeadAssigneeName(m.assignedTo)] : [emailLeadSplitNames(resolveEmailLeadEngineerName(m.destinationInboxAccount)).join(" and ")].filter(Boolean);
     (names.length ? names : ["Unassigned"]).forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
   });
   const chips = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
