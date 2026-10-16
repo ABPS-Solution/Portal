@@ -488,6 +488,11 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
       </div>
 
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">
+        <div style="margin-right:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button class="nav-btn-styled" style="background:#fff; color:var(--brand); border:1px solid var(--brand); font-size:0.76rem; padding:6px 12px;" onclick="toggleEmailLeadAssignPicker(${mIdx})">Assign</button>
+          <span id="email-assign-picker-${mIdx}" style="display:none; align-items:center; gap:6px;"></span>
+          <span id="email-assign-info-${mIdx}" style="font-size:0.74rem; color:var(--muted);">${emailLeadAssignInfoHtml(mail)}</span>
+        </div>
         ${deleteActionHtml}
         <button class="btn btn-sub" style="width:auto; font-size:0.82rem; padding:9px 18px;" onclick="triggerEmailLeadDatabaseActionPipeline(${mIdx})" id="email-form-toggle-btn-text-${mIdx}">Add in CRM / Create Task</button>
       </div>
@@ -496,6 +501,55 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
     `;
     canvas.appendChild(card);
   });
+}
+
+// Assign an Email Leads card to an engineer's mailbox (17 Oct 2026): it then
+// also appears under that mailbox in the Engineer / Email filter.
+function emailLeadAssignInfoHtml(mail) {
+  if (!mail || !mail.assignedTo) return "";
+  const when = mail.assignedAt ? `, ${formatOrdinalDate(String(mail.assignedAt).slice(0, 10))}` : "";
+  return `Assigned to <b style="color:var(--text); font-weight:600;">${escapeHtml(resolveEmailLeadEngineerName(mail.assignedTo))}</b>`
+    + (mail.assignedBy ? ` · by ${escapeHtml(mail.assignedBy)}` : "") + when;
+}
+
+function toggleEmailLeadAssignPicker(mIdx) {
+  const zone = document.getElementById(`email-assign-picker-${mIdx}`);
+  const mail = cachedInboundEmailLeadsArray[mIdx];
+  if (!zone || !mail) return;
+  if (zone.style.display === "inline-flex") { zone.style.display = "none"; zone.innerHTML = ""; return; }
+  const options = cachedEmailLeadsEngineerDirectory
+    .filter(e => !e.unrecognised && e.email)
+    .map(e => `<option value="${escapeHtml(e.email)}"${mail.assignedTo && mail.assignedTo.toLowerCase() === String(e.email).toLowerCase() ? " selected" : ""}>${escapeHtml(e.engineerName)} (${escapeHtml(e.email)})</option>`)
+    .join("");
+  zone.innerHTML = `
+    <select id="email-assign-select-${mIdx}" style="width:auto; max-width:320px; padding:5px 6px; font-size:0.78rem;">
+      <option value="">Select ABPS Engineer...</option>${options}
+    </select>
+    <button class="nav-btn-styled" style="background:var(--brand); font-size:0.76rem; padding:6px 12px;" onclick="saveEmailLeadAssignment(${mIdx}, false)">Save</button>
+    ${mail.assignedTo ? `<button style="background:none; border:none; color:var(--muted); font-size:0.76rem; cursor:pointer; padding:0;" onclick="saveEmailLeadAssignment(${mIdx}, true)">Unassign</button>` : ""}`;
+  zone.style.display = "inline-flex";
+}
+
+async function saveEmailLeadAssignment(mIdx, clear) {
+  const mail = cachedInboundEmailLeadsArray[mIdx];
+  if (!mail) return;
+  const sel = document.getElementById(`email-assign-select-${mIdx}`);
+  const assignTo = clear ? null : (sel ? sel.value : "");
+  if (!clear && !assignTo) { alert("Select an ABPS Engineer first."); return; }
+  try {
+    const data = await apFetch({ action: "assignEmailLead", messageId: mail.messageIdReference, assignTo });
+    if (!data.success) { alert(data.error || "Could not assign this email."); return; }
+    mail.assignedTo = data.assignedTo;
+    mail.assignedBy = data.assignedBy;
+    mail.assignedAt = data.assignedTo ? new Date().toLocaleString("sv-SE", { timeZone: "Asia/Kolkata" }).replace(" ", "T") : null;
+    const info = document.getElementById(`email-assign-info-${mIdx}`);
+    if (info) info.innerHTML = emailLeadAssignInfoHtml(mail);
+    const zone = document.getElementById(`email-assign-picker-${mIdx}`);
+    if (zone) { zone.style.display = "none"; zone.innerHTML = ""; }
+  } catch (e) {
+    if (e && e.message === "SESSION_EXPIRED") return;
+    alert("Network error: " + e.message);
+  }
 }
 
 // renderEmailLeadNotesStrip — notes are now append-only (10 Sep 2026,
