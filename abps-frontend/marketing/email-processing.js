@@ -163,6 +163,7 @@ function applyEmailLeadsCompanySearchAndRender() {
   const filtered = term
     ? cachedInboundEmailLeadsArray.filter(m => String(m.extractedCompany || "").toLowerCase().includes(term))
     : cachedInboundEmailLeadsArray;
+  renderEmailLeadsEngineerCounts(filtered);
   renderEmailLeadsFeedInterface(filtered, term ? `No companies matching "${activeEmailLeadsCompanySearch.trim()}" in this view.` : null);
 }
 
@@ -505,10 +506,49 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
 
 // Assign an Email Leads card to an engineer's mailbox (17 Oct 2026): it then
 // also appears under that mailbox in the Engineer / Email filter.
+// Same split as routes/marketing.js's splitEngineerNames: a mailbox label
+// like "Pavan Avhad and Balaji Paikrao" or "Alok Kumar (MD)" -> person names.
+function emailLeadSplitNames(label) {
+  return String(label || "")
+    .replace(/\([^)]*\)/g, " ")
+    .split(/\s+and\s+|\s*&\s*|\s*,\s*|\s*\/\s*/i)
+    .map(n => n.replace(/\s+/g, " ").trim())
+    .filter(n => n && !/pending|unrecognised|not a recognised/i.test(n));
+}
+function emailLeadAssignableNames() {
+  const map = new Map();
+  cachedEmailLeadsEngineerDirectory.filter(e => !e.unrecognised)
+    .forEach(e => emailLeadSplitNames(e.engineerName).forEach(n => map.set(n.toLowerCase(), n)));
+  return [...map.values()].sort((a, b) => a.localeCompare(b));
+}
+// Assignments made on the first day stored a mailbox address; show its owner.
+function emailLeadAssigneeName(assignedTo) {
+  if (!assignedTo) return "";
+  return String(assignedTo).includes("@") ? emailLeadSplitNames(resolveEmailLeadEngineerName(assignedTo)).join(" and ") || assignedTo : assignedTo;
+}
+// People a card counts for in the engineer box: the assignee if assigned,
+// otherwise everyone who owns the mailbox it came into.
+function emailLeadOwnerNames(mail) {
+  if (mail.assignedTo) return emailLeadSplitNames(emailLeadAssigneeName(mail.assignedTo));
+  return emailLeadSplitNames(resolveEmailLeadEngineerName(mail.destinationInboxAccount));
+}
+function renderEmailLeadsEngineerCounts(list) {
+  const box = document.getElementById("email-leads-engineer-counts");
+  if (!box) return;
+  const counts = new Map();
+  (list || []).forEach(m => {
+    const names = emailLeadOwnerNames(m);
+    (names.length ? names : ["Unassigned"]).forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
+  });
+  const chips = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([n, c]) => `<span class="nlr-eng-chip"><span>${escapeHtml(n)}</span><strong>${c}</strong></span>`).join("");
+  box.innerHTML = `<div class="nlr-stat-label">ABPS Engineer</div><div class="nlr-eng-chips">${chips || '<span style="font-size:0.8rem; color:var(--muted);">No pending emails</span>'}</div>`;
+}
+
 function emailLeadAssignInfoHtml(mail) {
   if (!mail || !mail.assignedTo) return "";
   const when = mail.assignedAt ? `, ${formatOrdinalDate(String(mail.assignedAt).slice(0, 10))}` : "";
-  return `Assigned to <b style="color:var(--text); font-weight:600;">${escapeHtml(resolveEmailLeadEngineerName(mail.assignedTo))}</b>`
+  return `Assigned to <b style="color:var(--text); font-weight:600;">${escapeHtml(emailLeadAssigneeName(mail.assignedTo))}</b>`
     + (mail.assignedBy ? ` · by ${escapeHtml(mail.assignedBy)}` : "") + when;
 }
 
@@ -517,9 +557,9 @@ function toggleEmailLeadAssignPicker(mIdx) {
   const mail = cachedInboundEmailLeadsArray[mIdx];
   if (!zone || !mail) return;
   if (zone.style.display === "inline-flex") { zone.style.display = "none"; zone.innerHTML = ""; return; }
-  const options = cachedEmailLeadsEngineerDirectory
-    .filter(e => !e.unrecognised && e.email)
-    .map(e => `<option value="${escapeHtml(e.email)}"${mail.assignedTo && mail.assignedTo.toLowerCase() === String(e.email).toLowerCase() ? " selected" : ""}>${escapeHtml(e.engineerName)} (${escapeHtml(e.email)})</option>`)
+  const current = emailLeadAssigneeName(mail.assignedTo).toLowerCase();
+  const options = emailLeadAssignableNames()
+    .map(n => `<option value="${escapeHtml(n)}"${current === n.toLowerCase() ? " selected" : ""}>${escapeHtml(n)}</option>`)
     .join("");
   zone.innerHTML = `
     <select id="email-assign-select-${mIdx}" style="width:auto; max-width:320px; padding:5px 6px; font-size:0.78rem;">
@@ -546,6 +586,7 @@ async function saveEmailLeadAssignment(mIdx, clear) {
     if (info) info.innerHTML = emailLeadAssignInfoHtml(mail);
     const zone = document.getElementById(`email-assign-picker-${mIdx}`);
     if (zone) { zone.style.display = "none"; zone.innerHTML = ""; }
+    applyEmailLeadsCompanySearchAndRender();
   } catch (e) {
     if (e && e.message === "SESSION_EXPIRED") return;
     alert("Network error: " + e.message);

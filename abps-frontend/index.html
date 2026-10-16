@@ -3513,7 +3513,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
 
     <div id="sa-panel-pdfkeys" style="display:none;">
-      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every document PDF (invoices, POs, BOQs, challans, tickets...) is made with these PDFShift keys. When one runs out, the next key is used automatically. Each key gets 50 free credits a month, renewing on its own date.</p>
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every document PDF (invoices, POs, BOQs, challans, tickets...) is made with these PDFShift keys. The key whose credits renew soonest is used first, then the next soonest, and so on; a key that runs out is skipped. Each key gets 50 free credits a month, renewing on its own date.</p>
       <div id="sa-pdfkeys-body"></div>
     </div>
 
@@ -6071,7 +6071,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             style="width:100%; max-width:360px; padding:7px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:0.8rem; box-sizing:border-box;" />
         </div>
       </div>
-      <div id="email-leads-active-filters-display" style="font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin-bottom:12px;">Filtering for: All Engineers | for All Time</div>
+      <div style="display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
+        <div id="email-leads-active-filters-display" style="font-size:0.8rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; flex:0 1 auto; display:flex; align-items:center;">Filtering for: All Engineers | for All Time</div>
+        <div class="nlr-stat nlr-stat-eng" id="email-leads-engineer-counts" style="padding:8px 14px;"></div>
+      </div>
 
       <div id="email-leads-runtime-status-feedback" style="display:none; margin-bottom:10px; padding:8px; border-radius:4px; font-size:0.8rem; font-weight:700; text-align:center;"></div>
       <div id="email-leads-inbound-feed-canvas" style="display:flex; flex-direction:column; gap:12px;"></div>
