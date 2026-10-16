@@ -56,7 +56,7 @@ function sdRenderDashboard(data) {
 
   // Row 2 stat cards — period throughput / rates
   document.getElementById("sd-s-tickets").textContent   = stats.totalTickets;
-  document.getElementById("sd-s-grns").textContent      = stats.totalGRNs;
+  document.getElementById("sd-s-grns").textContent      = stats.totalGateEntries ?? stats.totalGRNs;
   document.getElementById("sd-s-rejrate").textContent   = stats.currentStockValue == null ? "—" : "₹" + Math.round(stats.currentStockValue).toLocaleString("en-IN");
   document.getElementById("sd-s-rejrate").title = "Raw Material + Spare stock × last PO purchase rate (approximate)";
   document.getElementById("sd-s-sweeps").textContent    = stats.stockSweeps;
