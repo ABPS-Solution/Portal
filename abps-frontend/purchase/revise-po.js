@@ -970,9 +970,10 @@ function collectRPOLines() {
     // Shaped so the shared material checks in submit / update pass through;
     // rpoTransportError does the real checks for these rows.
     return st.lineItems.filter(l => !l._removed).map(l => ({
-      lineKey: l.lineKey || "", projectId: (l.projectId || "").trim(), description: (l.description || "").trim(),
-      additionalDescription: (l.description || "").trim(), unit: l.unit || "Trip",
-      quantity: parseFloat(l.quantity) || 0, vendorDiscussedQty: parseFloat(l.quantity) || 0,
+      lineKey: l.lineKey || "", projectIds: Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : []),
+      description: (l.description || "").trim(),
+      additionalDescription: (l.description || "").trim(), unit: "Lump Sum",
+      quantity: 1, vendorDiscussedQty: 1,
       rate: parseFloat(l.rate) || 0, discountPercent: parseFloat(l.discountPercent) || 0,
       allocations: [], _sourceAllocations: [], _allocationTouched: true, _received: 0,
     }));
@@ -1101,6 +1102,7 @@ async function submitPORevisionUI() {
 // A Transport PO's rows are free text with a Project ID each. The revision
 // carries the full new row list; authorizing it replaces the PO's rows.
 async function rpoEnsureProjects() {
+  try { await ensureSharedProjectTypeaheadData(); } catch (e) { /* the search box loads on first use */ }
   if (Array.isArray(window.cpoActiveProjects) && window.cpoActiveProjects.length) return;
   try {
     const res = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
@@ -1117,6 +1119,37 @@ function rpoTransportRowsHtml(lineItems) {
   const units = ["Trip", "Lump Sum", "KM", "Truck", "Nos"];
   const rows = lineItems.map((li, idx) => {
     if (li._removed) return "";
+    if (!Array.isArray(li.projectIds)) li.projectIds = li.projectId ? [li.projectId] : [];
+    const taId = `rpo-tproj-${idx}`;
+    const meta = window.sharedProjectMeta || {};
+    const chips = li.projectIds.map(p => `<span style="display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:var(--brand); font-size:0.78rem; font-weight:700; padding:4px 8px; border-radius:4px; margin:0 6px 6px 0;">${esc(p)}${meta[p] && meta[p].companyName ? ` <span style="font-weight:500; color:#475569;">(${esc(meta[p].companyName)})</span>` : ""}<button type="button" onclick="rpoRemoveTransportProject(${idx}, ${jsArg(p)})" style="border:none; background:none; color:#b91c1c; font-weight:800; cursor:pointer; padding:0;">×</button></span>`).join("");
+    const amt = (parseFloat(li.rate) || 0) * (100 - (parseFloat(li.discountPercent) || 0)) / 100;
+    return `<div style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; border-radius:8px 8px 0 0; background:${li.lineKey ? "#e0f2fe" : "#dbeafe"};">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}${li.lineKey ? "" : " (new)"}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong>₹<span id="rpo-amount-${idx}">0</span></strong></span>
+        <button onclick="rpoRemoveTransportRow(${idx})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:28px; height:28px; border-radius:4px;">✕</button>
+      </div>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <div><div style="${lbl}">Project ID(s) *</div><div>${chips}</div>
+          <div style="position:relative; max-width:520px;">
+            <input type="text" id="${taId}-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, '${taId}-ta-input', '${taId}-ta-dropdown')"
+              onchange="if (this.value.trim()) rpoAddTransportProject(${idx}, this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="${taId}-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div></div>
+        <div><div style="${lbl}">Description *</div>
+          <textarea rows="1" oninput="updateRPORowField(${idx},'description',this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-family:inherit; resize:none; overflow:hidden;">${esc(li.description)}</textarea></div>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 220px)); gap:10px;">
+          <div><div style="${lbl}">Amount (₹) *</div><input type="number" min="0" step="any" value="${esc(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)" style="${inp}"></div>
+          <div><div style="${lbl}">Disc %</div><input type="number" min="0" max="100" step="any" value="${esc(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)" style="${inp}"></div>
+        </div>
+        ${li.projectIds.length > 1 && amt > 0 ? `<div style="font-size:0.78rem; color:#475569;">Split equally: ₹${(amt / li.projectIds.length).toLocaleString("en-IN", { maximumFractionDigits: 2 })} per project</div>` : ""}
+      </div>
+    </div>`;
+    // eslint-disable-next-line no-unreachable
     const unitList = units.includes(li.unit) || !li.unit ? units : [li.unit, ...units];
     return `<div style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px; overflow:hidden;">
       <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; background:${li.lineKey ? "#e0f2fe" : "#dbeafe"};">
@@ -1148,7 +1181,23 @@ function rpoTransportRowsHtml(lineItems) {
 function rpoAddTransportRow() {
   const st = window.rpoActive;
   if (!st) return;
-  st.lineItems.push({ projectId: "", description: "", quantity: "", unit: "Trip", rate: "", discountPercent: 0 });
+  st.lineItems.push({ projectIds: [], description: "", quantity: 1, unit: "Lump Sum", rate: "", discountPercent: 0 });
+  renderPORevisionCard();
+}
+
+function rpoAddTransportProject(idx, projectId) {
+  const li = window.rpoActive && window.rpoActive.lineItems[idx];
+  const pid = (projectId || "").trim();
+  if (!li || !pid) return;
+  if (!Array.isArray(li.projectIds)) li.projectIds = li.projectId ? [li.projectId] : [];
+  if (!li.projectIds.includes(pid)) li.projectIds.push(pid);
+  renderPORevisionCard();
+}
+
+function rpoRemoveTransportProject(idx, projectId) {
+  const li = window.rpoActive && window.rpoActive.lineItems[idx];
+  if (!li) return;
+  li.projectIds = (li.projectIds || []).filter(p => p !== projectId);
   renderPORevisionCard();
 }
 
@@ -1163,10 +1212,9 @@ function rpoTransportError(lines) {
   if (!lines.length) return "Keep at least one row. To cancel the whole PO, use Cancel this PO entirely.";
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (!(l.projectId || "").trim()) return `Row ${i + 1}: choose the Project ID.`;
+    if (!(l.projectIds || []).length) return `Row ${i + 1}: add at least one Project ID.`;
     if (!(l.description || "").trim()) return `Row ${i + 1}: Description is required.`;
-    if (!(Number(l.quantity) > 0)) return `Row ${i + 1}: Quantity must be greater than 0.`;
-    if (!(Number(l.rate) > 0)) return `Row ${i + 1}: Rate must be greater than 0.`;
+    if (!(Number(l.rate) > 0)) return `Row ${i + 1}: Amount must be greater than 0.`;
   }
   return "";
 }
@@ -1178,18 +1226,18 @@ function aporTransportSummary(r) {
   const out = [];
   (r.revisedLineItems || []).forEach(l => {
     const cur = curByKey[l.lineKey];
-    const label = `${escapeHtml(l.projectId || "")}: ${escapeHtml(l.description || "")}`;
+    const pl = (x) => escapeHtml((Array.isArray(x.projectIds) && x.projectIds.length ? x.projectIds : [x.projectId]).filter(Boolean).join(", "));
+    const label = `${pl(l)}: ${escapeHtml(l.description || "")}`;
     if (!cur) { out.push(`<li><span style="font-weight:800; color:#1e3a8a;">New row:</span> <strong>${label}</strong>, ${fmt(l.quantity)} at ${fmt(l.rate)}</li>`); return; }
     const changes = [];
-    if ((cur.projectId || "") !== (l.projectId || "")) changes.push(`project ${escapeHtml(cur.projectId || "")} → ${escapeHtml(l.projectId || "")}`);
+    if (pl(cur) !== pl(l)) changes.push(`projects ${pl(cur)} → ${pl(l)}`);
     if ((cur.description || cur.additionalDescription || "") !== (l.description || "")) changes.push("description changed");
-    if (Math.abs((Number(cur.quantity) || 0) - (Number(l.quantity) || 0)) > 1e-9) changes.push(`qty ${fmt(cur.quantity)} → ${fmt(l.quantity)}`);
-    if (Math.abs((Number(cur.rate) || 0) - (Number(l.rate) || 0)) > 1e-9) changes.push(`rate ${fmt(cur.rate)} → ${fmt(l.rate)}`);
+    if (Math.abs((Number(cur.rate) || 0) - (Number(l.rate) || 0)) > 1e-9) changes.push(`amount ${fmt(cur.rate)} → ${fmt(l.rate)}`);
     if (Math.abs((Number(cur.discountPercent) || 0) - (Number(l.discountPercent) || 0)) > 1e-9) changes.push(`disc ${fmt(cur.discountPercent)}% → ${fmt(l.discountPercent)}%`);
     if (changes.length) out.push(`<li><strong>${label}</strong>: ${changes.join(", ")}</li>`);
   });
   (r.currentLines || []).filter(c => !revKeys.has(c.lineKey)).forEach(c => {
-    out.push(`<li><span style="font-weight:800; color:#991b1b;">Row removed:</span> <strong>${escapeHtml(c.projectId || "")}: ${escapeHtml(c.description || "")}</strong></li>`);
+    out.push(`<li><span style="font-weight:800; color:#991b1b;">Row removed:</span> <strong>${escapeHtml((Array.isArray(c.projectIds) && c.projectIds.length ? c.projectIds : [c.projectId]).filter(Boolean).join(", "))}: ${escapeHtml(c.description || "")}</strong></li>`);
   });
   return out;
 }
@@ -1198,19 +1246,17 @@ function aporTransportRowsHtml(r) {
   const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const rid = r.requestId;
   const rows = (r.revisedLineItems || []).map((l, idx) => `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px; font-family:monospace; font-size:0.8rem;">${escapeHtml(l.projectId || "")}</td>
+      <td style="padding:8px; font-family:monospace; font-size:0.8rem;">${escapeHtml((Array.isArray(l.projectIds) && l.projectIds.length ? l.projectIds : [l.projectId]).filter(Boolean).join(", "))}</td>
       <td style="padding:8px;">${escapeHtml(l.description || "")}</td>
-      <td style="padding:8px; text-align:center;">${fmt(l.quantity)}</td>
-      <td style="padding:8px; text-align:center;">${escapeHtml(l.unit || "")}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.rate)}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
       <td style="padding:8px; text-align:right; font-weight:700;"><span id="apor-amount-${rid}-${idx}">0</span></td>
     </tr>`).join("");
   return `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Transport rows after this revision</div>
     <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.85rem;">
-      <thead><tr style="background:#f1f5f9;"><th style="padding:8px; text-align:left;">Project</th><th style="padding:8px; text-align:left;">Description</th>
-        <th style="padding:8px;">Qty</th><th style="padding:8px;">Unit</th><th style="padding:8px;">Rate</th><th style="padding:8px;">Disc</th><th style="padding:8px; text-align:right;">Amount</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="7" style="padding:12px; text-align:center; color:var(--muted);">No rows.</td></tr>`}</tbody>
+      <thead><tr style="background:#f1f5f9;"><th style="padding:8px; text-align:left;">Projects</th><th style="padding:8px; text-align:left;">Description</th>
+        <th style="padding:8px;">Amount</th><th style="padding:8px;">Disc</th><th style="padding:8px; text-align:right;">After Disc</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" style="padding:12px; text-align:center; color:var(--muted);">No rows.</td></tr>`}</tbody>
     </table>`;
 }
 

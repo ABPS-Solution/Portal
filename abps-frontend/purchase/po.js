@@ -425,7 +425,9 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     const allocSum = allocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 100) / 100;
     const projectChips = isTransportPO
-      ? `<div style="display:inline-block; background:#ede9fe; color:#6d28d9; font-size:0.72rem; padding:2px 8px; border-radius:4px;">${escapeHtml(l.projectId || "")}</div>`
+      ? ((Array.isArray(l.projectIds) && l.projectIds.length ? l.projectIds : [l.projectId]).filter(Boolean)
+          .map(p => `<div style="display:inline-block; background:#ede9fe; color:#6d28d9; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;">${escapeHtml(p)}</div>`).join("")
+        + ((l.projectIds || []).length > 1 ? `<div style="font-size:0.72rem; color:#475569;">Split equally</div>` : ""))
       : allocs.length
       ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")}: <strong>${fmt(a.quantity)}</strong></div>`).join("")
         + (extraQty > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${fmt(extraQty)}</strong></div>` : "")
@@ -630,9 +632,15 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
           <label class="field-label" style="margin-top:0;">Vendor Name *</label>
-          <select id="cpo-vendor" onchange="handleCPOVendorChange()" ${isExisting ? "disabled" : ""} style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; ${isExisting ? "background:#f1f5f9; color:#475569;" : ""}">
+          <select id="cpo-vendor" onchange="handleCPOVendorChange()" ${isExisting ? "disabled" : ""} style="display:none;">
             <option value="">— Select Vendor —</option>${vendorOptions}
           </select>
+          <div style="position:relative;">
+            <input type="text" id="cpo-vendor-ta-input" placeholder="Type to search vendor..." autocomplete="off" ${isExisting ? "disabled" : ""}
+              oninput="cpoFilterVendors(this.value)" onfocus="cpoFilterVendors(this.value)"
+              style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; font-weight:600; ${isExisting ? "background:#f1f5f9; color:#475569;" : ""}">
+            <div id="cpo-vendor-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
           ${isExisting ? `<div style="font-size:0.7rem; color:var(--muted); margin-top:3px;">Locked</div>` : ""}
         </div>
         <div>
@@ -778,7 +786,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
             id: window.cpoRowSeq, description: li.description || "", additionalDescription: li.additionalDescription || "", itemCode: li.itemCode || "",
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
             projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [],
-            projectId: li.projectId || "", lineKey: li.lineKey || "",
+            projectIds: Array.isArray(li.projectIds) ? li.projectIds : (li.projectId ? [li.projectId] : []), lineKey: li.lineKey || "",
             _allocationTouched: true, _allocatedForQty: qty,
             designRatePerQuantity: li.designRatePerQuantity != null ? Number(li.designRatePerQuantity) : null,
           };
@@ -821,6 +829,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     }
   }
   cpoApplyPoTypeLabels();
+  ensureSharedProjectTypeaheadData().then(() => { if (cpoIsTransport()) renderCPOMaterialRows(); });
   renderCPOMaterialRows();
   recalcCPOTotals();
 }
@@ -861,7 +870,84 @@ async function onCPOPoTypeChange() {
   persistCPODraft();
 }
 
+function cpoTransportProjects(row) {
+  if (!Array.isArray(row.projectIds)) row.projectIds = row.projectId ? [row.projectId] : [];
+  return row.projectIds;
+}
+
+function cpoAddTransportProject(rowId, projectId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  const pid = (projectId || "").trim();
+  if (!row || !pid) return;
+  const list = cpoTransportProjects(row);
+  if (!list.includes(pid)) list.push(pid);
+  renderCPOMaterialRows(); recalcCPOTotals(); persistCPODraft();
+  setTimeout(() => { const el = document.getElementById(`cpo-tproj-${rowId}-ta-input`); if (el) el.focus(); }, 0);
+}
+
+function cpoRemoveTransportProject(rowId, projectId) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.projectIds = cpoTransportProjects(row).filter(p => p !== projectId);
+  renderCPOMaterialRows(); recalcCPOTotals(); persistCPODraft();
+}
+
 function cpoTransportRowHtml(row, idx) {
+  return cpoTransportRowHtmlV2(row, idx);
+}
+
+function cpoTransportRowHtmlV2(row, idx) {
+  const esc = (t) => (t || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
+  const inp = "width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1rem; text-align:center;";
+  const pids = cpoTransportProjects(row);
+  const meta = window.sharedProjectMeta || {};
+  const chips = pids.map(p => `<span style="display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:var(--brand); font-size:0.78rem; font-weight:700; padding:4px 8px; border-radius:4px; margin:0 6px 6px 0;">
+      ${esc(p)}${meta[p] && meta[p].companyName ? `<span style="font-weight:500; color:#475569;">(${esc(meta[p].companyName)})</span>` : ""}
+      <button type="button" onclick="cpoRemoveTransportProject(${row.id}, ${jsArg(p)})" title="Remove project" style="border:none; background:none; color:#b91c1c; font-weight:800; cursor:pointer; padding:0;">×</button></span>`).join("");
+  const amount = (parseFloat(row.rate) || 0) * (100 - (parseFloat(row.discountPercent) || 0)) / 100;
+  const split = pids.length > 1 && amount > 0
+    ? `<div style="font-size:0.78rem; color:#475569; margin-top:2px;">Split equally: ₹${(amount / pids.length).toLocaleString("en-IN", { maximumFractionDigits: 2 })} per project (${pids.length} projects)</div>` : "";
+  const taId = `cpo-tproj-${row.id}`;
+  return `<div data-rowid="${row.id}" style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px;">
+      <div class="cpo-row-head" data-rowid="${row.id}" style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; border-radius:8px 8px 0 0; ${cpoRowHeadStyle(row)}">
+        <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}</span>
+        <span class="cpo-row-status" data-rowid="${row.id}" style="font-size:0.78rem; font-weight:700;">${cpoRowStatusHtml(row)}</span>
+        <span style="margin-left:auto; font-size:0.8rem;">Amount <strong style="font-size:1rem; color:#0f172a;">₹<span class="cpo-amount" data-rowid="${row.id}">0</span></strong></span>
+        <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:28px; height:28px; border-radius:4px;">✕</button>
+      </div>
+      <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <div>
+          <div style="${lbl}">Project ID(s) *  <span style="text-transform:none; font-weight:500;">— add every project this transport is for; the cost is split equally</span></div>
+          <div>${chips}</div>
+          <div style="position:relative; max-width:520px;">
+            <input type="text" id="${taId}-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, '${taId}-ta-input', '${taId}-ta-dropdown')"
+              onchange="if (this.value.trim()) cpoAddTransportProject(${row.id}, this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid ${pids.length ? "var(--border)" : "#f59e0b"}; border-radius:var(--radius);" />
+            <div id="${taId}-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <div style="${lbl}">Description *</div>
+          <textarea rows="1" placeholder="e.g. Truck 32 ft, ABPS works to Raipur site"
+            oninput="updateCPORowField(${row.id},'additionalDescription',this.value); cpoRefreshRowStatus(${row.id}); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+            style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-size:0.88rem; font-family:inherit; resize:none; overflow:hidden;">${esc(row.additionalDescription)}</textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
+          <div style="padding:8px 10px; text-align:center;"><div style="${lbl}">Amount (₹) *</div>
+            <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${esc(row.rate)}" oninput="updateCPORowField(${row.id},'rate',this.value)" style="${inp}"></div>
+          <div style="padding:8px 10px; text-align:center; border-left:1px solid #cbd5e1;"><div style="${lbl}">Disc %</div>
+            <input type="number" min="0" max="100" step="any" class="cpo-disc" data-rowid="${row.id}" value="${esc(row.discountPercent)}" placeholder="0" oninput="updateCPORowField(${row.id},'discountPercent',this.value)" style="${inp}"></div>
+          <div style="padding:8px 10px; text-align:center; background:#f1f5f9; border-left:1px solid #cbd5e1;"><div style="${lbl}">Amount after Disc</div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:1.1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
+        </div>
+        ${split}
+      </div>
+    </div>`;
+}
+
+function cpoTransportRowHtmlOld(row, idx) {
   const esc = (t) => (t || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
   const inp = "width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1rem; text-align:center;";
@@ -909,14 +995,11 @@ function cpoTransportRowHtml(row, idx) {
 }
 
 function cpoTransportRowsError(rows) {
-  const known = new Set(window.cpoActiveProjects || []);
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i], n = i + 1;
-    if (!(r.projectId || "").trim()) return `Row ${n}: choose the Project ID.`;
-    if (known.size && !known.has(r.projectId.trim())) return `Row ${n}: ${r.projectId} is not an Active project.`;
+    if (!cpoTransportProjects(r).length) return `Row ${n}: add at least one Project ID.`;
     if (!(r.additionalDescription || "").trim()) return `Row ${n}: Description is required.`;
-    if (!(parseFloat(r.quantity) > 0)) return `Row ${n}: Quantity must be greater than 0.`;
-    if (!(parseFloat(r.rate) > 0)) return `Row ${n}: Rate must be greater than 0.`;
+    if (!(parseFloat(r.rate) > 0)) return `Row ${n}: Amount must be greater than 0.`;
   }
   return "";
 }
@@ -924,8 +1007,8 @@ function cpoTransportRowsError(rows) {
 function cpoTransportPayloadRows() {
   return window.cpoMaterialRows.map(r => ({
     description: (r.additionalDescription || "").trim(), additionalDescription: (r.additionalDescription || "").trim(),
-    projectId: (r.projectId || "").trim(), lineKey: r.lineKey || "",
-    quantity: parseFloat(r.quantity) || 0, unit: r.unit || "Trip", rate: parseFloat(r.rate) || 0,
+    projectIds: cpoTransportProjects(r), lineKey: r.lineKey || "",
+    quantity: 1, unit: "Lump Sum", rate: parseFloat(r.rate) || 0,
     discountPercent: parseFloat(r.discountPercent) || 0, amount: Number(r.amount) || 0,
   }));
 }
@@ -990,8 +1073,31 @@ async function clearCPOForm() {
   initializeCreatePOPanel();
 }
 
+// Vendor search box: filters the vendor list as you type (same feel as the BOQ pickers).
+function cpoFilterVendors(query) {
+  const dd = document.getElementById("cpo-vendor-ta-dropdown");
+  if (!dd) return;
+  const q = (query || "").trim().toLowerCase();
+  const list = (window.cpoVendors || []).filter(v => v.vendorName && (!q || v.vendorName.toLowerCase().includes(q))).slice(0, 40);
+  if (!list.length) { dd.innerHTML = `<div style="padding:8px 10px; color:var(--muted); font-size:0.82rem;">No vendor matches. Add it in Vendor List first.</div>`; dd.style.display = "block"; return; }
+  dd.innerHTML = list.map(v => `<div onmousedown="event.preventDefault();" onclick="cpoPickVendor(${jsArg(v.vendorName)})"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.84rem;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:700;">${escapeHtml(v.vendorName)}</span>${v.state ? ` <span style="color:var(--muted);">— ${escapeHtml(v.state)}</span>` : ""}</div>`).join("");
+  dd.style.display = "block";
+}
+
+function cpoPickVendor(name) {
+  const sel = document.getElementById("cpo-vendor");
+  sel.value = name;
+  document.getElementById("cpo-vendor-ta-dropdown").style.display = "none";
+  handleCPOVendorChange();
+}
+
 function handleCPOVendorChange() {
   const name = document.getElementById("cpo-vendor").value;
+  const vendorTa = document.getElementById("cpo-vendor-ta-input");
+  if (vendorTa) vendorTa.value = name || "";
   const preview = document.getElementById("cpo-vendor-preview");
   const v = window.cpoVendors.find(x => x.vendorName === name);
   if (!v) { preview.style.display = "none"; persistCPODraft(); return; }
@@ -1014,7 +1120,7 @@ function handleCPOVendorChange() {
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
   window.cpoMaterialRows.push(cpoIsTransport()
-    ? { id, description: "", additionalDescription: "", itemCode: "", projectId: "", lineKey: "", quantity: "", unit: "Trip", rate: "", discountPercent: "", allocations: [] }
+    ? { id, description: "", additionalDescription: "", itemCode: "", projectIds: [], lineKey: "", quantity: 1, unit: "Lump Sum", rate: "", discountPercent: "", allocations: [] }
     : { id, description: "", additionalDescription: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
   renderCPOMaterialRows();
   persistCPODraft();
@@ -1156,10 +1262,9 @@ function cpoGrowNameBox(el) {
 function cpoRowMissing(row) {
   const missing = [];
   if (cpoIsTransport()) {
-    if (!(row.projectId || "").trim()) missing.push("Project ID");
+    if (!cpoTransportProjects(row).length) missing.push("Project ID");
     if (!(row.additionalDescription || "").trim()) missing.push("description");
-    if (!(parseFloat(row.quantity) > 0)) missing.push("quantity");
-    if (!(parseFloat(row.rate) > 0)) missing.push("Rate");
+    if (!(parseFloat(row.rate) > 0)) missing.push("Amount");
     return missing;
   }
   if (!row.itemCode) missing.push('material');
