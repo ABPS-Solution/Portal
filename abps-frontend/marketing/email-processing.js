@@ -490,7 +490,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
 
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">
         <div style="margin-right:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button class="nav-btn-styled" style="background:#fff; color:var(--brand); border:1px solid var(--brand); font-size:0.76rem; padding:6px 12px;" onclick="toggleEmailLeadAssignPicker(${mIdx})">Assign</button>
+          <button class="nav-btn-styled" style="background:#fff; color:var(--brand); border:1px solid var(--brand); font-size:0.76rem; padding:6px 12px;" onclick="${mail.assignedTo ? `saveEmailLeadAssignment(${mIdx}, true)` : `toggleEmailLeadAssignPicker(${mIdx})`}">${mail.assignedTo ? "Unassign" : "Assign"}</button>
           <span id="email-assign-picker-${mIdx}" style="display:none; align-items:center; gap:6px;"></span>
           <span id="email-assign-info-${mIdx}" style="font-size:0.74rem; color:var(--muted);">${emailLeadAssignInfoHtml(mail)}</span>
         </div>
