@@ -4,6 +4,7 @@
 
 let pcostRows = [];
 let pcostStatus = "Active";
+let pcostDesignOnly = false;
 const pcostOpen = new Set();
 
 function pcostCall(action, payload) {
@@ -30,7 +31,13 @@ function pcostRenderStatusPills() {
   const box = document.getElementById("pcost-status-pills");
   if (!box) return;
   box.innerHTML = ["Active", "Completed", "All"].map(s =>
-    `<button class="pcost-pill${s === pcostStatus ? " active" : ""}" onclick="pcostSetStatus(${jsArg(s)})">${s}</button>`).join("");
+    `<button class="pcost-pill${s === pcostStatus ? " active" : ""}" onclick="pcostSetStatus(${jsArg(s)})">${s}</button>`).join("") +
+    `<button class="pcost-pill${pcostDesignOnly ? " active" : ""}" style="margin-left:12px;" onclick="pcostToggleDesignOnly()">Only projects with Design MSR %</button>`;
+}
+function pcostToggleDesignOnly() { pcostDesignOnly = !pcostDesignOnly; pcostRenderStatusPills(); pcostRender(); }
+function pcostMsrShade(r) {
+  const m = Math.max(Number(r.designMsr) || 0, Number(r.actualMsr) || 0);
+  return m > 100 ? "background:#fca5a5;" : m > 80 ? "background:#fee2e2;" : "";
 }
 function pcostSetStatus(s) { pcostStatus = s; pcostRenderStatusPills(); pcostLoad(); }
 
@@ -100,7 +107,7 @@ function pcostRender() {
   const wrap = document.getElementById("pcost-table-wrap");
   if (!wrap) return;
   const q = ((document.getElementById("pcost-search") || {}).value || "").trim().toLowerCase();
-  const rows = pcostRows.filter(r => !q || (r.projectId + " " + (r.companyName || "")).toLowerCase().includes(q));
+  const rows = pcostRows.filter(r => (!q || (r.projectId + " " + (r.companyName || "")).toLowerCase().includes(q)) && (!pcostDesignOnly || r.designMsr != null));
   if (!rows.length) { wrap.innerHTML = `<div style="padding:16px; color:var(--muted);">No projects for these filters.</div>`; return; }
 
   const sum = k => rows.reduce((a, r) => a + (r[k] == null ? 0 : Number(r[k])), 0);
@@ -118,11 +125,11 @@ function pcostRender() {
 
   let html = `<div class="pcost-box"><table class="prn-view-table pcost-table"><colgroup>
       <col style="width:4%"><col style="width:15%"><col style="width:8%"><col style="width:9%"><col style="width:6%">
-      <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:7%">
+      <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:9%">
     </colgroup><thead><tr>
-      <th>Sr No</th><th>Project</th><th>PO Value (Basic)</th><th>Design Estimated Costing</th><th>Design MSR</th>
+      <th>Sr No</th><th>Project</th><th>PO Value (Basic)</th><th>Design Estimated Costing</th><th>Design MSR %</th>
       <th>Current RM PO Costing</th><th>Current Production Memo Costing</th><th>Current Transport Costing</th><th>Total Current Costing</th>
-      <th>Current vs Design</th><th>Payment Received</th><th>Actual MSR</th></tr></thead><tbody>`;
+      <th>Payment Received</th><th>Actual MSR %</th></tr></thead><tbody>`;
   rows.forEach((r, i) => {
     const open = pcostOpen.has(r.projectId);
     const design = r.designCosting != null ? pcostMoney(r.designCosting)
@@ -132,18 +139,17 @@ function pcostRender() {
       `<span style="color:${r.difference > 0 ? "#b91c1c" : "#15803d"}; font-weight:600;">${r.difference > 0 ? "+" : ""}${pcostMoney(r.difference).replace("₹-", "-₹")}</span>`;
     const pay = `${pcostMoney(r.paymentReceived)}${r.paymentPct != null ? `<div class="pcost-muted">${pcostPct(r.paymentPct)} of ${pcostMoney(r.poTotalWithGst)}</div>` : ""}`;
     const actual = r.status === "Complete" ? `<strong>${pcostPct(r.actualMsr)}</strong>${r.dispatchDate ? `<div class="pcost-muted">${formatOrdinalDate(r.dispatchDate)}</div>` : ""}` : `<span class="pcost-muted">Not dispatched</span>`;
-    html += `<tr class="${r.status === "Complete" ? "pcost-done" : ""}">
+    html += `<tr class="${r.status === "Complete" ? "pcost-done" : ""}" style="${pcostMsrShade(r)}">
       <td style="text-align:center;"><button class="pcost-sr" onclick="pcostToggle(${jsArg(r.projectId)})">${open ? "▾" : "▸"} ${i + 1}</button></td>
       <td class="pcost-left"><div style="font-weight:600;">${escapeHtml(r.companyName || "")}</div><div class="pcost-muted" style="word-break:break-all;">${escapeHtml(r.projectId)}</div></td>
       <td>${pcostMoney(r.poValue)}</td><td>${design}</td><td>${pcostPct(r.designMsr)}</td>
       <td>${pcostMoney(r.rmPoCosting)}</td><td>${pcostMoney(r.memoCosting)}</td><td>${pcostMoney(r.transportCosting)}</td><td><strong>${pcostMoney(r.currentCosting)}</strong>${r.poValue > 0 ? `<div class="pcost-muted">${pcostPct(ratio(r.currentCosting, r.poValue))} of PO</div>` : ""}</td>
-      <td>${diff}</td><td>${pay}</td><td>${actual}</td></tr>`;
-    if (open) html += `<tr><td colspan="12" id="pcost-bd-${CSS.escape(r.projectId)}" style="background:#f8fafc;">Loading BOQs...</td></tr>`;
+      <td>${pay}</td><td>${actual}</td></tr>`;
+    if (open) html += `<tr><td colspan="11" id="pcost-bd-${CSS.escape(r.projectId)}" style="background:#f8fafc;">Loading BOQs...</td></tr>`;
   });
   html += `<tr class="pcost-total"><td></td><td>Total (${rows.length})</td><td>${pcostMoney(tot.po)}</td>
     <td>${pcostMoney(tot.design)}</td><td>${pcostPct(ratio(tot.design, tot.designPo))}</td>
     <td>${pcostMoney(tot.rm)}</td><td>${pcostMoney(tot.memo)}</td><td>${pcostMoney(tot.tr)}</td><td>${pcostMoney(tot.cur)}</td>
-    <td>${designRows.length ? pcostMoney(tot.diff).replace("₹-", "-₹") : ""}</td>
     <td>${pcostMoney(tot.recv)}<div class="pcost-muted">${pcostPct(ratio(tot.recv, tot.poGst))}</div></td>
     <td>${pcostPct(ratio(tot.actCost, tot.actPo))}</td></tr></tbody></table></div>`;
   wrap.innerHTML = html;
