@@ -46,7 +46,7 @@ function vdRenderList() {
   root.innerHTML = `
     <style>
       #vd-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.86rem; }
-      #vd-table thead th { position:sticky; top:0; z-index:2; background:#eef2f7; color:#1e293b; font-size:0.82rem; font-weight:800;
+      #vd-table thead th { background:#eef2f7; color:#1e293b; font-size:0.82rem; font-weight:800;
         text-transform:uppercase; letter-spacing:0.02em; padding:11px 10px; vertical-align:middle; white-space:nowrap;
         border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
       #vd-table td { padding:10px; vertical-align:middle; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
@@ -56,7 +56,7 @@ function vdRenderList() {
       #vd-table tbody tr.vd-row:hover td { background:#eef4ff; }
       #vd-table tbody tr.vd-row.vd-open td { background:#e0ecff; }
       #vd-table tbody tr.vd-row.vd-inactive td { color:#94a3b8; }
-      #vd-table .vd-exp { width:auto; min-width:52px; padding:5px 10px; font-weight:800; font-size:0.85rem; border:1.5px solid var(--brand);
+      #vd-table .vd-exp { width:auto; min-width:58px; white-space:nowrap; padding:5px 10px; font-weight:800; font-size:0.85rem; border:1.5px solid var(--brand);
         background:#fff; color:var(--brand); border-radius:6px; cursor:pointer; }
       #vd-table tr.vd-open .vd-exp { background:var(--brand); color:#fff; }
       #vd-table td.vd-detail-cell { padding:0 14px 14px; background:#f1f5f9; }
@@ -131,9 +131,9 @@ function vdRenderCards() {
   }
   const n = VD_COLS.length + 1;
   box.innerHTML = `
-    <div class="vd-scroll" style="overflow:auto; max-height:72vh; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
+    <div class="vd-scroll" style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
       <table id="vd-table">
-        <thead><tr><th style="text-align:center; min-width:70px;">Sr No</th>${VD_COLS.map(([h, , al, w]) => `<th style="text-align:${al}; min-width:${w}px;">${h}</th>`).join("")}</tr></thead>
+        <thead><tr><th style="text-align:center; min-width:84px;">Sr No</th>${VD_COLS.map(([h, , al, w]) => `<th style="text-align:${al}; min-width:${w}px;">${h}</th>`).join("")}</tr></thead>
         <tbody>${list.map((v, i) => { const id = vdRowId(v.vendorName); const open = vdOpenRows.has(v.vendorName); return `
           <tr class="vd-row${v.status !== "Active" ? " vd-inactive" : ""}${open ? " vd-open" : ""}" id="${id}-row">
             <td style="text-align:center;"><button type="button" class="vd-exp" title="Open / close vendor details" onclick="vdToggleRow(${jsArg(v.vendorName)})">${i + 1} ${open ? "▴" : "▾"}</button></td>
