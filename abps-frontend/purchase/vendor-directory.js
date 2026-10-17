@@ -148,6 +148,10 @@ function vdGstinState() {
   if (g.length >= 2 && VD_GST_STATES[code]) {
     document.getElementById("vdf-stateCode").value = code;
     document.getElementById("vdf-state").value = VD_GST_STATES[code];
+    const intra = code === "27";
+    document.getElementById("vdf-cgstPercent").value = intra ? 9 : 0;
+    document.getElementById("vdf-sgstPercent").value = intra ? 9 : 0;
+    document.getElementById("vdf-igstPercent").value = intra ? 0 : 18;
   }
 }
 
