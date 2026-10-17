@@ -62,88 +62,307 @@ function ticketBulkRemaining(jc, code) {
   return r ? Number(r.remainingQty) || 0 : null;
 }
 
+// Layout: (1) Job Card picker (select all / none / by set range),
+// (2) search a material, then fill one row per Job Card showing its own
+// Allotted / Used / Remaining, (3) basket of added materials. Works the same
+// for 100 materials or 80 Job Cards: nothing scrolls sideways.
+function ticketBulkSelectedJcs() {
+  const st = window._ticketBulk;
+  return st.jcs.filter(j => st.selected.has(j.jobCardNumber)).map(j => j.jobCardNumber);
+}
+
+function ticketBulkMatRow(jc, code) {
+  return (window._ticketBulk?.mats[jc] || []).find(m => m.itemCode === code) || null;
+}
+
+function ticketBulkBasketCodes() {
+  const st = window._ticketBulk; const codes = [];
+  ticketBulkMaterials().forEach(m => {
+    if (ticketBulkSelectedJcs().some(jc => Number(st.qty[jc + "|" + m.itemCode]) > 0)) codes.push(m.itemCode);
+  });
+  return codes;
+}
+
 function ticketBulkRender() {
   const st = window._ticketBulk; const zone = document.getElementById("ticket-bulk-zone");
   if (!st || !zone) return;
-  const sel = st.jcs.filter(j => st.selected.has(j.jobCardNumber)).map(j => j.jobCardNumber);
-  const mats = ticketBulkMaterials();
-  const th = "padding:8px; font-size:0.78rem; background:#f1f5f9; border:2px solid #94a3b8; text-align:center; vertical-align:middle;";
-  const td = "padding:6px; border:2px solid #94a3b8; vertical-align:middle;";
-  const head = `<tr><th style="${th} text-align:left; min-width:220px;">Material</th><th style="${th}">Unit</th>${sel.map(jc =>
-    `<th style="${th} min-width:90px;" title="${escapeHtml(jc)}">${escapeHtml(ticketBulkSetLabel(jc))}</th>`).join("")}<th style="${th}">Total</th></tr>`;
-  const rows = mats.map(m => {
-    let total = 0;
-    const cells = sel.map(jc => {
-      const rem = ticketBulkRemaining(jc, m.itemCode);
-      if (rem === null) return `<td style="${td} text-align:center; color:var(--muted); background:#f8fafc;">—</td>`;
-      const v = st.qty[jc + "|" + m.itemCode];
-      total += Number(v) || 0;
-      const over = v !== undefined && v !== "" && Number(v) > rem + 1e-9;
-      return `<td style="${td} ${over ? "background:#fef3c7;" : ""}">
-        <input type="number" min="0" step="any" value="${v ?? ""}" placeholder="${fmtQty(rem)} left"
-          data-jc="${escapeHtml(jc)}" data-code="${escapeHtml(m.itemCode)}" oninput="ticketBulkCell(this)"
-          style="width:100%; box-sizing:border-box; padding:6px; text-align:center; font-weight:700; border:1.5px solid ${over ? "#b45309" : "var(--border)"}; border-radius:4px;" /></td>`;
-    }).join("");
-    return `<tr><td style="${td} font-weight:600;">${escapeHtml(m.materialName)}</td><td style="${td} text-align:center;">${escapeHtml(m.unitType || "")}</td>${cells}<td style="${td} text-align:center; font-weight:800;" id="tbulk-total-${escapeHtml(m.itemCode)}">${total ? fmtQty(total) : ""}</td></tr>`;
-  }).join("");
-  const anyOver = ticketBulkHasOver();
+  const reasonNow = document.getElementById("tbulk-reason")?.value;
+  if (reasonNow !== undefined) st.reason = reasonNow;
+  const selCount = st.selected.size;
+  const pill = j => `
+    <label style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border:1.5px solid ${st.selected.has(j.jobCardNumber) ? "var(--brand)" : "var(--border)"}; border-radius:999px; font-size:0.78rem; font-weight:700; cursor:pointer; background:${st.selected.has(j.jobCardNumber) ? "#eff6ff" : "#fff"};" title="${escapeHtml(j.jobCardNumber)}">
+      <input type="checkbox" ${st.selected.has(j.jobCardNumber) ? "checked" : ""} onchange="ticketBulkToggleJc(${jsArg(j.jobCardNumber)}, this.checked)" style="width:auto; margin:0;"> ${escapeHtml(ticketBulkSetLabel(j.jobCardNumber))}
+    </label>`;
+  const btnS = "width:auto; padding:6px 12px; font-size:0.78rem; font-weight:700;";
   zone.innerHTML = `
-    <div class="cmit-box-title">Bulk Ticket — Several Job Cards</div>
-    <p style="margin:0 0 10px; font-size:0.8rem; color:var(--muted);">One ticket is made for each Job Card, each against its own remaining quantity, and Store approves them together.
-      A quantity above a Job Card's remaining goes to <strong>Approve Excess Material Request</strong> for that Job Card. Material Change and Production Memo purchase are done on a single Job Card ticket.</p>
-    <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">${st.jcs.map(j => `
-        <label style="display:flex; align-items:center; gap:5px; padding:5px 10px; border:1.5px solid ${st.selected.has(j.jobCardNumber) ? "var(--brand)" : "var(--border)"}; border-radius:999px; font-size:0.82rem; font-weight:700; cursor:pointer; background:#fff;">
-          <input type="checkbox" ${st.selected.has(j.jobCardNumber) ? "checked" : ""} onchange="ticketBulkToggleJc(${jsArg(j.jobCardNumber)}, this.checked)" style="width:auto; margin:0;"> ${escapeHtml(ticketBulkSetLabel(j.jobCardNumber))}
-        </label>`).join("")}</div>
-      <select onchange="ticketBulkSetStore(this.value)" style="width:auto; padding:6px 8px; font-weight:600; border:2px solid #94a3b8; border-radius:var(--radius);">
-        <option value="Raw Materials Store" ${st.store === "Raw Materials Store" ? "selected" : ""}>Raw Materials Store</option>
-        <option value="Spare Store" ${st.store === "Spare Store" ? "selected" : ""}>Spare Store</option>
-      </select>
+    <div class="cmit-box-title">Bulk Ticket for Several Job Cards</div>
+    <p style="margin:0 0 12px; font-size:0.8rem; color:var(--muted);">One ticket is made for each Job Card, each against its own remaining quantity, and Store approves them together.
+      A quantity above a Job Card's remaining goes to <strong>Approve Excess Material Request</strong> for that Job Card.</p>
+
+    <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+        <span style="font-weight:800; font-size:0.85rem;">Job Cards: ${selCount} of ${st.jcs.length} selected</span>
+        <button class="nav-btn-styled" style="${btnS} background:var(--brand);" onclick="ticketBulkSelectRange('all')">Select all</button>
+        <button class="nav-btn-styled" style="${btnS} background:#718096;" onclick="ticketBulkSelectRange('none')">Select none</button>
+        <input id="tbulk-range" placeholder="Sets e.g. 1-10, 15" style="width:170px; padding:6px 8px; font-size:0.82rem;" onkeydown="if(event.key==='Enter')ticketBulkSelectRange(this.value)">
+        <button class="nav-btn-styled" style="${btnS} background:var(--brand);" onclick="ticketBulkSelectRange(document.getElementById('tbulk-range').value)">Select these sets</button>
+        <span style="flex:1;"></span>
+        <select onchange="ticketBulkSetStore(this.value)" style="width:auto; padding:6px 8px; font-weight:600; border:2px solid #94a3b8; border-radius:var(--radius);">
+          <option value="Raw Materials Store" ${st.store === "Raw Materials Store" ? "selected" : ""}>Raw Materials Store</option>
+          <option value="Spare Store" ${st.store === "Spare Store" ? "selected" : ""}>Spare Store</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; max-height:110px; overflow-y:auto;">${st.jcs.map(pill).join("")}</div>
     </div>
-    <div style="overflow-x:auto; margin-bottom:10px;">
-      ${mats.length ? `<table style="width:100%; border-collapse:collapse; background:#fff;">${head}${rows}</table>`
-        : `<div style="padding:14px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No materials on the chosen Job Cards.</div>`}
+
+    <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
+      <label class="field-label" style="margin-top:0;">Add Material (search by name, rating, make or item code)</label>
+      <div style="position:relative;">
+        <input id="tbulk-search" autocomplete="off" placeholder="${selCount ? "Type to search this BOQ's materials..." : "Select at least one Job Card first"}" ${selCount ? "" : "disabled"}
+          oninput="ticketBulkSearch(this.value)" onfocus="ticketBulkSearch(this.value)" style="width:100%; box-sizing:border-box; padding:9px;">
+        <div id="tbulk-search-list" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:50; background:#fff; border:1px solid var(--border); border-radius:6px; max-height:260px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.12);"></div>
+      </div>
+      <div id="tbulk-editor" style="margin-top:10px;"></div>
     </div>
-    <div id="tbulk-reason-wrap" style="display:${anyOver ? "block" : "none"}; margin-bottom:10px;">
-      <label class="field-label" style="margin-top:0; color:#b45309;">Why is the extra material needed? (cells above a Job Card's remaining) *</label>
+
+    <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
+      <div style="font-weight:800; font-size:0.85rem; margin-bottom:8px;">Basket</div>
+      <div id="tbulk-basket"></div>
+    </div>
+
+    <div id="tbulk-reason-wrap" style="display:none; margin-bottom:10px;">
+      <label class="field-label" style="margin-top:0; color:#b45309;">Why is the extra material needed? (quantities above a Job Card's remaining) *</label>
       <textarea id="tbulk-reason" rows="2" style="width:100%; box-sizing:border-box; padding:8px; border:2px solid #94a3b8; border-radius:var(--radius);">${escapeHtml(st.reason || "")}</textarea>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
       <button class="nav-btn-styled" onclick="ticketBulkClear()" style="width:auto; background:#718096; padding:9px 20px; font-weight:700;">Clear</button>
       <button class="nav-btn-styled" id="tbulk-submit-btn" onclick="ticketBulkSubmit()" style="width:auto; background:var(--accent); padding:9px 20px; font-weight:700;">Generate Bulk Ticket</button>
     </div>`;
+  ticketBulkRenderEditor();
+  ticketBulkRenderBasket();
+}
+
+function ticketBulkSearch(q) {
+  const list = document.getElementById("tbulk-search-list"); if (!list) return;
+  const mats = ticketBulkMaterials();
+  const hits = String(q || "").trim()
+    ? materialSearch(mats, q, 40, m => [m.materialName, m.itemCode])
+    : mats.slice(0, 40);
+  if (!hits.length) { list.innerHTML = `<div style="padding:10px; color:var(--muted); font-size:0.85rem;">No matching material on the selected Job Cards.</div>`; list.style.display = "block"; return; }
+  const st = window._ticketBulk;
+  list.innerHTML = hits.map(m => {
+    const inBasket = ticketBulkSelectedJcs().some(jc => Number(st.qty[jc + "|" + m.itemCode]) > 0);
+    return `<div onmousedown="event.preventDefault(); ticketBulkPick(${jsArg(m.itemCode)})"
+      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+      <span style="font-weight:600;">${escapeHtml(m.materialName)}</span>
+      <span style="color:var(--muted); font-size:0.75rem;"> · ${escapeHtml(m.itemCode)} · ${escapeHtml(m.unitType || "")}</span>
+      ${inBasket ? `<span style="font-size:0.7rem; color:#15803d; font-weight:800; margin-left:6px;">IN BASKET</span>` : ""}
+    </div>`;
+  }).join("");
+  list.style.display = "block";
+}
+
+document.addEventListener("mousedown", e => {
+  const list = document.getElementById("tbulk-search-list");
+  if (list && list.style.display !== "none" && !e.target.closest("#tbulk-search-list") && e.target.id !== "tbulk-search") list.style.display = "none";
+});
+
+function ticketBulkPick(code) {
+  const st = window._ticketBulk; if (!st) return;
+  const vals = {};
+  ticketBulkSelectedJcs().forEach(jc => { const v = st.qty[jc + "|" + code]; if (v !== undefined) vals[jc] = v; });
+  st.edit = { code, vals };
+  const list = document.getElementById("tbulk-search-list"); if (list) list.style.display = "none";
+  const inp = document.getElementById("tbulk-search"); if (inp) inp.value = "";
+  ticketBulkRenderEditor();
+}
+
+function ticketBulkRenderEditor() {
+  const st = window._ticketBulk; const box = document.getElementById("tbulk-editor");
+  if (!st || !box) return;
+  if (!st.edit) { box.innerHTML = ""; return; }
+  const m = ticketBulkMaterials().find(x => x.itemCode === st.edit.code);
+  if (!m) { st.edit = null; box.innerHTML = ""; return; }
+  const th = "padding:7px 8px; font-size:0.76rem; background:#f1f5f9; border-bottom:2px solid #94a3b8; text-align:center; position:sticky; top:0; z-index:1;";
+  const td = "padding:5px 8px; border-bottom:1px solid #e2e8f0; text-align:center; vertical-align:middle;";
+  const rows = ticketBulkSelectedJcs().map(jc => {
+    const r = ticketBulkMatRow(jc, m.itemCode);
+    if (!r) return `<tr><td style="${td} font-weight:800; text-align:left;">${escapeHtml(ticketBulkSetLabel(jc))}</td><td colspan="4" style="${td} color:var(--muted);">Not on this Job Card</td></tr>`;
+    const rem = Number(r.remainingQty) || 0; const v = st.edit.vals[jc];
+    const over = v !== undefined && v !== "" && Number(v) > rem + 1e-9;
+    return `<tr style="${over ? "background:#fef3c7;" : ""}">
+      <td style="${td} font-weight:800; text-align:left;" title="${escapeHtml(jc)}">${escapeHtml(ticketBulkSetLabel(jc))}</td>
+      <td style="${td}">${fmtQty(Number(r.allottedQty) || 0)}</td>
+      <td style="${td}">${fmtQty(Number(r.usedQty) || 0)}</td>
+      <td style="${td} color:#0369a1; font-weight:800;">${fmtQty(rem)}</td>
+      <td style="${td} width:140px;"><input type="number" min="0" step="any" value="${v ?? ""}" placeholder="0" data-jc="${escapeHtml(jc)}" oninput="ticketBulkEditCell(this)"
+        style="width:120px; padding:5px; text-align:center; font-weight:700; border:1.5px solid ${over ? "#b45309" : "var(--border)"}; border-radius:4px;"></td>
+    </tr>`;
+  }).join("");
+  const btnS = "width:auto; padding:6px 12px; font-size:0.78rem; font-weight:700;";
+  box.innerHTML = `
+    <div style="border:2px solid var(--brand); border-radius:6px; padding:10px; background:#f8fbff;">
+      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+        <div><div style="font-weight:800;">${escapeHtml(m.materialName)}</div>
+          <div style="font-size:0.75rem; color:var(--muted);">${escapeHtml(m.itemCode)} · Unit ${escapeHtml(m.unitType || "")}</div></div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <button class="nav-btn-styled" style="${btnS} background:var(--brand);" onclick="ticketBulkFillRemaining()">Fill each with its remaining</button>
+          <input id="tbulk-same-qty" type="number" min="0" step="any" placeholder="Qty" style="width:80px; padding:6px;">
+          <button class="nav-btn-styled" style="${btnS} background:var(--brand);" onclick="ticketBulkFillSame()">Same qty for every set</button>
+          <button class="nav-btn-styled" style="${btnS} background:#718096;" onclick="ticketBulkEditClearVals()">Clear</button>
+        </div>
+      </div>
+      <div style="max-height:380px; overflow-y:auto; border:1px solid var(--border); border-radius:4px; background:#fff;">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr><th style="${th} text-align:left;">Job Card</th><th style="${th}">Allotted</th><th style="${th}">Used</th><th style="${th}">Remaining</th><th style="${th}">Qty to Issue</th></tr>
+          ${rows}
+        </table>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <div style="font-weight:800;">Total: <span id="tbulk-edit-total">0</span> ${escapeHtml(m.unitType || "")}
+          <span id="tbulk-edit-over" style="display:none; color:#b45309; font-size:0.8rem; margin-left:8px;">Amber rows go as Excess Material Requests</span></div>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn-styled" style="width:auto; background:#718096; padding:8px 16px; font-weight:700;" onclick="ticketBulkEditCancel()">Cancel</button>
+          <button class="nav-btn-styled" style="width:auto; background:var(--accent); padding:8px 16px; font-weight:700;" onclick="ticketBulkEditSave()">Add to Basket</button>
+        </div>
+      </div>
+    </div>`;
+  ticketBulkEditRefreshTotal();
+}
+
+function ticketBulkEditRefreshTotal() {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  let total = 0, over = false;
+  ticketBulkSelectedJcs().forEach(jc => {
+    const v = Number(st.edit.vals[jc]) || 0; total += v;
+    const r = ticketBulkMatRow(jc, st.edit.code);
+    if (r && v > (Number(r.remainingQty) || 0) + 1e-9) over = true;
+  });
+  const t = document.getElementById("tbulk-edit-total"); if (t) t.textContent = fmtQty(total);
+  const o = document.getElementById("tbulk-edit-over"); if (o) o.style.display = over ? "inline" : "none";
+}
+
+function ticketBulkEditCell(inp) {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  const jc = inp.dataset.jc;
+  if (inp.value === "" || Number(inp.value) <= 0) delete st.edit.vals[jc]; else st.edit.vals[jc] = inp.value;
+  const r = ticketBulkMatRow(jc, st.edit.code);
+  const over = st.edit.vals[jc] !== undefined && r && Number(st.edit.vals[jc]) > (Number(r.remainingQty) || 0) + 1e-9;
+  inp.style.borderColor = over ? "#b45309" : "var(--border)";
+  inp.closest("tr").style.background = over ? "#fef3c7" : "";
+  ticketBulkEditRefreshTotal();
+}
+
+function ticketBulkFillRemaining() {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  ticketBulkSelectedJcs().forEach(jc => {
+    const r = ticketBulkMatRow(jc, st.edit.code); const rem = r ? Number(r.remainingQty) || 0 : 0;
+    if (rem > 0) st.edit.vals[jc] = String(rem); else delete st.edit.vals[jc];
+  });
+  ticketBulkRenderEditor();
+}
+
+function ticketBulkFillSame() {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  const q = Number(document.getElementById("tbulk-same-qty")?.value) || 0;
+  ticketBulkSelectedJcs().forEach(jc => {
+    if (ticketBulkMatRow(jc, st.edit.code) && q > 0) st.edit.vals[jc] = String(q); else delete st.edit.vals[jc];
+  });
+  ticketBulkRenderEditor();
+}
+
+function ticketBulkEditClearVals() {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  st.edit.vals = {}; ticketBulkRenderEditor();
+}
+
+function ticketBulkEditCancel() {
+  const st = window._ticketBulk; if (!st) return;
+  st.edit = null; ticketBulkRenderEditor();
+}
+
+function ticketBulkEditSave() {
+  const st = window._ticketBulk; if (!st || !st.edit) return;
+  const code = st.edit.code;
+  Object.keys(st.qty).forEach(k => { if (k.endsWith("|" + code)) delete st.qty[k]; });
+  Object.entries(st.edit.vals).forEach(([jc, v]) => { if (Number(v) > 0) st.qty[jc + "|" + code] = v; });
+  st.edit = null;
+  ticketBulkRenderEditor();
+  ticketBulkRenderBasket();
+  document.getElementById("tbulk-search")?.focus();
+}
+
+function ticketBulkRemove(code) {
+  const st = window._ticketBulk; if (!st) return;
+  Object.keys(st.qty).forEach(k => { if (k.endsWith("|" + code)) delete st.qty[k]; });
+  if (st.edit && st.edit.code === code) st.edit = null;
+  ticketBulkRenderEditor();
+  ticketBulkRenderBasket();
+}
+
+function ticketBulkRenderBasket() {
+  const st = window._ticketBulk; const box = document.getElementById("tbulk-basket");
+  if (!st || !box) return;
+  const codes = ticketBulkBasketCodes();
+  const mats = ticketBulkMaterials();
+  const reasonWrap = document.getElementById("tbulk-reason-wrap");
+  if (reasonWrap) reasonWrap.style.display = ticketBulkHasOver() ? "block" : "none";
+  if (!codes.length) { box.innerHTML = `<div style="padding:10px; color:var(--muted); font-size:0.85rem;">No materials added yet. Search a material above.</div>`; return; }
+  const th = "padding:7px 8px; font-size:0.76rem; background:#f1f5f9; border:1px solid #cbd5e1; text-align:center;";
+  const td = "padding:6px 8px; border:1px solid #cbd5e1; vertical-align:middle;";
+  box.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+    <tr><th style="${th} text-align:left;">Material</th><th style="${th}">Unit</th><th style="${th} text-align:left;">Per Job Card</th><th style="${th}">Total</th><th style="${th}"></th></tr>
+    ${codes.map(code => {
+      const m = mats.find(x => x.itemCode === code) || { materialName: code };
+      let total = 0;
+      const parts = ticketBulkSelectedJcs().filter(jc => Number(st.qty[jc + "|" + code]) > 0).map(jc => {
+        const q = Number(st.qty[jc + "|" + code]); total += q;
+        const r = ticketBulkMatRow(jc, code); const over = r && q > (Number(r.remainingQty) || 0) + 1e-9;
+        return `<span style="display:inline-block; margin:1px 6px 1px 0; ${over ? "color:#b45309; font-weight:800;" : ""}">${escapeHtml(ticketBulkSetLabel(jc))}: ${fmtQty(q)}${over ? " (excess)" : ""}</span>`;
+      });
+      return `<tr>
+        <td style="${td} font-weight:600;">${escapeHtml(m.materialName)}<div style="font-size:0.72rem; color:var(--muted);">${escapeHtml(code)}</div></td>
+        <td style="${td} text-align:center;">${escapeHtml(m.unitType || "")}</td>
+        <td style="${td} font-size:0.78rem;"><div style="max-height:66px; overflow-y:auto;">${parts.join("")}</div></td>
+        <td style="${td} text-align:center; font-weight:800;">${fmtQty(total)}</td>
+        <td style="${td} text-align:center; white-space:nowrap;">
+          <button class="nav-btn-styled" style="width:auto; padding:5px 10px; font-size:0.75rem; background:var(--brand);" onclick="ticketBulkPick(${jsArg(code)})">Edit</button>
+          <button class="nav-btn-styled" style="width:auto; padding:5px 10px; font-size:0.75rem; background:#b91c1c;" onclick="ticketBulkRemove(${jsArg(code)})">Remove</button>
+        </td></tr>`;
+    }).join("")}</table>`;
 }
 
 function ticketBulkHasOver() {
   const st = window._ticketBulk; if (!st) return false;
   return Object.entries(st.qty).some(([k, v]) => {
-    const [jc, code] = k.split("|");
+    const i = k.lastIndexOf("|"); const jc = k.slice(0, i), code = k.slice(i + 1);
     if (!st.selected.has(jc)) return false;
     const rem = ticketBulkRemaining(jc, code);
     return rem !== null && Number(v) > rem + 1e-9;
   });
 }
 
-function ticketBulkCell(inp) {
-  const st = window._ticketBulk; if (!st) return;
-  const key = inp.dataset.jc + "|" + inp.dataset.code;
-  if (inp.value === "" || Number(inp.value) <= 0) delete st.qty[key]; else st.qty[key] = inp.value;
-  const rem = ticketBulkRemaining(inp.dataset.jc, inp.dataset.code);
-  const over = st.qty[key] !== undefined && rem !== null && Number(st.qty[key]) > rem + 1e-9;
-  inp.style.borderColor = over ? "#b45309" : "var(--border)";
-  inp.parentElement.style.background = over ? "#fef3c7" : "";
-  const total = [...st.selected].reduce((s, jc) => s + (Number(st.qty[jc + "|" + inp.dataset.code]) || 0), 0);
-  const tEl = document.getElementById("tbulk-total-" + inp.dataset.code);
-  if (tEl) tEl.textContent = total ? fmtQty(total) : "";
-  const reasonWrap = document.getElementById("tbulk-reason-wrap");
-  if (reasonWrap) reasonWrap.style.display = ticketBulkHasOver() ? "block" : "none";
-}
-
 async function ticketBulkToggleJc(jc, on) {
   const st = window._ticketBulk; if (!st) return;
-  st.reason = document.getElementById("tbulk-reason")?.value || st.reason;
   if (on) st.selected.add(jc); else st.selected.delete(jc);
+  await ticketBulkLoad();
+  ticketBulkRender();
+}
+
+async function ticketBulkSelectRange(spec) {
+  const st = window._ticketBulk; if (!st) return;
+  if (spec === "all") st.selected = new Set(st.jcs.map(j => j.jobCardNumber));
+  else if (spec === "none") st.selected = new Set();
+  else {
+    const want = new Set();
+    String(spec || "").split(/[,\s]+/).forEach(p => {
+      const m = /^(\d+)(?:-(\d+))?$/.exec(p.trim()); if (!m) return;
+      const lo = Number(m[1]), hi = Number(m[2] || m[1]);
+      for (let n = Math.min(lo, hi); n <= Math.max(lo, hi); n++) want.add(n);
+    });
+    if (!want.size) return ticketBulkFeedback("Type set numbers like <strong>1-10, 15</strong>.");
+    st.selected = new Set(st.jcs.filter(j => want.has(Number(j.setNumber))).map(j => j.jobCardNumber));
+  }
   await ticketBulkLoad();
   ticketBulkRender();
 }
@@ -155,7 +374,7 @@ function ticketBulkSetStore(v) {
 
 function ticketBulkClear() {
   const st = window._ticketBulk; if (!st) return;
-  st.qty = {}; st.reason = "";
+  st.qty = {}; st.reason = ""; st.edit = null;
   ticketBulkRender();
 }
 
