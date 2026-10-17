@@ -419,9 +419,14 @@ async function loadPPSForPRN() {
           <tbody>${rowsHtml}</tbody>
         </table>
       </div>
+      ${data.storeOnly ? `
+      <div style="margin-top:12px; padding:10px 14px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; color:#166534; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <span>PPS complete: everything is covered from store, nothing to purchase.</span>
+        ${data.ppsDocUrl ? `<a href="${driveLink(data.ppsDocUrl)}" target="_blank" style="background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:6px 16px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">View PPS Document</a>` : `<span style="color:#92400e; font-size:0.82rem;">PPS document could not be created now; it will be retried within the hour.</span>`}
+      </div>` : `
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <button class="nav-btn-styled" id="pps-save-schedule-btn" onclick="savePPSDeliverySchedule('${prnId}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">Save Delivery Schedule</button>
-      </div>`;
+      </div>`}`;
   } catch (e) {
     body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
   }
