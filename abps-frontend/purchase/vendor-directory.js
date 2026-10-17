@@ -131,7 +131,7 @@ function vdRenderCards() {
   }
   const n = VD_COLS.length + 1;
   box.innerHTML = `
-    <div style="overflow:auto; max-height:72vh; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
+    <div class="vd-scroll" style="overflow:auto; max-height:72vh; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
       <table id="vd-table">
         <thead><tr><th style="text-align:center; min-width:70px;">Sr No</th>${VD_COLS.map(([h, , al, w]) => `<th style="text-align:${al}; min-width:${w}px;">${h}</th>`).join("")}</tr></thead>
         <tbody>${list.map((v, i) => { const id = vdRowId(v.vendorName); const open = vdOpenRows.has(v.vendorName); return `
@@ -248,9 +248,19 @@ async function vdOpenProfile(vendorName) {
   if (row) row.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+// Keep an open vendor's details inside the visible width of the (wide, scrolling) table.
+function vdFitDetail(box) {
+  const wrap = box.closest('.vd-scroll');
+  if (!wrap) return;
+  box.style.position = 'sticky'; box.style.left = '14px';
+  box.style.width = Math.max(280, wrap.clientWidth - 30) + 'px';
+}
+window.addEventListener('resize', () => document.querySelectorAll('#vd-table .vd-detail-cell > div').forEach(vdFitDetail));
+
 async function vdLoadProfileInto(vendorName) {
   const box = document.getElementById(vdRowId(vendorName) + "-box");
   if (!box) return;
+  vdFitDetail(box);
   box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--muted);">Loading ${vdEsc(vendorName)}...</div>`;
   try {
     const d = await apFetch({ action: "fetchVendorProfile", vendorName });
