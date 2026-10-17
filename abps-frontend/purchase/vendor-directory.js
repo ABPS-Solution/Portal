@@ -3,7 +3,6 @@
 let vdVendors = [];
 let vdTypes = [];
 let vdFilter = "Active";
-let vdView = (() => { try { return localStorage.getItem("vdView") || "cards"; } catch (e) { return "cards"; } })();
 
 const vdEsc = (v) => escapeHtml(v == null ? "" : String(v));
 const vdMoney = (n) => "₹" + (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -43,65 +42,46 @@ function vdRenderList() {
     All: vdVendors.length,
   };
   const pill = (k) => `<button type="button" class="nav-btn-styled vd-pill" onclick="vdSetFilter('${k}')"
-      style="width:auto; padding:6px 14px; font-size:0.82rem; font-weight:700; background:${vdFilter === k ? "var(--brand)" : "#e2e8f0"}; color:${vdFilter === k ? "#fff" : "#334155"};">${k === "Incomplete" ? "Details Incomplete" : k} (${counts[k]})</button>`;
+      style="width:auto; padding:7px 16px; font-size:0.85rem; font-weight:700; border-radius:999px; background:${vdFilter === k ? "var(--brand)" : "#e2e8f0"}; color:${vdFilter === k ? "#fff" : "#334155"};">${k === "Incomplete" ? "Details Incomplete" : k} <span style="opacity:0.8;">(${counts[k]})</span></button>`;
   root.innerHTML = `
+    <style>
+      #vd-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.86rem; }
+      #vd-table thead th { position:sticky; top:0; z-index:2; background:#eef2f7; color:#1e293b; font-size:0.82rem; font-weight:800;
+        text-transform:uppercase; letter-spacing:0.02em; padding:11px 10px; vertical-align:middle; white-space:nowrap;
+        border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
+      #vd-table td { padding:10px; vertical-align:middle; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
+      #vd-table th:first-child, #vd-table td:first-child { border-left:none; }
+      #vd-table tbody tr.vd-row:nth-child(4n+1) td { background:#fff; }
+      #vd-table tbody tr.vd-row:nth-child(4n+3) td { background:#f8fafc; }
+      #vd-table tbody tr.vd-row:hover td { background:#eef4ff; }
+      #vd-table tbody tr.vd-row.vd-open td { background:#e0ecff; }
+      #vd-table tbody tr.vd-row.vd-inactive td { color:#94a3b8; }
+      #vd-table .vd-exp { width:auto; min-width:52px; padding:5px 10px; font-weight:800; font-size:0.85rem; border:1.5px solid var(--brand);
+        background:#fff; color:var(--brand); border-radius:6px; cursor:pointer; }
+      #vd-table tr.vd-open .vd-exp { background:var(--brand); color:#fff; }
+      #vd-table td.vd-detail-cell { padding:0 14px 14px; background:#f1f5f9; }
+      .vd-badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.74rem; font-weight:800; white-space:nowrap; }
+    </style>
     <div id="vd-feedback" style="display:none;"></div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
-      <input type="text" id="vd-search" placeholder="Search name, GSTIN, city, contact, phone, email..." autocomplete="off"
-        oninput="vdRenderCards()" style="flex:1 1 280px; padding:9px; font-weight:600; border:2px solid #94a3b8; border-radius:6px;">
-      <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:9px 18px; font-weight:700;" onclick="vdOpenForm(null)">+ Add Vendor</button>
+      <div style="position:relative; flex:1 1 320px;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;">🔍</span>
+        <input type="text" id="vd-search" placeholder="Search name, GSTIN, city, contact, phone, email..." autocomplete="off"
+          oninput="vdRenderCards()" style="width:100%; box-sizing:border-box; padding:10px 12px 10px 36px; font-weight:600; border:2px solid #94a3b8; border-radius:8px;">
+      </div>
+      <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:10px 20px; font-weight:700; border-radius:8px;" onclick="vdOpenForm(null)">+ Add Vendor</button>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center;">${["Active", "Incomplete", "Inactive", "All"].map(pill).join("")}
-      <span style="flex:1 1 auto;"></span>
-      ${[["cards", "Cards"], ["table", "Vendor Table"]].map(([k, l]) => `<button type="button" class="nav-btn-styled" onclick="vdSetView('${k}')"
-        style="width:auto; padding:6px 14px; font-size:0.82rem; font-weight:700; background:${vdView === k ? "var(--accent)" : "#e2e8f0"}; color:${vdView === k ? "#fff" : "#334155"};">${l}</button>`).join("")}
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">${["Active", "Incomplete", "Inactive", "All"].map(pill).join("")}
+      <span id="vd-count" style="margin-left:auto; font-size:0.85rem; color:#475569; font-weight:600;"></span>
     </div>
-    <div id="vd-cards" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;"></div>
-    <div id="vd-detail"></div>`;
+    <div id="vd-cards"></div>`;
   vdRenderCards();
 }
 
 function vdSetFilter(k) { vdFilter = k; vdRenderList(); }
-function vdSetView(k) { vdView = k; try { localStorage.setItem("vdView", k); } catch (e) {} vdRenderList(); }
 
-function vdRenderTable(box, list) {
-  box.style.display = "block";
-  const fmtN = (n) => trimNum(Number(n) || 0);
-  const date = (d) => d ? formatOrdinalDate(d) : "—";
-  const head = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
-  const cell = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
-  const cols = [
-    ["Vendor Name", v => `<span style="font-weight:800; color:var(--brand);">${vdEsc(v.vendorName)}</span>`, "left", 200],
-    ["Status", v => v.status !== "Active" ? "Inactive" : v.incomplete ? `<span style="color:#b45309; font-weight:700;">Active (details incomplete)</span>` : "Active", "center", 90],
-    ["Type of Vendor", v => vdEsc(v.typeOfVendor || "—"), "left", 120],
-    ["GSTIN", v => `<span style="font-family:monospace;">${vdEsc(v.gstin || "—")}</span>`, "left", 150],
-    ["Contact Person", v => vdEsc(v.contactPerson || "—"), "left", 130],
-    ["Phone", v => vdEsc(v.phoneNumber || "—"), "left", 110],
-    ["Email", v => vdEsc(v.email || "—"), "left", 170],
-    ["City", v => vdEsc(v.city || "—"), "left", 100],
-    ["State", v => vdEsc([v.state, v.stateCode ? "(" + v.stateCode + ")" : ""].filter(Boolean).join(" ") || "—"), "left", 130],
-    ["Address", v => vdEsc(v.address || "—"), "left", 220],
-    ["CGST / SGST / IGST %", v => [v.cgstPercent, v.sgstPercent, v.igstPercent].map(p => p == null ? "—" : fmtN(p)).join(" / "), "center", 110],
-    ["POs", v => fmtN(v.poCount), "center", 60],
-    ["Open POs", v => fmtN(v.openPoCount), "center", 70],
-    ["PO Value", v => vdMoney(v.poValue), "right", 120],
-    ["Last PO", v => date(v.lastPoDate), "center", 110],
-    ["Qty Ordered", v => fmtN(v.qtyOrdered), "center", 90],
-    ["Qty Received", v => fmtN(v.qtyReceived), "center", 90],
-    ["On-time %", v => { const d = (Number(v.onTime) || 0) + (Number(v.late) || 0); return d ? Math.round((Number(v.onTime) || 0) * 100 / d) + "%" : "—"; }, "center", 80],
-    ["Avg Days Late", v => v.avgDaysLate == null ? "—" : fmtN(Math.round(Number(v.avgDaysLate) * 10) / 10), "center", 80],
-    ["Rejection %", v => { const r = Number(v.qtyReceived) || 0; const rej = (Number(v.qaRejected) || 0) + (Number(v.transitRejected) || 0); return r ? (Math.round(rej * 1000 / r) / 10) + "%" : "—"; }, "center", 80],
-    ["Last Delivery", v => date(v.lastDeliveryDate), "center", 110],
-  ];
-  box.innerHTML = `
-    <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-        <thead><tr style="background:#f8fafc;">${cols.map(([h, , al, w], i) => `<th style="padding:8px; font-size:0.7rem; text-align:${al}; min-width:${w}px; ${i ? head : "border-bottom:2px solid #94a3b8;"}">${h}</th>`).join("")}</tr></thead>
-        <tbody>${list.map(v => `<tr onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; ${v.status !== "Active" ? "color:#94a3b8;" : ""}" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
-          ${cols.map(([, f, al], i) => `<td style="padding:8px; text-align:${al}; vertical-align:top; ${i ? cell : "border-bottom:2px solid #94a3b8;"}">${f(v)}</td>`).join("")}</tr>`).join("")}</tbody>
-      </table>
-    </div>`;
-}
+const vdOpenRows = new Set();
+const vdRowId = (name) => "vd-" + Array.from(String(name)).map(c => c.charCodeAt(0).toString(36)).join("");
 
 function vdMatches(v, q) {
   if (!q) return true;
@@ -110,6 +90,32 @@ function vdMatches(v, q) {
   return q.toLowerCase().replace(/[^a-z0-9@ ]/g, " ").split(/\s+/).filter(Boolean).every(w => hay.includes(w));
 }
 
+const VD_COLS = [
+  ["Vendor Name", v => `<span style="font-weight:800; color:var(--brand);">${vdEsc(v.vendorName)}</span>`, "left", 210],
+  ["Status", v => v.status !== "Active" ? '<span class="vd-badge" style="background:#e2e8f0; color:#475569;">Inactive</span>'
+    : v.incomplete ? '<span class="vd-badge" style="background:#fef3c7; color:#b45309;">Details incomplete</span>'
+    : '<span class="vd-badge" style="background:#dcfce7; color:#15803d;">Active</span>', "center", 110],
+  ["Type of Vendor", v => vdEsc(v.typeOfVendor || "—"), "left", 130],
+  ["GSTIN", v => `<span style="font-family:monospace; font-size:0.84rem;">${vdEsc(v.gstin || "—")}</span>`, "left", 160],
+  ["Contact Person", v => vdEsc(v.contactPerson || "—"), "left", 140],
+  ["Phone", v => vdEsc(v.phoneNumber || "—"), "left", 120],
+  ["Email", v => vdEsc(v.email || "—"), "left", 190],
+  ["City", v => vdEsc(v.city || "—"), "left", 110],
+  ["State", v => vdEsc([v.state, v.stateCode ? "(" + v.stateCode + ")" : ""].filter(Boolean).join(" ") || "—"), "left", 140],
+  ["Address", v => `<div style="max-width:260px; white-space:normal; line-height:1.35;">${vdEsc(v.address || "—")}</div>`, "left", 240],
+  ["CGST / SGST / IGST %", v => [v.cgstPercent, v.sgstPercent, v.igstPercent].map(p => p == null ? "—" : trimNum(Number(p))).join(" / "), "center", 130],
+  ["POs", v => trimNum(Number(v.poCount) || 0), "center", 70],
+  ["Open POs", v => trimNum(Number(v.openPoCount) || 0), "center", 80],
+  ["PO Value", v => `<span style="font-weight:700;">${vdMoney(v.poValue)}</span>`, "right", 130],
+  ["Last PO", v => v.lastPoDate ? formatOrdinalDate(v.lastPoDate) : "—", "center", 120],
+  ["Qty Ordered", v => trimNum(Number(v.qtyOrdered) || 0), "center", 100],
+  ["Qty Received", v => trimNum(Number(v.qtyReceived) || 0), "center", 100],
+  ["On-time %", v => { const d = (Number(v.onTime) || 0) + (Number(v.late) || 0); if (!d) return "—"; const p = Math.round((Number(v.onTime) || 0) * 100 / d); return `<span style="font-weight:800; color:${p >= 90 ? "#15803d" : p >= 70 ? "#b45309" : "#b91c1c"};">${p}%</span>`; }, "center", 90],
+  ["Avg Days Late", v => v.avgDaysLate == null ? "—" : trimNum(Math.round(Number(v.avgDaysLate) * 10) / 10), "center", 90],
+  ["Rejection %", v => { const r = Number(v.qtyReceived) || 0; const rej = (Number(v.qaRejected) || 0) + (Number(v.transitRejected) || 0); return r ? (Math.round(rej * 1000 / r) / 10) + "%" : "—"; }, "center", 90],
+  ["Last Delivery", v => v.lastDeliveryDate ? formatOrdinalDate(v.lastDeliveryDate) : "—", "center", 120],
+];
+
 function vdRenderCards() {
   const box = document.getElementById("vd-cards");
   if (!box) return;
@@ -117,35 +123,28 @@ function vdRenderCards() {
   const list = vdVendors.filter(v =>
     (vdFilter === "All" || (vdFilter === "Active" && v.status === "Active") || (vdFilter === "Inactive" && v.status !== "Active")
       || (vdFilter === "Incomplete" && v.incomplete && v.status === "Active")) && vdMatches(v, q));
+  const cnt = document.getElementById("vd-count");
+  if (cnt) cnt.textContent = `${list.length} vendor${list.length === 1 ? "" : "s"}`;
   if (list.length === 0) {
-    box.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No vendors match.</div>`;
+    box.innerHTML = `<div style="text-align:center; padding:28px; color:var(--muted); background:#fff; border:2px solid #94a3b8; border-radius:var(--radius);">No vendors match.</div>`;
     return;
   }
-  if (vdView === "table") return vdRenderTable(box, list);
-  box.style.display = "grid";
-  box.innerHTML = list.map(v => {
-    const done = (Number(v.onTime) || 0) + (Number(v.late) || 0);
-    const onTimePct = done ? Math.round((Number(v.onTime) || 0) * 100 / done) + "%" : "—";
-    return `
-    <div onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; background:#fff; border:2px solid #94a3b8; border-left:5px solid ${v.status === "Active" ? "var(--brand)" : "#94a3b8"}; border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;"
-      onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='#94a3b8'">
-      <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
-        <div style="font-weight:800; color:var(--brand); line-height:1.3;">${vdEsc(v.vendorName)}</div>
-        ${v.status !== "Active" ? `<span style="font-size:0.68rem; font-weight:800; background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:999px;">INACTIVE</span>`
-          : v.incomplete ? `<span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:999px; white-space:nowrap;">DETAILS INCOMPLETE</span>` : ""}
-      </div>
-      <div style="font-size:0.8rem; color:#475569;">${[v.typeOfVendor, [v.city, v.state].filter(Boolean).join(", ")].filter(Boolean).map(vdEsc).join(" · ") || "&nbsp;"}</div>
-      ${v.gstin ? `<div style="font-size:0.78rem; font-family:monospace; color:#334155;">GSTIN ${vdEsc(v.gstin)}</div>` : ""}
-      <div style="display:flex; gap:14px; flex-wrap:wrap; border-top:1.5px solid #cbd5e1; padding-top:6px; font-size:0.78rem; color:#334155;">
-        <span><strong>${Number(v.poCount) || 0}</strong> POs</span>
-        <span><strong>${vdMoney(v.poValue)}</strong></span>
-        <span>On time <strong>${onTimePct}</strong></span>
-      </div>
+  const n = VD_COLS.length + 1;
+  box.innerHTML = `
+    <div style="overflow:auto; max-height:72vh; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
+      <table id="vd-table">
+        <thead><tr><th style="text-align:center; min-width:70px;">Sr No</th>${VD_COLS.map(([h, , al, w]) => `<th style="text-align:${al}; min-width:${w}px;">${h}</th>`).join("")}</tr></thead>
+        <tbody>${list.map((v, i) => { const id = vdRowId(v.vendorName); const open = vdOpenRows.has(v.vendorName); return `
+          <tr class="vd-row${v.status !== "Active" ? " vd-inactive" : ""}${open ? " vd-open" : ""}" id="${id}-row">
+            <td style="text-align:center;"><button type="button" class="vd-exp" title="Open / close vendor details" onclick="vdToggleRow(${jsArg(v.vendorName)})">${i + 1} ${open ? "▴" : "▾"}</button></td>
+            ${VD_COLS.map(([, fn, al]) => `<td style="text-align:${al};">${fn(v)}</td>`).join("")}
+          </tr>
+          <tr class="vd-detail-row" id="${id}-detail" style="display:${open ? "table-row" : "none"};"><td colspan="${n}" class="vd-detail-cell"><div id="${id}-box"></div></td></tr>`; }).join("")}</tbody>
+      </table>
     </div>`;
-  }).join("");
+  vdOpenRows.forEach(name => { if (list.some(v => v.vendorName === name)) vdLoadProfileInto(name); });
 }
 
-// ── Add / Edit form ──────────────────────────────────────────────────────
 function vdOpenForm(vendorName) {
   const v = vendorName ? vdVendors.find(x => x.vendorName === vendorName) : null;
   const ov = document.createElement("div");
@@ -225,18 +224,40 @@ async function vdSave(originalName) {
 }
 
 // ── Vendor profile ───────────────────────────────────────────────────────
+function vdToggleRow(vendorName) {
+  if (vdOpenRows.has(vendorName)) return vdCloseProfile(vendorName);
+  vdOpenProfile(vendorName);
+}
+
+function vdCloseProfile(vendorName) {
+  vdOpenRows.delete(vendorName);
+  const id = vdRowId(vendorName);
+  const det = document.getElementById(id + "-detail"), row = document.getElementById(id + "-row");
+  if (det) det.style.display = "none";
+  if (row) { row.classList.remove("vd-open"); const b = row.querySelector(".vd-exp"); if (b) b.textContent = b.textContent.replace("▴", "▾"); }
+}
+
 async function vdOpenProfile(vendorName) {
-  const box = document.getElementById("vd-detail");
+  vdOpenRows.add(vendorName);
+  const id = vdRowId(vendorName);
+  if (!document.getElementById(id + "-row")) { vdFilter = "All"; const sr = document.getElementById("vd-search"); if (sr) sr.value = ""; vdRenderList(); }
+  const det = document.getElementById(id + "-detail"), row = document.getElementById(id + "-row");
+  if (det) det.style.display = "table-row";
+  if (row) { row.classList.add("vd-open"); const b = row.querySelector(".vd-exp"); if (b) b.textContent = b.textContent.replace("▾", "▴"); }
+  await vdLoadProfileInto(vendorName);
+  if (row) row.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function vdLoadProfileInto(vendorName) {
+  const box = document.getElementById(vdRowId(vendorName) + "-box");
   if (!box) return;
-  box.innerHTML = `<div style="margin-top:16px; padding:20px; text-align:center; color:var(--muted);">Loading ${vdEsc(vendorName)}...</div>`;
-  box.scrollIntoView({ behavior: "smooth", block: "start" });
+  box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--muted);">Loading ${vdEsc(vendorName)}...</div>`;
   try {
     const d = await apFetch({ action: "fetchVendorProfile", vendorName });
     if (!d.success) throw new Error(d.error || "Could not load the vendor.");
     box.innerHTML = vdProfileHtml(d);
-    box.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") box.innerHTML = `<div style="margin-top:16px; color:#b91c1c; font-weight:700;">${vdEsc(e.message)}</div>`;
+    if (e.message !== "SESSION_EXPIRED") box.innerHTML = `<div style="padding:12px; color:#b91c1c; font-weight:700;">${vdEsc(e.message)}</div>`;
   }
 }
 
@@ -297,7 +318,7 @@ function vdProfileHtml(d) {
           ${btn("Edit", "var(--brand)", `vdOpenForm(${jsArg(v.vendorName)})`)}
           ${btn(v.status === "Active" ? "Deactivate" : "Activate", v.status === "Active" ? "#b45309" : "var(--accent)", `vdSetStatus(${jsArg(v.vendorName)}, '${v.status === "Active" ? "Inactive" : "Active"}')`)}
           ${btn("Delete", "#b91c1c", `vdDelete(${jsArg(v.vendorName)})`)}
-          ${btn("Close", "#718096", "document.getElementById('vd-detail').innerHTML=''")}
+          ${btn("Close", "#718096", `vdCloseProfile(${jsArg(v.vendorName)})`)}
         </div>
       </div>
       <div style="padding:14px 16px 18px;">
