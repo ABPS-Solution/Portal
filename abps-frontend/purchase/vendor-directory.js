@@ -3,6 +3,7 @@
 let vdVendors = [];
 let vdTypes = [];
 let vdFilter = "Active";
+let vdView = (() => { try { return localStorage.getItem("vdView") || "cards"; } catch (e) { return "cards"; } })();
 
 const vdEsc = (v) => escapeHtml(v == null ? "" : String(v));
 const vdMoney = (n) => "₹" + (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -50,13 +51,57 @@ function vdRenderList() {
         oninput="vdRenderCards()" style="flex:1 1 280px; padding:9px; font-weight:600; border:2px solid #94a3b8; border-radius:6px;">
       <button type="button" class="nav-btn-styled" style="width:auto; background:var(--accent); padding:9px 18px; font-weight:700;" onclick="vdOpenForm(null)">+ Add Vendor</button>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">${["Active", "Incomplete", "Inactive", "All"].map(pill).join("")}</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center;">${["Active", "Incomplete", "Inactive", "All"].map(pill).join("")}
+      <span style="flex:1 1 auto;"></span>
+      ${[["cards", "Cards"], ["table", "Vendor Table"]].map(([k, l]) => `<button type="button" class="nav-btn-styled" onclick="vdSetView('${k}')"
+        style="width:auto; padding:6px 14px; font-size:0.82rem; font-weight:700; background:${vdView === k ? "var(--accent)" : "#e2e8f0"}; color:${vdView === k ? "#fff" : "#334155"};">${l}</button>`).join("")}
+    </div>
     <div id="vd-cards" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;"></div>
     <div id="vd-detail"></div>`;
   vdRenderCards();
 }
 
 function vdSetFilter(k) { vdFilter = k; vdRenderList(); }
+function vdSetView(k) { vdView = k; try { localStorage.setItem("vdView", k); } catch (e) {} vdRenderList(); }
+
+function vdRenderTable(box, list) {
+  box.style.display = "block";
+  const fmtN = (n) => trimNum(Number(n) || 0);
+  const date = (d) => d ? formatOrdinalDate(d) : "—";
+  const head = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
+  const cell = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
+  const cols = [
+    ["Vendor Name", v => `<span style="font-weight:800; color:var(--brand);">${vdEsc(v.vendorName)}</span>`, "left", 200],
+    ["Status", v => v.status !== "Active" ? "Inactive" : v.incomplete ? `<span style="color:#b45309; font-weight:700;">Active (details incomplete)</span>` : "Active", "center", 90],
+    ["Type of Vendor", v => vdEsc(v.typeOfVendor || "—"), "left", 120],
+    ["GSTIN", v => `<span style="font-family:monospace;">${vdEsc(v.gstin || "—")}</span>`, "left", 150],
+    ["Contact Person", v => vdEsc(v.contactPerson || "—"), "left", 130],
+    ["Phone", v => vdEsc(v.phoneNumber || "—"), "left", 110],
+    ["Email", v => vdEsc(v.email || "—"), "left", 170],
+    ["City", v => vdEsc(v.city || "—"), "left", 100],
+    ["State", v => vdEsc([v.state, v.stateCode ? "(" + v.stateCode + ")" : ""].filter(Boolean).join(" ") || "—"), "left", 130],
+    ["Address", v => vdEsc(v.address || "—"), "left", 220],
+    ["CGST / SGST / IGST %", v => [v.cgstPercent, v.sgstPercent, v.igstPercent].map(p => p == null ? "—" : fmtN(p)).join(" / "), "center", 110],
+    ["POs", v => fmtN(v.poCount), "center", 60],
+    ["Open POs", v => fmtN(v.openPoCount), "center", 70],
+    ["PO Value", v => vdMoney(v.poValue), "right", 120],
+    ["Last PO", v => date(v.lastPoDate), "center", 110],
+    ["Qty Ordered", v => fmtN(v.qtyOrdered), "center", 90],
+    ["Qty Received", v => fmtN(v.qtyReceived), "center", 90],
+    ["On-time %", v => { const d = (Number(v.onTime) || 0) + (Number(v.late) || 0); return d ? Math.round((Number(v.onTime) || 0) * 100 / d) + "%" : "—"; }, "center", 80],
+    ["Avg Days Late", v => v.avgDaysLate == null ? "—" : fmtN(Math.round(Number(v.avgDaysLate) * 10) / 10), "center", 80],
+    ["Rejection %", v => { const r = Number(v.qtyReceived) || 0; const rej = (Number(v.qaRejected) || 0) + (Number(v.transitRejected) || 0); return r ? (Math.round(rej * 1000 / r) / 10) + "%" : "—"; }, "center", 80],
+    ["Last Delivery", v => date(v.lastDeliveryDate), "center", 110],
+  ];
+  box.innerHTML = `
+    <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <thead><tr style="background:#f8fafc;">${cols.map(([h, , al, w], i) => `<th style="padding:8px; font-size:0.7rem; text-align:${al}; min-width:${w}px; ${i ? head : "border-bottom:2px solid #94a3b8;"}">${h}</th>`).join("")}</tr></thead>
+        <tbody>${list.map(v => `<tr onclick="vdOpenProfile(${jsArg(v.vendorName)})" style="cursor:pointer; ${v.status !== "Active" ? "color:#94a3b8;" : ""}" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+          ${cols.map(([, f, al], i) => `<td style="padding:8px; text-align:${al}; vertical-align:top; ${i ? cell : "border-bottom:2px solid #94a3b8;"}">${f(v)}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table>
+    </div>`;
+}
 
 function vdMatches(v, q) {
   if (!q) return true;
@@ -76,6 +121,8 @@ function vdRenderCards() {
     box.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No vendors match.</div>`;
     return;
   }
+  if (vdView === "table") return vdRenderTable(box, list);
+  box.style.display = "grid";
   box.innerHTML = list.map(v => {
     const done = (Number(v.onTime) || 0) + (Number(v.late) || 0);
     const onTimePct = done ? Math.round((Number(v.onTime) || 0) * 100 / done) + "%" : "—";

@@ -279,6 +279,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
         <td style="padding:8px; font-weight:600; vertical-align:middle; color:#111827;">
           ${escapeHtml(li.description)}
+          <div class="mc-desc-qty" style="margin-top:4px; font-size:0.8rem; font-weight:700; color:#475569;">Qty: ${fmtQty(li.quantity)} ${escapeHtml(li.unit || "")}</div>
           ${isHeld ? `<div style="margin-top:4px;"><span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px;" title="${escapeHtml(state.holdReason || '')}">⏸ On Hold</span></div>` : ''}
         </td>
         <td style="padding:8px; position:relative; vertical-align:middle;">

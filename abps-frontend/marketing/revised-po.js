@@ -415,6 +415,58 @@ function crpoAddRow() {
 function crpoDeleteRow(i) { crpoReview.lineItems.splice(i, 1); crpoRenderLines(); }
 function crpoToggleRemove(lineId, on) { if (on) crpoReview.removeLineIds.add(lineId); else crpoReview.removeLineIds.delete(lineId); }
 
+// Same look as Upload Purchase Order's "Purchase Order Saved" card.
+function crpoRenderSuccess(data, h, review) {
+  const pid = data.projectId || review.projectId;
+  const amt = review.amounts || {};
+  const rupee = (v) => (v || v === 0) && String(v).trim() !== '' ? '₹' + crpoNum(v).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—';
+  const tile = (label, value, mono) => `
+    <div style="background:#fff; border:1px solid #d1fae5; border-radius:8px; padding:12px 14px; min-width:0;">
+      <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; color:#6b7a8d; margin-bottom:4px;">${label}</div>
+      <div style="font-size:1.02rem; font-weight:700; color:#111827; overflow-wrap:anywhere; ${mono ? 'font-family:monospace;' : ''}">${value}</div>
+    </div>`;
+  const link = (url, text) => `<a href="${driveLink(url)}" target="_blank" rel="noopener" style="display:inline-block; margin:8px 10px 0 0; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 16px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">${text}</a>`;
+  const notes = [];
+  if (data.oldProjectId) notes.push(`Project ID renamed from <b>${escapeHtml(data.oldProjectId)}</b> (${data.renamedIds} IDs renamed). BOQ / PRN documents and Drive folders are being updated in the background.`);
+  if (data.summary) notes.push(escapeHtml(data.summary));
+  if (data.revisedBoqIds && data.revisedBoqIds.length) notes.push('Revised BOQs: ' + data.revisedBoqIds.map(x => escapeHtml(x)).join(', '));
+  (data.docWarnings || []).forEach(w => notes.push(`<span style="color:#b45309;">${escapeHtml(w)}</span>`));
+  if (!data.withoutDocument && !data.fileUrl) notes.push('<span style="color:#b45309;">The PO document could not be saved to Drive.</span>');
+  crpoBanner('');
+  ['crpo-details-zone', 'crpo-upload-zone'].forEach(id => { const z = document.getElementById(id); if (z) { z.innerHTML = ''; z.style.display = 'none'; } });
+  const zone = document.getElementById('crpo-review-zone');
+  zone.style.display = 'block';
+  zone.innerHTML = `
+    <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:18px 20px; margin-top:8px;">
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px; font-size:1.15rem; font-weight:800; color:#15803d;">Revised Purchase Order Saved</div>
+        <button class="nav-btn-styled" onclick="crpoReviseAnother()" style="width:auto; background:#15803d; color:#fff; padding:9px 18px; font-weight:700;">+ Revise Another</button>
+      </div>
+      <div style="margin-top:16px; background:#fff; border:1.5px solid #15803d; border-radius:8px; padding:12px 14px;">
+        <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; color:#6b7a8d; margin-bottom:4px;">Project ID</div>
+        <div style="font-family:monospace; font-size:1.05rem; font-weight:700; color:#111827; overflow-wrap:anywhere;">${escapeHtml(pid)}</div>
+      </div>
+      <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px;">
+        ${tile('Revision', escapeHtml(String(data.revisionNo ?? '—')))}
+        ${tile('PO Number', escapeHtml(h.poNumber || '—'), true)}
+        ${tile('Tentative Delivery Date', formatOrdinalDate(h.deliveryDate) || escapeHtml(h.deliveryDate || '—'))}
+        ${tile('Basic Amount (excl. GST)', rupee(amt.basic))}
+        ${tile('Total Amount (incl. GST)', rupee(amt.total))}
+      </div>
+      ${notes.length ? `<div style="margin-top:12px; font-size:0.85rem; color:#166534; line-height:1.5;">${notes.join('<br>')}</div>` : ''}
+      <div>${data.fileUrl ? link(data.fileUrl, 'View Revised PO') : ''}${data.orderAcceptanceUrl ? link(data.orderAcceptanceUrl, 'View Order Acceptance') : ''}${data.contractReviewUrl ? link(data.contractReviewUrl, 'View Contract Review') : ''}</div>
+    </div>`;
+  zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function crpoReviseAnother() {
+  crpoReview = null; crpoFile = null; crpoOaFile = null; crpoCrFile = null;
+  const z = document.getElementById('crpo-review-zone'); if (z) { z.innerHTML = ''; z.style.display = 'none'; }
+  await crpoInitPanel();
+  const sel = document.getElementById('crpo-project-select'), inp = document.getElementById('crpo-project-ta-input');
+  if (sel) sel.value = ''; if (inp) inp.value = '';
+}
+
 async function crpoSubmit() {
   if (!crpoReview) return;
   const h = crpoReview.header;
@@ -456,22 +508,7 @@ async function crpoSubmit() {
       mimeType: crpoFile ? (crpoFile.type || 'application/octet-stream') : 'application/octet-stream',
     });
     if (!data.success) { crpoBanner(escapeHtml(data.error || 'Saving failed.')); return; }
-    const pid = data.projectId || crpoReview.projectId;
-    const okMsg = `✅ Revision ${data.revisionNo} saved for ${escapeHtml(pid)}: ${escapeHtml(data.summary || '')}.` +
-      (data.oldProjectId ? ` <br>Project ID renamed from <b>${escapeHtml(data.oldProjectId)}</b> to <b>${escapeHtml(pid)}</b> (${data.renamedIds} IDs renamed). BOQ / PRN documents and Drive folders are being updated in the background.` : '') +
-      (data.orderAcceptanceUrl ? ` <a href="${driveLink(data.orderAcceptanceUrl)}" target="_blank" rel="noopener">View new Order Acceptance ↗</a>` : '') +
-      (data.contractReviewUrl ? ` <a href="${driveLink(data.contractReviewUrl)}" target="_blank" rel="noopener">View new Contract Review ↗</a>` : '') +
-      ((data.docWarnings || []).length ? ` <span style="color:#b45309;">${data.docWarnings.map(w => escapeHtml(w)).join(' ')}</span>` : '') +
-      (data.revisedBoqIds && data.revisedBoqIds.length ? ` Revised BOQs: ${data.revisedBoqIds.map(x => escapeHtml(x)).join(', ')}.` : '') +
-      (data.withoutDocument ? '' : data.fileUrl ? ` <a href="${driveLink(data.fileUrl)}" target="_blank" rel="noopener">View revised PO ↗</a>` : ' <span style="color:#b45309;">(The PO document could not be saved to Drive.)</span>');
-    if (data.oldProjectId) {
-      await crpoInitPanel();
-      const sel = document.getElementById('crpo-project-select'), inp = document.getElementById('crpo-project-ta-input');
-      if (sel) sel.value = pid;
-      if (inp) inp.value = (sel && sel.selectedOptions[0] && sel.selectedOptions[0].value) ? sel.selectedOptions[0].text : pid;
-    }
-    await crpoSelectProject(pid);
-    crpoBanner(okMsg, 'success');
+    crpoRenderSuccess(data, h, crpoReview);
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') crpoBanner('Network error: ' + escapeHtml(e.message));
   } finally {
