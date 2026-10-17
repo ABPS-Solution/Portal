@@ -296,6 +296,11 @@ function renderMcLineItemsTable(projectId, lineItems) {
             style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
             placeholder="Auto-filled from Product Name">${ratingVal.replace(/</g,'&lt;')}</textarea>
         </td>
+        <td style="padding:8px; vertical-align:middle;">
+          <textarea rows="1" id="mc-std-make-${safeId}-${li.lineId}" readonly
+            style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; background:#f1f5f9; color:#111827; cursor:not-allowed;"
+            placeholder="Auto-filled">${escapeHtml(state.make || "")}</textarea>
+        </td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;">${fmtQty(li.quantity)}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; color:#111827;">${escapeHtml(li.unit || "—")}</td>
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${escapeHtml(itemCodeUnitVal || "—")}</td>
@@ -322,8 +327,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
       <div style="overflow-x:auto; margin-bottom:14px;">
         <table class="mc-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup>
-            <col style="width:17%;" /><col style="width:14%;" /><col style="width:14%;" />
-            <col style="width:6%;" /><col style="width:6%;" /><col style="width:6%;" />
+            <col style="width:15%;" /><col style="width:13%;" /><col style="width:12%;" /><col style="width:8%;" />
+            <col style="width:5%;" /><col style="width:6%;" /><col style="width:6%;" />
             <col style="width:7%;" /><col style="width:7%;" /><col style="width:8%;" /><col style="width:7%;" /><col style="width:7%;" />
           </colgroup>
           <thead>
@@ -331,6 +336,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
               <th style="padding:8px;">Order Product Description</th>
               <th style="padding:8px;">Standard Product Name *</th>
               <th style="padding:8px;">Standard Product Rating</th>
+              <th style="padding:8px;">Make</th>
               <th style="padding:8px; text-align:center;">Order Quantity</th>
               <th style="padding:8px; text-align:center;">Order Product UOM</th>
               <th style="padding:8px; text-align:center;">Item Code UOM</th>
@@ -517,6 +523,8 @@ function handleMcProductSearch(query, projectId, lineId) {
   const itemCodeUnitEl = document.getElementById(`mc-std-itemcode-unit-${safeId}-${lineId}`);
   const clearRating = () => {
     if (ratingEl) { ratingEl.value = ""; mcAutoGrowField(ratingEl); }
+    const makeEl = document.getElementById(`mc-std-make-${safeId}-${lineId}`);
+    if (makeEl) { makeEl.value = ""; mcAutoGrowField(makeEl); }
     if (makeEl) { makeEl.value = ""; mcAutoGrowField(makeEl); }
     if (itemCodeUnitEl) itemCodeUnitEl.textContent = "—";
   };
