@@ -1066,6 +1066,15 @@ function toggleTicketJobCardDropdown() {
   list.style.display = isOpen ? "none" : "block";
 }
 function selectTicketJobCard(jobCardNumber, label) {
+  if (jobCardNumber === "__BULK__") {
+    document.getElementById("ticket-job-card-dropdown").value = "";
+    document.getElementById("ticket-job-card-display-text").textContent = label;
+    document.getElementById("ticket-job-card-dropdown-list").style.display = "none";
+    resetMaterialRequestCascadingLockState();
+    ticketBulkOpen();
+    return;
+  }
+  ticketBulkClose();
   document.getElementById("ticket-job-card-dropdown").value = jobCardNumber;
   document.getElementById("ticket-job-card-display-text").textContent = label;
   document.getElementById("ticket-job-card-dropdown-list").style.display = "none";
@@ -1557,6 +1566,7 @@ function applyCmitDepartmentLock(lock) {
 }
 
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
+  ticketBulkClose();
   const isService = chosenDepartmentVal === "Service";
   const hasPurpose = isService || chosenDepartmentVal === "Processing";
 
@@ -1721,6 +1731,7 @@ function handleCreateTicketOperatorChange(chosenOperatorVal) {
 // --- LOCATE AND UPDATE THE PROJECT CHANGE HANDLER INSIDE index.html ---
 
 function handleCreateTicketBOQChange(chosenBoqId) {
+  ticketBulkClose();
   const jobCardLabel = document.getElementById("lbl-job-card-title");
   const isService = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Service";
 
@@ -1763,7 +1774,11 @@ function handleCreateTicketBOQChange(chosenBoqId) {
     return;
   }
   ticketJobCardDisplayReset("— Select Job Card Number —");
-  ticketJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
+  // Several Job Cards of this BOQ in one bulk ticket (17 Oct 2026); not for
+  // Processing, whose expected returns belong to one Job Card.
+  const bulkOption = filtered.length >= 2 && document.getElementById("ticket-department-outgoing-dropdown")?.value !== "Processing"
+    ? [{ value: "__BULK__", label: "Several Job Cards (bulk ticket)" }] : [];
+  ticketJobCardPopulate(bulkOption.concat(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` }))));
   ticketJobCardDisplayEnable();
   if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
 }

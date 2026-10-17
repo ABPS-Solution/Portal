@@ -100,6 +100,13 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
   if (!cardsFeedZone) return;
   
   cardsFeedZone.innerHTML = "";
+  // Bulk tickets (17 Oct 2026) show as one card each, approved together.
+  const batchedTickets = (pendingTicketsList || []).filter(t => t.batchId);
+  pendingTicketsList = (pendingTicketsList || []).filter(t => !t.batchId);
+  if (batchedTickets.length) {
+    cardsFeedZone.insertAdjacentHTML("beforeend", ticketBatchCardsHtml(batchedTickets));
+    if (pendingTicketsList.length === 0) return;
+  }
   if (pendingTicketsList.length === 0) {
     cardsFeedZone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">Tickets Approvals Queue Clear</h3></div>`;
     return;
