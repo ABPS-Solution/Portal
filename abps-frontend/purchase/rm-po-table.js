@@ -51,8 +51,9 @@ function rptBuild() {
         padding:9px 6px; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; cursor:pointer; user-select:none; }
       #rpt-table td { padding:8px 6px; vertical-align:middle; overflow-wrap:anywhere; word-break:normal; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
       #rpt-table .rpt-amt { font-size:0.98rem; font-weight:700; color:#0f172a; }
-      #rpt-table .rpt-po-link { font-weight:800; color:var(--brand); font-family:monospace; text-decoration:underline; }
+      #rpt-table .rpt-po-link { font-size:0.95rem; font-weight:800; color:var(--brand); font-family:monospace; text-decoration:underline; }
       @media (max-width:640px) { #rpt-table { min-width:900px; } }
+      @media (max-width:900px) { .rpt-pd-row { grid-template-columns:repeat(2, minmax(0, 1fr)) !important; } }
       #rpt-table th:first-child, #rpt-table td:first-child { border-left:none; }
       #rpt-table tbody tr.rpt-row:nth-child(4n+1) td { background:#fff; }
       #rpt-table tbody tr.rpt-row:nth-child(4n+3) td { background:#f8fafc; }
@@ -206,14 +207,14 @@ function rptTextMatches(r, q) {
 // [header, sort key, cell, align, width %]
 const RPT_COLS = [
   ["PO Number", "poNo", r => `${r.pdfUrl ? `<a class="rpt-po-link" href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" title="${r.pdfIsDraft ? "Open draft" : "Open PO document"}">${rptEsc(r.poNo)}</a>`
-    : `<span style="font-weight:800; color:var(--brand); font-family:monospace;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 10],
+    : `<span style="font-weight:800; color:var(--brand); font-family:monospace; font-size:0.95rem;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 9],
   ["PO Date", "orderDate", r => r.orderDate ? formatOrdinalDate(r.orderDate) : rptDash, "center", 8],
   ["Vendor Name", "vendorName", r => `<div style="font-weight:600;">${rptEsc(r.vendorName)}</div>`, "left", 12],
   ["Project ID(s)", "projectIds", r => r.projectIds.length ? `<div style="font-size:0.76rem; line-height:1.4;">${r.projectIds.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 11],
   ["Material Names", "materialNames", rptMaterialLinesHtml, "left", 22],
-  ["Basic Amount", "basicAmount", r => `<span class="rpt-amt">${rptAmount(r.basicAmount)}</span>`, "right", 8.5],
-  ["Total incl. GST", "grandTotal", r => `<span class="rpt-amt">${rptAmount(r.grandTotal)}</span>`, "right", 8.5],
-  ["Delivery Progress", "progressPct", rptDeliveryCell, "left", 9],
+  ["Basic Amount", "basicAmount", r => `<span class="rpt-amt">${rptAmount(r.basicAmount)}</span>`, "center", 7.5],
+  ["Total incl. GST", "grandTotal", r => `<span class="rpt-amt">${rptAmount(r.grandTotal)}</span>`, "center", 7.5],
+  ["Delivery Progress", "progressPct", rptDeliveryCell, "left", 12],
   ["Prepared By", "preparedBy", r => rptEsc(r.preparedBy || "-"), "left", 6],
 ];
 
@@ -265,7 +266,7 @@ function rptRender() {
       <table id="rpt-table">
         <colgroup><col style="width:5%;">${RPT_COLS.map(c => `<col style="width:${c[4]}%;">`).join("")}</colgroup>
         <thead><tr><th style="text-align:center; cursor:default;">Sr No</th>${RPT_COLS.map(([h, k, , al]) =>
-          `<th onclick="rptSortBy('${k}')" style="text-align:${al};">${h}${arrow(k)}</th>`).join("")}</tr></thead>
+          `<th onclick="rptSortBy('${k}')" style="text-align:${k === "progressPct" ? "center" : al};">${h}${arrow(k)}</th>`).join("")}</tr></thead>
         <tbody>${visible.map((r, i) => { const id = rptRowId(r.poNo); const open = rptOpenRows.has(r.poNo); return `
           <tr class="rpt-row${open ? " rpt-open" : ""}" id="${id}-row">
             <td style="text-align:center;"><button type="button" class="rpt-exp" title="Open / close PO details" onclick="rptToggleRow(${jsArg(r.poNo)})">${i + 1} ${open ? "▴" : "▾"}</button></td>
@@ -307,42 +308,44 @@ function rptToggleRow(poNo) {
 
 function rptDetailHtml(r) {
   const h = r.header || {};
+  // Same border weights as PPS Tracking (purchase/pps-tracking.js).
   const B = "2px solid #94a3b8";
-  const cell = (label, val, span, raw) => `<div style="${span ? "grid-column:1/-1;" : ""} padding:9px 12px; border-right:1.5px solid #cbd5e1; border-bottom:1.5px solid #cbd5e1; min-width:0;">
+  const CELL_B = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
+  const cell = (label, val, raw) => `<div style="padding:9px 12px; ${CELL_B} min-width:0;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.3px;">${label}</div>
-      <div style="font-weight:600; color:#0f172a; margin-top:2px; overflow-wrap:break-word; white-space:pre-line;">${val ? (raw ? val : rptEsc(val)) : '<span style="color:#94a3b8;">-</span>'}</div></div>`;
-  const contact = [h.vendorContact, h.vendorPhone, h.vendorEmail].filter(Boolean).join(" · ");
+      <div style="font-weight:600; color:#0f172a; margin-top:2px; overflow-wrap:anywhere; white-space:pre-line;">${val ? (raw ? val : rptEsc(val)) : '<span style="color:#94a3b8;">-</span>'}</div></div>`;
+  const pdRow = (cols, cells) => `<div class="rpt-pd-row" style="display:grid; grid-template-columns:${cols}; margin-left:-1.5px;">${cells}</div>`;
   const pdf = r.pdfUrl ? `<a href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" style="font-weight:700;">${r.pdfIsDraft ? "View Draft" : "View PO"} ↗</a>` : "";
-  const header = `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); border:${B}; border-radius:8px; background:#fff; overflow:hidden;">
-      ${cell("Status", r.status)}${cell("Type", r.poType)}${cell("Vendor GSTIN", h.vendorGstin)}${cell("Vendor Contact", contact)}
-      ${cell("Vendor City / State", [h.vendorCity, h.vendorState].filter(Boolean).join(", "))}
-      ${cell("Trade Type", h.tradeType === "Import" ? `Import${h.usdRate ? " (USD rate " + trimNum(Number(h.usdRate)) + ")" : ""}` : h.tradeType)}
-      ${cell("Payment Terms", h.paymentTerms)}${cell("Freight Terms", h.freightTerms)}${cell("Warranty", h.warranty)}${cell("Insurance", h.insurance)}
-      ${cell("Supplier Ref / Offer No", h.supplierRef)}${cell("Delivery Date (on PO)", h.deliveryDate ? formatOrdinalDate(h.deliveryDate) : "")}
-      ${cell("Next Expected Delivery", r.nextDelivery ? formatOrdinalDate(r.nextDelivery) + (r.overdueDays > 0 ? ` (${r.overdueDays} days overdue)` : "") : "")}
-      ${cell("Pending Value", r.pendingValue > 0 ? rptMoney(r.pendingValue) : "")}${cell("Last Receipt", r.lastReceipt ? formatOrdinalDate(r.lastReceipt) : "")}
-      ${cell("Revisions", r.revisionCount ? String(r.revisionCount) : "")}${cell("Authorized By", r.authorizedBy)}${cell("PO Document", pdf, false, true)}
-      ${cell("Remarks", h.notes, true)}</div>`;
-  const th = (t, al) => `<th style="padding:8px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; white-space:nowrap;">${t}</th>`;
-  const td = (x, al) => `<td style="padding:8px; text-align:${al || "center"}; vertical-align:top; border-top:1px solid #e2e8f0;">${x}</td>`;
+  const header = `<div style="border:${B}; border-bottom:none; border-radius:var(--radius); background:#fff; overflow:hidden;">
+      ${pdRow("repeat(7, minmax(0, 1fr))", cell("PO Type", r.poType) + cell("Vendor GSTIN", h.vendorGstin)
+        + cell("Vendor Contact Name", h.vendorContact) + cell("Vendor Contact Number", h.vendorPhone) + cell("Vendor Contact Email", h.vendorEmail)
+        + cell("Vendor City / State", [h.vendorCity, h.vendorState].filter(Boolean).join(", "))
+        + cell("Trade Type", h.tradeType === "Import" ? `Import${h.usdRate ? " (USD rate " + trimNum(Number(h.usdRate)) + ")" : ""}` : h.tradeType))}
+      ${pdRow("minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr)", cell("Supplier Ref / Offer No", h.supplierRef)
+        + cell("Delivery Date (on PO)", h.deliveryDate ? formatOrdinalDate(h.deliveryDate) : "") + cell("PO Document", pdf, true) + cell("Notes", h.notes))}
+      ${pdRow("repeat(4, minmax(0, 1fr))", cell("Payment Terms", h.paymentTerms) + cell("Freight Terms", h.freightTerms)
+        + cell("Warranty", h.warranty) + cell("Insurance", h.insurance))}</div>`;
+  const th = (t, al) => `<th style="padding:8px 6px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; overflow-wrap:anywhere; ${CELL_B}">${t}</th>`;
+  const td = (x, al) => `<td style="padding:8px 6px; text-align:${al || "center"}; vertical-align:top; overflow-wrap:anywhere; ${CELL_B}">${x}</td>`;
+  const cols = (ws) => `<colgroup>${ws.map(w => `<col style="width:${w}%;">`).join("")}</colgroup>`;
+  const poText = (l) => l.additionalDescription || l.materialName || "";
   let table;
   if (r.poType === "Transport") {
-    table = `<table style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:560px; background:#fff;"><thead><tr>${th("Description", "left")}${th("Projects", "left")}${th("Rate")}${th("Discount %")}${th("Amount")}</tr></thead>
-      <tbody>${r.lines.map(l => `<tr>${td(rptEsc(l.materialName), "left")}${td(l.projectIds.map(rptEsc).join("<br>") || "-", "left")}${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}</tr>`).join("")}</tbody></table>`;
+    table = `<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.85rem; min-width:560px; background:#fff;">${cols([46, 22, 12, 7, 13])}<thead><tr>${th("Description", "left")}${th("Projects", "left")}${th("Rate")}${th("Discount %")}${th("Amount")}</tr></thead>
+      <tbody>${r.lines.map(l => `<tr>${td(rptEsc(poText(l)), "left")}${td(l.projectIds.map(rptEsc).join("<br>") || "-", "left")}${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}</tr>`).join("")}</tbody></table>`;
   } else {
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-    const alloc = (l) => l.allocations.length ? l.allocations.map(a => `<div>${rptEsc(a.projectId)}${a.prnId ? `<div style="font-size:0.74rem; color:#64748b;">${rptEsc(a.prnId)}</div>` : ""}<strong>${fmtQty(a.qty)}</strong></div>`).join("") : (l.projectIds.map(rptEsc).join("<br>") || "-");
     const sched = (l) => l.schedule.length ? l.schedule.map(s => {
       const late = s.status !== "Received" && s.plannedDate && s.plannedDate < today;
-      return `<div style="white-space:nowrap;${late ? " color:#b91c1c; font-weight:700;" : ""}">${formatOrdinalDate(s.plannedDate)}: ${fmtQty(s.plannedQty)} <span style="font-size:0.74rem; color:#64748b;">(${rptEsc(s.status)})</span></div>`;
+      return `<div${late ? ' style="color:#b91c1c; font-weight:700;"' : ""}>${formatOrdinalDate(s.plannedDate)}: ${fmtQty(s.plannedQty)} <span style="font-size:0.74rem; color:#64748b;">(${rptEsc(s.status)})</span></div>`;
     }).join("") : '<span style="color:#94a3b8;">Not scheduled</span>';
-    table = `<table style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:1000px; background:#fff;"><thead><tr>${th("Material", "left")}${th("Unit")}${th("Ordered")}${th("Received")}${th("Still Due")}${th("Rate")}${th("Discount %")}${th("Line Amount")}${th("Project / PRN", "left")}${th("Delivery Schedule", "left")}</tr></thead>
-      <tbody>${r.lines.map(l => `<tr>${td(`<div style="font-weight:700;">${rptEsc(l.materialName)}</div>`, "left")}
+    table = `<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.85rem; min-width:760px; background:#fff;">${cols([37, 6, 7, 7, 7, 8, 5, 9, 14])}<thead><tr>${th("Material Name", "left")}${th("Unit")}${th("Ordered")}${th("Received")}${th("Still Due")}${th("Rate")}${th("Disc. %")}${th("Amount")}${th("Delivery Schedule", "left")}</tr></thead>
+      <tbody>${r.lines.map(l => `<tr>${td(`<div style="font-weight:700;">${rptEsc(poText(l))}</div>`, "left")}
         ${td(rptEsc(l.unit || "-"))}${td(fmtQty(l.orderedQty))}${td(l.tracked ? `<strong style="color:#15803d;">${fmtQty(l.receivedQty)}</strong>` : "-")}
         ${td(l.tracked ? (l.stillDueQty > 0 ? `<strong style="color:#b45309;">${fmtQty(l.stillDueQty)}</strong>` : "0") : "-")}
-        ${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}${td(alloc(l), "left")}${td(sched(l), "left")}</tr>`).join("")}</tbody></table>`;
+        ${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}${td(sched(l), "left")}</tr>`).join("")}</tbody></table>`;
   }
-  return `<div style="margin-top:14px; background:#f8fafc; border:${B}; border-left:6px solid var(--brand); border-radius:10px; overflow:hidden;">
+  return `<div style="margin-top:14px; background:#f8fafc; border:${B}; border-radius:var(--radius); overflow:hidden;">
       <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:12px 16px; background:#fff; border-bottom:${B};">
         <div style="font-size:1.15rem; font-weight:800; color:var(--brand);">${rptEsc(r.poNo)} <span style="font-weight:600; color:#334155;">· ${rptEsc(r.vendorName)}</span></div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
@@ -352,8 +355,8 @@ function rptDetailHtml(r) {
       </div>
       <div style="padding:14px 16px 18px;">
         <div class="sec-label" style="margin:0 0 8px;">PO Details</div>${header}
-        <div class="sec-label" style="margin:16px 0 8px;">${r.poType === "Transport" ? "Rows" : "Line Items"}</div>
-        <div style="overflow-x:auto; border:${B}; border-radius:8px;">${r.lines.length ? table : '<div style="padding:14px; text-align:center; color:var(--muted);">No lines.</div>'}</div>
+        <div class="sec-label" style="margin:16px 0 8px;">${r.poType === "Transport" ? "Rows" : "Materials"}</div>
+        <div style="overflow-x:auto; border:${B}; border-radius:var(--radius);">${r.lines.length ? table : '<div style="padding:14px; text-align:center; color:var(--muted);">No lines.</div>'}</div>
       </div></div>`;
 }
 
