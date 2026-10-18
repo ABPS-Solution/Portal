@@ -31,8 +31,8 @@ function initializeCurrentProjectsPanel() {
     <div class="cpb-toolbar">
       <input type="text" id="cpb-search" placeholder="Search by company or Project ID..." oninput="cpbRenderTable()" autocomplete="off" />
       <select id="cpb-status" onchange="cpbLoadBoard()">
-        <option value="Active,Inactive" selected>Active + Inactive</option>
-        <option value="Active">Active</option>
+        <option value="Active" selected>Active</option>
+        <option value="Active,Inactive">Active + Inactive</option>
         <option value="Inactive">Inactive</option>
         <option value="Complete">Complete</option>
         <option value="Active,Inactive,Complete">All</option>
@@ -61,7 +61,7 @@ async function cpbLoadBoard() {
   const wrap = document.getElementById("cpb-table-wrap");
   if (!wrap) return;
   wrap.innerHTML = `<div class="cpb-msg">Loading projects...</div>`;
-  const statuses = (document.getElementById("cpb-status")?.value || "Active,Inactive").split(",");
+  const statuses = (document.getElementById("cpb-status")?.value || "Active").split(",");
   try {
     const data = await apFetch({ action: "fetchCurrentProjectsBoard", statuses, showCosting: cpbShowCosting, _timeoutMs: 55000 });
     if (!data.success) {
@@ -87,9 +87,12 @@ function cpbPct(v) {
   return v == null ? "-" : trimNum(v) + "%";
 }
 
-function cpbCellHtml(cell) {
+const CPB_STATE_WORDS = { done: "Completed", partial: "Partially", pending: "Pending" };
+
+function cpbCellHtml(cell, key) {
   if (!cell) return `<td class="cpb-cell cpb-na"></td>`;
-  const text = cell.text != null ? cell.text : (cell.date ? formatOrdinalDate(cell.date) : (cell.state === "pending" ? "Pending" : ""));
+  let text = CPB_STATE_WORDS[cell.state] || cell.text || "Not needed";
+  if (key === "delivery") text = cell.date ? formatOrdinalDate(cell.date) : (cell.text || "Not set");
   const tip = [cell.tip, cell.date ? formatOrdinalDate(cell.date) : ""].filter(Boolean).join(". ");
   return `<td class="cpb-cell cpb-${escapeHtml(cell.state)}" title="${escapeHtml(tip)}">${escapeHtml(text)}</td>`;
 }
@@ -107,27 +110,32 @@ function cpbRenderTable() {
     return;
   }
   const canOpen = typeof userPermissions !== "undefined" && userPermissions && userPermissions.projectTimeline === true;
-  const costCols = data.withCosting ? [
-    ["poValue", "PO Value (Basic)", cpbMoney], ["designCosting", "Design Costing", cpbMoney],
-    ["currentCosting", "Current Costing", cpbMoney], ["designMsr", "Design MSR", cpbPct],
-    ["currentMsr", "Current MSR", cpbPct], ["paymentReceived", "Payment Received", cpbMoney],
-  ] : [];
-  const stageHead = data.columns.map(c => `<th class="cpb-stage${c.stage}" title="Stage ${c.stage}">${escapeHtml(c.label)}</th>`).join("");
-  const costHead = costCols.map(c => `<th class="cpb-cost">${escapeHtml(c[1])}</th>`).join("");
+  const COST = { poValue: ["PO Value (Basic)", cpbMoney], designCosting: ["Design Costing", cpbMoney],
+    designMsr: ["Design MSR", cpbPct], currentCosting: ["Current Costing", cpbMoney] };
+  const order = [];
+  data.columns.forEach(c => {
+    if (data.withCosting && c.key === "production") order.push({ cost: "currentCosting" });
+    order.push({ step: c });
+    if (data.withCosting && c.key === "po") order.push({ cost: "poValue" });
+    if (data.withCosting && c.key === "boqs") order.push({ cost: "designCosting" }, { cost: "designMsr" });
+  });
+  const head = order.map(o => o.step
+    ? `<th class="cpb-stage${o.step.stage}" title="Stage ${o.step.stage}">${escapeHtml(o.step.label)}</th>`
+    : `<th class="cpb-cost">${escapeHtml(COST[o.cost][0])}</th>`).join("");
   const body = rows.map(r => {
     const idCell = canOpen
       ? `<a href="javascript:void(0)" onclick="cpbOpenTimeline(${jsArg(r.projectId)})" title="Open Project Timeline">${escapeHtml(r.projectId)}</a>`
       : escapeHtml(r.projectId);
-    const cells = data.columns.map(c => cpbCellHtml(r.cells[c.key])).join("");
-    const cost = costCols.map(c => {
-      const v = r.costing ? r.costing[c[0]] : null;
-      const tip = c[0] === "designCosting" && v == null && r.costing && r.costing.designSoFar
+    const cells = order.map(o => {
+      if (o.step) return cpbCellHtml(r.cells[o.step.key], o.step.key);
+      const v = r.costing ? r.costing[o.cost] : null;
+      const tip = o.cost === "designCosting" && v == null && r.costing && r.costing.designSoFar
         ? `Not every BOQ is authorized yet. So far: ${cpbMoney(r.costing.designSoFar)}` : "";
-      return `<td class="cpb-cost" title="${escapeHtml(tip)}">${escapeHtml(c[2](v))}</td>`;
+      return `<td class="cpb-cost" title="${escapeHtml(tip)}">${escapeHtml(COST[o.cost][1](v))}</td>`;
     }).join("");
-    return `<tr><th class="cpb-first"><div class="cpb-pid">${idCell} <span class="cpb-status cpb-st-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></div><div class="cpb-co">${escapeHtml(r.companyName || "")}</div></th>${cells}${cost}</tr>`;
+    return `<tr><th class="cpb-first" title="${escapeHtml(r.companyName || "")}"><div class="cpb-pid">${idCell} <span class="cpb-status cpb-st-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></div></th>${cells}</tr>`;
   }).join("");
-  wrap.innerHTML = `<table class="cpb-table"><thead><tr><th class="cpb-first">Project</th>${stageHead}${costHead}</tr></thead><tbody>${body}</tbody></table>`;
+  wrap.innerHTML = `<table class="cpb-table"><thead><tr><th class="cpb-first">Project</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
 function cpbOpenTimeline(projectId) {
