@@ -119,7 +119,6 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     initializeRejectedMaterialPanel('pending');
   } else if (targetModuleId === "purchase-search-po") {
     document.getElementById("canvas-module-purchase-search-po").style.display = "block";
-    initializeSearchRMPOPanel();
     rptSwitchView("table");
   } else if (targetModuleId === "purchase-vendor-costing") {
     document.getElementById("canvas-module-purchase-vendor-costing").style.display = "block";

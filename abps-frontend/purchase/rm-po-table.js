@@ -10,12 +10,14 @@ const rptSel = { vendor: null, itemCode: null };
 
 const rptEsc = (v) => escapeHtml(v == null ? "" : String(v));
 const rptMoney = (n) => "₹" + (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const rptAmount = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 const rptDash = '<span style="color:#94a3b8;">-</span>';
 const rptRowId = (poNo) => "rpt-" + Array.from(String(poNo)).map(c => c.charCodeAt(0).toString(36)).join("");
 const RPT_PERIODS = [["today", "Today"], ["yesterday", "Yesterday"], ["week", "This Week"], ["month", "This Month"], ["quarter", "This Quarter"], ["year", "This Year"], ["all", "All time"]];
 
-function rptSwitchView(view) {
-  rptView = view === "search" ? "search" : "table";
+// The old "Search" view was removed; the PO Table is the only view now.
+function rptSwitchView() {
+  rptView = "table";
   [["rpt-tab-table", "table"], ["rpt-tab-search", "search"]].forEach(([id, v]) => {
     const b = document.getElementById(id);
     if (!b) return;
@@ -44,16 +46,19 @@ function rptBuild() {
       .rpt-dd { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
       .rpt-dd div { padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem; }
       .rpt-dd div:hover { background:var(--highlight-bg); }
-      #rpt-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.86rem; }
-      #rpt-table thead th { background:#eef2f7; color:#1e293b; font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;
-        padding:11px 10px; vertical-align:middle; white-space:nowrap; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; cursor:pointer; user-select:none; }
-      #rpt-table td { padding:10px; vertical-align:middle; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
+      #rpt-table { width:100%; table-layout:fixed; border-collapse:separate; border-spacing:0; font-size:0.84rem; }
+      #rpt-table thead th { background:#eef2f7; color:#1e293b; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;
+        padding:9px 6px; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; cursor:pointer; user-select:none; }
+      #rpt-table td { padding:8px 6px; vertical-align:middle; overflow-wrap:anywhere; word-break:normal; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
+      #rpt-table .rpt-amt { font-size:0.98rem; font-weight:700; color:#0f172a; }
+      #rpt-table .rpt-po-link { font-weight:800; color:var(--brand); font-family:monospace; text-decoration:underline; }
+      @media (max-width:640px) { #rpt-table { min-width:900px; } }
       #rpt-table th:first-child, #rpt-table td:first-child { border-left:none; }
       #rpt-table tbody tr.rpt-row:nth-child(4n+1) td { background:#fff; }
       #rpt-table tbody tr.rpt-row:nth-child(4n+3) td { background:#f8fafc; }
       #rpt-table tbody tr.rpt-row:hover td { background:#eef4ff; }
       #rpt-table tbody tr.rpt-row.rpt-open td { background:#e0ecff; }
-      #rpt-table .rpt-exp { width:auto; min-width:58px; white-space:nowrap; padding:5px 10px; font-weight:800; font-size:0.85rem; border:1.5px solid var(--brand); background:#fff; color:var(--brand); border-radius:6px; cursor:pointer; }
+      #rpt-table .rpt-exp { width:auto; max-width:100%; white-space:nowrap; padding:4px 6px; font-weight:800; font-size:0.85rem; border:1.5px solid var(--brand); background:#fff; color:var(--brand); border-radius:6px; cursor:pointer; }
       #rpt-table tr.rpt-open .rpt-exp { background:var(--brand); color:#fff; }
       #rpt-table td.rpt-detail-cell { padding:0 14px 14px; background:#f1f5f9; }
       .rpt-badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.74rem; font-weight:800; white-space:nowrap; }
@@ -73,6 +78,8 @@ function rptBuild() {
         <button type="button" class="nav-btn-styled" id="rpt-xl-btn" onclick="rptDownloadExcel()" style="width:auto; background:#15803d; color:#fff; padding:9px 20px; font-weight:700;">Download Excel</button>
       </div>
     </div>
+    <input type="text" id="rpt-text" placeholder="Search PO number, vendor, project ID, material or prepared by..." autocomplete="off" oninput="rptRender()"
+      style="width:100%; box-sizing:border-box; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:12px; font-size:0.9rem;">
     <div id="rpt-summary"></div>
     <div id="rpt-table-box"></div>`;
   rptPaintPeriod();
@@ -145,6 +152,7 @@ function rptFilters() {
   }
   rptFeedback(true, "");
   return {
+    textQuery: v("rpt-text") || null,
     period: rptPeriod,
     poNumberQuery: v("rpt-po") || null,
     vendorName: rptSel.vendor || v("rpt-vendor") || null,
@@ -160,7 +168,8 @@ async function rptLoad() {
   if (!f) return;
   box.innerHTML = `<div style="padding:24px; text-align:center; color:var(--muted);">Loading purchase orders...</div>`;
   try {
-    const d = await apFetch({ action: "fetchRMPOTable", ...f });
+    // The text box filters the loaded rows on screen (rptRender), so it is not sent here.
+    const d = await apFetch({ action: "fetchRMPOTable", ...f, textQuery: null });
     if (!d.success) throw new Error(d.error || "Could not load purchase orders.");
     rptLastResult = d;
     rptRows = d.rows || [];
@@ -174,21 +183,38 @@ function rptDeliveryCell(r) {
   if (r.poType === "Transport") return r.status === "Completed" ? '<span class="rpt-badge" style="background:#dcfce7; color:#15803d;">Completed</span>' : rptDash;
   if (!r.deliveryState) return `<span style="font-size:0.78rem; color:#64748b;">${rptEsc(r.status)}</span>`;
   const c = r.deliveryState === "Fully received" ? ["#dcfce7", "#15803d"] : r.deliveryState === "Partly received" ? ["#fef3c7", "#b45309"] : ["#e2e8f0", "#475569"];
-  return `<div style="min-width:130px;"><span class="rpt-badge" style="background:${c[0]}; color:${c[1]};">${rptEsc(r.deliveryState)}</span>
+  return `<div><span class="rpt-badge" style="background:${c[0]}; color:${c[1]};">${rptEsc(r.deliveryState)}</span>
     <div style="margin-top:5px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;"><div style="height:100%; width:${r.progressPct || 0}%; background:${c[1]};"></div></div>
     <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">${trimNum(r.progressPct || 0)}%${r.overdueDays > 0 ? ` · <strong style="color:#b91c1c;">${r.overdueDays} day${r.overdueDays === 1 ? "" : "s"} overdue</strong>` : ""}</div></div>`;
 }
 
+function rptMaterialLinesHtml(r) {
+  const lines = Array.isArray(r.materialLines) ? r.materialLines : r.materialNames.map(name => ({ name, qty: null }));
+  if (!lines.length) return rptDash;
+  return `<div style="font-size:0.8rem; line-height:1.4;">${lines.map(l => rptEsc(l.name) + (l.qty == null ? ""
+    : ` - <strong>Qty: ${fmtQty(l.qty)}${l.unit ? " " + rptEsc(l.unit) : ""}</strong>`)).join("<br>")}</div>`;
+}
+
+// Same rule as rmPoTextMatches (lib/rmPoTable.js), used by the Excel download.
+function rptTextMatches(r, q) {
+  const needle = String(q || "").trim().toLowerCase();
+  if (!needle) return true;
+  return [r.poNo, r.vendorName, r.preparedBy, ...(r.projectIds || []), ...(r.materialNames || [])]
+    .some(v => v != null && String(v).toLowerCase().includes(needle));
+}
+
+// [header, sort key, cell, align, width %]
 const RPT_COLS = [
-  ["PO Number", "poNo", r => `<span style="font-weight:800; color:var(--brand); font-family:monospace;">${rptEsc(r.poNo)}</span>${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 150],
-  ["PO Date", "orderDate", r => r.orderDate ? formatOrdinalDate(r.orderDate) : rptDash, "center", 110],
-  ["Vendor Name", "vendorName", r => `<div style="min-width:170px; white-space:normal; font-weight:600;">${rptEsc(r.vendorName)}</div>`, "left", 190],
-  ["Project ID(s)", "projectIds", r => r.projectIds.length ? `<div style="min-width:170px; white-space:normal; font-size:0.8rem; line-height:1.4;">${r.projectIds.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 190],
-  ["Material Names", "materialNames", r => r.materialNames.length ? `<div style="min-width:260px; white-space:normal; font-size:0.82rem; line-height:1.4;">${r.materialNames.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 280],
-  ["Basic Amount", "basicAmount", r => rptMoney(r.basicAmount), "right", 120],
-  ["Total incl. GST", "grandTotal", r => `<strong>${rptMoney(r.grandTotal)}</strong>`, "right", 130],
-  ["Delivery Progress", "progressPct", rptDeliveryCell, "left", 150],
-  ["Prepared By", "preparedBy", r => rptEsc(r.preparedBy || "-"), "left", 130],
+  ["PO Number", "poNo", r => `${r.pdfUrl ? `<a class="rpt-po-link" href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" title="${r.pdfIsDraft ? "Open draft" : "Open PO document"}">${rptEsc(r.poNo)}</a>`
+    : `<span style="font-weight:800; color:var(--brand); font-family:monospace;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 10],
+  ["PO Date", "orderDate", r => r.orderDate ? formatOrdinalDate(r.orderDate) : rptDash, "center", 8],
+  ["Vendor Name", "vendorName", r => `<div style="font-weight:600;">${rptEsc(r.vendorName)}</div>`, "left", 12],
+  ["Project ID(s)", "projectIds", r => r.projectIds.length ? `<div style="font-size:0.76rem; line-height:1.4;">${r.projectIds.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 11],
+  ["Material Names", "materialNames", rptMaterialLinesHtml, "left", 22],
+  ["Basic Amount", "basicAmount", r => `<span class="rpt-amt">${rptAmount(r.basicAmount)}</span>`, "right", 8.5],
+  ["Total incl. GST", "grandTotal", r => `<span class="rpt-amt">${rptAmount(r.grandTotal)}</span>`, "right", 8.5],
+  ["Delivery Progress", "progressPct", rptDeliveryCell, "left", 9],
+  ["Prepared By", "preparedBy", r => rptEsc(r.preparedBy || "-"), "left", 6],
 ];
 
 function rptSortBy(key) {
@@ -213,7 +239,14 @@ function rptRender() {
   const sum = document.getElementById("rpt-summary");
   if (!box) return;
   const d = rptLastResult || {};
-  const s = d.summary || { count: 0, totalValue: 0, pendingValue: 0, overdueCount: 0 };
+  const text = document.getElementById("rpt-text")?.value || "";
+  const visible = rptSorted().filter(r => rptTextMatches(r, text));
+  const s = {
+    count: visible.length,
+    totalValue: visible.reduce((a, r) => a + (Number(r.grandTotal) || 0), 0),
+    pendingValue: visible.reduce((a, r) => a + (Number(r.pendingValue) || 0), 0),
+    overdueCount: visible.filter(r => r.overdueDays > 0).length,
+  };
   const tile = (label, value, color) => `<div style="background:#fff; border:2px solid #94a3b8; border-top:4px solid ${color}; border-radius:8px; padding:9px 12px; min-width:0;">
       <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b;">${label}</div>
       <div style="font-size:1.2rem; font-weight:800; color:#0f172a; margin-top:3px;">${value}</div></div>`;
@@ -221,7 +254,7 @@ function rptRender() {
       ${tile("Purchase Orders", trimNum(s.count), "var(--brand)")}${tile("Total Value (incl. GST)", rptMoney(s.totalValue), "var(--brand)")}
       ${tile("Pending Value", rptMoney(s.pendingValue), "#b45309")}${tile("Overdue POs", trimNum(s.overdueCount), s.overdueCount ? "#b91c1c" : "#94a3b8")}</div>
     ${d.capped ? `<div style="background:#fffbeb; border-left:4px solid #d97706; color:#92400e; padding:9px 12px; border-radius:4px; font-size:0.85rem; margin-bottom:10px;">Showing the newest ${trimNum(d.cap)} purchase orders only. Pick a shorter period or narrow the filters to see the rest.</div>` : ""}`;
-  if (!rptRows.length) {
+  if (!visible.length) {
     box.innerHTML = `<div style="text-align:center; padding:28px; color:var(--muted); background:#fff; border:2px solid #94a3b8; border-radius:var(--radius);">No purchase orders match.</div>`;
     return;
   }
@@ -230,12 +263,13 @@ function rptRender() {
   box.innerHTML = `
     <div class="rpt-scroll" style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
       <table id="rpt-table">
-        <thead><tr><th style="text-align:center; min-width:84px; cursor:default;">Sr No</th>${RPT_COLS.map(([h, k, , al, w]) =>
-          `<th onclick="rptSortBy('${k}')" style="text-align:${al}; min-width:${w}px;">${h}${arrow(k)}</th>`).join("")}</tr></thead>
-        <tbody>${rptSorted().map((r, i) => { const id = rptRowId(r.poNo); const open = rptOpenRows.has(r.poNo); return `
+        <colgroup><col style="width:5%;">${RPT_COLS.map(c => `<col style="width:${c[4]}%;">`).join("")}</colgroup>
+        <thead><tr><th style="text-align:center; cursor:default;">Sr No</th>${RPT_COLS.map(([h, k, , al]) =>
+          `<th onclick="rptSortBy('${k}')" style="text-align:${al};">${h}${arrow(k)}</th>`).join("")}</tr></thead>
+        <tbody>${visible.map((r, i) => { const id = rptRowId(r.poNo); const open = rptOpenRows.has(r.poNo); return `
           <tr class="rpt-row${open ? " rpt-open" : ""}" id="${id}-row">
             <td style="text-align:center;"><button type="button" class="rpt-exp" title="Open / close PO details" onclick="rptToggleRow(${jsArg(r.poNo)})">${i + 1} ${open ? "▴" : "▾"}</button></td>
-            ${RPT_COLS.map(([, , fn, al]) => `<td style="text-align:${al};${al === "right" ? " white-space:nowrap;" : ""}">${fn(r)}</td>`).join("")}
+            ${RPT_COLS.map(([, , fn, al]) => `<td style="text-align:${al};">${fn(r)}</td>`).join("")}
           </tr>
           <tr id="${id}-detail" style="display:${open ? "table-row" : "none"};"><td colspan="${n}" class="rpt-detail-cell"><div id="${id}-box">${open ? rptDetailHtml(r) : ""}</div></td></tr>`; }).join("")}</tbody>
       </table>
@@ -311,13 +345,25 @@ function rptDetailHtml(r) {
   return `<div style="margin-top:14px; background:#f8fafc; border:${B}; border-left:6px solid var(--brand); border-radius:10px; overflow:hidden;">
       <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:12px 16px; background:#fff; border-bottom:${B};">
         <div style="font-size:1.15rem; font-weight:800; color:var(--brand);">${rptEsc(r.poNo)} <span style="font-weight:600; color:#334155;">· ${rptEsc(r.vendorName)}</span></div>
-        <button type="button" class="nav-btn-styled" style="width:auto; background:#718096; padding:7px 16px; font-weight:700; font-size:0.85rem;" onclick="rptToggleRow(${jsArg(r.poNo)})">Close</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          ${r.poType === "Transport" && r.status === "Authorized" ? `<button type="button" class="nav-btn-styled" style="width:auto; background:#15803d; color:#fff; padding:7px 16px; font-weight:700; font-size:0.85rem;" onclick="rptMarkTransportCompleted(${jsArg(r.poNo)}, this)">Mark Completed</button>` : ""}
+          <button type="button" class="nav-btn-styled" style="width:auto; background:#718096; padding:7px 16px; font-weight:700; font-size:0.85rem;" onclick="rptToggleRow(${jsArg(r.poNo)})">Close</button>
+        </div>
       </div>
       <div style="padding:14px 16px 18px;">
         <div class="sec-label" style="margin:0 0 8px;">PO Details</div>${header}
         <div class="sec-label" style="margin:16px 0 8px;">${r.poType === "Transport" ? "Rows" : "Line Items"}</div>
         <div style="overflow-x:auto; border:${B}; border-radius:8px;">${r.lines.length ? table : '<div style="padding:14px; text-align:center; color:var(--muted);">No lines.</div>'}</div>
       </div></div>`;
+}
+
+// Uses the same confirmation + route as the old Search view (markTransportPOCompleted in purchase/po.js).
+async function rptMarkTransportCompleted(poNo, btn) {
+  await markTransportPOCompleted(poNo, btn);
+  if (btn.isConnected) return;
+  const r = rptRows.find(x => x.poNo === poNo);
+  if (r) r.status = "Completed";
+  rptRender();
 }
 
 async function rptDownloadExcel() {

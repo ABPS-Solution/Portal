@@ -4400,11 +4400,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Search Raw Material Purchase Order</h2>
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button type="button" id="rpt-tab-table" class="nav-btn-styled" onclick="rptSwitchView('table')" style="width:auto; padding:8px 20px; font-weight:700; border-radius:999px;">PO Table</button>
-        <button type="button" id="rpt-tab-search" class="nav-btn-styled" onclick="rptSwitchView('search')" style="width:auto; padding:8px 20px; font-weight:700; border-radius:999px;">Search</button>
-      </div>
       <div id="rpt-root"></div>
+      <!-- Old Search view: no longer shown (PO Table only). Kept hidden, flagged not deleted. -->
       <div id="srchpo-search-view" style="display:none;">
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by any combination of PO Number, material, Project ID, and date range — every field is optional. For vendor rate/costing lookups, use Search Vendor Costing Information instead.</p>
       <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>

@@ -21,6 +21,16 @@ let mcGatingInitialSnapshot = {};
 // show "before → after" without the after-value having already clobbered it.
 let mcLineItemMeta = {};
 
+// Escapes the product list, then bolds each line's trailing "Qty: ..." (added by fetchProjectsByStatus).
+function mcBoldQtyHtml(text) {
+  return escapeHtml(text || "").split("\n").map(line => {
+    const i = line.lastIndexOf(" - Qty: ");
+    if (i < 0) return line;
+    const m = line.slice(i + 3).match(/^(.*?)(,?)$/);
+    return line.slice(0, i + 3) + "<strong>" + m[1] + "</strong>" + m[2];
+  }).join("\n");
+}
+
 // switchMcStatus / syncMcStatusPills — moved here from
 // accounts/tour-expense.js (where they were misfiled) during the Tour
 // Expense Tracker rebuild; this is where they actually belong.
@@ -105,7 +115,7 @@ async function loadManufacturingClearanceList() {
       <tr class="mc-filter-row" data-search="${escapeHtml((p.companyName + ' ' + p.projectId).toLowerCase())}" style="border-bottom:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace; word-break:break-word;">${p.projectId}</td>
         <td style="padding:8px; word-break:break-word; font-size:0.95rem; font-weight:600;">${escapeHtml(p.companyName)}</td>
-        <td style="padding:8px; white-space:pre-line; word-break:break-word;">${escapeHtml(p.orderProductDescription) || "—"}</td>
+        <td style="padding:8px; white-space:pre-line; word-break:break-word;">${mcBoldQtyHtml(p.orderProductDescription) || "—"}</td>
         <td style="padding:8px; font-size:0.95rem; font-weight:600;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"

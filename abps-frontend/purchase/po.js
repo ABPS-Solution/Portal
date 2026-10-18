@@ -112,6 +112,7 @@ function toggleAuthorizePOCard(poNo) {
 // safer to just render static divs here from fetchRMPOFullDetail's data.
 // ═══════════════════════════════════════════════════════════════════════
 
+// UNUSED since 18 Oct 2026: the Search view was removed (PO Table only, purchase/rm-po-table.js). Flagged, not deleted.
 async function initializeSearchRMPOPanel() {
   window.srchpoSelectedItemCode = null;
   window.srchpoSelectedProjectId = null;
