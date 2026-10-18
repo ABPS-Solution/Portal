@@ -216,6 +216,14 @@ async function importCBOQFromExisting() {
         descriptionOfMaterial: row.descriptionOfMaterial || ""
       };
     });
+    // A recent RM PO rate (same formula as picking a material) replaces the
+    // old BOQ's rate; rows with no PO in the window keep the old rate.
+    await boqEnsurePurchaseRates(cboqMaterialRows.filter(r => r.typeOfStore !== "Finished Goods Store" && !boqIsAcRow(r)).map(r => r.itemCode).filter(Boolean));
+    window.boqImportedRates = new WeakMap();
+    cboqMaterialRows.forEach(r => {
+      if (Number(r.designRatePerQuantity) > 0) window.boqImportedRates.set(r, r.designRatePerQuantity);
+      if (r.itemCode && r.typeOfStore !== "Finished Goods Store" && !boqIsAcRow(r)) boqApplyAutoRate("cboq", r);
+    });
     renderCBOQMaterialRows();
 
     // Product Name / Rating are NOT auto-filled from the imported BOQ —
@@ -736,7 +744,10 @@ function boqRateHintHtml(row, prefix) {
   const main = sug.method === "qtyAware"
     ? `Suggested ${inr(sug.rate)} for qty ${trimNum(boqRowNeed(prefix, row))}<br>Avg ${inr(sug.weightedAvg)} over ${sug.count} POs in ${boqPurchaseRateWindowDays} days${range}`
     : `Avg ${inr(sug.weightedAvg)} over ${sug.count} PO${sug.count === 1 ? "" : "s"} in ${boqPurchaseRateWindowDays} days${range}`;
-  return wrap(`${main}<br>${lastLine}`, "#15803d", title);
+  const oldRate = window.boqImportedRates && window.boqImportedRates.get(row);
+  const oldNote = oldRate !== undefined && window.boqAutoRateRows.get(row) !== undefined && Number(oldRate) !== Number(row.designRatePerQuantity)
+    ? `<br>Old BOQ had ${inr(oldRate)}` : "";
+  return wrap(`${main}${oldNote}<br>${lastLine}`, "#15803d", title);
 }
 function boqUnverifyRow(prefix, idx) {
   const rows = { eboq: eboqMaterialRows, boqrev: uboqRevRows }[prefix];
