@@ -1533,4 +1533,5 @@ async function submitPinvRevision() {
   }
 }
 
+// Unloaded file (not in index.html); if ever loaded this clashes with production/finished-goods.js.
 let _submitFGAddItemInProgress = false;

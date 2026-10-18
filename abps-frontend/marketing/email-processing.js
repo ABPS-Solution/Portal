@@ -443,7 +443,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
     // FIXED: Enforce role visibility restriction boundaries to guard delete actions
     const isAdminUser = localStorage.getItem("isUserAdminGlobal") === "true";
     const deleteActionHtml = isAdminUser
-      ? `<button style="background:none; border:none; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0;" onmouseover="this.style.color='var(--warn)'" onmouseout="this.style.color='var(--muted)'" onclick="archiveEmailLeadFromSystemDatabaseCache('${mail.messageIdReference}', ${mIdx})">Delete</button>`
+      ? `<button style="background:none; border:none; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0;" onmouseover="this.style.color='var(--warn)'" onmouseout="this.style.color='var(--muted)'" onclick="archiveEmailLeadFromSystemDatabaseCache(${jsArg(mail.messageIdReference)}, ${mIdx})">Delete</button>`
       : "";
 
     card.innerHTML = `
@@ -484,8 +484,8 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
         <div id="email-notes-strip-${mIdx}" style="display:flex; gap:6px; overflow-x:auto; flex:1; min-width:0; padding:2px 0;">
           ${renderEmailLeadNotesStrip(mail.notes)}
         </div>
-        <input type="text" id="email-note-${mIdx}" placeholder="Add a note..." style="flex:0 0 160px; padding:6px 8px; font-size:0.78rem; border:1px solid var(--border); border-radius:4px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}');}" />
-        <button class="nav-btn-styled" id="email-note-save-btn-${mIdx}" style="background:var(--brand); font-size:0.76rem; padding:6px 12px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, '${mail.messageIdReference}')">Add</button>
+        <input type="text" id="email-note-${mIdx}" placeholder="Add a note..." style="flex:0 0 160px; padding:6px 8px; font-size:0.78rem; border:1px solid var(--border); border-radius:4px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveEmailLeadNote(${mIdx}, ${jsArg(mail.messageIdReference)});}" />
+        <button class="nav-btn-styled" id="email-note-save-btn-${mIdx}" style="background:var(--brand); font-size:0.76rem; padding:6px 12px; white-space:nowrap; flex-shrink:0;" onclick="saveEmailLeadNote(${mIdx}, ${jsArg(mail.messageIdReference)})">Add</button>
       </div>
 
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);" id="email-action-response-mount-zone-${mIdx}">

@@ -213,6 +213,13 @@ function crpoStartFromCurrentPo() {
     matchLineId: l.lineId,
   }));
   crpoReview = { projectId, base64Data: null, header, lineItems, removeLineIds: new Set(), withoutDocument: true };
+  // Keep the saved PO Amounts if they differ from the rows' sum (set by hand before).
+  const savedHdr = crpoDetails.amounts || {};
+  let rowBasic = 0, rowGst = 0;
+  lineItems.forEach(li => { rowBasic += crpoNum(li.quantity) * crpoNum(li.ratePerQuantity); rowGst += crpoNum(li.gstAmount); });
+  if (savedHdr.poBasicAmount != null && (Math.abs(crpoNum(savedHdr.poBasicAmount) - rowBasic) > 0.005 || Math.abs(crpoNum(savedHdr.poGstAmount) - rowGst) > 0.005)) {
+    crpoReview.amounts = { edited: true, basic: String(savedHdr.poBasicAmount ?? ''), gst: String(savedHdr.poGstAmount ?? ''), total: String(savedHdr.poTotalAmount ?? '') };
+  }
   crpoRenderReview();
 }
 
@@ -305,16 +312,36 @@ function crpoRenderReview() {
   crpoRenderLines();
 }
 
-// Basic / GST / Total PO Amount are worked out from the product rows (the
-// server recomputes them the same way on save), so they are shown, not typed.
+// Basic / GST / Total PO Amount start as the sum of the product rows and
+// follow them, until someone types one (13 Oct 2026): then the typed values
+// are kept and saved (crpoReview.amounts). Typing Basic or GST updates Total.
 function crpoRenderAmounts() {
   const el = document.getElementById('crpo-amounts');
   if (!el) return;
   let basic = 0, gst = 0;
   crpoReview.lineItems.forEach(li => { basic += crpoNum(li.quantity) * crpoNum(li.ratePerQuantity); gst += crpoNum(li.gstAmount); });
-  const box = (label, v) => `<div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
-    <div style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; background:#f8fafc;">${crpoMoney(v)}</div></div>`;
-  el.innerHTML = box('Basic PO Amount', basic) + box('PO GST Amount', gst) + box('PO Total Amount', basic + gst);
+  const a = crpoReview.amounts || (crpoReview.amounts = { edited: false });
+  if (!a.edited) { a.basic = String(Math.round(basic * 100) / 100); a.gst = String(Math.round(gst * 100) / 100); a.total = String(Math.round((basic + gst) * 100) / 100); }
+  const focused = document.activeElement && document.activeElement.id && document.activeElement.id.startsWith('crpo-amt-');
+  if (focused && el.children.length) return; // don't redraw under the cursor
+  const box = (label, k) => `<div class="grid-cell-item" style="grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
+    <input id="crpo-amt-${k}" type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(a[k] ?? ''))}"
+      oninput="crpoAmountTyped('${k}', sanitizeAmountInput(this))"
+      onfocus="this.value = (crpoReview.amounts['${k}'] ?? '').toString();"
+      onblur="this.value = formatIndianCurrencyInput(crpoReview.amounts['${k}']);"
+      style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; text-align:right; width:100%; box-sizing:border-box;" /></div>`;
+  el.innerHTML = box('Basic PO Amount', 'basic') + box('PO GST Amount', 'gst') + box('PO Total Amount', 'total');
+}
+
+function crpoAmountTyped(k, value) {
+  const a = crpoReview.amounts;
+  a.edited = true;
+  a[k] = value;
+  if (k !== 'total') {
+    a.total = String(Math.round((crpoNum(a.basic) + crpoNum(a.gst)) * 100) / 100);
+    const t = document.getElementById('crpo-amt-total');
+    if (t) t.value = formatIndianCurrencyInput(a.total);
+  }
 }
 
 function crpoLineWarning(li) {
@@ -504,6 +531,8 @@ async function crpoSubmit() {
       action: 'commitRevisedPurchaseOrder', _timeoutMs: 180000,
       projectId: crpoReview.projectId, header: h, lineItems: lines,
       removeLineIds: [...crpoReview.removeLineIds],
+      poAmounts: crpoReview.amounts && crpoReview.amounts.edited
+        ? { basic: crpoNum(crpoReview.amounts.basic), gst: crpoNum(crpoReview.amounts.gst), total: crpoNum(crpoReview.amounts.total) } : null,
       fileName: crpoFile ? crpoFile.name : 'Revised_PO', base64Data: crpoReview.base64Data,
       mimeType: crpoFile ? (crpoFile.type || 'application/octet-stream') : 'application/octet-stream',
     });

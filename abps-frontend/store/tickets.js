@@ -228,12 +228,12 @@ async function submitMaterialRequestTicketToBackend() {
       jobCardNumber: jobCardNumberVal,
       boqId: (isServiceSubmit && !isLegacySubmit) ? boqIdVal : "",
       legacyCompanyName: legacyCompanyNameVal,
-      department: departmentSubmitVal,
-      departmentOutgoing: departmentSubmitVal,
       outwardPurpose: outwardPurposeVal,
       expectedReturnItems: departmentVal === "Processing"
         ? (window.ticketExpectedReturnRows || []).map(r => ({ itemCode: r.itemCode, quantity: Number(r.quantity) }))
         : [],
+      department: departmentSubmitVal,
+      departmentOutgoing: departmentSubmitVal,
       ticketTypeCommandString: ticketTypeVal,
       storeTargetScope: chosenStoreTargetScopeStr,
       requestOrReturn: 'Request',
@@ -317,7 +317,9 @@ function startLiveStockPolling() {
   _liveStockPollTimer = setInterval(async () => {
     const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
     if (!selectedMaterial) { stopLiveStockPolling(); return; }
-    await refreshLiveStockForSelectedMaterial();
+    if (window._liveStockPollBusy) return; // previous refresh still running: skip, don't overlap
+    window._liveStockPollBusy = true;
+    try { await refreshLiveStockForSelectedMaterial({ poll: true }); } finally { window._liveStockPollBusy = false; }
   }, 5000); // refresh every 5 seconds
 }
 
@@ -325,7 +327,13 @@ function stopLiveStockPolling() {
   if (_liveStockPollTimer) { clearInterval(_liveStockPollTimer); _liveStockPollTimer = null; }
 }
 
-async function refreshLiveStockForSelectedMaterial() {
+async function refreshLiveStockForSelectedMaterial(opts) {
+  const isPoll = !!(opts && opts.poll);
+  // A newer refresh (or a different material) makes this one stale: never draw it.
+  const runId = (window._liveStockRunId = (window._liveStockRunId || 0) + 1);
+  const pickedAtStart = document.getElementById("ticket-item-selection-dropdown")?.value;
+  const stillCurrent = () => runId === window._liveStockRunId
+    && document.getElementById("ticket-item-selection-dropdown")?.value === pickedAtStart;
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
   const projectId          = document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
@@ -341,7 +349,9 @@ async function refreshLiveStockForSelectedMaterial() {
     // Goods Store belongs in this immediate render too — it was left out, which meant the whole
     // FG pill (including ALLOTTED/USED/REMAINING, which don't need any live network call at all)
     // silently never appeared until the live-count fetch below succeeded.
-    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
+    // Only on the first draw: on the 5-second refresh the box keeps its last
+    // live figures until the new live ones arrive (no cached-then-live flicker).
+    if (!isPoll && projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
       await updateSelectedLiveStockPillCounter(null);
     }
 
@@ -364,13 +374,16 @@ async function refreshLiveStockForSelectedMaterial() {
     const jcmFallbackForItemCode = (window._ticketJobCardMaterialsCache?.records || []).find(
       r => (r.materialName || "").replace(/\s+/g, "").toLowerCase() === cleanKeyForLookup
     );
-    const resolvedItemCode = matchedCatalogEntry?.itemCode || jcmFallbackForItemCode?.itemCode;
+    // The picked option's own item code first (13 Oct 2026): several materials
+    // share a bare name (e.g. one per size), so a name lookup in the catalog
+    // could fetch another size's live stock.
+    const resolvedItemCode = ticketSelectedItemCode() || jcmFallbackForItemCode?.itemCode || matchedCatalogEntry?.itemCode;
     if (!resolvedItemCode) return; // no Item Code found for this material -- nothing to look up
 
     // NOW fire the single network call for live stock counts
     const jobCardNumberForPill = document.getElementById("ticket-job-card-dropdown")?.value || "";
     const data = await apFetch({ action: "getLiveStockForItem", itemCode: resolvedItemCode, projectId: projectId, jobCardNumber: jobCardNumberForPill });
-    if (!data.success) return;
+    if (!data.success || !stillCurrent()) return;
 
     // Also refresh job_card_materials on every tick — a QA check completing,
     // automatic reservation shifting stock, or a BOQ revision changing this
@@ -401,12 +414,14 @@ async function refreshLiveStockForSelectedMaterial() {
     const cleanKey = cleanMaterialName.replace(/\s+/g,"").toLowerCase();
 
     const _invCache = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
-    const existing = _invCache.find(i =>
-      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
-    );
-    if (existing) {
+    // By item code (13 Oct 2026): names on this screen are full names now, so a
+    // name match never found the row and the Add check used a stale total.
+    const existing = (data.stock && _invCache.find(i => i.itemCode === resolvedItemCode))
+      || _invCache.find(i => (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey);
+    if (existing && data.stock) {
       existing.availableStock = data.stock.availableStock;
       existing.reservedStock  = data.stock.reservedStock;
+      if (data.stock.totalStock !== undefined) existing.totalStock = data.stock.totalStock;
       existing.unitType       = data.stock.unitType;
     }
 
@@ -430,6 +445,7 @@ async function refreshLiveStockForSelectedMaterial() {
       }
     }
 
+    if (!stillCurrent()) return;
     await updateSelectedLiveStockPillCounter(data.stock);
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
 }
@@ -638,7 +654,15 @@ async function addItemToShoppingBasketRow() {
       const totalCons = quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0);
       const canIssue = Math.max(0, Number(consMatch.remainingQty) || 0);
       const issueQty = Math.min(totalCons, canIssue);
-      const memoQty = Math.round((totalCons - issueQty) * 1000) / 1000;
+      const shortQty = Math.round((totalCons - issueQty) * 1000) / 1000;
+      // Already requested / on order through Production Memo for this Job Card
+      // is still coming, so only the rest is asked again (13 Oct 2026).
+      const memoComing = Math.max(0, Number(consMatch.memoComing) || 0);
+      const memoQty = Math.max(0, Math.round((shortQty - memoComing) * 1000) / 1000);
+      if (shortQty > 0 && memoComing > 0) {
+        alert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this Job Card.`
+          + (memoQty > 0 ? ` Only ${fmtQty(memoQty)} more will be asked.` : ` Nothing more will be asked; issue the rest when it arrives.`));
+      }
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
       if (memoQty > 0 && !deptForMemo) {
         restoreAddBtn();
@@ -648,10 +672,11 @@ async function addItemToShoppingBasketRow() {
       if (existingCons) {
         existingCons.quantity = issueQty;
         existingCons.memoQty = memoQty;
+        existingCons.shortQty = shortQty;
         existingCons.allottedRemainingLimit = canIssue;
       } else {
         dynamicTicketShoppingBasketArray.push({
-          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty,
+          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty, shortQty,
           unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
           allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
         });
@@ -666,9 +691,17 @@ async function addItemToShoppingBasketRow() {
   // --- RAW MATERIALS STORE: inventory + BOQ check ---
   let activeCacheCollection = cachedInventoryStockCollection;
   
-  const itemData = activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-    || activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-    || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+  // The picked option is a Job Card line's full name: resolve its item code
+  // first and find the stock row by item code (13 Oct 2026). Matching stock by
+  // the first 20 characters of the name could pick a different material.
+  const pickedCode = ticketSelectedItemCode();
+  const pickedRecs = (window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.records) || [];
+  const pickedJcm = (pickedCode && pickedRecs.find(r => r.itemCode === pickedCode))
+    || pickedRecs.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+  const itemData = (pickedJcm && pickedJcm.itemCode && activeCacheCollection.find(i => i.itemCode === pickedJcm.itemCode))
+    || activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+    || (!pickedJcm && (activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)))));
 
   if (!itemData) {
     restoreAddBtn();
@@ -754,7 +787,8 @@ async function addItemToShoppingBasketRow() {
     existingLineItem.allottedRemainingLimit = allottedLimit;
   } else {
     dynamicTicketShoppingBasketArray.push({
-      materialName: itemData.materialName,
+      // Full Name - Rating - Description - Make (the Job Card line's name), not the stock row's bare name.
+      materialName: jcmMatch.materialName || materialName || itemData.materialName,
       quantity: totalRequestedQuantity,
       unitType: itemData.unitType || "NOS",
       requiresBOQIncreaseFlag: isOverAllottedBOQLimit,
@@ -1877,7 +1911,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material —</option>';
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
-          opt.value = r.materialName;
+          opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
           opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
@@ -1941,7 +1975,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
           if (!uniqueMaterialsMapSpare[r.materialName]) {
             uniqueMaterialsMapSpare[r.materialName] = true;
             let opt = document.createElement("option");
-            opt.value = r.materialName;
+            opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             opt.textContent = r.materialName;
             // fetchJobCardMaterials bakes "- Make: X" into materialName,
             // but getSpareStoreStock's own materialName never has it — so
@@ -1992,7 +2026,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
           if (!uniqueMaterialsMapFG[r.materialName]) {
             uniqueMaterialsMapFG[r.materialName] = true;
             let opt = document.createElement("option");
-            opt.value = r.materialName;
+            opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             opt.textContent = r.materialName;
             itemDrop.appendChild(opt);
           }
@@ -2049,7 +2083,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
           if (!uniqueMaterialsMap[r.materialName]) {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
-            opt.value = r.materialName;
+            opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
             if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
@@ -2573,4 +2607,11 @@ function ticketSubmitSuccessHtml(result, outwardPurposeVal) {
       </div>
       <div style="padding:14px 18px; display:flex; flex-direction:column; gap:8px; background:#f0fdf4;">${lines.join("")}</div>
     </div>`;
+}
+
+// Item code of the material picked in Add Item (each option carries it, 13 Oct 2026).
+function ticketSelectedItemCode() {
+  const sel = document.getElementById("ticket-item-selection-dropdown");
+  const opt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  return (opt && opt.value && opt.dataset.itemcode) || "";
 }

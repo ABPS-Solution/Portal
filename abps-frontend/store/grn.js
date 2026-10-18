@@ -154,7 +154,11 @@ async function initializeStoreEntryWorkspaceQueue() {
                 <span style="background:#e0f2fe;color:#0369a1;font-weight:700; margin-left:4px;">INVOICE: ${item.invoiceNumber}</span>
                 ${item.challanNumber ? `<span style="background:#f0fdf4;color:#15803d;font-weight:700; margin-left:4px;">CHALLAN: ${item.challanNumber}</span>` : ''}
               </div>
-              <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
+              <span style="display:flex; align-items:center; gap:8px;">
+                ${localStorage.getItem("isUserSuperAdminGlobal") === "true" ? `<button type="button" onclick="event.stopPropagation(); deleteGateEntryAsSuperAdmin(${jsArg(item.gateNumber)}, this)"
+                  style="width:auto; padding:3px 10px; font-size:0.74rem; font-weight:700; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; cursor:pointer;">Delete Entry</button>` : ''}
+                <span style="background:#cbd5e1;color:#1e293b;font-weight:700; font-size:0.8rem; padding:3px 8px;">${cleanDateDisplay}</span>
+              </span>
             </div>
             <div style="font-size:0.85rem; margin-top:8px; color:var(--muted); font-weight:600; padding-left:2px;">
               Vendor: <strong style="color:var(--text); font-weight:700;">${escapeHtml(item.vendorName || "Designated ABPS Supplier Profile")}</strong>
@@ -266,4 +270,20 @@ function grnProcessingChallanChanged(gateNum) {
   const hit = byDc[v];
   if (!hit) { msg.style.color = "#b91c1c"; msg.textContent = "No open Delivery Challan with material due back matches this number."; return; }
   msg.textContent = "";
+}
+
+// Super Admin: delete a duplicate / accidental Gate Entry (and its GRN) before Q/A.
+async function deleteGateEntryAsSuperAdmin(gateNumber, btn) {
+  if (!await abpsConfirm(`Delete gate entry ${gateNumber} completely? It will be removed as if it was never entered. This cannot be undone.`, { title: "Delete gate entry", okLabel: "Delete" })) return;
+  btn.disabled = true; btn.textContent = "Deleting...";
+  try {
+    const data = await apFetch({ action: "deleteGateEntryAsSuperAdmin", gateNumber });
+    if (!data.success) throw new Error(data.error || "Delete failed.");
+    alert(`Gate entry ${gateNumber}${data.grnNumber ? " / " + data.grnNumber : ""} deleted (${data.lines} line(s)).`);
+    initializeStoreEntryWorkspaceQueue();
+  } catch (e) {
+    if (e.message === "SESSION_EXPIRED") return;
+    alert(e.message);
+    btn.disabled = false; btn.textContent = "Delete Entry";
+  }
 }

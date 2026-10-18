@@ -559,7 +559,7 @@ function ticketBatchCardsHtml(tickets) {
         <td style="${td}">${escapeHtml(item.unitType || "")}</td>
         <td style="${td} color:#0369a1; font-weight:700;">${rem !== null && rem !== undefined ? fmtQty(rem) : "—"}</td>
         <td style="${td} font-family:monospace; font-weight:700; color:var(--brand);">${fmtQty(req)}</td>
-        <td style="${td}"><input type="number" class="tbatch-actual" data-ticket="${escapeHtml(t.ticketId)}" data-code="${escapeHtml(item.itemCode)}"
+        <td style="${td}"><input type="number" class="tbatch-actual" data-ticket="${escapeHtml(t.ticketId)}" data-code="${escapeHtml(item.itemCode)}" data-label="${escapeHtml((item.materialName || item.itemCode) + " / " + setOf(t.jobCardNumber))}"
           value="${req}" min="0" max="${req}" step="any" oninput="if(Number(this.value)>${req})this.value=${req}"
           style="width:100%; box-sizing:border-box; padding:5px; text-align:center; font-family:monospace; font-weight:700; border:1.5px solid var(--border); border-radius:4px;" /></td>
       </tr>`;
@@ -593,15 +593,30 @@ async function ticketBatchAction(batchId, cmd) {
   const ok = await abpsConfirm(cmd === "APPROVE"
     ? `Approve and release every Job Card in bulk ticket ${batchId}?` : `Reject every Job Card in bulk ticket ${batchId}?`);
   if (!ok) return;
+  const banner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
   const tickets = {};
   if (cmd === "APPROVE") {
-    document.querySelectorAll(`#tbatch-card-${CSS.escape(batchId)} .tbatch-actual`).forEach(inp => {
+    const inputs = [...document.querySelectorAll(`#tbatch-card-${CSS.escape(batchId)} .tbatch-actual`)];
+    const blank = inputs.filter(inp => String(inp.value).trim() === "");
+    if (blank.length) {
+      if (banner) {
+        banner.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; margin-bottom:12px;";
+        banner.innerHTML = `<strong>Enter Actual Qty for:</strong> ${blank.map(i => escapeHtml(i.dataset.label || i.dataset.code)).join(", ")}`;
+        banner.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      blank[0].focus();
+      return;
+    }
+    const zeros = inputs.filter(inp => Number(inp.value) === 0);
+    if (zeros.length && !(await abpsConfirm(`These lines will be approved with 0 issued: ${zeros.map(i => i.dataset.label || i.dataset.code).join(", ")}. Continue?`))) return;
+    inputs.forEach(inp => {
       const t = inp.dataset.ticket;
       tickets[t] = tickets[t] || { actualQuantities: {} };
-      tickets[t].actualQuantities[inp.dataset.code] = Number(inp.value) || 0;
+      tickets[t].actualQuantities[inp.dataset.code] = Number(inp.value);
     });
   }
-  const banner = document.getElementById("store-approvals-runtime-inline-feedback-banner");
+  const actionBtns = [...document.querySelectorAll(`#tbatch-card-${CSS.escape(batchId)} button`)];
+  actionBtns.forEach(b => { b.disabled = true; });
   showBlockingOverlay(cmd === "APPROVE" ? "Releasing bulk ticket..." : "Rejecting bulk ticket...");
   try {
     const data = await apFetch({ action: "actionTicketBatchApproval", batchId, managerDecisionCommand: cmd, tickets });
@@ -615,9 +630,11 @@ async function ticketBatchAction(batchId, cmd) {
         : `<strong>Could not ${cmd === "APPROVE" ? "approve" : "reject"}:</strong> ${escapeHtml(data.error || "")}`;
       banner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    if (!data.success) actionBtns.forEach(b => { b.disabled = false; });
     if (data.success && typeof initializeStoreManagerApprovalsWorkspace === "function") initializeStoreManagerApprovalsWorkspace();
   } catch (e) {
     hideBlockingOverlay();
+    actionBtns.forEach(b => { b.disabled = false; });
     if (e.message !== "SESSION_EXPIRED" && banner) { banner.style.display = "block"; banner.textContent = e.message; }
   }
 }
