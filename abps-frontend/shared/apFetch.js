@@ -172,6 +172,8 @@ function applyServerRoleFlags(permData) {
   // Access) never shows the Docs button.
   const docsBtn = document.getElementById("header-docs-btn");
   if (docsBtn) docsBtn.style.display = permData.deviceRestricted ? "none" : "";
+  const curProjBtn = document.getElementById("header-curproj-btn");
+  if (curProjBtn) curProjBtn.style.display = (permData.deviceRestricted || (typeof cpbIsPhone === "function" && cpbIsPhone())) ? "none" : "";
   localStorage.setItem("isUserAdminGlobal", permData.isAdmin ? "true" : "false");
   // isUserSuperAdminGlobal (17 Sep 2026, super-admin tier) — same
   // always-fresh-on-every-load mechanism as isUserAdminGlobal above, for

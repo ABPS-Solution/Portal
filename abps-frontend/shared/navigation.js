@@ -295,6 +295,7 @@ function returnToDashboard() {
   if(document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if(document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
   if(document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
+  if(document.getElementById("canvas-module-current-projects")) document.getElementById("canvas-module-current-projects").style.display = "none";
   if(document.getElementById("canvas-module-drive-documents")) document.getElementById("canvas-module-drive-documents").style.display = "none";
 
   document.getElementById("module-workspace-container").style.display = "none";
@@ -1012,6 +1013,7 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
   if (document.getElementById("canvas-module-product-serial-tracking")) document.getElementById("canvas-module-product-serial-tracking").style.display = "none";
   if (document.getElementById("canvas-module-daily-timeline")) document.getElementById("canvas-module-daily-timeline").style.display = "none";
   if (document.getElementById("canvas-module-documentation")) document.getElementById("canvas-module-documentation").style.display = "none";
+  if (document.getElementById("canvas-module-current-projects")) document.getElementById("canvas-module-current-projects").style.display = "none";
   if (document.getElementById("canvas-module-drive-documents")) document.getElementById("canvas-module-drive-documents").style.display = "none";
   if (document.getElementById("canvas-module-production-planning")) document.getElementById("canvas-module-production-planning").style.display = "none";
   if (document.getElementById("canvas-module-assign-material-requirement-date")) document.getElementById("canvas-module-assign-material-requirement-date").style.display = "none";
@@ -1268,6 +1270,10 @@ function switchActiveDashboardModule(targetCanvasModuleId) {
     document.getElementById("dashboard-view").style.display = "none";
     const ddocCanvas = document.getElementById("canvas-module-drive-documents");
     if (ddocCanvas) { ddocCanvas.style.display = "block"; initializeDriveDocumentsPanel(); }
+  } else if (targetCanvasModuleId === 'current-projects') {
+    document.getElementById("dashboard-view").style.display = "none";
+    const cpbCanvas = document.getElementById("canvas-module-current-projects");
+    if (cpbCanvas) { cpbCanvas.style.display = "block"; initializeCurrentProjectsPanel(); }
   } else if (targetCanvasModuleId === 'documentation') {
     document.getElementById("dashboard-view").style.display = "none";
     const docCanvas = document.getElementById("canvas-module-documentation");

@@ -79,7 +79,43 @@
   .header-actions-block { display: flex; flex-direction: row; align-items: center; gap: 12px; }
   .user-full-name { font-size: 1.05rem; font-weight: 700; }
   .user-display-username { font-size: 0.68rem; color: #d0d9e4; font-family: monospace; }
-  .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
+  .logout-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #fff; padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.01em; line-height: 1.2; text-transform: none; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
+  .logout-btn:hover { background: rgba(255,255,255,0.24); border-color: rgba(255,255,255,0.55); }
+  .logout-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .logout-btn .hdr-ico { font-size: 0.9rem; line-height: 1; opacity: 0.9; }
+  .logout-btn.hdr-signout { background: transparent; }
+  .logout-btn.hdr-signout:hover { background: rgba(255,255,255,0.16); }
+  .cpb-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .cpb-toolbar #cpb-search { flex: 1 1 260px; width: auto; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); }
+  .cpb-toolbar #cpb-status { flex: 0 0 auto; width: auto; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); }
+  .cpb-costing-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .cpb-costing-toggle input { width: auto; margin: 0; }
+  .cpb-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+  .cpb-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .cpb-sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.12); }
+  .cpb-summary { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+  .cpb-table-wrap { overflow: auto; max-height: calc(100vh - 230px); border: 1px solid var(--border); border-radius: var(--radius); }
+  .cpb-table { border-collapse: separate; border-spacing: 0; font-size: 0.78rem; width: max-content; min-width: 100%; }
+  .cpb-table th, .cpb-table td { border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; white-space: nowrap; }
+  .cpb-table thead th { position: sticky; top: 0; z-index: 2; background: #1e3a5f; color: #fff; font-weight: 600; max-width: 110px; white-space: normal; line-height: 1.2; }
+  .cpb-table thead th.cpb-first { z-index: 3; }
+  .cpb-table .cpb-first { position: sticky; left: 0; z-index: 1; background: #fff; text-align: left; min-width: 220px; max-width: 260px; white-space: normal; box-shadow: 1px 0 0 #cbd5e1; }
+  .cpb-table tbody tr:hover .cpb-first { background: #f1f5f9; }
+  .cpb-pid { font-weight: 700; font-size: 0.78rem; word-break: break-all; }
+  .cpb-pid a { color: var(--brand); text-decoration: none; }
+  .cpb-pid a:hover { text-decoration: underline; }
+  .cpb-co { font-weight: 500; color: #334155; font-size: 0.78rem; }
+  .cpb-status { display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: #e2e8f0; color: #334155; margin-left: 4px; }
+  .cpb-st-Active { background: #dcfce7; color: #166534; }
+  .cpb-st-Inactive { background: #fef3c7; color: #92400e; }
+  .cpb-cell { min-width: 74px; font-weight: 600; cursor: default; }
+  .cpb-done { background: #dcfce7; color: #166534; }
+  .cpb-partial { background: #ffedd5; color: #9a3412; }
+  .cpb-pending { background: #fee2e2; color: #991b1b; }
+  .cpb-na { background: #f1f5f9; color: #64748b; }
+  .cpb-cost { background: #f8fafc; font-weight: 600; color: #0f172a; }
+  .cpb-msg { padding: 30px; text-align: center; color: var(--muted); }
+  .cpb-err { color: var(--warn); }
   
   /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
   .dashboard-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
@@ -1250,9 +1286,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
       </div>
-      <button id="header-drive-btn" class="logout-btn" onclick="openDriveDocumentsPanel()" title="Documents" style="margin-right:6px; display:none;">Documents</button>
-      <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Information" style="margin-right:6px;">Information</button>
-      <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
+      <button id="header-curproj-btn" class="logout-btn" onclick="openCurrentProjectsBoard()" title="Current Projects" style="display:none;"><span class="hdr-ico" aria-hidden="true">&#9638;</span>Current Projects</button>
+      <button id="header-drive-btn" class="logout-btn" onclick="openDriveDocumentsPanel()" title="Documents" style="display:none;"><span class="hdr-ico" aria-hidden="true">&#9636;</span>Documents</button>
+      <button id="header-docs-btn" class="logout-btn" onclick="switchActiveDashboardModule('documentation')" title="Information"><span class="hdr-ico" aria-hidden="true">&#9432;</span>Information</button>
+      <button class="logout-btn hdr-signout" onclick="executeLogout()" title="Sign Out">Sign Out</button>
     </div>
   </header>
 
@@ -3000,6 +3037,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
     <h2 class="panel-title">Daily Timeline</h2>
     <div id="dtl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-current-projects" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitCurrentProjectsBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Current Projects</h2>
+    <div id="cpb-mount"></div>
     </div>
   </div>
 
@@ -6386,6 +6434,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="shared/typeahead.js"></script>
 <script src="shared/navigation.js"></script>
 <script src="shared/documentation.js"></script>
+<script src="shared/current-projects.js"></script>
 <script src="shared/drive-documents.js"></script>
 <script src="store/consumable-requests.js"></script>
 <script src="project/manufacturing-clearance.js"></script>

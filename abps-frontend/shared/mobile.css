@@ -23,6 +23,7 @@
   .navigation-action-header-row > [style*="visibility: hidden"], .navigation-action-header-row > [style*="visibility:hidden"] { display: none !important; }
 
   /* Header and department tabs */
+  #header-curproj-btn { display: none !important; }
   #main-global-nav-header-bar, .main-global-nav-header-bar { flex-wrap: wrap; gap: 6px; padding-left: 10px !important; padding-right: 10px !important; }
   #dept-tabs-bar, .dept-tabs-bar { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   #dept-tabs-bar > *, .dept-tabs-bar > * { flex: 0 0 auto; }
