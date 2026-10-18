@@ -92,6 +92,7 @@ const CPB_STATE_WORDS = { done: "Completed", partial: "Partially", pending: "Pen
 function cpbCellHtml(cell, key) {
   if (!cell) return `<td class="cpb-cell cpb-na"></td>`;
   let text = CPB_STATE_WORDS[cell.state] || cell.text || "Not needed";
+  if (/^\d+\/\d+$/.test(cell.text || "")) text = cell.text;
   if (key === "delivery") text = cell.date ? formatOrdinalDate(cell.date) : (cell.text || "Not set");
   const tip = [cell.tip, cell.date ? formatOrdinalDate(cell.date) : ""].filter(Boolean).join(". ");
   return `<td class="cpb-cell cpb-${escapeHtml(cell.state)}" title="${escapeHtml(tip)}">${escapeHtml(text)}</td>`;
