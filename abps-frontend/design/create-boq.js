@@ -209,10 +209,9 @@ async function importCBOQFromExisting() {
         make: (catalogEntry && catalogEntry.make) || row.make || "",
         quantityFor1Set: row.quantityFor1Set !== null && row.quantityFor1Set !== undefined ? cleanNum(row.quantityFor1Set) : "",
         unit: row.unit || "",
-        // Design Rate / Qty is deliberately NOT imported — the operator must
-        // re-enter it fresh for this BOQ rather than carrying over a rate
-        // that may no longer be accurate.
-        designRatePerQuantity: "",
+        // Design Rate / Qty is copied from the source BOQ (editable). Finished
+        // Goods rows stay blank: the server sets them (applyServerFgRates).
+        designRatePerQuantity: (row.typeOfStore !== "Finished Goods Store" && Number(row.designRatePerQuantity) > 0) ? cleanNum(row.designRatePerQuantity) : "",
         descriptionId: row.descriptionId || null,
         descriptionOfMaterial: row.descriptionOfMaterial || ""
       };
