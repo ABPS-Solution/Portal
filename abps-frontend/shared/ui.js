@@ -335,3 +335,46 @@ function abpsConfirm(message, opts) {
     ok.focus();
   });
 }
+
+// Row + column hover highlight. Call with a table or any container that holds one;
+// the mark survives the table being re-rendered inside a container. Rows marked
+// data-xhair-skip, or whose single cell spans the table (expanded detail rows), are ignored.
+function enableTableCrosshair(el) {
+  if (!el || (window.matchMedia && window.matchMedia("(hover: none)").matches)) return;
+  el.setAttribute("data-xhair", "1");
+  if (window._xhairWired) return;
+  window._xhairWired = true;
+  const colOf = (cell) => { let i = 0, c = cell.previousElementSibling; while (c) { i += c.colSpan || 1; c = c.previousElementSibling; } return i; };
+  const isDetail = (tr) => tr.hasAttribute("data-xhair-skip") || (tr.cells.length === 1 && tr.cells[0].colSpan > 1);
+  const clear = () => {
+    document.querySelectorAll(".xhair-row, .xhair-col, .xhair-cell").forEach(n => n.classList.remove("xhair-row", "xhair-col", "xhair-cell"));
+    window._xhairCell = null;
+  };
+  document.addEventListener("mouseover", (ev) => {
+    const cell = ev.target.closest && ev.target.closest("td, th");
+    if (cell === window._xhairCell) return;
+    const table = cell && cell.closest("table");
+    const tr = cell && cell.parentElement;
+    const mark = table && table.closest("[data-xhair]");
+    const outer = mark && mark !== table && table.parentElement.closest("table");
+    if (!mark || (outer && mark.contains(outer)) || !tr || tr.parentElement.tagName !== "TBODY" || isDetail(tr)) {
+      if (window._xhairCell) clear();
+      return;
+    }
+    clear();
+    window._xhairCell = cell;
+    const col = colOf(cell);
+    tr.classList.add("xhair-row");
+    cell.classList.add("xhair-cell");
+    for (const r of table.rows) {
+      if (r.parentElement.tagName === "TBODY" && isDetail(r)) continue;
+      let i = 0;
+      for (const c of r.cells) {
+        const span = c.colSpan || 1;
+        if (col >= i && col < i + span) { if (span === 1) c.classList.add("xhair-col"); break; }
+        i += span;
+      }
+    }
+  });
+  document.documentElement.addEventListener("mouseleave", clear);
+}

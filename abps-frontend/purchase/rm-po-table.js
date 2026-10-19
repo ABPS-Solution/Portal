@@ -261,6 +261,7 @@ function rptRender() {
   }
   const n = RPT_COLS.length + 1;
   const arrow = (k) => rptSort.key === k ? (rptSort.dir < 0 ? " ▼" : " ▲") : "";
+  enableTableCrosshair(box);
   box.innerHTML = `
     <div class="rpt-scroll" style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
       <table id="rpt-table">
@@ -328,7 +329,7 @@ function rptDetailHtml(r) {
   const th = (t, al) => `<th style="padding:8px 6px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; overflow-wrap:anywhere; ${CELL_B}">${t}</th>`;
   const td = (x, al) => `<td style="padding:8px 6px; text-align:${al || "center"}; vertical-align:top; overflow-wrap:anywhere; ${CELL_B}">${x}</td>`;
   const cols = (ws) => `<colgroup>${ws.map(w => `<col style="width:${w}%;">`).join("")}</colgroup>`;
-  const poText = (l) => l.additionalDescription || l.materialName || "";
+  const poText = (l) => (r.poType === "Transport" ? (l.additionalDescription || l.materialName) : (l.materialName || l.additionalDescription)) || "";
   let table;
   if (r.poType === "Transport") {
     table = `<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.85rem; min-width:560px; background:#fff;">${cols([46, 22, 12, 7, 13])}<thead><tr>${th("Description", "left")}${th("Projects", "left")}${th("Rate")}${th("Discount %")}${th("Amount")}</tr></thead>

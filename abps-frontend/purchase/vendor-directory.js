@@ -130,6 +130,7 @@ function vdRenderCards() {
     return;
   }
   const n = VD_COLS.length + 1;
+  enableTableCrosshair(box);
   box.innerHTML = `
     <div class="vd-scroll" style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius); background:#fff;">
       <table id="vd-table">

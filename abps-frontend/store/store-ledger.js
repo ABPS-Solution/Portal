@@ -161,6 +161,7 @@ function renderStoreLedgerTable(prefix, rows) {
     bodyEl.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--muted);">No materials found for this range.</td></tr>`;
     return;
   }
+  enableTableCrosshair(bodyEl.closest("table"));
   bodyEl.innerHTML = rows.map(r => `
     <tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px; font-weight:600;">${escapeHtml(r.materialName || '—')}</td>

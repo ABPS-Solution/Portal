@@ -105,6 +105,7 @@ async function runNewLeadsReport(opts) {
       return;
     }
     window._nlrLastFilters = f;
+    enableTableCrosshair(out);
     out.innerHTML = nlrRenderReport(data, f);
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED") out.innerHTML = `<div style="color:var(--warn); font-weight:700;">${escapeHtml(e.message)}</div>`;

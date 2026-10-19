@@ -152,6 +152,7 @@ function pcostRender() {
     <td>${pcostMoney(tot.rm)}</td><td>${pcostMoney(tot.memo)}</td><td>${pcostMoney(tot.tr)}</td><td>${pcostMoney(tot.cur)}</td>
     <td>${pcostMoney(tot.recv)}<div class="pcost-muted">${pcostPct(ratio(tot.recv, tot.poGst))}</div></td>
     <td>${pcostPct(ratio(tot.actCost, tot.actPo))}</td></tr></tbody></table></div>`;
+  enableTableCrosshair(wrap);
   wrap.innerHTML = html;
   rows.filter(r => pcostOpen.has(r.projectId)).forEach(r => pcostLoadBreakdown(r.projectId));
 }

@@ -136,6 +136,7 @@ function cpbRenderTable() {
     }).join("");
     return `<tr><th class="cpb-first" title="${escapeHtml(r.companyName || "")}"><div class="cpb-pid">${idCell} <span class="cpb-status cpb-st-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></div></th>${cells}</tr>`;
   }).join("");
+  enableTableCrosshair(wrap);
   wrap.innerHTML = `<table class="cpb-table"><thead><tr><th class="cpb-first">Project</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
