@@ -3,11 +3,12 @@ async function openCPOAllocationPicker(rowId) {
   if (!row) return;
   if (!row.itemCode) { alert("Select the material for this row first — the PRN list depends on which item code is being purchased."); return; }
 
-  let prns = [], memoReqs = [];
+  let prns = [], memoReqs = [], pendingBoqs = [];
   try {
     const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode });
     prns = (res && res.success) ? (res.prns || []) : [];
     memoReqs = (res && res.success) ? (res.memoRequests || []) : [];
+    pendingBoqs = (res && res.success) ? (res.pendingBoqs || []) : [];
   } catch (e) {
     alert("Could not load the PRN list for this material: " + e.message);
     return;
@@ -16,6 +17,7 @@ async function openCPOAllocationPicker(rowId) {
   // Qty (lowest design_rate_per_quantity among the PRNs actually chosen)
   // without a second round trip — only one allocation modal is ever open.
   window._cpoAllocOpenPrns = prns;
+  window._cpoAllocPendingBoqs = pendingBoqs;
 
   const existing = document.getElementById("cpo-alloc-modal");
   if (existing) existing.remove();
@@ -25,6 +27,7 @@ async function openCPOAllocationPicker(rowId) {
 
   const existingByPrn = Object.fromEntries((row.allocations || []).map(a => [a.prnId, a.quantity]));
   const existingByMemo = Object.fromEntries((row.memoAllocations || []).map(a => [String(a.requestId), a.quantity]));
+  const existingByBoq = Object.fromEntries((row.boqAllocations || []).map(a => [String(a.boqId), a.quantity]));
   let remaining = lineQty;
   const prefilled = prns.map(p => {
     if (existingByPrn[p.prnId] !== undefined) {
@@ -76,7 +79,33 @@ async function openCPOAllocationPicker(rowId) {
     </div>`;
   }).join("");
 
-  const noPrnNotice = prns.length === 0 && memoReqs.length === 0
+  // "PRN pending": Authorized BOQs with no PRN yet. The quantity is what the
+  // PRN would need with Store Qty taken as 0, less what other POs already
+  // hold for it. This row's own saved quantity is added back to its cap.
+  const pendingList = pendingBoqs.slice();
+  Object.keys(existingByBoq).forEach(id => {
+    if (!pendingList.some(b => String(b.boqId) === id)) pendingList.push({ boqId: id, stillToOrder: 0, projectId: "", productName: "" });
+  });
+  const pendingRowsHtml = pendingList.map(b => {
+    const q = existingByBoq[String(b.boqId)] !== undefined ? (Number(existingByBoq[String(b.boqId)]) || 0) : 0;
+    const cap = (Number(b.stillToOrder) || 0) + q;
+    return `
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid #c4b5fd; background:#f5f3ff; border-radius:6px; margin-bottom:6px; font-size:0.85rem;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${escapeHtml(b.productName || "")}${b.productRating ? " " + escapeHtml(b.productRating) : ""}
+          <span style="display:inline-block; margin-left:6px; font-size:0.7rem; font-weight:800; color:#5b21b6; background:#ede9fe; padding:1px 7px; border-radius:999px;">PRN pending</span></div>
+        <div style="font-size:0.72rem; color:var(--muted); overflow-wrap:anywhere;">${escapeHtml(b.boqId || "")}${b.projectId ? " · " + escapeHtml(b.projectId) : ""}</div>
+      </div>
+      <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(cap)}</span>
+      <input type="number" min="0" max="${cap}" step="any"
+        class="cpo-alloc-input" data-boqid="${escapeHtml(String(b.boqId))}" data-max="${cap}"
+        value="${q > 0 ? q : ""}" placeholder="0"
+        oninput="handleCPOAllocInput(this, ${lineQty})"
+        style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:1.05rem;">
+    </div>`;
+  }).join("");
+
+  const noPrnNotice = prns.length === 0 && memoReqs.length === 0 && pendingList.length === 0
     ? `<div style="padding:10px 12px; margin-bottom:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; font-size:0.8rem; color:#78350f;">No authorized PRN currently needs "${row.itemCode}". This line will be ordered entirely as extra available stock unless you add allocations to PRNs.</div>`
     : "";
 
@@ -98,7 +127,7 @@ async function openCPOAllocationPicker(rowId) {
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
         <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${escapeHtml(row.unit || "")} of ${row.itemCode} to PRNs</div>
       </div>
-      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${memoRowsHtml}${extraRowHtml}</div>
+      <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${pendingRowsHtml}${memoRowsHtml}${extraRowHtml}</div>
       <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
       <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc;">
         <button onclick="document.getElementById('cpo-alloc-modal').remove()" style="padding:9px 18px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>

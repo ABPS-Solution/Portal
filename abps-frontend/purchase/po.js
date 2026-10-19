@@ -422,15 +422,17 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
 
   const rowsHtml = lineItems.map((l) => {
     const allocs = l.allocations || [];
+    const boqAllocsView = l.boqAllocations || [];
     // Extra = ordered qty not tied to any PRN, mirroring Create PO's allot chips.
-    const allocSum = allocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const allocSum = [...allocs, ...boqAllocsView].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const pendingChipsView = boqAllocsView.map(a => `<div style="display:inline-block; background:#ede9fe; color:#5b21b6; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${escapeHtml(a.boqId || '')}">PRN pending: ${escapeHtml(a.boqId || '')}: <strong>${fmt(a.quantity)}</strong></div>`).join("");
     const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 100) / 100;
     const projectChips = isTransportPO
       ? ((Array.isArray(l.projectIds) && l.projectIds.length ? l.projectIds : [l.projectId]).filter(Boolean)
           .map(p => `<div style="display:inline-block; background:#ede9fe; color:#6d28d9; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;">${escapeHtml(p)}</div>`).join("")
         + ((l.projectIds || []).length > 1 ? `<div style="font-size:0.72rem; color:#475569;">Split equally</div>` : ""))
-      : allocs.length
-      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")}: <strong>${fmt(a.quantity)}</strong></div>`).join("")
+      : (allocs.length || boqAllocsView.length)
+      ? allocs.map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${(a.prnId||'').replace(/^PRN_/, "")}: <strong>${fmt(a.quantity)}</strong></div>`).join("") + pendingChipsView
         + (extraQty > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${fmt(extraQty)}</strong></div>` : "")
       : (extraQty > 0
           ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px;">Extra: <strong>${fmt(extraQty)}</strong></div>`
@@ -786,7 +788,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           return {
             id: window.cpoRowSeq, description: li.description || "", additionalDescription: li.additionalDescription || "", itemCode: li.itemCode || "",
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
-            projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [],
+            projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [], boqAllocations: li.boqAllocations || [],
             projectIds: Array.isArray(li.projectIds) ? li.projectIds : (li.projectId ? [li.projectId] : []), lineKey: li.lineKey || "",
             _allocationTouched: true, _allocatedForQty: qty,
             designRatePerQuantity: li.designRatePerQuantity != null ? Number(li.designRatePerQuantity) : null,
@@ -1151,7 +1153,8 @@ function renderCPOMaterialRows() {
   body.innerHTML = window.cpoMaterialRows.map((row, idx) => {
     if (cpoIsTransport()) return cpoTransportRowHtml(row, idx);
     const allocList = row.allocations || [];
-    const allocSum = allocList.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const boqAllocList = row.boqAllocations || [];
+    const allocSum = [...allocList, ...boqAllocList].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const lineQtyNow = parseFloat(row.quantity) || 0;
     const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
 
@@ -1195,11 +1198,13 @@ function renderCPOMaterialRows() {
           <a href="javascript:void(0)" class="cpo-change-name" onclick="cpoChangeRowMaterial(${row.id})" style="font-size:0.78rem; font-weight:700; color:var(--brand);">Change</a>
         </div>`;
 
-    const prnChips = allocList.map(a => `<span style="display:inline-block; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ");
-    const allocOk = allocList.length > 0 && Math.abs(unallocNow) < 1e-9;
-    const allocCheck = (!allocList.length && row._allocationTouched)
+    const prnChips = allocList.map(a => `<span style="display:inline-block; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; background:#e0f2fe; color:var(--brand); font-size:0.74rem; padding:3px 8px; border-radius:4px;">${esc(a.prnId)}: <strong>${a.quantity}</strong></span>`).join(" ")
+      + boqAllocList.map(a => ` <span style="display:inline-block; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; background:#ede9fe; color:#5b21b6; font-size:0.74rem; padding:3px 8px; border-radius:4px;">PRN pending: ${esc(a.boqId)}: <strong>${a.quantity}</strong></span>`).join("");
+    const hasAnyAlloc = allocList.length > 0 || boqAllocList.length > 0;
+    const allocOk = hasAnyAlloc && Math.abs(unallocNow) < 1e-9;
+    const allocCheck = (!hasAnyAlloc && row._allocationTouched)
       ? `<span style="font-size:0.78rem; font-weight:700; color:#b45309;">All ${fmtQty(lineQtyNow)} as extra stock (no PRN)</span>`
-      : allocList.length
+      : hasAnyAlloc
       ? `<span style="font-size:0.78rem; font-weight:700; color:${allocOk ? '#15803d' : '#b45309'};">${fmtQty(allocSum)} / ${fmtQty(lineQtyNow)} allocated${unallocNow > 0 ? ` (${fmtQty(unallocNow)} extra)` : ''}</span>`
       : `<span style="font-size:0.78rem; font-weight:700; color:#b91c1c;">No PRNs allocated</span>`;
 
@@ -1363,6 +1368,7 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   row.unit = unitType || "Nos";
   row.allocations = []; // old allocations were tied to the previous item code
   row.memoAllocations = [];
+  row.boqAllocations = [];
   row._allocationTouched = false;
   row.designRatePerQuantity = null; // was derived from the old item code's allocated PRNs
   // Description of Material defaults to the selected Material Name (11 Sep
@@ -1400,12 +1406,13 @@ function handleCPOQtyBlur(rowId) {
   if (!row || !row._allocationTouched) return;
   const newQty = parseFloat(row.quantity) || 0;
   if (newQty === row._allocatedForQty) return;
-  if ((row.allocations || []).length > 0) {
+  if ((row.allocations || []).length > 0 || (row.boqAllocations || []).length > 0) {
     // Real PRN allocations no longer necessarily make sense against a
     // different quantity — clear them and force the operator to
     // re-confirm via Allocate to PRNs.
     row.allocations = [];
     row.memoAllocations = [];
+    row.boqAllocations = [];
     row._allocationTouched = false;
     row.designRatePerQuantity = null;
   } else {
@@ -1550,18 +1557,19 @@ function saveCPOAllocationPicker(rowId) {
   const modal = document.getElementById("cpo-alloc-modal");
   if (!row || !modal) return;
   const lineQty = parseFloat(row.quantity) || 0;
-  const allocs = [], memoAllocs = [];
+  const allocs = [], memoAllocs = [], boqAllocs = [];
   let sum = 0;
   for (const inp of modal.querySelectorAll(".cpo-alloc-input")) {
     const q = parseFloat(inp.value) || 0;
     if (q <= 0) continue;
     const cap = parseFloat(inp.dataset.max) || 0;
     if (q > cap + 1e-9) {
-      alert(`${inp.dataset.prnid || ("Production Memo request #" + inp.dataset.memoid)} only needs ${cap} more of this material, cannot allocate ${q}.`);
+      alert(`${inp.dataset.prnid || (inp.dataset.boqid ? "PRN pending " + inp.dataset.boqid : ("Production Memo request #" + inp.dataset.memoid))} only needs ${cap} more of this material, cannot allocate ${q}.`);
       return;
     }
     sum += q;
     if (inp.dataset.memoid) memoAllocs.push({ requestId: Number(inp.dataset.memoid), quantity: q });
+    else if (inp.dataset.boqid) boqAllocs.push({ boqId: inp.dataset.boqid, quantity: q });
     else allocs.push({ prnId: inp.dataset.prnid, quantity: q });
   }
   if (sum > lineQty + 1e-9) {
@@ -1570,15 +1578,18 @@ function saveCPOAllocationPicker(rowId) {
   }
   row.allocations = allocs;
   row.memoAllocations = memoAllocs;
+  row.boqAllocations = boqAllocs;
   row._allocatedForQty = lineQty;
   row._allocationTouched = true;
   // Design Rate / Qty = the lowest design_rate_per_quantity (from the
   // allocated PRN's own BOQ, same item code) among only the PRNs this
   // row actually got allocated to — not every open PRN for the material.
   const openPrns = window._cpoAllocOpenPrns || [];
+  const pendingBoqsOpen = window._cpoAllocPendingBoqs || [];
   const rates = allocs
     .map(a => openPrns.find(p => p.prnId === a.prnId))
     .map(p => p && p.designRatePerQuantity)
+    .concat(boqAllocs.map(a => (pendingBoqsOpen.find(b => b.boqId === a.boqId) || {}).designRatePerQuantity))
     .filter(r => r != null)
     .map(Number);
   row.designRatePerQuantity = rates.length ? Math.min(...rates) : null;
@@ -1637,7 +1648,7 @@ async function submitCreatePO() {
     if (!row._allocationTouched) {
       return showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before submitting.`);
     }
-    const aSum = [...(row.allocations || []), ...(row.memoAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const aSum = [...(row.allocations || []), ...(row.memoAllocations || []), ...(row.boqAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
       return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
     }
@@ -1657,7 +1668,8 @@ async function submitCreatePO() {
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
       allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 })),
-      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 }))
+      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 })),
+      boqAllocations: (r.boqAllocations || []).map(a => ({ boqId: a.boqId, quantity: Number(a.quantity) || 0 }))
     })),
     cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
     sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),
@@ -1751,7 +1763,7 @@ async function authorizePOFromForm() {
     if (!row._allocationTouched) {
       return showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before authorizing.`);
     }
-    const aSum = [...(row.allocations || []), ...(row.memoAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const aSum = [...(row.allocations || []), ...(row.memoAllocations || []), ...(row.boqAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
       return showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`);
     }
@@ -1776,7 +1788,8 @@ async function authorizePOFromForm() {
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
       allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 })),
-      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 }))
+      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 })),
+      boqAllocations: (r.boqAllocations || []).map(a => ({ boqId: a.boqId, quantity: Number(a.quantity) || 0 }))
     })),
     cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
     sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),
@@ -1899,7 +1912,7 @@ function buildCPOEditPayload(banner) {
     if (!row._allocationTouched) {
       showErr(`Row ${n}: click "Allocate to PRNs" and confirm the split (or Extra) before saving.`); return null;
     }
-    const aSum = [...(row.allocations || []), ...(row.memoAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+    const aSum = [...(row.allocations || []), ...(row.memoAllocations || []), ...(row.boqAllocations || [])].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     if (aSum > (parseFloat(row.quantity) || 0) + 1e-9) {
       showErr(`Row ${n}: allocated ${aSum} across PRNs but only ${row.quantity} is being ordered.`); return null;
     }
@@ -1916,7 +1929,8 @@ function buildCPOEditPayload(banner) {
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
       allocations: (r.allocations || []).map(a => ({ prnId: a.prnId, quantity: Number(a.quantity) || 0 })),
-      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 }))
+      memoAllocations: (r.memoAllocations || []).map(a => ({ requestId: a.requestId, quantity: Number(a.quantity) || 0 })),
+      boqAllocations: (r.boqAllocations || []).map(a => ({ boqId: a.boqId, quantity: Number(a.quantity) || 0 }))
     })),
     cgstPercent: document.getElementById("cpo-cgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-cgst").value) || 0),
     sgstPercent: document.getElementById("cpo-sgst").value.trim() === "" ? 9 : (parseFloat(document.getElementById("cpo-sgst").value) || 0),

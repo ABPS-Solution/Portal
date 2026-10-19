@@ -688,9 +688,11 @@ async function submitMcClearance(projectId) {
     newMfcQuantity: state[lineId].needsBoqJc === false ? state[lineId].orderQuantity : state[lineId].newMfcQuantity,
     needsBoqJc: state[lineId].needsBoqJc !== false,
     buildType: state[lineId].buildType,
-  }));
+  }))
+    // a row with no Standard Product and no New MFC Quantity is simply not cleared now
+    .filter(r => !(r.needsBoqJc && !r.standardItemCode && !(Number(r.newMfcQuantity) > 0)));
   if (rows.length === 0) {
-    alert("Every product row on this project is currently On Hold — nothing to submit.");
+    alert("Nothing to submit: pick a Standard Product and New MFC Quantity on at least one row that is not On Hold.");
     return;
   }
 

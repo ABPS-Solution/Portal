@@ -1149,7 +1149,10 @@ async function refreshRPRNDeltaLiveStock() {
       // only by free stock above Current PRN Store Qty (what the PRN still
       // holds), never above storeFrom* (ever claimed) (29 Sep 2026).
       const addBackHeld = isIncreaseInp && itemForSpan ? (Number(itemForSpan.previousStoreQty) || 0) : 0;
-      const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
+      // Stock held for this BOQ on a "PRN pending" PO counts as store
+      // coverage for its first PRN (after free stock), so it adds to the cap.
+      const prnPendingHeld = itemForSpan && !isDecreaseInp && !isIncreaseInp ? (Number(itemForSpan.heldForBoq) || 0) : 0;
+      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld;
       const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
       const effectiveTotal = baseRaw + baseSpare;
 
@@ -1306,7 +1309,8 @@ async function refreshAPRNLiveStock() {
       // release. Resplit rows carry the ABSOLUTE current split
       // (newStoreFromRaw/newStoreFromSpare) for exactly this reason.
       const isResplitRow = row && row.changeKind === 'resplit';
-      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : Math.max(0, Number(row.storeFromRawDelta) || 0)) : 0;
+      // heldUse: stock held for this BOQ on a "PRN pending" PO that this PRN takes.
+      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : Math.max(0, Number(row.storeFromRawDelta) || 0) + (Number(row.heldUse) || 0)) : 0;
       const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0)
         : Math.max(0, Number(row.storeFromSpareDelta) || 0) + (Number(row.previousStoreQty) || 0)) : 0;
       const baseRaw = s.raw + ownRaw;
@@ -1425,7 +1429,10 @@ async function refreshPRNCreateLiveStock() {
       // only by free stock above Current PRN Store Qty (what the PRN still
       // holds), never above storeFrom* (ever claimed) (29 Sep 2026).
       const addBackHeld = isIncreaseInp && itemForSpan ? (Number(itemForSpan.previousStoreQty) || 0) : 0;
-      const baseRaw = addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw;
+      // Stock held for this BOQ on a "PRN pending" PO counts as store
+      // coverage for its first PRN (after free stock), so it adds to the cap.
+      const prnPendingHeld = itemForSpan && !isDecreaseInp && !isIncreaseInp ? (Number(itemForSpan.heldForBoq) || 0) : 0;
+      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld;
       const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
       const effectiveTotal = baseRaw + baseSpare;
       // Overwriting with the ADD-BACK-INCLUSIVE numbers — the dataset
@@ -1479,7 +1486,8 @@ async function refreshPRNLiveStock() {
     document.querySelectorAll(".prn-livestock-total").forEach(span => {
       const code = span.dataset.itemcode;
       const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
-      const total = s.raw + s.spare;
+      const heldLi = (prnCurrentData.lineItems || []).find(it => it.itemCode === code);
+      const total = s.raw + s.spare + (heldLi ? Number(heldLi.heldForBoq) || 0 : 0);
       span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
       span.dataset.liveTotal = total;
 

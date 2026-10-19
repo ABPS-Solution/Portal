@@ -396,7 +396,43 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
           </tr>
         </tfoot>
       </table>
+      <div id="material-breakdown-prn-pending" style="margin-top:16px;"></div>
     </div>`;
   document.body.appendChild(modal);
+  loadMaterialBreakdownPrnPending(itemCode, unitLabel);
+}
+
+// "PRN pending": Authorized BOQs with no PRN yet that need this material.
+// Shown below the PRN table and not added to the total above; Purchase can
+// order them from Create RM PO's allocation box before the PRN exists.
+async function loadMaterialBreakdownPrnPending(itemCode, unitLabel) {
+  const zone = document.getElementById("material-breakdown-prn-pending");
+  if (!zone) return;
+  try {
+    const data = await apFetch({ action: "fetchPrnPendingBoqsForItemCode", itemCode });
+    if (!data.success) return;
+    const scope = materialListSelectedProjectId;
+    const list = (data.pendingBoqs || []).filter(b => !scope || b.projectId === scope);
+    if (!list.length) return;
+    const fmtN = (n) => (Math.round((Number(n) || 0) * 100) / 100).toString();
+    zone.innerHTML = `
+      <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#5b21b6; letter-spacing:0.5px; margin-bottom:6px;">PRN pending (BOQ authorized, no PRN yet)</div>
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <colgroup><col style="width:auto;"><col style="width:140px;"><col style="width:140px;"><col style="width:140px;"></colgroup>
+        <thead><tr style="text-align:left; border-bottom:2px solid var(--border);">
+          <th style="padding:6px; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">BOQ</th>
+          <th style="padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">PRN Would Need</th>
+          <th style="padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Already Ordered</th>
+          <th style="padding:6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Still to Order</th>
+        </tr></thead>
+        <tbody>${list.map(b => `
+          <tr style="border-bottom:1px solid var(--border); background:#f5f3ff;">
+            <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155; overflow-wrap:anywhere;">${escapeHtml(b.boqId)} <span style="font-size:0.7rem; font-weight:800; color:#5b21b6; background:#ede9fe; padding:1px 7px; border-radius:999px;">PRN pending</span></td>
+            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${fmtN(b.requirement)} <span style="font-size:0.7rem; color:var(--muted);">${escapeHtml(unitLabel)}</span></td>
+            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-weight:700;">${fmtN(b.allocatedQty)}</td>
+            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-weight:800; color:#b91c1c;">${fmtN(b.stillToOrder)}</td>
+          </tr>`).join("")}</tbody>
+      </table>`;
+  } catch (e) { /* the PRN table above still shows; this section is optional */ }
 }
 
