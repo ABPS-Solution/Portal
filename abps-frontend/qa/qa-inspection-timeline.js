@@ -141,7 +141,7 @@ function qaitRenderRow(r) {
   const rowMain = `
     <tr id="qait-row-${r.projectId}" onclick="qaitToggleRow('${r.projectId}')" style="cursor:pointer; border-bottom:2px solid var(--border);">
       <td style="padding:8px 6px; ${centered} font-weight:700; color:var(--brand);">${expanded ? '▾' : '▸'}</td>
-      <td style="padding:8px 6px; font-weight:700; ${colBorder}">${escapeHtml(r.projectId)}${r.hasLdExposure ? ' <span title="LD applicable on this project" style="color:#b91c1c;">⚠</span>' : ''}</td>
+      <td style="padding:8px 6px; font-weight:700; overflow-wrap:anywhere; ${colBorder}">${escapeHtml(r.projectId)}${r.hasLdExposure ? ' <span title="LD applicable on this project" style="color:#b91c1c;">⚠</span>' : ''}</td>
       <td style="padding:8px 6px; ${colBorder}">${escapeHtml(r.companyName || '')}</td>
       <td style="padding:8px 6px; ${colBorder}">${escapeHtml(nextStepLabel)} ${qaitBucketBadge(r.bucket)}</td>
       <td style="padding:8px 6px; ${centered} ${colBorder} ${r.bucket === 'overdue' ? 'color:#b91c1c; font-weight:700;' : ''}">${r.nextStepDate ? qaitFmt(r.nextStepDate) + (r.daysOverdue ? ` (${r.daysOverdue}d late)` : '') : '—'}</td>

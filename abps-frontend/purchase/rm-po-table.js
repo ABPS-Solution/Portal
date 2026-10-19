@@ -48,11 +48,12 @@ function rptBuild() {
       .rpt-dd div:hover { background:var(--highlight-bg); }
       #rpt-table { width:100%; table-layout:fixed; border-collapse:separate; border-spacing:0; font-size:0.84rem; }
       #rpt-table thead th { background:#eef2f7; color:#1e293b; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;
-        padding:9px 6px; vertical-align:middle; white-space:normal; overflow-wrap:anywhere; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; cursor:pointer; user-select:none; }
-      #rpt-table td { padding:8px 6px; vertical-align:middle; overflow-wrap:anywhere; word-break:normal; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
+        padding:9px 6px; vertical-align:middle; white-space:normal; overflow-wrap:normal; word-break:normal; hyphens:none; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; cursor:pointer; user-select:none; }
+      #rpt-table td { padding:8px 6px; vertical-align:middle; overflow-wrap:break-word; word-break:normal; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8; }
       #rpt-table .rpt-amt { font-size:0.98rem; font-weight:700; color:#0f172a; }
-      #rpt-table .rpt-po-link { font-size:0.95rem; font-weight:800; color:var(--brand); font-family:monospace; text-decoration:underline; }
+      #rpt-table .rpt-po-link { white-space:nowrap; font-size:0.95rem; font-weight:800; color:var(--brand); font-family:monospace; text-decoration:underline; }
       @media (max-width:640px) { #rpt-table { min-width:900px; } }
+      @media (min-width:641px) and (max-width:1180px) { #rpt-table { min-width:1100px; } }
       @media (max-width:900px) { .rpt-pd-row { grid-template-columns:repeat(2, minmax(0, 1fr)) !important; } }
       #rpt-table th:first-child, #rpt-table td:first-child { border-left:none; }
       #rpt-table tbody tr.rpt-row:nth-child(4n+1) td { background:#fff; }
@@ -207,15 +208,15 @@ function rptTextMatches(r, q) {
 // [header, sort key, cell, align, width %]
 const RPT_COLS = [
   ["PO Number", "poNo", r => `${r.pdfUrl ? `<a class="rpt-po-link" href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" title="${r.pdfIsDraft ? "Open draft" : "Open PO document"}">${rptEsc(r.poNo)}</a>`
-    : `<span style="font-weight:800; color:var(--brand); font-family:monospace; font-size:0.95rem;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 9],
+    : `<span style="font-weight:800; color:var(--brand); font-family:monospace; font-size:0.95rem; white-space:nowrap;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 12],
   ["PO Date", "orderDate", r => r.orderDate ? formatOrdinalDate(r.orderDate) : rptDash, "center", 8],
   ["Vendor Name", "vendorName", r => `<div style="font-weight:600;">${rptEsc(r.vendorName)}</div>`, "left", 12],
   ["Project ID(s)", "projectIds", r => r.projectIds.length ? `<div style="font-size:0.76rem; line-height:1.4;">${r.projectIds.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 11],
-  ["Material Names", "materialNames", rptMaterialLinesHtml, "left", 22],
+  ["Material Names", "materialNames", rptMaterialLinesHtml, "left", 18],
   ["Basic Amount", "basicAmount", r => `<span class="rpt-amt">${rptAmount(r.basicAmount)}</span>`, "center", 7.5],
   ["Total incl. GST", "grandTotal", r => `<span class="rpt-amt">${rptAmount(r.grandTotal)}</span>`, "center", 7.5],
   ["Delivery Progress", "progressPct", rptDeliveryCell, "left", 12],
-  ["Prepared By", "preparedBy", r => rptEsc(r.preparedBy || "-"), "left", 6],
+  ["Prepared By", "preparedBy", r => rptEsc(r.preparedBy || "-"), "left", 7],
 ];
 
 function rptSortBy(key) {
@@ -326,7 +327,7 @@ function rptDetailHtml(r) {
         + cell("Delivery Date (on PO)", h.deliveryDate ? formatOrdinalDate(h.deliveryDate) : "") + cell("PO Document", pdf, true) + cell("Notes", h.notes))}
       ${pdRow("repeat(4, minmax(0, 1fr))", cell("Payment Terms", h.paymentTerms) + cell("Freight Terms", h.freightTerms)
         + cell("Warranty", h.warranty) + cell("Insurance", h.insurance))}</div>`;
-  const th = (t, al) => `<th style="padding:8px 6px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; overflow-wrap:anywhere; ${CELL_B}">${t}</th>`;
+  const th = (t, al) => `<th style="padding:8px 6px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; overflow-wrap:normal; word-break:normal; ${CELL_B}">${t}</th>`;
   const td = (x, al) => `<td style="padding:8px 6px; text-align:${al || "center"}; vertical-align:top; overflow-wrap:anywhere; ${CELL_B}">${x}</td>`;
   const cols = (ws) => `<colgroup>${ws.map(w => `<col style="width:${w}%;">`).join("")}</colgroup>`;
   const poText = (l) => (r.poType === "Transport" ? (l.additionalDescription || l.materialName) : (l.materialName || l.additionalDescription)) || "";

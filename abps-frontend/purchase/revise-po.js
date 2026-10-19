@@ -43,6 +43,8 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
     const el = document.getElementById(id); if (el) el.style.display = "none";
   });
 
+  // A screen's own header-bar controls (e.g. List of Material's Refresh + title) never carry over.
+  document.querySelectorAll(".panel-own-header-item").forEach(el => el.style.display = "none");
   document.getElementById("module-purchase-workspace-enclosure-panel").style.display = "block";
 
   if (targetModuleId === "purchase-prn") {

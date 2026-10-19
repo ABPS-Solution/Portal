@@ -224,6 +224,7 @@ async function navigateToModule(key) {
 }
 
 function returnToDashboard() {
+  document.querySelectorAll(".panel-own-header-item").forEach(el => el.style.display = "none");
   boqFormIsDirty   = false;
   boqUpdateIsDirty = false;
   collapseNewEntryDropdownFormExplicitly();
@@ -956,6 +957,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 
 function switchActiveDashboardModule(targetCanvasModuleId) {
   window.scrollTo(0, 0);
+  document.querySelectorAll(".panel-own-header-item").forEach(el => el.style.display = "none");
   checkStorePRNRevisionReminder();
   checkMaterialRequirementDateReminder();
   checkProductionPlanningReminder();

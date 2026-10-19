@@ -41,8 +41,8 @@ function initializeCurrentProjectsPanel() {
         <input type="checkbox" id="cpb-costing" onchange="cpbToggleCosting(this.checked)" /> Show Costing
       </label>
       <div class="cpb-legend">
-        <span><i class="cpb-sw cpb-done"></i>Done</span>
-        <span><i class="cpb-sw cpb-partial"></i>Partly done</span>
+        <span><i class="cpb-sw cpb-done"></i>Completed</span>
+        <span><i class="cpb-sw cpb-partial"></i>Partially</span>
         <span><i class="cpb-sw cpb-pending"></i>Pending</span>
         <span><i class="cpb-sw cpb-na"></i>Not needed / not due</span>
       </div>
