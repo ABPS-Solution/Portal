@@ -864,7 +864,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
   // MATCHED LAYOUT BLUEPRINT Blueprints
   const customSectionLayout = [
     { type: "META", keys: ["Status", "Engineer Name"] },
-    { type: "CARD", keys: ["Company Name", "Website", "City", "State", "Country", "Company Address"] },
+    { type: "CARD", keys: ["Company Name", "Website", "City", "State", "Country", "Company Address", "Old Company"] },
     { type: "SEC1", keys: ["Date of Meeting", "Time of Meeting", "Meeting Venue", "Venue Name / City", "Additional Meeting Details (if any)"] },
     { type: "SEC2", keys: ["ABPS Business Vertical", "Type of Customer"] },
     { type: "SEC3", keys: ["Low Power Factor Issue", "High Electricity Bill Issue", "Harmonics Issue", "Transformer Heating / Breakdown Issue", "Grid Stability Issue", "Tender Enquiry", "Existing System Details", "Contract Demand (MVA)", "Voltage Level Requirements"] }, 
@@ -917,7 +917,16 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       cell.appendChild(label);
 
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
-      if (key === "Status") {
+      if (key === "Old Company") {
+        // Old company (19 Oct 2026): already a customer, so a company profile
+        // is optional for its leads (Morning Meeting never shows it overdue).
+        let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
+        const isOld = leadMap[key] === true || leadMap[key] === "true" || leadMap[key] === "Yes";
+        sel.innerHTML = '<option value="No">No</option><option value="Yes">Yes, company profile optional</option>';
+        sel.value = isOld ? "Yes" : "No";
+        cell.appendChild(sel);
+      }
+      else if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
         sel.dataset.original = leadMap[key] || "";
         [
@@ -1286,7 +1295,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   // This form mixes Company-level fields (identity, shared across all a company's
   // Leads) with Lead-level fields (this specific project) — split them here so
   // the lead-update save would silently no-op (the header doesn't exist there).
-  const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Industry"];
+  const companyLevelKeys = ["Company Name", "City", "State", "Country", "Company Address", "Website", "Type of Customer", "Type of Industry", "Old Company"];
   let companyFieldsPayload = {};
   companyLevelKeys.forEach(k => {
     if (fieldsPayload[k] !== undefined) {

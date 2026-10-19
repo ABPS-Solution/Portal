@@ -21,7 +21,7 @@ const MM_COUNTS = [
 // Mirrors FUNNEL_TESTS in lib/morningMeeting.js.
 const MM_TESTS = {
   leads: () => true,
-  profileNotSent: r => !r.profileDate,
+  profileNotSent: r => !r.profileDate && !r.profileOptional,
   visitNotDone: r => !r.visitedDate,
   enquiryNotReceived: r => !r.enquiryDate,
   offerNotSent: r => !r.firstOfferDate,
@@ -159,7 +159,9 @@ function mmPendingText(r, k) {
 function mmProgressHtml(r) {
   return '<div class="mm-steps">' + MM_STEP_LABELS.map(([k, label]) => {
     const p = r[k] ? null : mmPendingText(r, k);
-    const val = r[k] ? escapeHtml(formatOrdinalDate(r[k])) : (p ? p.html : "-");
+    // Old company: the profile is optional (still shown when it was sent).
+    const optional = k === "profileDate" && !r[k] && r.profileOptional;
+    const val = r[k] ? escapeHtml(formatOrdinalDate(r[k])) : optional ? "Not needed<em><br>old company</em>" : (p ? p.html : "-");
     return `<div class="mm-step${r[k] ? " mm-step-done" : ""}${p ? " mm-step-" + p.cls : ""}"><span>${r[k] ? "✓ " : ""}${label}</span><strong>${val}</strong></div>`;
   }).join("") + "</div>";
 }
