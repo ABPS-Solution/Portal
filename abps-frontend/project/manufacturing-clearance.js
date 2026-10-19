@@ -233,6 +233,9 @@ async function loadMcLineItems(projectId) {
         onHold: !!li.onHold, holdReason: li.holdReason || "",
         boqIds: li.boqIds || [],
         buildType: li.buildType || (li.needsBoqJc === false ? "No BOQ" : "Made in ABPS"),
+        originalBuildType: li.buildType || (li.needsBoqJc === false ? "No BOQ" : "Made in ABPS"),
+        canChangeBuildType: li.canChangeBuildType !== false,
+        buildTypeLockReason: li.buildTypeLockReason || "",
         needsBoqJc: li.needsBoqJc !== false,
       };
       mcLineItemMeta[projectId][li.lineId] = {
@@ -282,8 +285,12 @@ function renderMcLineItemsTable(projectId, lineItems) {
     // Product" button below) can change it from here on.
     const hasBoq = (state.boqIds || []).length > 0;
     const productSearchDisabledAttr = hasBoq ? "disabled" : rowDisabledAttr;
-    const toggleLocked = !(gatingComplete && !isHeld) || hasBoq;
-    const toggleTitle = hasBoq ? "This product already has a BOQ, so its Build Type cannot be changed" : "";
+    // Build Type can change while no production has started on the BOQ
+    // (the server withdraws the BOQ and decides; this only mirrors it).
+    const buildTypeBlocked = hasBoq && !state.canChangeBuildType;
+    const toggleLocked = !(gatingComplete && !isHeld) || buildTypeBlocked;
+    const toggleTitle = buildTypeBlocked ? "Production has started, so the Build Type cannot be changed: " + (state.buildTypeLockReason || "") : "";
+    const btBase = `mc-bt-${safeId}-${li.lineId}`;
     const productSearchStyleExtra = hasBoq ? " background:#f1f5f9; cursor:not-allowed;" : ((gatingComplete && !isHeld) ? "" : " background:#f1f5f9; cursor:not-allowed;");
     return `
       <tr data-line-id="${li.lineId}" style="border-bottom:1px solid var(--border); color:#111827;${rowBg}">
@@ -317,11 +324,14 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; text-align:center; vertical-align:middle; font-size:1rem; font-weight:600; color:#111827;" id="mc-std-itemcode-unit-${safeId}-${li.lineId}">${escapeHtml(itemCodeUnitVal || "—")}</td>
         ${mcMfcQtyCellsHtml(projectId, safeId, li.lineId, state, li.quantity, li.mfcQuantity, gatingComplete && !isHeld)}
         <td style="padding:8px; text-align:center; vertical-align:middle;">
-          <select data-mc-boq-toggle ${toggleLocked ? "disabled" : ""} title="${toggleTitle}"
-            onchange="setMcBuildType('${projectId}', ${li.lineId}, this)"
-            style="width:100%; min-width:0; padding:5px 6px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--border); border-radius:4px; color:${MC_BUILD_TYPE_COLORS[state.buildType] || '#111827'};${toggleLocked ? ' background:#f1f5f9; cursor:not-allowed;' : ''}">
-            ${MC_BUILD_TYPES.map(t => `<option value="${t}" ${state.buildType === t ? "selected" : ""}>${t}</option>`).join("")}
-          </select>
+          <input type="hidden" id="${btBase}" value="${escapeHtml(state.buildType)}" />
+          <div id="${btBase}-display" class="gwd-display" data-mc-boq-toggle data-disabled="${toggleLocked ? "1" : "0"}" title="${escapeHtml(toggleTitle)}"
+            onclick="mcOpenBuildTypeDropdown(${jsArg(projectId)}, ${li.lineId}, ${jsArg(btBase)})"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px; padding:5px 6px; font-size:0.78rem; font-weight:700; text-align:left; border:1.5px solid var(--border); border-radius:4px; line-height:1.3; color:${MC_BUILD_TYPE_COLORS[state.buildType] || '#111827'};${toggleLocked ? ' background:#f1f5f9; cursor:not-allowed; opacity:0.5;' : ' background:#fff; cursor:pointer;'}">
+            <span id="${btBase}-display-text" style="white-space:normal; word-break:break-word;">${escapeHtml(state.buildType)}</span>
+            <span style="flex-shrink:0;">▾</span>
+          </div>
+          <div id="${btBase}-list" class="gwd-list" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:left;"></div>
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           ${isAdmin ? (isHeld
@@ -397,7 +407,9 @@ function setMcTableEnabled(projectId, enabled) {
       el.style.cursor = rowEnabled ? '' : 'not-allowed';
     });
     const tog = tr.querySelector('[data-mc-boq-toggle]');
-    if (tog) tog.disabled = !rowEnabled || (state[lineId] && (state[lineId].boqIds || []).length > 0);
+    const st = state[lineId];
+    const blocked = st && (st.boqIds || []).length > 0 && !st.canChangeBuildType;
+    if (tog) genericDropdownSetDisabled(tog.id.replace(/-display$/, ''), !rowEnabled || blocked);
   });
   wrap.querySelectorAll('button:not([data-mc-hold-btn]):not([data-mc-boq-toggle])').forEach(el => { el.disabled = !enabled; });
 }
@@ -634,12 +646,29 @@ function mcRefreshMfcQtyCells(projectId, lineId) {
 // No BOQ = billed by hand on the Dispatch Invoice.
 const MC_BUILD_TYPES = ["Made in ABPS", "Purchased from Outside", "No BOQ"];
 const MC_BUILD_TYPE_COLORS = { "Made in ABPS": "#15803d", "Purchased from Outside": "#1d4ed8", "No BOQ": "#b91c1c" };
-function setMcBuildType(projectId, lineId, sel) {
+// Build Type picker: the shared wrapping dropdown (shared/ui.js), its list
+// placed with position:fixed so the table wrapper cannot clip it.
+function mcOpenBuildTypeDropdown(projectId, lineId, baseId) {
+  const disp = document.getElementById(`${baseId}-display`);
+  const list = document.getElementById(`${baseId}-list`);
+  if (!disp || !list || disp.dataset.disabled === "1") return;
+  genericDropdownPopulate(baseId, MC_BUILD_TYPES.map(t => ({ value: t, label: escapeHtml(t) })),
+    value => setMcBuildType(projectId, lineId, value, baseId));
+  toggleGenericDropdown(baseId);
+  if (list.style.display === "block") {
+    const r = disp.getBoundingClientRect();
+    list.style.left = r.left + "px";
+    list.style.top = r.bottom + "px";
+    list.style.width = Math.max(r.width, 170) + "px";
+  }
+}
+function setMcBuildType(projectId, lineId, value, baseId) {
   const st = mcLineItemState[projectId] && mcLineItemState[projectId][lineId];
-  if (!st || sel.disabled || !MC_BUILD_TYPES.includes(sel.value)) return;
-  st.buildType = sel.value;
-  st.needsBoqJc = sel.value !== "No BOQ";
-  sel.style.color = MC_BUILD_TYPE_COLORS[sel.value];
+  if (!st || !MC_BUILD_TYPES.includes(value)) return;
+  st.buildType = value;
+  st.needsBoqJc = value !== "No BOQ";
+  const disp = baseId && document.getElementById(`${baseId}-display`);
+  if (disp) disp.style.color = MC_BUILD_TYPE_COLORS[value];
   mcRefreshMfcQtyCells(projectId, lineId);
 }
 
@@ -693,7 +722,14 @@ async function submitMcClearance(projectId) {
   const warning = anyDecrease
     ? "\n\nWARNING: One or more products have a REDUCED MFC Quantity. Job Cards beyond the new count will be deleted (or marked Excess/Orphaned if already partially consumed), and any Finished Goods BOQs depending on these products will have their quantities reduced too."
     : "";
-  if (!await abpsConfirm(`Submit Manufacturing Clearance for ${projectId}?${warning}`)) return;
+  const withdrawals = Object.keys(state).filter(id => !state[id].onHold && (state[id].boqIds || []).length > 0
+    && state[id].buildType !== state[id].originalBuildType);
+  const withdrawWarning = withdrawals.length
+    ? "\n\nBUILD TYPE CHANGE: " + withdrawals.map(id => `${state[id].standardProductName || ("Line " + id)} (${state[id].originalBuildType} to ${state[id].buildType}) will withdraw ${state[id].boqIds.join(", ")}`).join("; ")
+      + ". Its unused Job Cards and production plan are deleted and its PRN is reduced (Purchase revises any PO already placed)."
+      + " Purchased from Outside creates a new BOQ for authorization; Made in ABPS puts the product back in Create BOQ."
+    : "";
+  if (!await abpsConfirm(`Submit Manufacturing Clearance for ${projectId}?${warning}${withdrawWarning}`)) return;
 
   showBlockingOverlay("Submitting Manufacturing Clearance...");
   try {

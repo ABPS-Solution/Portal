@@ -644,6 +644,7 @@ function renderEBOQMaterialRows() {
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
           ${boqAcStoreOptionHtml(row)}
         </select>
+        ${boqFgBuildTypeHtml('eboqMaterialRows', idx, row)}
       </td>
       <td style="padding:4px; position:relative;">
         ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('eboq', idx, row, `renderEBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"

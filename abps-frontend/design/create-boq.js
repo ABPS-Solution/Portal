@@ -511,6 +511,7 @@ function renderCBOQMaterialRows() {
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
           ${boqAcStoreOptionHtml(row)}
         </select>
+        ${boqFgBuildTypeHtml('cboqMaterialRows', idx, row)}
       </td>
       <td style="padding:4px; position:relative;">
         ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('cboq', idx, row, `renderCBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
@@ -704,10 +705,22 @@ function boqIsAcRow(row) { return !!row && row.typeOfStore === BOQ_AC_STORE; }
 function boqAcStoreOptionHtml(row) {
   return `<option value="${BOQ_AC_STORE}" ${boqIsAcRow(row) ? "selected" : ""}>Additional Costing</option>`;
 }
+// Finished Goods row: Make in ABPS (default) or Purchase from Outside. The
+// server creates / withdraws the FG product's own BOQ to match on save.
+const BOQ_FG_BUILD_TYPES = ["Make in ABPS", "Purchase from Outside"];
+function boqFgBuildTypeHtml(arrName, idx, row) {
+  if (!row || row.typeOfStore !== "Finished Goods Store") return "";
+  const cur = row.fgBuildType === "Purchase from Outside" ? "Purchase from Outside" : "Make in ABPS";
+  return `<select title="Make this Finished Goods product in ABPS, or buy it from outside" onchange="${arrName}[${idx}].fgBuildType=this.value;"
+    style="margin-top:4px; padding:3px; font-size:0.72rem; width:100%; color:${cur === "Make in ABPS" ? "#15803d" : "#1d4ed8"}; font-weight:700;">
+    ${BOQ_FG_BUILD_TYPES.map(t => `<option value="${t}" ${cur === t ? "selected" : ""}>${t}</option>`).join("")}
+  </select>`;
+}
 function boqSetStoreType(row, value) {
   const wasAc = boqIsAcRow(row);
   row.typeOfStore = value;
-  if (value === "Finished Goods Store") row.designRatePerQuantity = "";
+  if (value === "Finished Goods Store") { row.designRatePerQuantity = ""; if (!row.fgBuildType) row.fgBuildType = "Make in ABPS"; }
+  else delete row.fgBuildType;
   if (value === BOQ_AC_STORE && !wasAc) {
     Object.assign(row, { materialName: "", itemCode: "", make: "", quantityFor1Set: 1, unit: BOQ_AC_UNIT, designRatePerQuantity: "", descriptionId: null, descriptionOfMaterial: "" });
   } else if (wasAc && value !== BOQ_AC_STORE) {

@@ -214,6 +214,7 @@ function renderBOQRevisionRows(updateId) {
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
           ${boqAcStoreOptionHtml(row)}
         </select>
+        ${boqFgBuildTypeHtml('uboqRevRows', idx, row)}
       </td>
       <td style="padding:4px; position:relative;">
         ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('boqrev', idx, row, `renderBOQRevisionRows(${updateId}); recomputeBOQRevisionSummary(${updateId});`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
@@ -593,6 +594,7 @@ function renderUBOQMaterialRows() {
           <option value="Finished Goods Store" ${row.typeOfStore==="Finished Goods Store"?"selected":""}>Finished Goods</option>
           ${boqAcStoreOptionHtml(row)}
         </select>
+        ${boqFgBuildTypeHtml('uboqMaterialRows', idx, row)}
       </td>
       <td style="padding:4px; position:relative;">
         ${boqIsAcRow(row) ? boqAcMaterialSelectHtml('uboq', idx, row, `renderUBOQMaterialRows();`) : `<textarea rows="1" placeholder="Type to search..." autocomplete="off"
