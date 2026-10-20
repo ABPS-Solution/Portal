@@ -5879,18 +5879,21 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="workspace-newsLeads" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">News Leads</h2>
-      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every morning the system reads business news, industry feeds and tender news, and the AI picks out articles that suggest a company in India may need ABPS products (new plants and expansions, solar and renewable projects, substations and EPC awards, and tenders). Review each card: <b>Create Lead</b> to add it to the CRM, or <b>Dismiss</b> it.</p>
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every morning the system reads business news, industry feeds and tender news, and the AI picks out articles that suggest a company in India may need ABPS products (new plants and expansions, solar and renewable projects, substations and EPC awards, and tenders). Review each row: <b>Create Lead</b> to add it to the CRM, or <b>Dismiss</b> it.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
         <div id="nl-tabs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
         <button id="nl-run-btn" class="nav-btn-styled" onclick="nlRunNow()" style="display:none; width:auto; margin-left:auto; padding:7px 14px; background:#1e293b; color:#fff;">Read news now</button>
       </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
-        <input id="nl-search" type="text" placeholder="Search company, place or headline" oninput="nlOnSearch(this.value)" style="flex:1; min-width:220px; max-width:420px;" />
-        <select onchange="nlSetSignal(this.value)" style="width:auto;">
+      <div class="mm-filters" style="margin-bottom:12px;">
+        <div class="mm-flabel">Search</div>
+        <input id="nl-search" type="text" placeholder="Company, place or headline" oninput="nlOnSearch(this.value)" style="max-width:420px;" />
+        <div class="mm-flabel">Signal</div>
+        <select onchange="nlSetSignal(this.value)" style="width:auto; max-width:320px;">
           <option value="">All signal types</option>
           <option>New plant / expansion</option><option>Solar / renewable</option><option>Substation / DISCOM / EPC</option><option>Tender</option>
         </select>
-        <select onchange="nlSetDays(this.value)" style="width:auto;">
+        <div class="mm-flabel">Period</div>
+        <select onchange="nlSetDays(this.value)" style="width:auto; max-width:320px;">
           <option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option>
         </select>
       </div>

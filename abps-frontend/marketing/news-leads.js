@@ -56,46 +56,47 @@ function nlRender() {
     list.innerHTML = `<div style="padding:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); font-size:0.88rem;">${nlState.status === "New" ? "Nothing to review right now." : "Nothing here."}</div>`;
     return;
   }
-  list.innerHTML = nlState.items.map(nlCardHtml).join("");
+  // Same table look as Morning Meeting (nlr-table / mm-table classes).
+  list.innerHTML = `<div style="overflow-x:auto;">
+    <table class="nlr-table mm-table">
+      <colgroup><col style="width:4%"><col style="width:8%"><col style="width:9%"><col style="width:14%"><col style="width:25%"><col style="width:10%"><col style="width:12%"><col style="width:8%"><col style="width:10%"></colgroup>
+      <thead><tr>
+        <th class="nlr-center">Sr No</th><th class="nlr-center">Published</th><th class="nlr-center">Signal</th><th>Company &amp; Place</th>
+        <th>What's Happening</th><th>Capacity / Value</th><th>Fits ABPS</th><th>Source</th><th class="nlr-center">Action</th>
+      </tr></thead>
+      <tbody>${nlState.items.map((it, i) => nlRowHtml(it, i + 1)).join("")}</tbody>
+    </table></div>`;
 }
 
-function nlCardHtml(it) {
+function nlRowHtml(it, sr) {
   const color = NL_SIGNAL_COLORS[it.signalType] || "#475569";
   const date = it.publishedAt ? (typeof formatOrdinalDate === "function" ? formatOrdinalDate(it.publishedAt) : String(it.publishedAt).slice(0, 10)) : "";
   const place = [it.location, it.state].filter(Boolean).join(", ");
-  const facts = [
-    it.companyName ? `<b>${escapeHtml(it.companyName)}</b>` : "",
-    place ? escapeHtml(place) : "",
-    it.capacity ? escapeHtml(it.capacity) : "",
-    it.estimatedValue ? escapeHtml(it.estimatedValue) : "",
-  ].filter(Boolean).join(" &nbsp;·&nbsp; ");
+  const none = '<span class="nlr-none">Not stated</span>';
   const also = (it.alsoReported || []).length
-    ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Also reported by: ${it.alsoReported.slice(0, 6).map(a => a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.sourceName || "link")}</a>` : escapeHtml(a.sourceName || "")).join(", ")}${it.alsoReported.length > 6 ? ` and ${it.alsoReported.length - 6} more` : ""}</div>` : "";
-  let actions = "";
+    ? `<div class="nlr-sub" style="margin-top:4px;">Also: ${it.alsoReported.slice(0, 4).map(a => a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.sourceName || "link")}</a>` : escapeHtml(a.sourceName || "")).join(", ")}${it.alsoReported.length > 4 ? ` +${it.alsoReported.length - 4}` : ""}</div>` : "";
+  let actions;
   if (it.status === "New") {
-    actions = `<button class="nav-btn-styled" onclick="nlCreateLead(${it.newsId})" style="width:auto; padding:7px 14px; background:#15803d; color:#fff;">Create Lead</button>
-      <button class="nav-btn-styled" onclick="nlDismiss(${it.newsId})" style="width:auto; padding:7px 14px; background:#f1f5f9; color:#475569;">Dismiss</button>`;
+    actions = `<button class="nav-btn-styled" onclick="nlCreateLead(${it.newsId})" style="width:100%; padding:6px 8px; font-size:0.8rem; background:#15803d; color:#fff; margin-bottom:5px;">Create Lead</button>
+      <button class="nav-btn-styled" onclick="nlDismiss(${it.newsId})" style="width:100%; padding:6px 8px; font-size:0.8rem; background:#f1f5f9; color:#475569;">Dismiss</button>`;
   } else if (it.status === "Accepted") {
-    actions = `<span style="font-size:0.82rem; color:#15803d; font-weight:700;">Lead ${escapeHtml(it.leadId || "")} created${it.decidedBy ? " by " + escapeHtml(it.decidedBy) : ""}</span>`;
+    actions = `<div style="font-weight:700; color:#15803d;">${escapeHtml(it.leadId || "")}</div>${it.decidedBy ? `<div class="nlr-sub">by ${escapeHtml(it.decidedBy)}</div>` : ""}`;
   } else {
-    actions = `<span style="font-size:0.8rem; color:var(--muted);">${escapeHtml(it.status === "Dismissed" ? `Dismissed${it.decidedBy ? " by " + it.decidedBy : ""}${it.dismissReason ? ": " + it.dismissReason : ""}` : (it.filterReason || "Filtered"))}</span>
-      <button class="nav-btn-styled" onclick="nlRestore(${it.newsId})" style="width:auto; padding:6px 12px; background:#e0e7ff; color:#3730a3;">Move to review</button>`;
+    actions = `<div class="nlr-sub" style="margin-bottom:5px;">${escapeHtml(it.status === "Dismissed" ? `Dismissed${it.decidedBy ? " by " + it.decidedBy : ""}${it.dismissReason ? ": " + it.dismissReason : ""}` : (it.filterReason || "Filtered"))}</div>
+      <button class="nav-btn-styled" onclick="nlRestore(${it.newsId})" style="width:100%; padding:5px 8px; font-size:0.78rem; background:#e0e7ff; color:#3730a3;">Move to review</button>`;
   }
-  return `<div class="nl-card" id="nl-card-${it.newsId}" style="border:1px solid var(--border); border-left:4px solid ${color}; border-radius:0; background:#fff; padding:12px 14px; margin-bottom:10px;">
-    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
-      <div style="min-width:0; flex:1;">
-        <div style="font-size:0.75rem; font-weight:700; color:${color}; text-transform:uppercase; letter-spacing:0.02em;">${escapeHtml(it.signalType || "News")}${it.confidence != null ? ` <span style="color:var(--muted); font-weight:600; text-transform:none;">· AI confidence ${it.confidence}%</span>` : ""}</div>
-        <div style="font-size:0.98rem; font-weight:700; margin:3px 0;">${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="color:#0f172a; text-decoration:none;">${escapeHtml(it.title)} ↗</a>` : escapeHtml(it.title)}</div>
-        <div style="font-size:0.78rem; color:var(--muted);">${escapeHtml(it.sourceName || "")}${date ? " · " + escapeHtml(date) : ""}</div>
-      </div>
-    </div>
-    ${facts ? `<div style="font-size:0.86rem; margin-top:8px;">${facts}</div>` : ""}
-    ${it.projectSummary ? `<div style="font-size:0.86rem; margin-top:4px;">${escapeHtml(it.projectSummary)}</div>` : ""}
-    ${it.whyRelevant || it.suggestedProducts ? `<div style="font-size:0.82rem; margin-top:6px; padding:6px 10px; background:#f0fdf4; color:#14532d;">${it.whyRelevant ? escapeHtml(it.whyRelevant) : ""}${it.suggestedProducts ? `${it.whyRelevant ? " " : ""}<b>Fits:</b> ${escapeHtml(it.suggestedProducts)}` : ""}</div>` : ""}
-    ${also}
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px;">${actions}</div>
-    <div id="nl-form-mount-${it.newsId}" style="display:none; margin-top:12px;"></div>
-  </div>`;
+  return `<tr id="nl-row-${it.newsId}">
+      <td class="nlr-center">${sr}</td>
+      <td class="nlr-center">${escapeHtml(date) || none}</td>
+      <td class="nlr-center"><span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:0.72rem; font-weight:800; color:#fff; background:${color};">${escapeHtml(it.signalType || "News")}</span>${it.confidence != null ? `<div class="nlr-sub" style="margin-top:4px;">AI ${it.confidence}%</div>` : ""}</td>
+      <td>${it.companyName ? `<strong>${escapeHtml(it.companyName)}</strong>` : none}${place ? `<div class="nlr-sub">${escapeHtml(place)}</div>` : ""}</td>
+      <td>${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="font-weight:700; color:#0f172a;">${escapeHtml(it.title)} ↗</a>` : `<strong>${escapeHtml(it.title)}</strong>`}${it.projectSummary ? `<div style="margin-top:4px;">${escapeHtml(it.projectSummary)}</div>` : ""}${it.whyRelevant ? `<div class="nlr-sub" style="margin-top:4px;">${escapeHtml(it.whyRelevant)}</div>` : ""}</td>
+      <td>${it.capacity ? `<div>${escapeHtml(it.capacity)}</div>` : ""}${it.estimatedValue ? `<div style="font-weight:700;">${escapeHtml(it.estimatedValue)}</div>` : ""}${!it.capacity && !it.estimatedValue ? none : ""}</td>
+      <td>${it.suggestedProducts ? escapeHtml(it.suggestedProducts) : none}</td>
+      <td>${escapeHtml(it.sourceName || "")}${also}</td>
+      <td class="nlr-center">${actions}</td>
+    </tr>
+    <tr id="nl-form-row-${it.newsId}" style="display:none;"><td colspan="9" class="nlr-lead-cell"><div id="nl-form-mount-${it.newsId}" style="display:none;"></div></td></tr>`;
 }
 
 async function nlDismiss(newsId) {
@@ -140,6 +141,7 @@ function nlCreateLead(newsId) {
   form.style.display = "block";
   mountEl.appendChild(form);
   mountEl.style.display = "block";
+  const formRow = document.getElementById(`nl-form-row-${newsId}`); if (formRow) formRow.style.display = "";
   const remaining = document.getElementById("remaining-sections-form");
   const success = document.getElementById("success-screen");
   if (remaining) remaining.style.display = "block";
@@ -170,7 +172,7 @@ function nlCreateLead(newsId) {
   ["global-direct-inline-create-entry-btn", "global-direct-inline-collapse-entry-btn"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = "none"; });
   const back = document.getElementById("canvas-back-btn-enclosure-row"); if (back) back.innerHTML = "";
   window._newsLeadCreateCtx = { newsId };
-  window._emailLeadFormCancelCleanup = () => { window._newsLeadCreateCtx = null; if (typeof parkSharedLeadForm === "function") parkSharedLeadForm(); mountEl.style.display = "none"; };
+  window._emailLeadFormCancelCleanup = () => { window._newsLeadCreateCtx = null; if (typeof parkSharedLeadForm === "function") parkSharedLeadForm(); mountEl.style.display = "none"; const fr = document.getElementById(`nl-form-row-${newsId}`); if (fr) fr.style.display = "none"; };
   mountEl.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
