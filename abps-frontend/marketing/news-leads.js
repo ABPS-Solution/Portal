@@ -59,10 +59,10 @@ function nlRender() {
   // Same table look as Morning Meeting (nlr-table / mm-table classes).
   list.innerHTML = `<div style="overflow-x:auto;">
     <table class="nlr-table mm-table">
-      <colgroup><col style="width:4%"><col style="width:10%"><col style="width:14%"><col style="width:31%"><col style="width:10%"><col style="width:13%"><col style="width:10%"><col style="width:8%"></colgroup>
+      <colgroup><col style="width:4%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:31%"><col style="width:10%"><col style="width:13%"><col style="width:8%"></colgroup>
       <thead><tr>
-        <th class="nlr-center">Sr No</th><th class="nlr-center">Signal</th><th>Company &amp; Place</th>
-        <th>What's Happening</th><th class="nlr-center">Capacity / Value</th><th>Fits ABPS</th><th>Source &amp; Date</th><th class="nlr-center">Action</th>
+        <th class="nlr-center">Sr No</th><th>Source &amp; Date</th><th class="nlr-center">Signal</th><th>Company &amp; Place</th>
+        <th>What's Happening</th><th class="nlr-center">Capacity / Value</th><th>Fits ABPS</th><th class="nlr-center">Action</th>
       </tr></thead>
       <tbody>${nlState.items.map((it, i) => nlRowHtml(it, i + 1)).join("")}</tbody>
     </table></div>`;
@@ -91,12 +91,12 @@ function nlRowHtml(it, sr) {
   }
   return `<tr id="nl-row-${it.newsId}">
       <td class="nlr-center" style="text-align:center;">${sr}</td>
+      <td>${escapeHtml(it.sourceName || "")}${date ? `<div style="font-weight:800; font-size:0.78rem; margin-top:2px;">${escapeHtml(date)}</div>` : ""}${also}</td>
       <td class="nlr-center" style="text-align:center;"><div style="font-size:0.78rem; font-weight:800; line-height:1.25; color:${color};">${escapeHtml(it.signalType || "News")}</div>${level ? `<span style="display:inline-block; margin-top:6px; padding:2px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; ${level === "High" ? "background:#dcfce7; color:#15803d; border:1px solid #86efac;" : "background:#fef3c7; color:#b45309; border:1px solid #fcd34d;"}">${level}</span>` : ""}</td>
       <td>${it.companyName ? `<strong>${escapeHtml(it.companyName)}</strong>` : none}${place ? `<div class="nlr-sub">${escapeHtml(place)}</div>` : ""}</td>
       <td>${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="font-weight:700; color:#0f172a;">${escapeHtml(it.title)} ↗</a>` : `<strong>${escapeHtml(it.title)}</strong>`}${it.projectSummary || it.whyRelevant ? `<div style="margin-top:5px; font-size:0.78rem; line-height:1.4; color:#334155;">${escapeHtml(rupee([it.projectSummary, it.whyRelevant].filter(Boolean).join(" ")))}</div>` : ""}</td>
       <td class="nlr-center" style="text-align:center;">${it.capacity ? `<div>${escapeHtml(it.capacity)}</div>` : ""}${it.estimatedValue ? `<div style="font-weight:700;">${escapeHtml(rupee(it.estimatedValue))}</div>` : ""}${!it.capacity && !it.estimatedValue ? none : ""}</td>
       <td>${it.suggestedProducts ? escapeHtml(it.suggestedProducts) : none}</td>
-      <td>${escapeHtml(it.sourceName || "")}${date ? `<div class="nlr-sub">${escapeHtml(date)}</div>` : ""}${also}</td>
       <td class="nlr-center" style="text-align:center;">${actions}</td>
     </tr>
     <tr id="nl-form-row-${it.newsId}" style="display:none;"><td colspan="8" class="nlr-lead-cell"><div id="nl-form-mount-${it.newsId}" style="display:none;"></div></td></tr>`;
