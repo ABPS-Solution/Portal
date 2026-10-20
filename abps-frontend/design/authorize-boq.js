@@ -391,13 +391,13 @@ function renderEBOQForm(containerId) {
           <thead>
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.82rem;">Sr No</th>
-              <th style="width:110px; padding:8px; font-size:0.82rem;">Type of Store *</th>
+              <th style="width:125px; padding:8px; font-size:0.82rem;">Type of Store *</th>
               <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
               <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
               <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit</th>
               <th style="width:190px; padding:8px; font-size:0.82rem; text-align:center;">Design Rate / Qty *</th>
-              <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
+              <th style="width:130px; padding:8px; font-size:0.82rem; text-align:center;">Total Material Cost / Set</th>
               <th style="width:70px; padding:8px; font-size:0.82rem; text-align:center;">Costing Verified *</th>
               <th style="width:40px; padding:8px; font-size:0.82rem; text-align:center;">Del</th>
             </tr>
