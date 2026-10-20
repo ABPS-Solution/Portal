@@ -4473,7 +4473,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <div id="canvas-module-purchase-vendor-directory" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Vendor List</h2>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button id="vd-tab-vendors" class="nav-btn-styled" onclick="vdShowTab('vendors')" style="width:auto; padding:8px 18px; font-weight:700; background:var(--brand); color:#fff;">Vendors</button>
+        <button id="vd-tab-terms" class="nav-btn-styled" onclick="vdShowTab('terms')" style="width:auto; padding:8px 18px; font-weight:700; background:#e2e8f0; color:#334155;">PO Terms</button>
+      </div>
       <div id="vd-root"></div>
+      <div id="vd-terms-root" style="display:none;"></div>
     </div>
 
     <div id="canvas-module-purchase-vendor-costing" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -6535,6 +6540,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="purchase/pps-tracking.js"></script>
 <script src="purchase/material-list.js"></script>
 <script src="purchase/vendor-directory.js"></script>
+<script src="purchase/po-terms.js"></script>
 <script src="purchase/rm-po-table.js"></script>
 <script src="purchase/purchase-dashboard.js"></script>
 <script src="production/job-cards.js"></script>

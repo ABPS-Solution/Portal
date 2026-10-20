@@ -10,6 +10,7 @@ const vdMoney = (n) => "₹" + (Number(n) || 0).toLocaleString("en-IN", { maximu
 async function initializeVendorDirectoryPanel() {
   const root = document.getElementById("vd-root");
   if (!root) return;
+  if (typeof vdShowTab === "function") vdShowTab("vendors");
   vdFilter = "Active";
   root.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted);">Loading vendors...</div>`;
   try {
