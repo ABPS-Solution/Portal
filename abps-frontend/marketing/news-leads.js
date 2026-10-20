@@ -48,7 +48,7 @@ function nlRender() {
   const run = document.getElementById("nl-last-run");
   if (run) {
     const r = nlState.lastRun;
-    run.textContent = r ? `Last checked ${typeof formatOrdinalDateTime === "function" ? formatOrdinalDateTime(r.startedAt) : r.startedAt}: ${r.fetched || 0} articles read, ${r.relevant || 0} new leads${(r.errors || []).length ? `, ${r.errors.length} source problem(s)` : ""}.` : "Not checked yet. The news is read every morning at 6:20 am.";
+    run.textContent = r ? `Last checked ${typeof formatOrdinalDateTime === "function" ? formatOrdinalDateTime(r.startedAt) : r.startedAt}: ${r.fetched || 0} articles read, ${r.relevant || 0} new leads${(r.errors || []).length ? `, ${r.errors.length} source problem(s)` : ""}.` : "Not checked yet. The news is read every morning at 9:00 am.";
   }
   const list = document.getElementById("nl-list");
   if (!list) return;
