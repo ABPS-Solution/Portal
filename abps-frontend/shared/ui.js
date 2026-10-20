@@ -336,6 +336,64 @@ function abpsConfirm(message, opts) {
   });
 }
 
+// abpsAlert — on-page message box used instead of alert(). Returns a Promise
+// that resolves when OK is clicked; await it only when the next step needs it.
+function abpsAlert(message, opts) {
+  return _abpsDialog(message, Object.assign({ title: 'Message' }, opts || {}), false).then(() => undefined);
+}
+
+// abpsPrompt — on-page text-input box used instead of prompt(). Resolves to the
+// typed string, or null if cancelled (same as prompt()).
+function abpsPrompt(message, defaultValue, opts) {
+  return _abpsDialog(message, Object.assign({ title: 'Please enter' }, opts || {}), true, defaultValue);
+}
+
+function _abpsDialog(message, o, withInput, defaultValue) {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100001; display:flex; align-items:center; justify-content:center; padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff; border-radius:10px; max-width:480px; width:100%; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:10px;';
+    title.textContent = o.title;
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:0.92rem; color:#111827; white-space:pre-line; line-height:1.5; margin-bottom:18px; max-height:60vh; overflow:auto; word-break:break-word;';
+    msg.textContent = String(message == null ? '' : message);
+    let input = null;
+    if (withInput) {
+      input = document.createElement('input');
+      input.type = 'text';
+      input.value = defaultValue == null ? '' : String(defaultValue);
+      input.style.cssText = 'width:100%; margin:-6px 0 18px; padding:8px 10px; font-size:16px; border:1px solid #94a3b8; border-radius:6px; box-sizing:border-box;';
+    }
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:flex-end; gap:10px;';
+    const ok = document.createElement('button');
+    ok.type = 'button'; ok.className = 'nav-btn-styled';
+    ok.style.cssText = 'background:var(--brand); padding:8px 22px; font-weight:700; width:auto;';
+    ok.textContent = o.okLabel || 'OK';
+    const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(v); };
+    const cancelVal = withInput ? null : undefined;
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); done(cancelVal); } else if (e.key === 'Enter') { e.preventDefault(); done(withInput ? input.value : undefined); } };
+    ok.onclick = () => done(withInput ? input.value : undefined);
+    if (withInput) {
+      const cancel = document.createElement('button');
+      cancel.type = 'button'; cancel.className = 'nav-btn-styled';
+      cancel.style.cssText = 'background:#e2e8f0; color:#111827; padding:8px 20px; font-weight:700; width:auto;';
+      cancel.textContent = o.cancelLabel || 'Cancel';
+      cancel.onclick = () => done(null);
+      row.append(cancel);
+    }
+    row.append(ok);
+    document.addEventListener('keydown', onKey, true);
+    box.append(title, msg); if (input) box.append(input); box.append(row); wrap.appendChild(box);
+    document.body.appendChild(wrap);
+    (input || ok).focus();
+    if (input) input.select();
+  });
+}
+
 // Row + column hover highlight. Call with a table or any container that holds one;
 // the mark survives the table being re-rendered inside a container. Rows marked
 // data-xhair-skip, or whose single cell spans the table (expanded detail rows), are ignored.

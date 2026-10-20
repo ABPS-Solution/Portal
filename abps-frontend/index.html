@@ -68,7 +68,7 @@
   #canvas-module-manufacturing-clearance input[type="date"] { color: transparent; }
 
   /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
-  #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
+  #auth-container { display: none; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
   html, body { height: 100%; overflow-x: hidden; scroll-behavior: auto; }
   .auth-card { background: var(--card); width: 100%; max-width: 480px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
   .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
@@ -3492,6 +3492,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="sa-tab-holidays" class="nav-btn-styled" onclick="switchSecurityAdminTab('holidays')" style="flex:1; padding:11px 16px;">Holidays</button>
       <button id="sa-tab-emailinboxes" class="nav-btn-styled" onclick="switchSecurityAdminTab('emailinboxes')" style="flex:1; padding:11px 16px;">Email Inboxes</button>
       <button id="sa-tab-pdfkeys" class="nav-btn-styled" onclick="switchSecurityAdminTab('pdfkeys')" style="flex:1; padding:11px 16px;">PDF Keys</button>
+      <button id="sa-tab-signature" class="nav-btn-styled" onclick="switchSecurityAdminTab('signature')" style="flex:1; padding:11px 16px; display:none;">Authorized Signature</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
@@ -3575,6 +3576,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="sa-panel-pdfkeys" style="display:none;">
       <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">Every document PDF (invoices, POs, BOQs, challans, tickets...) is made with these PDFShift keys. The key whose credits renew soonest is used first, then the next soonest, and so on; a key that runs out is skipped. Each key gets 50 free credits a month, renewing on its own date.</p>
       <div id="sa-pdfkeys-body"></div>
+    </div>
+
+    <div id="sa-panel-signature" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">This signature (Alok Kumar, authorized signatory) is printed on the final authorized copy of outgoing documents: RM Purchase Orders and their revisions, Project Dispatch Invoices and their revisions, and Delivery Challans. Draft copies never carry it. Use a clear scan of the signature on a white or transparent background, cropped close.</p>
+      <div id="sa-signature-body"></div>
     </div>
 
     <div id="sa-panel-holidays" style="display:none;">

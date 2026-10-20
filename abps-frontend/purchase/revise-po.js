@@ -954,11 +954,11 @@ function saveRPOAllocationModal(idx) {
     const q = parseFloat(inp.value) || 0;
     if (q <= 0) continue;
     const cap = parseFloat(inp.dataset.need) || 0;
-    if (q > cap + 1e-9) { alert(`${inp.dataset.prnid.replace(/^PRN_/,"")} only needs ${cap} more from this PO, cannot allocate ${q}.`); return; }
+    if (q > cap + 1e-9) { abpsAlert(`${inp.dataset.prnid.replace(/^PRN_/,"")} only needs ${cap} more from this PO, cannot allocate ${q}.`); return; }
     sum += q;
     allocs.push({ prnId: inp.dataset.prnid, quantity: q });
   }
-  if (sum > vdq + 1e-9) { alert(`Allocated ${sum} across PRNs but the Vendor Discussed Qty is only ${vdq}.`); return; }
+  if (sum > vdq + 1e-9) { abpsAlert(`Allocated ${sum} across PRNs but the Vendor Discussed Qty is only ${vdq}.`); return; }
   li._workingAllocations = allocs;
   li._allocationTouched = true;
   li._allocatedForQty = vdq;
@@ -1837,7 +1837,7 @@ function saveAPORAllocationModal(requestId, idx) {
     sum += q;
     allocs.push({ prnId: inp.dataset.prnid, quantity: q });
   }
-  if (sum > vdq + 1e-9) { alert(`Allocated ${sum} across PRNs but the Vendor Discussed Qty is only ${vdq}.`); return; }
+  if (sum > vdq + 1e-9) { abpsAlert(`Allocated ${sum} across PRNs but the Vendor Discussed Qty is only ${vdq}.`); return; }
   line._workingAllocations = allocs;
   line._allocationTouched = allocs.length > 0;
   line._allocatedForQty = vdq;

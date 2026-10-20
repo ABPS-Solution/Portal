@@ -15,7 +15,7 @@ function pd2CustomTypeChange() {
 
 function pd2LoadCustom() {
   const val = dashReadCustomVal("pd2");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   pd2CurrentPeriod = pd2CurrentCustomType;
   pd2LoadDashboard(val);
 }
@@ -32,10 +32,10 @@ async function pd2LoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
-    if (!data.success) { alert("Production Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Production Dashboard load failed: " + data.error); return; }
     pd2RenderDashboard(data);
   } catch(e) {
-    alert("Production Dashboard error: " + e.message);
+    abpsAlert("Production Dashboard error: " + e.message);
   }
 }
 

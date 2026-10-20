@@ -591,10 +591,10 @@ async function saveEmailLeadAssignment(mIdx, clear) {
   if (!mail) return;
   const sel = document.getElementById(`email-assign-select-${mIdx}`);
   const assignTo = clear ? null : (sel ? sel.value : "");
-  if (!clear && !assignTo) { alert("Select an ABPS Engineer first."); return; }
+  if (!clear && !assignTo) { abpsAlert("Select an ABPS Engineer first."); return; }
   try {
     const data = await apFetch({ action: "assignEmailLead", messageId: mail.messageIdReference, assignTo });
-    if (!data.success) { alert(data.error || "Could not assign this email."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not assign this email."); return; }
     mail.assignedTo = data.assignedTo;
     mail.assignedBy = data.assignedBy;
     mail.assignedAt = data.assignedTo ? new Date().toLocaleString("sv-SE", { timeZone: "Asia/Kolkata" }).replace(" ", "T") : null;
@@ -605,7 +605,7 @@ async function saveEmailLeadAssignment(mIdx, clear) {
     applyEmailLeadsCompanySearchAndRender();
   } catch (e) {
     if (e && e.message === "SESSION_EXPIRED") return;
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -697,12 +697,12 @@ async function saveEmailLeadNote(idx, messageId) {
       if (input) { input.value = ""; input.disabled = false; input.focus(); }
       if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     } else {
-      alert("Failed to add note: " + (d.error || "Unknown error"));
+      abpsAlert("Failed to add note: " + (d.error || "Unknown error"));
       if (input) input.disabled = false;
       if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     }
   } catch(e) {
-    alert("Error: " + e.message);
+    abpsAlert("Error: " + e.message);
     if (input) input.disabled = false;
     if (btn) { btn.disabled = false; btn.textContent = "Add"; }
   }

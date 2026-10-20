@@ -198,7 +198,7 @@ async function mowSaveDraftAndReload(challanId, ticketIds, existingDraft) {
     window._mowSelectedPoolTickets.clear();
     await loadMaterialOutwardServiceQueue();
   } catch (err) {
-    alert(err.message);
+    abpsAlert(err.message);
     if (btn) { btn.disabled = false; btn.textContent = challanId ? `+ Add Selected to Draft Challan #${challanId}` : "+ Start New Challan From Selected"; }
   }
 }
@@ -376,7 +376,7 @@ async function mowAddTicketsWhileEditing(challanId) {
   const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   if (!draft) return;
   const picked = [...document.querySelectorAll(`.mow-edit-add-cb[data-challan-id="${challanId}"]:checked`)].map(cb => cb.dataset.ticketId);
-  if (!picked.length) { alert('Select at least one ticket to add.'); return; }
+  if (!picked.length) { abpsAlert('Select at least one ticket to add.'); return; }
   const btn = document.getElementById(`mow-edit-add-btn-${challanId}`);
   if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
   window._mowExpandedDrafts.add(String(challanId));
@@ -441,7 +441,7 @@ function mowValidateDraftCard(challanId) {
 
 function mowShowInlineError(challanId, msg) {
   const feedback = document.getElementById(`mow-inline-feedback-${challanId}`);
-  if (!feedback) { alert(msg); return; }
+  if (!feedback) { abpsAlert(msg); return; }
   feedback.style.cssText = "display:block; margin-top:12px; padding:10px; border-left:4px solid var(--danger); background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
   feedback.textContent = msg;
 }
@@ -595,7 +595,7 @@ Click OK to reject.`)) return;
     if (refreshBtn) refreshBtn.textContent = "Refresh Queue";
   } catch (err) {
     hideBlockingOverlay();
-    alert(err.message);
+    abpsAlert(err.message);
   }
 }
 

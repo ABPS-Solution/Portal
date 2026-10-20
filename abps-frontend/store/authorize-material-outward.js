@@ -122,7 +122,7 @@ function amoToggle(id) {
 
 function amoInlineError(id, msg) {
   const el = document.getElementById(`amo-inline-${id}`);
-  if (!el) { alert(msg); return; }
+  if (!el) { abpsAlert(msg); return; }
   el.style.display = "block";
   el.textContent = msg;
 }

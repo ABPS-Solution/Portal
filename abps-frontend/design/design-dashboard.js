@@ -16,7 +16,7 @@ function ddCustomTypeChange() {
 
 function ddLoadCustom() {
   const val = dashReadCustomVal("dd");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   ddCurrentPeriod = ddCurrentCustomType;
   ddLoadDashboard(val);
 }
@@ -44,10 +44,10 @@ async function ddLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
-    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Dashboard load failed: " + data.error); return; }
     ddRenderDashboard(data);
   } catch(e) {
-    alert("Dashboard error: " + e.message);
+    abpsAlert("Dashboard error: " + e.message);
   }
 }
 

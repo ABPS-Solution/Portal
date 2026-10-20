@@ -49,7 +49,7 @@ function fmtPstatDateTime(value) {
 
 async function runProjectStatusSearch() {
   const projectId = document.getElementById("pstat-project-input").value.trim();
-  if (!projectId) { alert("Enter a Project ID first."); return; }
+  if (!projectId) { abpsAlert("Enter a Project ID first."); return; }
   document.getElementById("pstat-project-dropdown").style.display = "none";
   const resultsZone = document.getElementById("pstat-results");
   const lanesContainer = document.getElementById("pstat-lanes-container");

@@ -208,17 +208,17 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
     return openFGReleaseSelectionModal(ticketId);
   }
   if (hasEmptyActualQtyInputs(ticketId)) {
-    alert("Actual Quantity is required for every item before approving.");
+    abpsAlert("Actual Quantity is required for every item before approving.");
     return;
   }
   const overrunItem = findActualQtyOverJcRemaining(ticketId);
   if (overrunItem) {
-    alert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
+    abpsAlert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
     return;
   }
   const invalidSpare = findInvalidSpareAllocation(ticketId);
   if (invalidSpare) {
-    alert(`Spare Store Extra Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
+    abpsAlert(`Spare Store Extra Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
     return;
   }
   // Skips the standalone stock-coverage pre-check/manual-reallocation modal

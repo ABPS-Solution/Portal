@@ -107,7 +107,7 @@ async function createMaterialDescriptionInline(text, inputId, dropdownId, hidden
       if (data.existing && await abpsConfirm(`${data.error}\n\nClick OK to create it anyway as a new, separate description.`)) {
         return createMaterialDescriptionInline(text, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg, true);
       }
-      if (!data.existing) alert(data.error || "Could not create this description.");
+      if (!data.existing) abpsAlert(data.error || "Could not create this description.");
       if (dropdown) dropdown.style.display = "none";
       return;
     }
@@ -117,7 +117,7 @@ async function createMaterialDescriptionInline(text, inputId, dropdownId, hidden
     await loadMaterialDescriptionsIntoCache(true);
     selectMaterialDescriptionOption(data.descriptionId, data.descriptionText, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg);
   } catch (e) {
-    alert("Network error creating description: " + e.message);
+    abpsAlert("Network error creating description: " + e.message);
     if (dropdown) dropdown.style.display = "none";
   }
 }

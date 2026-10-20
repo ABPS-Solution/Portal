@@ -684,7 +684,7 @@ function boqIsMemoMaterial(item) {
 function selectBOQRowMaterial(rowIdx, productName, itemCode, formPrefix) {
   const memoHit = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
   if (boqIsMemoMaterial(memoHit)) {
-    alert(`${productName} comes only through Production Memo, so it can't be added to a BOQ.`);
+    abpsAlert(`${productName} comes only through Production Memo, so it can't be added to a BOQ.`);
     return;
   }
   const rowsMap = { cboq: cboqMaterialRows, eboq: eboqMaterialRows, uboq: uboqMaterialRows, boqrev: uboqRevRows };

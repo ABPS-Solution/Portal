@@ -526,7 +526,7 @@ async function addItemToShoppingBasketRow() {
   
   if (!materialName || isNaN(quantity) || quantity <= 0) {
     restoreAddBtn();
-    alert("Please select a material item line and enter a valid quantity count.");
+    abpsAlert("Please select a material item line and enter a valid quantity count.");
     return;
   }
   
@@ -551,7 +551,7 @@ async function addItemToShoppingBasketRow() {
 
     if (quantity > availableQty) {
       restoreAddBtn();
-      alert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
+      abpsAlert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
       return;
     }
 
@@ -561,7 +561,7 @@ async function addItemToShoppingBasketRow() {
       totalRequestedQuantity += existingLineItem.quantity;
       if (totalRequestedQuantity > availableQty) {
         restoreAddBtn();
-        alert(`Spare Store Lockout: Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
+        abpsAlert(`Spare Store Lockout: Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
         return;
       }
       existingLineItem.quantity = totalRequestedQuantity;
@@ -591,7 +591,7 @@ async function addItemToShoppingBasketRow() {
 
     if (!jcmMatchFGAdd) {
       restoreAddBtn();
-      alert(ticketIsServiceItemMode_()
+      abpsAlert(ticketIsServiceItemMode_()
         ? "This Finished Goods material is not currently available in stock."
         : "This Finished Goods material has no allotment for " + jobCardNumberValFGAdd + ".");
       return;
@@ -613,7 +613,7 @@ async function addItemToShoppingBasketRow() {
     // approval flow on the other end to catch it.
     if (totalRequestedQuantity > Number(jcmMatchFGAdd.remainingQty)) {
       restoreAddBtn();
-      alert(ticketIsServiceItemMode_()
+      abpsAlert(ticketIsServiceItemMode_()
         ? `Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} are currently in stock. Reduce the quantity.`
         : `Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this Job Card. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
       return;
@@ -660,13 +660,13 @@ async function addItemToShoppingBasketRow() {
       const memoComing = Math.max(0, Number(consMatch.memoComing) || 0);
       const memoQty = Math.max(0, Math.round((shortQty - memoComing) * 1000) / 1000);
       if (shortQty > 0 && memoComing > 0) {
-        alert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this Job Card.`
+        abpsAlert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this Job Card.`
           + (memoQty > 0 ? ` Only ${fmtQty(memoQty)} more will be asked.` : ` Nothing more will be asked; issue the rest when it arrives.`));
       }
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
       if (memoQty > 0 && !deptForMemo) {
         restoreAddBtn();
-        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Choose the Outgoing Use department first, so the rest can be asked through Production Memo.`);
+        abpsAlert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Choose the Outgoing Use department first, so the rest can be asked through Production Memo.`);
         return;
       }
       if (existingCons) {
@@ -705,7 +705,7 @@ async function addItemToShoppingBasketRow() {
 
   if (!itemData) {
     restoreAddBtn();
-    alert("Material not found in inventory catalog. Please sync stock first.");
+    abpsAlert("Material not found in inventory catalog. Please sync stock first.");
     return;
   }
   
@@ -739,7 +739,7 @@ async function addItemToShoppingBasketRow() {
 
   if (!jcmMatch) {
     restoreAddBtn();
-    alert(ticketIsServiceItemMode_()
+    abpsAlert(ticketIsServiceItemMode_()
       ? "This material is not currently available in stock."
       : "This material has no Job Card allotment for " + jobCardNumberVal + ". Ensure the BOQ is authorized and the Job Card is saved.");
     return;
@@ -771,12 +771,12 @@ async function addItemToShoppingBasketRow() {
       return;
     }
     restoreAddBtn();
-    alert(`${materialName} requested quantity (${totalRequestedQuantity}) exceeds the current total stock in ${activeStoreScope} (${totalStockForItem}). Reduce the quantity, or check with Purchase Department on when more will arrive.`);
+    abpsAlert(`${materialName} requested quantity (${totalRequestedQuantity}) exceeds the current total stock in ${activeStoreScope} (${totalStockForItem}). Reduce the quantity, or check with Purchase Department on when more will arrive.`);
     return;
   }
 
   const changeConflict = materialChangeConflictMessage(jcmMatch.itemCode || itemData.itemCode, totalRequestedQuantity, jcmMatch.remainingQty);
-  if (changeConflict) { restoreAddBtn(); alert(changeConflict); return; }
+  if (changeConflict) { restoreAddBtn(); abpsAlert(changeConflict); return; }
 
   const isOverAllottedBOQLimit = totalRequestedQuantity > Number(jcmMatch.remainingQty);
   const allottedLimit = Number(jcmMatch.remainingQty);
@@ -918,11 +918,11 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
 
   if (!notesField || !notesField.value.trim()) {
-    alert("Compulsory Input Missing: You must fill out the Explain Request justification text box notes before sending to Admin.");
+    abpsAlert("Compulsory Input Missing: You must fill out the Explain Request justification text box notes before sending to Admin.");
     return;
   }
   if (basketMaterialChanges().length) {
-    alert("This basket also has a Material Change Request. Delete the material change row, send the Excess Material Request, then raise the material change on a new ticket.");
+    abpsAlert("This basket also has a Material Change Request. Delete the material change row, send the Excess Material Request, then raise the material change on a new ticket.");
     return;
   }
   
@@ -971,12 +971,12 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
         </div>
       `;
     } else {
-      alert("Submission Rejected by Server: " + result.error);
+      abpsAlert("Submission Rejected by Server: " + result.error);
       btn.disabled = false;
       btn.textContent = "Send Approval Request to Admin";
     }
   } catch(e) { 
-    alert("Network request execution failure: " + e.message); 
+    abpsAlert("Network request execution failure: " + e.message); 
     btn.disabled = false;
     btn.textContent = "Send Approval Request to Admin";
   }
@@ -1430,7 +1430,7 @@ async function executeShortfallResolution(ticketId, projectId, resolutionType) {
         transferQty:       qty
       });
     });
-    if (reallocations.length === 0) return alert("Select at least one reallocation source and enter a quantity greater than 0.");
+    if (reallocations.length === 0) return abpsAlert("Select at least one reallocation source and enter a quantity greater than 0.");
   }
 
   if (overlay) overlay.remove();
@@ -1462,10 +1462,10 @@ async function executeShortfallResolution(ticketId, projectId, resolutionType) {
         }
       }, 3500);
     } else {
-      alert("Resolution failed: " + (data.error || "Unknown error."));
+      abpsAlert("Resolution failed: " + (data.error || "Unknown error."));
     }
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -2537,7 +2537,7 @@ document.addEventListener("click", e => { if (e.target.closest && (e.target.clos
 function ticketOpenConsumableRequest(itemCode, materialName, unit) {
   const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
   const jobCardNumber = dept === "Service" ? "" : (document.getElementById("ticket-job-card-dropdown")?.value || "");
-  if (dept !== "Service" && !jobCardNumber) { alert("Select the Job Card first."); return; }
+  if (dept !== "Service" && !jobCardNumber) { abpsAlert("Select the Job Card first."); return; }
   const cat = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
   let fullName = (cat && (cat.combinedName || cat.productName)) || materialName || itemCode;
   if (cat && cat.make && !/Make:/i.test(fullName)) fullName += " - Make: " + cat.make;

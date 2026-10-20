@@ -181,8 +181,8 @@ function crpoReadBase64(file) {
 
 async function crpoExtract() {
   const projectId = document.getElementById('crpo-project-select').value;
-  if (!projectId) return alert('Select a project first.');
-  if (!crpoFile) return alert('Select the revised Purchase Order file first.');
+  if (!projectId) return abpsAlert('Select a project first.');
+  if (!crpoFile) return abpsAlert('Select the revised Purchase Order file first.');
   const btn = document.getElementById('crpo-extract-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'AI Extracting...'; }
   showBlockingOverlay('Reading Revised Purchase Order...');
@@ -497,17 +497,17 @@ async function crpoReviseAnother() {
 async function crpoSubmit() {
   if (!crpoReview) return;
   const h = crpoReview.header;
-  if (!String(h.deliveryDate || '').trim()) return alert('Tentative Delivery Date is required.');
+  if (!String(h.deliveryDate || '').trim()) return abpsAlert('Tentative Delivery Date is required.');
   const lines = crpoReview.lineItems.filter(li => (li.description || li.itemCode));
-  if (!lines.length) return alert('At least one product row is required.');
-  if (lines.some(li => String(li.quantity ?? '').trim() === '')) return alert('Every product row needs a quantity.');
+  if (!lines.length) return abpsAlert('At least one product row is required.');
+  if (lines.some(li => String(li.quantity ?? '').trim() === '')) return abpsAlert('Every product row needs a quantity.');
   const cuts = [];
   for (const li of lines) {
     if (!li.matchLineId) continue;
     const old = crpoDetails.lines.find(l => String(l.lineId) === String(li.matchLineId));
     if (!old) continue;
     const qty = crpoNum(li.quantity);
-    if (qty < (Number(old.invoicedQuantity) || 0)) return alert(`"${old.description}" cannot go below its invoiced quantity (${fmtQty(old.invoicedQuantity)}).`);
+    if (qty < (Number(old.invoicedQuantity) || 0)) return abpsAlert(`"${old.description}" cannot go below its invoiced quantity (${fmtQty(old.invoicedQuantity)}).`);
     if (qty < (Number(old.mfcQuantity) || 0)) cuts.push(`${old.description}: MFC ${fmtQty(old.mfcQuantity)} → ${fmtQty(qty)}`);
   }
   const poChanged = String(h.poNumber || '').trim() !== String((crpoDetails.header || {}).poNumber || '').trim();

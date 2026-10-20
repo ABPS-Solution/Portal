@@ -195,7 +195,7 @@ async function executeItemCodeSearch() {
   const createZone   = document.getElementById("itemcode-create-form-zone");
   const banner       = document.getElementById("itemcode-feedback-banner");
 
-  if (!query) { alert("Please enter a material name to search."); return; }
+  if (!query) { abpsAlert("Please enter a material name to search."); return; }
 
   // Reset zones
   resultsZone.style.display   = "none";
@@ -455,9 +455,9 @@ async function submitNewItemCode() {
   const itemCode   = document.getElementById("itemcode-new-code").value.trim();
   const typeOfMat  = document.getElementById("icf-new-type-ta-input").value.trim();
 
-  if (!typeOfMat) { alert("Type of Material is required."); return; }
+  if (!typeOfMat) { abpsAlert("Type of Material is required."); return; }
   if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
-    alert("Item Code not loaded yet. Please wait or refresh.");
+    abpsAlert("Item Code not loaded yet. Please wait or refresh.");
     return;
   }
 
@@ -484,7 +484,7 @@ async function submitNewItemCode() {
   }
 
   if (usingFormat) {
-    if (!icfSelectedFormat) { alert("Select a Sub-Option first."); return; }
+    if (!icfSelectedFormat) { abpsAlert("Select a Sub-Option first."); return; }
     const nameValues = icfNameGetValues ? icfNameGetValues() : [];
     const ratingValues = icfRatingGetValues ? icfRatingGetValues() : [];
     const nameErr = icfValidateValues(icfSelectedFormat.materialNameTemplate, nameValues);
@@ -503,8 +503,8 @@ async function submitNewItemCode() {
     materialName = document.getElementById("itemcode-new-name").value.trim();
     rating = document.getElementById("itemcode-new-rating").value.trim();
     unit = document.getElementById("itemcode-new-unit").value.trim();
-    if (!materialName) { alert("Material Name is required."); return; }
-    if (!unit)         { alert("Unit is required."); return; }
+    if (!materialName) { abpsAlert("Material Name is required."); return; }
+    if (!unit)         { abpsAlert("Unit is required."); return; }
     // skipAiCheck is only ever honored server-side after re-verifying real
     // admin status (req.user.perm_admin) — this client value is just what
     // the checkbox says, not a trust boundary. The checkbox itself is only
@@ -762,7 +762,7 @@ function handleIcfSubOptionChange(formatIdStr, initialValues) {
 // "clone" from creating an actual duplicate.
 async function cloneItemCodeIntoCreateForm(itemCode) {
   const item = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
-  if (!item) { alert("Could not find that item code's details — try refreshing the search."); return; }
+  if (!item) { abpsAlert("Could not find that item code's details — try refreshing the search."); return; }
 
   await revealItemCodeCreateForm();
 
@@ -1141,6 +1141,6 @@ async function toggleItemCodeConsumable(itemCode, box) {
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
     box.checked = !box.checked;
-    alert(e.message);
+    abpsAlert(e.message);
   }
 }

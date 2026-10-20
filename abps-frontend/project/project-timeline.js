@@ -869,15 +869,15 @@ async function ptlSetMilestoneOverride(nodeId) {
   if (!ptlData) return;
   const el = document.getElementById(`ptl-msoverride-${nodeId}`);
   const date = el ? el.value : "";
-  if (!date) { alert("Pick a date first."); return; }
+  if (!date) { abpsAlert("Pick a date first."); return; }
   const projectId = ptlData.project.projectId;
   const milestoneKey = PTL_ADMIN_MILESTONE_OVERRIDE_KEY[nodeId];
   try {
     const data = await apFetch({ action: "adminOverrideSystemMilestone", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     await selectPtlProject(projectId);
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -887,10 +887,10 @@ async function ptlClearMilestoneOverride(nodeId) {
   const milestoneKey = PTL_ADMIN_MILESTONE_OVERRIDE_KEY[nodeId];
   try {
     const data = await apFetch({ action: "adminClearSystemMilestoneOverride", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey });
-    if (!data.success) { alert(data.error || "Could not clear this override."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not clear this override."); return; }
     await selectPtlProject(projectId);
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -898,16 +898,16 @@ async function ptlSetSystemDate(fieldId) {
   if (!ptlData) return;
   const el = document.getElementById(`ptl-sysdate-${fieldId}`);
   const date = el ? el.value : "";
-  if (!date) { alert("Pick a date first."); return; }
+  if (!date) { abpsAlert("Pick a date first."); return; }
   const projectId = ptlData.project.projectId;
   try {
     const data = await apFetch({ action: "adminBackdateSystemDate", operatorName: appActiveOperatorIdentityString, projectId, fieldId, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     const node = ptlData.trunk.find(n => n.id === fieldId);
     if (node) node.actual = data.actualDate;
     ptlRender();
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -2204,12 +2204,12 @@ async function ptlMarkMilestoneDone(nodeId) {
   try {
     const asOfDate = ptlReadAsOf(nodeId);
     const data = await apFetch({ action: "saveTimelineManualMilestone", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, asOfDate });
-    if (!data.success) { alert(data.error || "Could not mark this done."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not mark this done."); return; }
     const node = ptlData.trunk.find(n => n.id === nodeId);
     if (node) node.actual = data.actualDate;
     ptlRender();
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -2322,7 +2322,7 @@ async function ptlParseLdClauseNow() {
     const clauseText = ptlLdPanelState.form.sourceText && ptlLdPanelState.form.sourceText.trim()
       ? ptlLdPanelState.form.sourceText : undefined;
     const data = await apFetch({ action: "extractLdTermsPreview", projectId: ptlLdPanelState.projectId, clauseText });
-    if (!data.success) { alert(data.error || "Could not parse this clause."); ptlLdPanelState.loadingParse = false; ptlRenderLdPanel(); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not parse this clause."); ptlLdPanelState.loadingParse = false; ptlRenderLdPanel(); return; }
     const c = data.candidate;
     Object.assign(ptlLdPanelState.form, {
       ldApplicable: c.ldApplicable, ratePercent: c.ratePercent, periodUnit: c.periodUnit,
@@ -2335,7 +2335,7 @@ async function ptlParseLdClauseNow() {
     ptlLdPanelState.candidateConfidence = c.confidence;
     ptlLdPanelState.parseRaw = c;
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
   ptlLdPanelState.loadingParse = false;
   ptlRenderLdPanel();
@@ -2344,12 +2344,12 @@ async function ptlParseLdClauseNow() {
 async function ptlSaveLdTerms() {
   if (!ptlLdPanelState) return;
   const f = ptlLdPanelState.form;
-  if (f.ldApplicable && !(Number(f.ratePercent) > 0)) { alert("Rate percent is required."); return; }
+  if (f.ldApplicable && !(Number(f.ratePercent) > 0)) { abpsAlert("Rate percent is required."); return; }
   // Both columns are numeric(6,3) — max 999.999. A larger value used to
   // hit a raw, unhelpful Postgres "numeric field overflow" (found via a
   // real ref-id lookup, 17 Sep 2026) instead of a clear message.
-  if (f.ldApplicable && Number(f.ratePercent) > 999.999) { alert("Rate % can't be more than 999.999."); return; }
-  if (f.ldApplicable && f.capPercent != null && f.capPercent !== "" && Number(f.capPercent) > 999.999) { alert("Cap % can't be more than 999.999."); return; }
+  if (f.ldApplicable && Number(f.ratePercent) > 999.999) { abpsAlert("Rate % can't be more than 999.999."); return; }
+  if (f.ldApplicable && f.capPercent != null && f.capPercent !== "" && Number(f.capPercent) > 999.999) { abpsAlert("Cap % can't be more than 999.999."); return; }
   try {
     const data = await apFetch({
       action: "saveLdTerms", operatorName: appActiveOperatorIdentityString, projectId: ptlLdPanelState.projectId,
@@ -2360,11 +2360,11 @@ async function ptlSaveLdTerms() {
       sourceText: f.sourceText, parseProvenance: f.parseProvenance, parseModel: f.parseModel,
       parseRaw: ptlLdPanelState.parseRaw || null, notes: f.notes,
     });
-    if (!data.success) { alert(data.error || "Could not save LD terms."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not save LD terms."); return; }
     ptlCloseLdPanel();
     await selectPtlProject(ptlData.project.projectId);
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 

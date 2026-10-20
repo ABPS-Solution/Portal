@@ -840,12 +840,12 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
           " style="background:#15803d; color:white; padding:8px 16px; font-weight:700;">+ Create New Entry</button>
         </div>`;
     } else {
-      alert("Submission Rejected: " + data.error);
+      abpsAlert("Submission Rejected: " + data.error);
       btn.disabled = false; btn.textContent = "Submit Store Entry and GRN";
     }
   } catch(e) { 
     hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message); 
+    abpsAlert("Network request execution failure: " + e.message); 
     btn.disabled = false; btn.textContent = "Submit Store Entry and GRN"; 
   }
 }
@@ -950,12 +950,12 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      alert("Server Error: " + data.error);
+      abpsAlert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
     }
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message);
+    abpsAlert("Network request execution failure: " + e.message);
     btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
   }
 }
@@ -974,7 +974,7 @@ async function commitRepairQAToBackend(grnNum, btn) {
       lineItems.push({ rejectionId: inp.dataset.rejid, repairedQuantity: repairedQuantity });
     }
   });
-  if (lineItems.length === 0) { alert("Enter at least one repaired quantity greater than zero."); return; }
+  if (lineItems.length === 0) { abpsAlert("Enter at least one repaired quantity greater than zero."); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Confirming...';
@@ -1000,12 +1000,12 @@ async function commitRepairQAToBackend(grnNum, btn) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      alert("Server Error: " + data.error);
+      abpsAlert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
     }
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message);
+    abpsAlert("Network request execution failure: " + e.message);
     btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
   }
 }

@@ -381,7 +381,7 @@ async function commitQARevisionToBackend(grnNumber, btn) {
   for (const li of lineItems) {
     if (li.notOkQuantity > 0 && (!li.reasonForNotOk || !li.actionForRejectedMaterial)) {
       const missing = [!li.reasonForNotOk && "Reason for Not OK", !li.actionForRejectedMaterial && "Action for Rejected"].filter(Boolean).join(" and ");
-      alert(`Cannot submit: ${li.itemCode} has ${li.notOkQuantity} Not OK but is missing ${missing}. Every row with Not OK above 0 needs both.`);
+      abpsAlert(`Cannot submit: ${li.itemCode} has ${li.notOkQuantity} Not OK but is missing ${missing}. Every row with Not OK above 0 needs both.`);
       return;
     }
   }
@@ -393,15 +393,15 @@ async function commitQARevisionToBackend(grnNumber, btn) {
     const data = await apFetch({ action: "commitQARevision", payload: { grnNumber, lineItems }, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
-      alert("Q/A revision applied successfully.");
+      abpsAlert("Q/A revision applied successfully.");
       runQARevisionSearch();
     } else {
-      alert("Server Error: " + data.error);
+      abpsAlert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = "Submit Q/A Revision";
     }
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message);
+    abpsAlert("Network request execution failure: " + e.message);
     btn.disabled = false; btn.textContent = "Submit Q/A Revision";
   }
 }
@@ -1034,12 +1034,12 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      alert("Server Error: " + data.error);
+      abpsAlert("Server Error: " + data.error);
       btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
     }
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network request execution failure: " + e.message);
+    abpsAlert("Network request execution failure: " + e.message);
     btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
   }
 }

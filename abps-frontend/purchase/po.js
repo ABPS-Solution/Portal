@@ -50,10 +50,10 @@ async function initializeAuthorizePOPanel() {
 // fast feedback; the server re-validates and re-checks the "Pending
 // Authorization" status regardless.
 async function promptRenameRMPONumber(oldPoNo) {
-  const newPoNo = (prompt(`Correct PO number "${oldPoNo}" to:`, oldPoNo) || "").trim();
+  const newPoNo = (await abpsPrompt(`Correct PO number "${oldPoNo}" to:`, oldPoNo) || "").trim();
   if (!newPoNo || newPoNo === oldPoNo) return;
   if (!/^[A-Za-z0-9._-]+$/.test(newPoNo)) {
-    alert('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
+    abpsAlert('PO number can only contain letters, numbers, dots, hyphens and underscores — replace "/" with "-".');
     return;
   }
   if (!await abpsConfirm(`Rename "${oldPoNo}" to "${newPoNo}"? This cannot be undone from here.`)) return;
@@ -62,11 +62,11 @@ async function promptRenameRMPONumber(oldPoNo) {
   try {
     const data = await apFetch({ action: "adminRenameRMPONumber", oldPoNo, newPoNo, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error || "Failed to rename PO."); return; }
+    if (!data.success) { abpsAlert(data.error || "Failed to rename PO."); return; }
     initializeAuthorizePOPanel();
   } catch (e) {
     hideBlockingOverlay();
-    alert(e.message || "Failed to rename PO.");
+    abpsAlert(e.message || "Failed to rename PO.");
   }
 }
 
@@ -407,7 +407,7 @@ async function markTransportPOCompleted(poNo, btn) {
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
     btn.disabled = false; btn.textContent = "Mark Completed";
-    alert(e.message);
+    abpsAlert(e.message);
   }
 }
 
@@ -1361,7 +1361,7 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   // Material differs (checked on save); just point it out here.
   const dupIdx = window.cpoMaterialRows.findIndex(r => r.id !== rowId && r.itemCode === itemCode);
   if (dupIdx !== -1) {
-    setTimeout(() => alert(`${itemCode} is also in Row ${dupIdx + 1}. That's allowed, but each row needs a different Description of Material (e.g. the size).`), 0);
+    setTimeout(() => abpsAlert(`${itemCode} is also in Row ${dupIdx + 1}. That's allowed, but each row needs a different Description of Material (e.g. the size).`), 0);
   }
   row.description = combinedName;
   row.itemCode = itemCode;
@@ -1564,7 +1564,7 @@ function saveCPOAllocationPicker(rowId) {
     if (q <= 0) continue;
     const cap = parseFloat(inp.dataset.max) || 0;
     if (q > cap + 1e-9) {
-      alert(`${inp.dataset.prnid || (inp.dataset.boqid ? "PRN pending " + inp.dataset.boqid : ("Production Memo request #" + inp.dataset.memoid))} only needs ${cap} more of this material, cannot allocate ${q}.`);
+      abpsAlert(`${inp.dataset.prnid || (inp.dataset.boqid ? "PRN pending " + inp.dataset.boqid : ("Production Memo request #" + inp.dataset.memoid))} only needs ${cap} more of this material, cannot allocate ${q}.`);
       return;
     }
     sum += q;
@@ -1573,7 +1573,7 @@ function saveCPOAllocationPicker(rowId) {
     else allocs.push({ prnId: inp.dataset.prnid, quantity: q });
   }
   if (sum > lineQty + 1e-9) {
-    alert(`Allocated ${sum} across PRNs but the ordered quantity is only ${lineQty}.`);
+    abpsAlert(`Allocated ${sum} across PRNs but the ordered quantity is only ${lineQty}.`);
     return;
   }
   row.allocations = allocs;

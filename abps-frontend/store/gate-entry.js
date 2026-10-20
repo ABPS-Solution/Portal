@@ -160,7 +160,7 @@ function resetGateEntryWorkspaceState() {
 
 async function parseGateDocumentsWithAI() {
   const btn = document.getElementById('gate-parse-ai-btn');
-  if (targetGateInvoiceFiles.length === 0 && targetGateChallanFiles.length === 0) return alert("Please select at least one document (Invoice or Challan) before processing.");
+  if (targetGateInvoiceFiles.length === 0 && targetGateChallanFiles.length === 0) return abpsAlert("Please select at least one document (Invoice or Challan) before processing.");
   btn.disabled = true; btn.innerHTML = 'AI Processing...';
   try {
     let invoiceCombined, challanCombined;
@@ -170,7 +170,7 @@ async function parseGateDocumentsWithAI() {
         combineGateImagesToSingleBase64(targetGateChallanFiles)
       ]);
     } catch (combineErr) {
-      alert(combineErr.message);
+      abpsAlert(combineErr.message);
       return;
     }
 
@@ -192,13 +192,13 @@ async function parseGateDocumentsWithAI() {
       challanMimeType: secondary ? secondary.mimeType : "image/jpeg",
       canonicalMaterialsCatalog: existingMaterialNamesList
     });
-    if (!data.success) return alert("AI Processing failed: " + data.error);
+    if (!data.success) return abpsAlert("AI Processing failed: " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
 
     if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems)) {
       activeParsedGatePayloadCache = activeParsedGatePayloadCache || {};
       activeParsedGatePayloadCache.lineItems = [];
-      alert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
+      abpsAlert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
     }
 
     document.getElementById('gate-meta-invoice').value = activeParsedGatePayloadCache.invoiceNumber || "";
@@ -247,7 +247,7 @@ async function parseGateDocumentsWithAI() {
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
   } catch(e) { 
-    alert("AI extraction pipeline failed: " + e.message); 
+    abpsAlert("AI extraction pipeline failed: " + e.message); 
   } finally { 
     btn.disabled = false; btn.textContent = "Process Documents with AI"; 
   }
@@ -258,18 +258,18 @@ async function commitGateEntryRecordsToBackend() {
   const banner = document.getElementById('store-gate-runtime-feedback-banner');
   const uploadWrapperBlock = document.getElementById('gate-upload-fields-wrapper-group');
   
-  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Process data missing.");
+  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return abpsAlert("Process data missing.");
 
-  if (!document.getElementById('gate-meta-vendor').value.trim()) return alert("Vendor Name is compulsory.");
+  if (!document.getElementById('gate-meta-vendor').value.trim()) return abpsAlert("Vendor Name is compulsory.");
   // Which number is required tracks which document was actually uploaded —
   // Invoice Number only matters if an Invoice was attached, Challan Number
   // only if a Challan was attached, and both if both were. Previously
   // Invoice Number was unconditionally required even for a challan-only
   // Gate Entry, which had no invoice number to give.
-  if (targetGateInvoiceFiles.length > 0 && !document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
-  if (targetGateChallanFiles.length > 0 && !document.getElementById('gate-meta-challan').value.trim()) return alert("Challan Number is compulsory.");
+  if (targetGateInvoiceFiles.length > 0 && !document.getElementById('gate-meta-invoice').value.trim()) return abpsAlert("Invoice Number is compulsory.");
+  if (targetGateChallanFiles.length > 0 && !document.getElementById('gate-meta-challan').value.trim()) return abpsAlert("Challan Number is compulsory.");
 
-  if ([...document.querySelectorAll('.gate-row-qty-input')].some(i => i.value === '' || !(Number(i.value) >= 0))) return alert("Every Invoice Qty must be a number of 0 or more.");
+  if ([...document.querySelectorAll('.gate-row-qty-input')].some(i => i.value === '' || !(Number(i.value) >= 0))) return abpsAlert("Every Invoice Qty must be a number of 0 or more.");
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
@@ -304,7 +304,7 @@ async function commitGateEntryRecordsToBackend() {
     ]);
   } catch (combineErr) {
     hideBlockingOverlay();
-    alert(combineErr.message);
+    abpsAlert(combineErr.message);
     btn.disabled = false; btn.textContent = "Generate Gate Entry";
     return;
   }
@@ -357,10 +357,10 @@ async function commitGateEntryRecordsToBackend() {
           " style="background:#15803d; color:white; padding:8px 16px; font-weight:700;">+ Create New Entry</button>
         </div>`;
     } else {
-      alert("Submission Error: " + data.error);
+      abpsAlert("Submission Error: " + data.error);
       btn.disabled = false; btn.textContent = "Generate Gate Entry";
     }
-  } catch(e) { hideBlockingOverlay(); alert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
+  } catch(e) { hideBlockingOverlay(); abpsAlert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
 }
 
 window.activeGateRejectionLinks = {}; // rejectionId -> { linkedQty, itemCode, materialName, unitType }

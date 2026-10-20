@@ -473,7 +473,7 @@ async function saveMcGatingField(projectId, field, value) {
   try {
     const data = await apFetch({ action: "saveMcGatingField", projectId, field, value });
     if (!data.success) {
-      alert(data.error || "Failed to save.");
+      abpsAlert(data.error || "Failed to save.");
       return;
     }
     mcGatingState[projectId] = { ...mcGatingState[projectId], [field]: value, complete: data.complete };
@@ -499,7 +499,7 @@ async function saveMcGatingField(projectId, field, value) {
       }
     }
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -692,13 +692,13 @@ async function submitMcClearance(projectId) {
     // a row with no Standard Product and no New MFC Quantity is simply not cleared now
     .filter(r => !(r.needsBoqJc && !r.standardItemCode && !(Number(r.newMfcQuantity) > 0)));
   if (rows.length === 0) {
-    alert("Nothing to submit: pick a Standard Product and New MFC Quantity on at least one row that is not On Hold.");
+    abpsAlert("Nothing to submit: pick a Standard Product and New MFC Quantity on at least one row that is not On Hold.");
     return;
   }
 
   const missing = rows.filter(r => r.needsBoqJc && !r.standardItemCode);
   if (missing.length > 0) {
-    alert("Standard Product Name is required for every product row that needs a BOQ / JC before submitting.");
+    abpsAlert("Standard Product Name is required for every product row that needs a BOQ / JC before submitting.");
     return;
   }
 
@@ -706,14 +706,14 @@ async function submitMcClearance(projectId) {
   for (const r of rows) {
     if (!r.needsBoqJc || !r.standardItemCode) continue;
     if (mixedBuild[r.standardItemCode] && mixedBuild[r.standardItemCode] !== r.buildType) {
-      alert(`"${r.standardProductName}" is on more than one row with different Build Types. Rows of the same product share one BOQ, so give them the same Build Type.`);
+      abpsAlert(`"${r.standardProductName}" is on more than one row with different Build Types. Rows of the same product share one BOQ, so give them the same Build Type.`);
       return;
     }
     mixedBuild[r.standardItemCode] = r.buildType;
   }
 
   if (!rows.some(r => Number(r.newMfcQuantity) > 0)) {
-    alert("At least one product row needs a New MFC Quantity greater than 0.");
+    abpsAlert("At least one product row needs a New MFC Quantity greater than 0.");
     return;
   }
 
@@ -780,10 +780,10 @@ async function submitMcClearance(projectId) {
       const createdRows = (data.createdBoqIds || []).map(id => ({ label: "BOQ created (Purchased from Outside)", raw: true, before: "—", after: id + " (pending authorization, set its Department in Authorize BOQ)" }));
       renderMcSubmitSuccess(projectId, [...gatingChangeRows, ...summaryRows, ...createdRows]);
     } else {
-      alert(data.error || "Failed to submit Manufacturing Clearance.");
+      abpsAlert(data.error || "Failed to submit Manufacturing Clearance.");
     }
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }
@@ -908,35 +908,35 @@ async function commitProductRename() {
       newItemCode: preview.newItemCode, operatorName: appActiveOperatorIdentityString,
     });
     if (!data.success) {
-      alert(data.error || "Rename failed.");
+      abpsAlert(data.error || "Rename failed.");
       if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
       return;
     }
     closeProductRenameModal();
     await loadMcLineItems(target.projectId);
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
     if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
   }
 }
 
 async function holdMcProduct(projectId, lineId) {
-  const reason = prompt("Reason for placing this product On Hold (required):");
+  const reason = await abpsPrompt("Reason for placing this product On Hold (required):");
   if (reason === null) return; // cancelled
-  if (!reason.trim()) { alert("A reason is required to place a Hold."); return; }
+  if (!reason.trim()) { abpsAlert("A reason is required to place a Hold."); return; }
   if (!await abpsConfirm(`Hold this product on ${projectId}?\n\nThis releases its currently-reserved store stock back to the free pool — the material becomes claimable by other projects' PRNs. No new BOQ/PRN/PO/Job Card/Store Ticket can be raised for it until un-held. Work already in progress (open POs, approved tickets, open Job Cards) is not affected.`)) return;
 
   showBlockingOverlay("Placing Hold...");
   try {
     const data = await apFetch({ action: "holdProjectProduct", projectId, lineId, reason: reason.trim(), operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error || "Failed to place Hold."); return; }
+    if (!data.success) { abpsAlert(data.error || "Failed to place Hold."); return; }
     const releasedSummary = (data.released || []).map(r => `${r.materialName || r.itemCode}: ${trimNum(r.releasedQty)}`).join("\n");
-    if (releasedSummary) alert(`Hold placed. Released back to free stock:\n${releasedSummary}`);
+    if (releasedSummary) abpsAlert(`Hold placed. Released back to free stock:\n${releasedSummary}`);
     await loadMcLineItems(projectId);
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -947,16 +947,16 @@ async function unholdMcProduct(projectId, lineId) {
   try {
     const data = await apFetch({ action: "unholdProjectProduct", projectId, lineId, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error || "Failed to remove Hold."); return; }
+    if (!data.success) { abpsAlert(data.error || "Failed to remove Hold."); return; }
     const shortfalls = (data.reclaimed || []).filter(r => r.shortfall > 1e-9);
     if (shortfalls.length > 0) {
       const msg = shortfalls.map(r => `${r.materialName || r.itemCode}: reclaimed ${trimNum(r.reclaimed)} of ${trimNum(r.wanted)} — ${trimNum(r.shortfall)} already claimed elsewhere`).join("\n");
-      alert(`Hold removed. Some stock could not be fully reclaimed:\n${msg}`);
+      abpsAlert(`Hold removed. Some stock could not be fully reclaimed:\n${msg}`);
     }
     await loadMcLineItems(projectId);
   } catch(e) {
     hideBlockingOverlay();
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -1006,9 +1006,9 @@ async function mcActivateProject(projectId) {
   try {
     const data = await apFetch({ action: "activateProject", projectId });
     if (data.success) { loadManufacturingClearanceList(); }
-    else alert(data.error || "Failed to activate.");
+    else abpsAlert(data.error || "Failed to activate.");
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }
@@ -1020,9 +1020,9 @@ async function mcReactivateProject(projectId) {
   try {
     const data = await apFetch({ action: "reactivateCompletedProject", projectId });
     if (data.success) { loadManufacturingClearanceList(); }
-    else alert(data.error || "Failed to reactivate.");
+    else abpsAlert(data.error || "Failed to reactivate.");
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }

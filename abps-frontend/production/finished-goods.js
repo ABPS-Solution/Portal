@@ -82,9 +82,9 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
   const banner    = document.getElementById(`fg-feedback-${canvasId}`);
   const submitBtn = document.getElementById(`fg-submit-${canvasId}`);
 
-  if (!projectId)              return alert("Project ID is required.");
-  if (!totalStock || totalStock <= 0) return alert("Product Quantity must be greater than 0.");
-  if (!storeIncharge)          return alert("Finished Goods Store Incharge Person is required.");
+  if (!projectId)              return abpsAlert("Project ID is required.");
+  if (!totalStock || totalStock <= 0) return abpsAlert("Product Quantity must be greater than 0.");
+  if (!storeIncharge)          return abpsAlert("Finished Goods Store Incharge Person is required.");
 
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Saving...';
@@ -122,12 +122,12 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
           </button>
         </div>`;
     } else {
-      alert("Submission failed: " + (data.error || "Unknown error."));
+      abpsAlert("Submission failed: " + (data.error || "Unknown error."));
       submitBtn.disabled = false;
       submitBtn.textContent = "Add to Finished Goods Store";
     }
   } catch(err) {
-    alert("Network error: " + err.message);
+    abpsAlert("Network error: " + err.message);
     submitBtn.disabled = false;
     submitBtn.textContent = "Add to Finished Goods Store";
   }

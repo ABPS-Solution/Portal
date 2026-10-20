@@ -16,7 +16,7 @@ function mdCustomTypeChange() {
 
 function mdLoadCustom() {
   const val = dashReadCustomVal("md");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   mdCurrentPeriod = mdCurrentCustomType;
   mdLoadDashboard(val);
 }
@@ -39,10 +39,10 @@ async function mdLoadDashboard(customVal, opts) {
       periodType:  mdCurrentPeriod,
       periodValue: customVal || ""
     });
-    if (!data.success) { if (!silent) alert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { if (!silent) abpsAlert("Dashboard load failed: " + data.error); return; }
     mdRenderDashboard(data);
   } catch(e) {
-    if (!silent) alert("Dashboard error: " + e.message);
+    if (!silent) abpsAlert("Dashboard error: " + e.message);
   }
 }
 

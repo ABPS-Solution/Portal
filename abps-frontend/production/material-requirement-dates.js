@@ -739,8 +739,8 @@ async function mrdToggleGate(turnOn) {
   if (!(await abpsConfirm(msg, { okLabel: turnOn ? "Turn On" : "Pause", title: "Material Requirement Dates" }))) return;
   try {
     const d = await apFetch({ action: "setMrdGateSetting", enabled: turnOn, operatorName: appActiveOperatorIdentityString });
-    if (!d.success) { alert(d.error || "Could not change the setting."); return; }
-  } catch (e) { alert("Network error: " + e.message); return; }
+    if (!d.success) { abpsAlert(d.error || "Could not change the setting."); return; }
+  } catch (e) { abpsAlert("Network error: " + e.message); return; }
   mrdRenderGateBar("mrd-gate-bar-assign");
   mrdRenderGateBar("mrd-gate-bar-revise");
 }

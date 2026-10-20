@@ -211,15 +211,15 @@ async function runCashExpenseSearch() {
 // an Open (never closed) or Online (always net-zero) voucher; server-side
 // deleteCashExpenseVoucher re-checks this regardless of what got sent.
 async function cesDeleteVoucher(expenseId) {
-  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  const reason = await abpsPrompt("Reason for deleting this voucher (optional):") || null;
   if (!await abpsConfirm("Permanently delete this voucher? This cannot be undone — the employee will need a new one.")) return;
   showBlockingOverlay("Deleting voucher...");
   try {
     const data = await acFetch("deleteCashExpenseVoucher", { expenseId, reason });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error); return; }
+    if (!data.success) { abpsAlert(data.error); return; }
     runCashExpenseSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
 }
 
 // Actual Amount correction for an already-closed voucher (revised 31 Aug

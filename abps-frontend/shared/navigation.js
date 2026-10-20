@@ -63,7 +63,7 @@ async function navigateToModule(key) {
     window.scrollTo(0, 0);
     setTimeout(() => window.scrollTo(0, 0), 50);
     // 1. Core verification gateway check routing against userPermissions payload mapping
-    if (!userPermissions[key]) return alert("Access Denied: Missing permission profile privileges."); 
+    if (!userPermissions[key]) return abpsAlert("Access Denied: Missing permission profile privileges."); 
     
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {

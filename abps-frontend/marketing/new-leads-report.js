@@ -93,7 +93,7 @@ function nlrFilterText(f) {
 // opts.allTime: no dates (used by Daily Timeline to find an engineer's leads).
 async function runNewLeadsReport(opts) {
   const f = nlrReadFilters();
-  if (!(opts && opts.allTime) && (!f.startDate || !f.endDate)) { alert("Please choose a From and a To date."); return; }
+  if (!(opts && opts.allTime) && (!f.startDate || !f.endDate)) { abpsAlert("Please choose a From and a To date."); return; }
   const btn = document.getElementById("nlr-run-btn");
   const out = document.getElementById("nlr-output");
   btn.classList.add("loading"); btn.textContent = "Loading...";
@@ -251,13 +251,13 @@ async function downloadNewLeadsReport() {
   if (btn) { btn.disabled = true; btn.textContent = "Preparing..."; }
   try {
     const data = await apFetch({ action: "downloadNewLeadsReport", ...f });
-    if (!data.success) { alert(data.error || "Download failed."); return; }
+    if (!data.success) { abpsAlert(data.error || "Download failed."); return; }
     const link = document.createElement("a");
     link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + data.base64;
     link.download = data.fileName;
     document.body.appendChild(link); link.click(); link.remove();
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert(e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert(e.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "Download Excel"; }
   }

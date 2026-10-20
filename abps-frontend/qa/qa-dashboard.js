@@ -43,7 +43,7 @@ function qadCustomTypeChange() {
 
 function qadLoadCustom() {
   const val = dashReadCustomVal("qad");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   qadCurrentPeriod = qadCurrentCustomType;
   qadLoadDashboard(val);
 }
@@ -60,10 +60,10 @@ async function qadLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("ptlTodayOverride") || ""
     });
-    if (!data.success) { alert("QA Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("QA Dashboard load failed: " + data.error); return; }
     qadRenderDashboard(data);
   } catch (e) {
-    alert("QA Dashboard error: " + e.message);
+    abpsAlert("QA Dashboard error: " + e.message);
   }
 }
 

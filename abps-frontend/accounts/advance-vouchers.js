@@ -169,9 +169,9 @@ async function advAddNewCompany(encodedCompanyName) {
       advCachedCompanies.push(data.company);
       advSelectCompany(encodeURIComponent(data.company.companyName));
     } else {
-      alert("Could not add company: " + data.error);
+      abpsAlert("Could not add company: " + data.error);
     }
-  } catch (e) { alert("Network error adding company: " + e.message); }
+  } catch (e) { abpsAlert("Network error adding company: " + e.message); }
 }
 
 document.addEventListener("click", (e) => {

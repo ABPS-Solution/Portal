@@ -299,16 +299,16 @@ function qaitCallFormHtml(projectId, existing) {
 // ptlSetQaMilestoneDate's own comment used to document).
 async function qaitSetInspectionSchedule(projectId) {
   const date = document.getElementById(`qait-sched-${projectId}`)?.value || "";
-  if (!date) { alert("Pick the scheduled inspection date first."); return; }
+  if (!date) { abpsAlert("Pick the scheduled inspection date first."); return; }
   showBlockingOverlay("Saving scheduled date...");
   try {
     const data = await apFetch({ action: "saveQaCustomerInspectionSchedule", projectId, date });
-    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not save this date."); return; }
+    if (!data.success) { hideBlockingOverlay(); abpsAlert(data.error || "Could not save this date."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
     await qaitLoadQueue();
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }
@@ -317,15 +317,15 @@ async function qaitSetInspectionSchedule(projectId) {
 async function qaitSetMilestoneDate(projectId, milestoneKey) {
   const el = document.getElementById(`qait-date-${projectId}-${milestoneKey}`);
   const date = el ? el.value : "";
-  if (!date) { alert("Pick a date first."); return; }
+  if (!date) { abpsAlert("Pick a date first."); return; }
   try {
     const data = await apFetch({ action: "saveQaMilestoneDate", operatorName: appActiveOperatorIdentityString, projectId, milestoneKey, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
     await qaitLoadQueue();
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -333,15 +333,15 @@ async function qaitRecordCall(projectId) {
   const date = document.getElementById(`qait-call-date-${projectId}`)?.value || "";
   const contact = document.getElementById(`qait-call-contact-${projectId}`)?.value || "";
   const notes = document.getElementById(`qait-call-notes-${projectId}`)?.value || "";
-  if (!date) { alert("Pick a call date first."); return; }
+  if (!date) { abpsAlert("Pick a call date first."); return; }
   showBlockingOverlay("Recording inspection call...");
   try {
     const data = await apFetch({ action: "recordInspectionCall", operatorName: appActiveOperatorIdentityString, projectId, callPlacedOn: date, customerContact: contact, notes });
-    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not record this call."); return; }
+    if (!data.success) { hideBlockingOverlay(); abpsAlert(data.error || "Could not record this call."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }
@@ -352,7 +352,7 @@ async function qaitUploadDocument(projectId) {
   const fileEl = document.getElementById(`qait-doc-file-${projectId}`);
   const documentType = typeEl ? typeEl.value : "";
   const file = fileEl && fileEl.files && fileEl.files[0];
-  if (!file) { alert("Choose a file first."); return; }
+  if (!file) { abpsAlert("Choose a file first."); return; }
   showBlockingOverlay("Uploading document...");
   try {
     const base64Data = await new Promise((resolve, reject) => {
@@ -366,11 +366,11 @@ async function qaitUploadDocument(projectId) {
       projectId, documentType,
       file: { fileName: file.name, mimeType: file.type, base64Data },
     });
-    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Upload failed."); return; }
+    if (!data.success) { hideBlockingOverlay(); abpsAlert(data.error || "Upload failed."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert("Upload error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Upload error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }
@@ -381,11 +381,11 @@ async function qaitDeleteDocument(projectId, documentId) {
   showBlockingOverlay("Removing document...");
   try {
     const data = await apFetch({ action: "deleteQaInspectionDocument", projectId, documentId });
-    if (!data.success) { hideBlockingOverlay(); alert(data.error || "Could not remove this document."); return; }
+    if (!data.success) { hideBlockingOverlay(); abpsAlert(data.error || "Could not remove this document."); return; }
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
   } finally {
     hideBlockingOverlay();
   }

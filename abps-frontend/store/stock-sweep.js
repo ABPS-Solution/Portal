@@ -75,7 +75,7 @@ function handleSweepAllocationPick(sel) {
   const alloc = sweepBlockedAllocationsCache.find(a => String(a.allocationId) === String(allocationId));
   if (!alloc) return;
   sel.value = "";
-  if (sweepBasket.some(b => b.allocationId === alloc.allocationId)) { alert("This allocation is already in the sweep list."); return; }
+  if (sweepBasket.some(b => b.allocationId === alloc.allocationId)) { abpsAlert("This allocation is already in the sweep list."); return; }
   sweepBasket.push({
     allocationId: alloc.allocationId, itemCode: alloc.itemCode, materialName: alloc.materialName,
     unitType: "", quantity: alloc.quantity, jobCardNumber: alloc.jobCardNumber, isBlockedExit: true,
@@ -121,7 +121,7 @@ function addSweepSearchMatch(i) {
 function addToSweepBasket(itemCode, materialName, rating, unitType) {
   document.getElementById("sweep-material-search").value = ""; document.getElementById("sweep-material-search").style.height = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
-  if (sweepBasket.some(b => b.itemCode === itemCode)) { alert("This item is already in the sweep list — edit its quantity below instead."); return; }
+  if (sweepBasket.some(b => b.itemCode === itemCode)) { abpsAlert("This item is already in the sweep list — edit its quantity below instead."); return; }
   sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "", isBlockedExit: false });
   renderSweepBasket();
 }

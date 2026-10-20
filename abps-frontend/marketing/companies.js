@@ -28,7 +28,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     comp = dropdown.value;
     targetName = ""; 
     btn = document.getElementById("lookup-module-search-btn");
-    if (!comp) return alert("Select a company first.");
+    if (!comp) return abpsAlert("Select a company first.");
     
     // Standardize text lookup values by stripping out trailing bracketed metadata notes
     if (comp.indexOf(" (") !== -1) {
@@ -36,7 +36,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     }
   }
   
-  if (!comp) return alert("Specify Company parameters.");
+  if (!comp) return abpsAlert("Specify Company parameters.");
   if (btn) {
     btn.disabled = true; 
     btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Searching...';
@@ -148,7 +148,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       if (staleBackRow) staleBackRow.style.display = "none";
     }
   } catch(e) { 
-    alert("Lookup Failed: " + e.message); 
+    abpsAlert("Lookup Failed: " + e.message); 
   } finally { 
     if (btn) {
       btn.disabled = false; 

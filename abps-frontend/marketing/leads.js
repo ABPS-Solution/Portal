@@ -125,10 +125,10 @@ function initializeGoogleAuthPlatformEngine() {
 
 async function parseCard() {
   const btn = document.getElementById('parse-btn');
-  if (!fileFront) return alert("Please capture or select the Front Side of the business card first.");
+  if (!fileFront) return abpsAlert("Please capture or select the Front Side of the business card first.");
   const MAX_CLOUDINARY = 10 * 1024 * 1024; // 10MB
-  if (fileFront.size > MAX_CLOUDINARY) return alert("Front image is too large (max 10MB). Please use a smaller image.");
-  if (fileBack && fileBack.size > MAX_CLOUDINARY) return alert("Back image is too large (max 10MB). Please use a smaller image.");
+  if (fileFront.size > MAX_CLOUDINARY) return abpsAlert("Front image is too large (max 10MB). Please use a smaller image.");
+  if (fileBack && fileBack.size > MAX_CLOUDINARY) return abpsAlert("Back image is too large (max 10MB). Please use a smaller image.");
   
   btn.disabled = true;
   btn.classList.add("loading");
@@ -160,7 +160,7 @@ async function parseCard() {
     // + lib/gemini.js's parseBusinessCard) and returns clean structured
     // fields at data.parsed — not raw Gemini API JSON to parse ourselves.
     if (data && data.success === false) {
-      alert("Card processing failed: " + (data.error || "Unknown server error."));
+      abpsAlert("Card processing failed: " + (data.error || "Unknown server error."));
       return;
     }
     if (data && data.parsed) {
@@ -181,10 +181,10 @@ async function parseCard() {
       if (document.getElementById("f-country")) document.getElementById("f-country").value = resultData.country || "";
 
     } else {
-      alert("AI could not read the card. Please try a clearer image.");
+      abpsAlert("AI could not read the card. Please try a clearer image.");
     }
   } catch (e) {
-    alert("Card Processing network execution crash: " + e.message);
+    abpsAlert("Card Processing network execution crash: " + e.message);
   } finally {
     btn.disabled = false;
     btn.classList.remove("loading");
@@ -369,9 +369,9 @@ async function triggerCityStateQuerySearchExecution() {
   const selectedStates = Array.from(document.querySelectorAll('input[name="searchStateFilter"]:checked')).map(cb => cb.value);
   let selectedCities = Array.from(document.querySelectorAll('input[name="searchCityFilter"]:checked')).map(cb => cb.value);
   
-  if (selectedCountries.length === 0) return alert("Select at least one Country.");
-  if (selectedStates.length === 0) return alert("Select at least one State.");
-  if (selectedCities.length === 0) return alert("Select at least one City or 'All Cities'.");
+  if (selectedCountries.length === 0) return abpsAlert("Select at least one Country.");
+  if (selectedStates.length === 0) return abpsAlert("Select at least one State.");
+  if (selectedCities.length === 0) return abpsAlert("Select at least one City or 'All Cities'.");
   
   btn.classList.add("loading"); btn.textContent = "Searching...";
   document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
@@ -402,10 +402,10 @@ async function triggerCityStateQuerySearchExecution() {
         
         canvas.style.display = "block"; 
      } else {
-        alert("Geographic search error: " + (data.error || "No records match."));
+        abpsAlert("Geographic search error: " + (data.error || "No records match."));
      }
   } catch (e) {
-     alert("Geographic layout request connection crash: " + e.message);
+     abpsAlert("Geographic layout request connection crash: " + e.message);
   } finally {
      btn.classList.remove("loading"); btn.textContent = "Search Location";
   }
@@ -1257,11 +1257,11 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   // Compulsory field checks — same rule as lead creation, enforced here too so an
   // edit can't silently blank out a required field.
   if (fieldsPayload["Status"] === "Order not Received" && !(fieldsPayload["Reason for Order Lost"] || "").trim()) {
-    alert("Please enter the reason the order was not received before saving."); return;
+    abpsAlert("Please enter the reason the order was not received before saving."); return;
   }
   const statusSel = Array.from(document.querySelectorAll('.live-lead-field-input-' + leadRef)).find(el => el.dataset.headerKey === "Status");
   if (statusSel && statusSel.dataset.original !== undefined && statusSel.value === statusSel.dataset.original) delete fieldsPayload["Status"];
-  if (!fieldsPayload["ABPS Business Vertical"]) { alert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
+  if (!fieldsPayload["ABPS Business Vertical"]) { abpsAlert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
 
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
   
@@ -1318,7 +1318,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     let companySaveOk = true;
     if (!carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
       companySaveOk = false;
-      alert("Lead details saved, but company details (Company Name, City, State, Country, Address, Website, Type of Customer/Industry) could not be saved — company not identified. Please search the lead again and retry.");
+      abpsAlert("Lead details saved, but company details (Company Name, City, State, Country, Address, Website, Type of Customer/Industry) could not be saved — company not identified. Please search the lead again and retry.");
     }
     if (carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
       const cr = await apFetch({
@@ -1328,11 +1328,11 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
         fields: companyFieldsPayload
       });
       companySaveOk = !!cr.success;
-      if (!companySaveOk) alert("Lead details saved, but company details failed: " + (cr.error || "Unknown error"));
+      if (!companySaveOk) abpsAlert("Lead details saved, but company details failed: " + (cr.error || "Unknown error"));
     }
 
     if (r.success) {
-      if (companySaveOk) alert("Modifications Saved Successfully.");
+      if (companySaveOk) abpsAlert("Modifications Saved Successfully.");
       // FIXED: Point to renamed structural data attributes identifiers
       const updatedStatusText = fieldsPayload["Status"] || (statusSel ? statusSel.value : "") || "N/A";
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
@@ -1356,7 +1356,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
         }
       }
     }
-  } catch(e) { alert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
+  } catch(e) { abpsAlert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
 async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, encodedContactNameForConfirm) {
@@ -1376,7 +1376,7 @@ async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, enco
         });
         
         if (!r.success) {
-            alert(r.error || "An unexpected error occurred.");
+            abpsAlert(r.error || "An unexpected error occurred.");
             btn.disabled = false;
             btn.innerHTML = "Delete Record";
             return;
@@ -1386,7 +1386,7 @@ async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, enco
         triggerSequentialSearch(currentActiveModuleContext);
         
     } catch(e) { 
-        alert("Network request execution failure: " + e.message); 
+        abpsAlert("Network request execution failure: " + e.message); 
         btn.disabled = false;
         btn.innerHTML = "Delete Record";
     }
@@ -1441,23 +1441,23 @@ async function submitLead() {
   const activeFormContainerScopeNode = document.getElementById("step2-new-entry-dropdown");
   const getRadioStrict = n => (activeFormContainerScopeNode.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
   
-  if (!statusField.value) { alert("Lead Status is compulsory."); return; }
+  if (!statusField.value) { abpsAlert("Lead Status is compulsory."); return; }
 
 
   const businessVerticalCheck = getRadioStrict('businessVertical');
-  if (!businessVerticalCheck) { alert("ABPS Business Vertical is a compulsory question."); return; }
+  if (!businessVerticalCheck) { abpsAlert("ABPS Business Vertical is a compulsory question."); return; }
 
   const companyNameCheck = document.getElementById('dropform-company-locked').value.trim();
-  if (!companyNameCheck) { alert("Company Name is compulsory."); return; }
+  if (!companyNameCheck) { abpsAlert("Company Name is compulsory."); return; }
 
   const cityCheck = document.getElementById('dropform-city').value.trim() || (document.getElementById('f-city') ? document.getElementById('f-city').value.trim() : "");
-  if (!cityCheck) { alert("City is compulsory."); return; }
+  if (!cityCheck) { abpsAlert("City is compulsory."); return; }
 
   const stateCheck = document.getElementById('dropform-state').value.trim() || (document.getElementById('f-state') ? document.getElementById('f-state').value.trim() : "");
-  if (!stateCheck) { alert("State is compulsory."); return; }
+  if (!stateCheck) { abpsAlert("State is compulsory."); return; }
 
   const countryCheck = document.getElementById('dropform-country').value.trim() || (document.getElementById('f-country') ? document.getElementById('f-country').value.trim() : "");
-  if (!countryCheck) { alert("Country is compulsory."); return; }
+  if (!countryCheck) { abpsAlert("Country is compulsory."); return; }
 
   if (feedbackBanner) {
     feedbackBanner.style.display = "none";
@@ -1486,7 +1486,7 @@ async function submitLead() {
 
     const qualChecked = getChecks('qualification');
     const qualFinal = qualChecked.map(v => v === 'Others' ? ((qOtherNode && qOtherNode.value) ? qOtherNode.value : 'Others') : v);
-    if (!qualFinal.filter(v => String(v).trim()).length) { alert("Type of Customer is compulsory. Please tick at least one."); return; }
+    if (!qualFinal.filter(v => String(v).trim()).length) { abpsAlert("Type of Customer is compulsory. Please tick at least one."); return; }
     const prodChecked = getChecks('prod');
     const prodFinal = prodChecked.map(v => v === 'Others' ? ((pdoNode && pdoNode.value) ? pdoNode.value : 'Others') : v);
 
@@ -1671,14 +1671,14 @@ async function submitLead() {
       }, 500); 
     }
     else {
-      alert("Submission failed: " + (d.error || "Unknown server error."));
+      abpsAlert("Submission failed: " + (d.error || "Unknown server error."));
     }
   } catch (e) {
     // apFetch already shows its own "session expired, please log in again"
     // message and redirects — an extra "Submission failed" alert on top of
     // that would be redundant and confusing.
     if (e.message !== "SESSION_EXPIRED") {
-      alert("Submission failed. Please check your network connection.\n" + e.message);
+      abpsAlert("Submission failed. Please check your network connection.\n" + e.message);
     }
   } finally {
     btn.disabled = false;
@@ -1697,7 +1697,7 @@ async function triggerQualificationSearch() {
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     const btn = document.getElementById("qual-search-btn");
     const selected = Array.from(document.querySelectorAll('input[name="searchQual"]:checked')).map(i => i.value);
-    if(selected.length === 0) return alert("Select at least one qualification.");
+    if(selected.length === 0) return abpsAlert("Select at least one qualification.");
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const data = await apFetch({ 
@@ -1714,14 +1714,14 @@ async function triggerQualificationSearch() {
             canvasLastParentWorkspaceId = "workspace-searchQualification";
             canvas.style.display = "block"; document.getElementById("workspace-searchQualification").appendChild(canvas);
         }
-    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Type of Customer"; }
+    } catch(e) { abpsAlert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Type of Customer"; }
 }
 
 async function triggerStatusSearch() {
     document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
     const btn = document.getElementById("status-search-btn");
     const statusVal = document.getElementById("status-filter-select").value;
-    if(!statusVal) return alert("Please select a status.");
+    if(!statusVal) return abpsAlert("Please select a status.");
     btn.classList.add("loading"); btn.textContent = "Searching...";
     try {
         const data = await apFetch({ action: "searchByStatus", activeEngineer: appActiveOperatorIdentityString, statusValue: statusVal });
@@ -1733,15 +1733,15 @@ async function triggerStatusSearch() {
             buildMultiContactDirectoryInterface(data.leads, "");
             canvasLastParentWorkspaceId = "workspace-searchStatus";
             canvas.style.display = "block"; document.getElementById("workspace-searchStatus").appendChild(canvas);
-        } else { alert(data.error || "No leads found with this status."); }
-    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
+        } else { abpsAlert(data.error || "No leads found with this status."); }
+    } catch(e) { abpsAlert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
 }
 
 async function triggerEngineerSearch() {
     const btn = document.getElementById("eng-search-btn");
     const engSelect = document.getElementById("engineer-filter-select");
     const engVal = engSelect.value;
-    if(!engVal) return alert("Please select an engineer.");
+    if(!engVal) return abpsAlert("Please select an engineer.");
     // engVal is the person_key (the select's value, needed for the actual
     // search query) — the banner below must show the resolved display
     // name instead (the select's own option text), or it prints the raw
@@ -1758,8 +1758,8 @@ async function triggerEngineerSearch() {
           buildMultiContactDirectoryInterface(data.leads, "");
           canvasLastParentWorkspaceId = "workspace-searchEngineer";
           canvas.style.display = "block"; document.getElementById("workspace-searchEngineer").appendChild(canvas);
-        } else { alert("No leads found for this engineer."); }
-    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
+        } else { abpsAlert("No leads found for this engineer."); }
+    } catch(e) { abpsAlert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
 }
 
 function renderLeadMatrixEngineerCheckboxes() {
@@ -1785,7 +1785,7 @@ async function executeLeadMatrixFilterSearch() {
   const checkedStatuses = Array.from(document.querySelectorAll('input[name="leadMatrixStatusFilter"]:checked')).map(i => i.value);
 
   if (checkedEngineers.length === 0 && checkedStatuses.length === 0) {
-    alert("Please select at least one Engineer or Status filter before searching.");
+    abpsAlert("Please select at least one Engineer or Status filter before searching.");
     return;
   }
 
@@ -1849,7 +1849,7 @@ async function executeLeadMatrixFilterSearch() {
       document.getElementById("workspace-searchStatus").appendChild(canvas);
     }
   } catch(e) {
-    alert("Leads matrix execution request dropped: " + e.message);
+    abpsAlert("Leads matrix execution request dropped: " + e.message);
   } finally {
     if (btn.classList.contains("loading")) {
       btn.classList.remove("loading");
@@ -1879,7 +1879,7 @@ function openEmailLeadCreateEntryForm(index, mountEl, onCancelFn) {
   const mailObject = cachedInboundEmailLeadsArray[index];
   if (!mountEl) return;
   const formTemplateSource = document.getElementById("step2-new-entry-dropdown");
-  if (!formTemplateSource) { alert("The New Lead form could not be opened. Please refresh the page."); return; }
+  if (!formTemplateSource) { abpsAlert("The New Lead form could not be opened. Please refresh the page."); return; }
   if (!window._sharedLeadFormHome && !formTemplateSource.closest('[id^="email-nested-inline-database-workspace-anchor-"]')) {
     window._sharedLeadFormHome = { parent: formTemplateSource.parentNode, next: formTemplateSource.nextSibling };
   }
@@ -2099,7 +2099,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       });
     }
   } catch(e) {
-    alert("Error: " + e.message);
+    abpsAlert("Error: " + e.message);
     actionBtn.disabled = false;
     actionBtn.textContent = "Add in CRM / Create Task";
     actionBtn.style.display = "inline-flex";
@@ -2234,7 +2234,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
   const activeWorkingFile = fileObjects[opsFlagTypeString];
   
   if (!activeWorkingFile) {
-    alert(`Please capture or select the corresponding document before running the AI engine.`);
+    abpsAlert(`Please capture or select the corresponding document before running the AI engine.`);
     return;
   }
 
@@ -2253,7 +2253,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
     const leadDropdownIds = { "DISPATCH": "dispatch-bill-lead-dropdown", "PURCHASE_ORDER": "purchase-order-lead-dropdown" };
     const leadDropEl = document.getElementById(leadDropdownIds[opsFlagTypeString]);
     if (!leadDropEl || !leadDropEl.value || leadDropEl.value.trim() === "") {
-      alert("Please select the Company / Lead this document belongs to before processing.");
+      abpsAlert("Please select the Company / Lead this document belongs to before processing.");
       if (leadDropEl) leadDropEl.focus();
       return;
     }
@@ -2265,12 +2265,12 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
   if (isPO) {
     poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
     if (!poAcceptanceDate) {
-      alert("Order Acceptance Sent Date is required.");
+      abpsAlert("Order Acceptance Sent Date is required.");
       return;
     }
     poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
     if (!poContractReviewFile) {
-      alert("Contract Review document is required.");
+      abpsAlert("Contract Review document is required.");
       return;
     }
   }
@@ -2439,11 +2439,11 @@ let poReviewState = null;
 
 async function extractPurchaseOrderForReview() {
   const activeWorkingFile = targetPurchaseOrderFileObj;
-  if (!activeWorkingFile) { alert("Please capture or select the Purchase Order document before running the AI engine."); return; }
+  if (!activeWorkingFile) { abpsAlert("Please capture or select the Purchase Order document before running the AI engine."); return; }
 
   const leadDropEl = document.getElementById("purchase-order-lead-dropdown");
   if (!leadDropEl || !leadDropEl.value.trim()) {
-    alert("Please select the Company / Lead this document belongs to before processing.");
+    abpsAlert("Please select the Company / Lead this document belongs to before processing.");
     if (leadDropEl) leadDropEl.focus();
     return;
   }
@@ -2453,13 +2453,13 @@ async function extractPurchaseOrderForReview() {
   // optional. Captured now (not asked again in the review screen) since
   // these are locked passthrough fields per the review screen's design.
   const poOwner = (document.getElementById("purchase-order-owner") || {}).value || "";
-  if (!poOwner.trim()) { alert("ABPS Owner of Order is required."); return; }
+  if (!poOwner.trim()) { abpsAlert("ABPS Owner of Order is required."); return; }
   const poAcceptanceDate = document.getElementById("purchase-order-acceptance-date").value.trim();
-  if (!poAcceptanceDate) { alert("Order Acceptance Sent Date is required."); return; }
+  if (!poAcceptanceDate) { abpsAlert("Order Acceptance Sent Date is required."); return; }
   const poContractReviewFile = document.getElementById("purchase-order-contract-review-file").files[0];
-  if (!poContractReviewFile) { alert("Contract Review document is required."); return; }
+  if (!poContractReviewFile) { abpsAlert("Contract Review document is required."); return; }
   const poOrderAcceptanceFile = document.getElementById("purchase-order-order-acceptance-file").files[0];
-  if (!poOrderAcceptanceFile) { alert("Order Acceptance document is required."); return; }
+  if (!poOrderAcceptanceFile) { abpsAlert("Order Acceptance document is required."); return; }
 
   const feedbackBanner = document.getElementById("purchase-order-feedback-banner");
   const targetBtn = document.getElementById("btn-ops-purchase-order-submit");
@@ -3534,14 +3534,14 @@ function afterLeadContactsChanged(leadRef, contacts) {
 
 async function addLeadContactRow(leadRef, btn) {
   const data = readLeadContactRow(btn.closest(".lc-row"));
-  if (!data.name && !data.phone && !data.email) { alert("Enter at least a name, phone or email."); return; }
+  if (!data.name && !data.phone && !data.email) { abpsAlert("Enter at least a name, phone or email."); return; }
   btn.disabled = true;
   try {
     const r = await apFetch({ action: "addLeadContact", leadId: leadRef, ...data });
-    if (!r.success) { alert(r.error || "Could not add the contact."); return; }
+    if (!r.success) { abpsAlert(r.error || "Could not add the contact."); return; }
     const list = (window.leadContactsByLead[leadRef] || []).concat([{ contactId: r.contactId, ...data, isPrimary: false }]);
     afterLeadContactsChanged(leadRef, list);
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not add the contact."); }
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not add the contact."); }
   finally { btn.disabled = false; }
 }
 
@@ -3550,10 +3550,10 @@ async function saveLeadContactRow(leadRef, contactId, btn) {
   btn.disabled = true;
   try {
     const r = await apFetch({ action: "updateLeadContact", contactId, ...data });
-    if (!r.success) { alert(r.error || "Could not save the contact."); return; }
+    if (!r.success) { abpsAlert(r.error || "Could not save the contact."); return; }
     const list = (window.leadContactsByLead[leadRef] || []).map(c => c.contactId === contactId ? { ...c, ...data } : c);
     afterLeadContactsChanged(leadRef, list);
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not save the contact."); }
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not save the contact."); }
   finally { btn.disabled = false; }
 }
 
@@ -3561,9 +3561,9 @@ async function removeLeadContactRow(leadRef, contactId) {
   if (!(await abpsConfirm("Remove this person from the lead?"))) return;
   try {
     const r = await apFetch({ action: "deleteLeadContact", contactId });
-    if (!r.success) { alert(r.error || "Could not remove the contact."); return; }
+    if (!r.success) { abpsAlert(r.error || "Could not remove the contact."); return; }
     afterLeadContactsChanged(leadRef, (window.leadContactsByLead[leadRef] || []).filter(c => c.contactId !== contactId));
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not remove the contact."); }
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not remove the contact."); }
 }
 
 // Merge: pick another lead of the same company to fold into this one.
@@ -3571,22 +3571,22 @@ async function openMergeLeadPicker(targetLeadId, encodedCompany) {
   const companyName = decodeURIComponent(encodedCompany || "");
   let r;
   try { r = await apFetch({ action: "fetchOpenLeadsForCompany", companyName }); }
-  catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Could not load the company's leads."); return; }
+  catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not load the company's leads."); return; }
   const others = (r.leads || []).filter(l => l.leadId !== targetLeadId);
-  if (!others.length) { alert("This company has no other lead without a PO to merge into this one."); return; }
+  if (!others.length) { abpsAlert("This company has no other lead without a PO to merge into this one."); return; }
   const list = others.map((l, i) => `${i + 1}. ${l.leadName || l.leadId} (${l.leadId})${l.contacts ? " - " + l.contacts : ""}`).join("\n");
-  const pick = prompt(`Merge which lead INTO ${targetLeadId}? Its contacts, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
+  const pick = await abpsPrompt(`Merge which lead INTO ${targetLeadId}? Its contacts, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
   const idx = parseInt(pick, 10) - 1;
   if (isNaN(idx) || !others[idx]) return;
   const source = others[idx];
   if (!(await abpsConfirm(`Merge ${source.leadId} into ${targetLeadId}? This cannot be undone.`))) return;
   try {
     const m = await apFetch({ action: "mergeLeads", sourceLeadId: source.leadId, targetLeadId });
-    if (!m.success) { alert(m.error || "Merge failed."); return; }
-    alert("Leads merged. Search again to see the combined lead.");
+    if (!m.success) { abpsAlert(m.error || "Merge failed."); return; }
+    abpsAlert("Leads merged. Search again to see the combined lead.");
     const srcCard = document.getElementById(`contact-parent-wrapper-${source.leadId}`);
     if (srcCard) srcCard.remove();
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") alert("Merge failed."); }
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Merge failed."); }
 }
 
 

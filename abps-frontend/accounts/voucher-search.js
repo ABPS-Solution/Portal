@@ -492,15 +492,15 @@ function tvsRenderCard(v) {
 // to resubmit" case (wrong date, wrong doc, etc.). Re-checked server-side
 // regardless of what the button's own visibility already enforces.
 async function tvsDeleteVoucher(voucherId) {
-  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  const reason = await abpsPrompt("Reason for deleting this voucher (optional):") || null;
   if (!await abpsConfirm("Permanently delete this Unchecked voucher? This cannot be undone — the employee will need to resubmit.")) return;
   showBlockingOverlay("Deleting voucher...");
   try {
     const data = await acFetch("deleteTourVoucher", { voucherId, reason });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error); return; }
+    if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
 }
 
 async function tvsUnlinkTicket(voucherId, travellerId) {
@@ -509,9 +509,9 @@ async function tvsUnlinkTicket(voucherId, travellerId) {
   try {
     const data = await acFetch("unlinkTravelTicketFromVoucher", { voucherId, travellerId });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error); return; }
+    if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
 }
 
 // Lazy-loaded picker for linking an Unactioned travel/hotel booking (made
@@ -560,9 +560,9 @@ async function tvsLinkBooking(voucherId, travellerId) {
   try {
     const data = await acFetch("linkCompanyPaidBooking", { voucherId, travellerId });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error); return; }
+    if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
 }
 
 // Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
@@ -666,10 +666,10 @@ async function tvsRegenerateVoucherPdf(voucherId, btn) {
   if (btn) { btn.disabled = true; btn.textContent = "Generating..."; }
   try {
     const data = await acFetch("regenerateTourVoucherPdf", { voucherId, operatorName: appActiveOperatorIdentityString });
-    if (!data.success) { alert(data.error || "Could not generate the PDF."); if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; } return; }
+    if (!data.success) { abpsAlert(data.error || "Could not generate the PDF."); if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; } return; }
     runTourVoucherSearch();
   } catch (e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
     if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; }
   }
 }

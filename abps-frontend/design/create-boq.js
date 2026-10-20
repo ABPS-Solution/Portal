@@ -177,7 +177,7 @@ document.addEventListener("click", (e) => {
 
 async function importCBOQFromExisting() {
   const boqId = window.cboqImportResolvedBoqId;
-  if (!boqId) { alert("Please select a Product Name + Rating and a Project ID to import first."); return; }
+  if (!boqId) { abpsAlert("Please select a Product Name + Rating and a Project ID to import first."); return; }
 
   const btn = document.getElementById("cboq-import-btn");
   btn.disabled = true;
@@ -186,7 +186,7 @@ async function importCBOQFromExisting() {
 
   try {
     const data = await apFetch({ action: "fetchBOQMaterialRowsForImport", boqId: boqId });
-    if (!data.success) { alert("Import failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Import failed: " + data.error); return; }
 
     // Strip trailing decimal noise (DB numeric columns come back as
     // strings like "16.000") the same way formatRateSmart does server-side:
@@ -235,7 +235,7 @@ async function importCBOQFromExisting() {
 
     window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
   } catch(e) {
-    alert("Network request execution failure: " + e.message);
+    abpsAlert("Network request execution failure: " + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
@@ -347,7 +347,7 @@ async function cboqApplyDraftState(state) {
     renderCBOQMaterialRows();
     updateCBOQTotals();
   } else {
-    alert(`"${p.name || p.itemCode}" is no longer waiting for a BOQ on this project (it may already have one). Your material rows were restored; pick a product from the list to continue.`);
+    abpsAlert(`"${p.name || p.itemCode}" is no longer waiting for a BOQ on this project (it may already have one). Your material rows were restored; pick a product from the list to continue.`);
   }
 }
 
@@ -435,7 +435,7 @@ function selectCBOQProductOption(itemCode, descriptionId, lineId) {
   const opts = window.cboqAllowedOptionsByValue || {};
   const opt = opts[itemCode + '|' + (descriptionId || '') + '|' + (lineId || '')]
     || Object.values(opts).find(o => o.itemCode === itemCode && String(o.descriptionId || '') === String(descriptionId || ''));
-  if (opt && opt.onHold) { alert(`This product is On Hold — ${opt.holdReason || 'no reason given'}. An admin must remove the Hold before a BOQ can be created for it.`); return; }
+  if (opt && opt.onHold) { abpsAlert(`This product is On Hold — ${opt.holdReason || 'no reason given'}. An admin must remove the Hold before a BOQ can be created for it.`); return; }
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
   const qtyEl = document.getElementById("cboq-order-qty");

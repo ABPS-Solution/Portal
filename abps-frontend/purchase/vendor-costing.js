@@ -254,7 +254,7 @@ async function downloadSVCIPdf(btn) {
       sortColumnLabel, sortDirectionLabel,
       rows: list
     });
-    if (!data.success) { alert("Could not generate PDF: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not generate PDF: " + data.error); return; }
     const byteChars = atob(data.pdfBase64);
     const byteNumbers = new Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
@@ -269,7 +269,7 @@ async function downloadSVCIPdf(btn) {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   } catch(e) {
-    alert("Network error generating PDF: " + e.message);
+    abpsAlert("Network error generating PDF: " + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;

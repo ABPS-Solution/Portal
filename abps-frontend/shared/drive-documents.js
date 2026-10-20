@@ -288,7 +288,7 @@ async function ddocRunIndex() {
     if (!data.success) throw new Error(data.error || "Refresh failed.");
     initializeDriveDocumentsPanel();
   } catch (err) {
-    if (err.message !== "SESSION_EXPIRED") alert(err.message);
+    if (err.message !== "SESSION_EXPIRED") abpsAlert(err.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "Refresh list"; }
   }
@@ -387,7 +387,7 @@ async function daccToggle(personKey, category, department, grant) {
     daccRender();
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    alert(err.message);
+    abpsAlert(err.message);
   }
 }
 
@@ -401,7 +401,7 @@ async function daccToggleScreen(personKey, enabled, box) {
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
     box.checked = !enabled;
-    alert(err.message);
+    abpsAlert(err.message);
   }
 }
 

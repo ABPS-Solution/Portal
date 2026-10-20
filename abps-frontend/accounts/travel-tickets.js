@@ -344,9 +344,9 @@ async function ttkAddNewCompany(encodedCompanyName) {
       ttkCachedCompanies.push(data.company);
       ttkSelectCompany(encodeURIComponent(data.company.companyName));
     } else {
-      alert("Could not add company: " + data.error);
+      abpsAlert("Could not add company: " + data.error);
     }
-  } catch (e) { alert("Network error adding company: " + e.message); }
+  } catch (e) { abpsAlert("Network error adding company: " + e.message); }
 }
 
 function ttkRemoveCompanyChip(encodedCompanyName) {
@@ -805,7 +805,7 @@ async function ttkStartEdit(ticketId) {
 }
 
 async function ttkCancelTicket(ticketId) {
-  const refundInput = prompt("Refund amount received from the vendor (leave blank if none):");
+  const refundInput = await abpsPrompt("Refund amount received from the vendor (leave blank if none):");
   if (refundInput === null) return;
   const refundAmount = refundInput.trim() === "" ? null : Number(refundInput);
   if (refundInput.trim() !== "" && (isNaN(refundAmount) || refundAmount < 0)) return showTicketFeedback("Refund amount must be a valid non-negative number.", "error");

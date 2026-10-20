@@ -139,10 +139,10 @@ async function renderServiceConsumableRequestsToOrder(mountId) {
 
 async function cprMarkOrdered(requestId, mountId) {
   const poNo = (document.getElementById(`cpr-po-${requestId}`)?.value || '').trim();
-  if (!poNo) { alert('Enter the RM PO number.'); return; }
+  if (!poNo) { abpsAlert('Enter the RM PO number.'); return; }
   try {
     const data = await apFetch({ action: 'markServiceConsumableOrdered', requestId, poNo });
-    if (!data.success) { alert(data.error || 'Could not save.'); return; }
+    if (!data.success) { abpsAlert(data.error || 'Could not save.'); return; }
     renderServiceConsumableRequestsToOrder(mountId);
-  } catch (e) { if (e.message !== 'SESSION_EXPIRED') alert(e.message); }
+  } catch (e) { if (e.message !== 'SESSION_EXPIRED') abpsAlert(e.message); }
 }

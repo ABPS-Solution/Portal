@@ -15,7 +15,7 @@ function sdCustomTypeChange() {
 
 function sdLoadCustom() {
   const val = dashReadCustomVal("sd");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   sdCurrentPeriod = sdCurrentCustomType;
   sdLoadDashboard(val);
 }
@@ -31,10 +31,10 @@ async function sdLoadDashboard(customVal) {
       periodType:  sdCurrentPeriod,
       periodValue: customVal || ""
     });
-    if (!data.success) { alert("Store Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Store Dashboard load failed: " + data.error); return; }
     sdRenderDashboard(data);
   } catch(e) {
-    alert("Store Dashboard error: " + e.message);
+    abpsAlert("Store Dashboard error: " + e.message);
   }
 }
 

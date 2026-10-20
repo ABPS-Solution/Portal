@@ -1,7 +1,7 @@
 async function openCPOAllocationPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;
-  if (!row.itemCode) { alert("Select the material for this row first — the PRN list depends on which item code is being purchased."); return; }
+  if (!row.itemCode) { abpsAlert("Select the material for this row first — the PRN list depends on which item code is being purchased."); return; }
 
   let prns = [], memoReqs = [], pendingBoqs = [];
   try {
@@ -10,7 +10,7 @@ async function openCPOAllocationPicker(rowId) {
     memoReqs = (res && res.success) ? (res.memoRequests || []) : [];
     pendingBoqs = (res && res.success) ? (res.pendingBoqs || []) : [];
   } catch (e) {
-    alert("Could not load the PRN list for this material: " + e.message);
+    abpsAlert("Could not load the PRN list for this material: " + e.message);
     return;
   }
   // Read back by saveCPOAllocationPicker to derive the row's Design Rate /

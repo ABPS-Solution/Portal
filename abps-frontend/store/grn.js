@@ -279,11 +279,11 @@ async function deleteGateEntryAsSuperAdmin(gateNumber, btn) {
   try {
     const data = await apFetch({ action: "deleteGateEntryAsSuperAdmin", gateNumber });
     if (!data.success) throw new Error(data.error || "Delete failed.");
-    alert(`Gate entry ${gateNumber}${data.grnNumber ? " / " + data.grnNumber : ""} deleted (${data.lines} line(s)).`);
+    abpsAlert(`Gate entry ${gateNumber}${data.grnNumber ? " / " + data.grnNumber : ""} deleted (${data.lines} line(s)).`);
     initializeStoreEntryWorkspaceQueue();
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
-    alert(e.message);
+    abpsAlert(e.message);
     btn.disabled = false; btn.textContent = "Delete Entry";
   }
 }

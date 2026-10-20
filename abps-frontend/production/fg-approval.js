@@ -245,7 +245,7 @@ async function triggerFGDedicatedUpload(fgId, docType) {
       const err = await uploadFGDedicatedFile(fgId, docType, files[i]);
       if (err) failed.push(`${files[i].name}: ${err}`);
     }
-    if (failed.length) alert("Some files were not uploaded:\n" + failed.join("\n"));
+    if (failed.length) abpsAlert("Some files were not uploaded:\n" + failed.join("\n"));
   } finally {
     if (dz) { dz.innerHTML = dzLabel; dz.style.pointerEvents = ""; dz.style.opacity = ""; }
     refreshFGDocTable(fgId);
@@ -417,11 +417,11 @@ async function removeFGDocRow(fgId, documentId, tempId) {
       action: "deleteFinishedGoodsDocument", activeEngineer: appActiveOperatorIdentityString,
       documentId, operatorName: appActiveOperatorIdentityString,
     });
-    if (!data.success) { alert(data.error || "Remove failed."); return; }
+    if (!data.success) { abpsAlert(data.error || "Remove failed."); return; }
     st.docs = st.docs.filter(d => d.documentId !== documentId);
     refreshFGDocTable(fgId);
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
   }
 }
 
@@ -469,13 +469,13 @@ async function triggerFGReplaceUpload(fgId, documentId) {
       documentId, file: { fileName: file.name, base64Data, mimeType: file.type || "application/octet-stream" },
       operatorName: appActiveOperatorIdentityString,
     });
-    if (!data.success) { alert(data.error || "Replace failed."); if (btn) { btn.disabled = false; btn.textContent = "Replace"; } return; }
+    if (!data.success) { abpsAlert(data.error || "Replace failed."); if (btn) { btn.disabled = false; btn.textContent = "Replace"; } return; }
     const st = window._fgApprovalState[fgId];
     const doc = st.docs.find(d => d.documentId === documentId);
     if (doc) { doc.url = data.url; doc.fileName = data.fileName; doc.createdAt = data.createdAt; doc.qaChecked = false; }
     refreshFGDocTable(fgId);
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
     if (btn) { btn.disabled = false; btn.textContent = "Replace"; }
   }
 }
@@ -496,12 +496,12 @@ async function triggerFGNewRowUpload(fgId, tempId) {
       file: { fileName: file.name, base64Data, mimeType: file.type || "application/octet-stream" },
       operatorName: appActiveOperatorIdentityString,
     });
-    if (!data.success) { alert(data.error || "Upload failed."); if (btn) { btn.disabled = false; btn.textContent = "Upload"; } return; }
+    if (!data.success) { abpsAlert(data.error || "Upload failed."); if (btn) { btn.disabled = false; btn.textContent = "Upload"; } return; }
     st.newRows = st.newRows.filter(r => r.tempId !== tempId);
     st.docs.push({ documentId: data.documentId, docType: row.docType, docLabel: data.docLabel, fileName: data.fileName, url: data.url, createdAt: data.createdAt, qaChecked: false });
     refreshFGDocTable(fgId);
   } catch(e) {
-    alert("Network error: " + e.message);
+    abpsAlert("Network error: " + e.message);
     if (btn) { btn.disabled = false; btn.textContent = "Upload"; }
   }
 }

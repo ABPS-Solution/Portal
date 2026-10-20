@@ -31,6 +31,8 @@ async function initializeSecurityAdminPanel() {
   if (loginAnywhereTabBtn) loginAnywhereTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   const emailInboxesTabBtn = document.getElementById("sa-tab-emailinboxes");
   if (emailInboxesTabBtn) emailInboxesTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
+  const signatureTabBtn = document.getElementById("sa-tab-signature");
+  if (signatureTabBtn) signatureTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   const pinsModeBtn = document.getElementById("pinmode-btn-changepin");
   if (pinsModeBtn) pinsModeBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   switchSecurityAdminTab('permissions');
@@ -59,7 +61,7 @@ function switchSecurityAdminTab(tab) {
   // already hidden for anyone else, but this refuses a direct call too
   // (e.g. a stale bookmarked handler), same defense-in-depth spirit as
   // the server-side gate on its own routes.
-  if ((tab === 'users' || tab === 'emailinboxes') && !saViewerIsSuperAdmin()) tab = 'permissions';
+  if ((tab === 'users' || tab === 'emailinboxes' || tab === 'signature') && !saViewerIsSuperAdmin()) tab = 'permissions';
   // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
   // shows (admin_db.trusted_devices) is only ever populated by Google
   // Sign-In from an office IP, and Google Sign-In has been hidden from
@@ -72,8 +74,9 @@ function switchSecurityAdminTab(tab) {
   // flagged, not deleted, per house convention.
   if (tab === 'emailinboxes' && typeof loadEmailInboxes === 'function') loadEmailInboxes();
   if (tab === 'pdfkeys') loadPdfShiftCredits();
+  if (tab === 'signature') loadSignatorySignature();
   if (tab === 'docaccess') loadDocumentAccessMatrix();
-  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys'].forEach(t => {
+  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys', 'signature'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -960,7 +963,7 @@ async function saDeviceAddPersonRemove(personKey) {
 async function saDeviceAddPersonCommit(modal) {
   try {
     const data = await apFetch({ action: "setRegisteredDeviceUsers", deviceId: modal._deviceId, allowedPersonKeys: modal._allowedKeys });
-    if (!data.success) { alert(data.error || "Could not update this device's allowed people."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not update this device's allowed people."); return; }
     const searchInput = document.getElementById("sa-device-addperson-search");
     const resultsBox = document.getElementById("sa-device-addperson-results");
     if (searchInput) searchInput.value = "";
@@ -968,7 +971,7 @@ async function saDeviceAddPersonCommit(modal) {
     saRenderDeviceAddPersonChips(modal);
     loadRegisteredDevices(); // background refresh of the underlying table; the modal itself renders from its own tracked state above
   } catch (e) {
-    alert("Connection error: " + e.message);
+    abpsAlert("Connection error: " + e.message);
   }
 }
 
@@ -1135,11 +1138,11 @@ async function toggleUserAdminTier(enabled) {
   if (!pmSelectedUser) return;
   try {
     const data = await apFetch({ action: "toggleUserAdmin", personKey: pmSelectedUser.personKey, enabled });
-    if (!data.success) { alert(data.error || 'Failed to update admin tier.'); return; }
+    if (!data.success) { abpsAlert(data.error || 'Failed to update admin tier.'); return; }
     pmUserIsAdmin = enabled;
     renderPermissionMatrix();
   } catch (e) {
-    alert('Connection error: ' + e.message);
+    abpsAlert('Connection error: ' + e.message);
   }
 }
 
@@ -1199,6 +1202,88 @@ async function submitAddUserToSystem(deptSlug, deptName) {
   }
 }
 
+
+// ── Authorized Signature (Super Admin) ─────────────────────────────────
+async function loadSignatorySignature() {
+  const body = document.getElementById('sa-signature-body');
+  if (!body) return;
+  body.innerHTML = '<div style="padding:14px; color:var(--muted);">Loading...</div>';
+  try {
+    const data = await apFetch({ action: 'fetchSignatorySignature' });
+    if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(data.error || 'Failed to load.')}</div>`; return; }
+    const sig = data.signature;
+    body.innerHTML = `
+      <div style="border:1px solid var(--border); border-radius:8px; padding:16px; max-width:520px; background:#fff;">
+        ${sig ? `<div style="text-align:center; padding:10px; border:1px dashed #cbd5e1; border-radius:6px; margin-bottom:10px;">
+            <img src="${sig.dataUri}" alt="Signature" style="max-height:90px; max-width:100%;">
+          </div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Last set by ${escapeHtml(sig.updatedBy || '')}${sig.updatedAt ? ' on ' + escapeHtml(formatOrdinalDateTime(sig.updatedAt)) : ''}</div>`
+          : '<div style="padding:12px; color:#b45309; background:#fffbeb; border-radius:6px; margin-bottom:12px;">No signature set. Final copies print the typed name only.</div>'}
+        <input type="file" id="sa-signature-file" accept="image/png,image/jpeg" style="margin-bottom:10px;">
+        <div style="display:flex; gap:10px;">
+          <button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:var(--brand); color:#fff;" onclick="submitSignatorySignature()">${sig ? 'Replace signature' : 'Upload signature'}</button>
+          ${sig ? '<button class="nav-btn-styled" style="width:auto; padding:8px 18px; background:#fee2e2; color:#b91c1c;" onclick="removeSignatorySignature()">Remove</button>' : ''}
+        </div>
+        <div id="sa-signature-msg" style="margin-top:10px; font-size:0.85rem;"></div>
+      </div>`;
+  } catch (err) {
+    if (err && err.message === 'SESSION_EXPIRED') return;
+    body.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(err.message || 'Failed to load.')}</div>`;
+  }
+}
+
+// Scales a picked image down to at most 600 x 200 and re-encodes it as PNG
+// (keeps transparency), so a phone photo never goes up at full size.
+function saPrepareSignatureImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the file.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('That file is not a readable image.'));
+      img.onload = () => {
+        const scale = Math.min(1, 600 / img.width, 200 / img.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitSignatorySignature() {
+  const input = document.getElementById('sa-signature-file');
+  const msg = document.getElementById('sa-signature-msg');
+  const file = input && input.files && input.files[0];
+  if (!file) { msg.innerHTML = '<span style="color:#b91c1c;">Choose a PNG or JPEG image first.</span>'; return; }
+  msg.innerHTML = '<span style="color:var(--muted);">Saving...</span>';
+  try {
+    const image = await saPrepareSignatureImage(file);
+    const data = await apFetch({ action: 'saveSignatorySignature', image });
+    if (!data.success) { msg.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error || 'Save failed.')}</span>`; return; }
+    await loadSignatorySignature();
+  } catch (err) {
+    if (err && err.message === 'SESSION_EXPIRED') return;
+    msg.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(err.message || 'Save failed.')}</span>`;
+  }
+}
+
+async function removeSignatorySignature() {
+  const ok = await abpsConfirm('Remove the authorized signature? Final copies will print the typed name only until a new one is uploaded.', { okLabel: 'Remove', title: 'Remove signature' });
+  if (!ok) return;
+  try {
+    const data = await apFetch({ action: 'removeSignatorySignature' });
+    if (!data.success) { abpsAlert(data.error || 'Remove failed.'); return; }
+    await loadSignatorySignature();
+  } catch (err) {
+    if (err && err.message === 'SESSION_EXPIRED') return;
+    abpsAlert(err.message || 'Remove failed.');
+  }
+}
 
 // ── PDF Keys ───────────────────────────────────────────────────────────
 async function loadPdfShiftCredits() {

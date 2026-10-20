@@ -32,7 +32,7 @@ function adCustomTypeChange() {
 
 function adLoadCustom() {
   const val = dashReadCustomVal("ad");
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   adCurrentPeriod = adCurrentCustomType;
   adLoadDashboard(val);
 }
@@ -49,10 +49,10 @@ async function adLoadDashboard(customVal) {
       periodType:  adCurrentPeriod,
       periodValue: customVal || "",
     });
-    if (!data.success) { alert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Dashboard load failed: " + data.error); return; }
     adRenderDashboard(data);
   } catch (e) {
-    alert("Dashboard error: " + e.message);
+    abpsAlert("Dashboard error: " + e.message);
   }
 }
 

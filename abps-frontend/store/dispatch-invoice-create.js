@@ -162,7 +162,7 @@ function showCpdiReadySerials(idx) {
   const l = cpdiCache.lines[idx];
   if (!l || !(l.readySerials || []).length) return;
   const lines = l.readySerials.map(s => `${s.jobCardNumber} — Serial No.: ${s.serialNumber || '(not recorded)'}`);
-  alert(`${l.productName || l.description}\n\nJob Cards / Product Serial Numbers that would be reserved:\n\n${lines.join('\n')}`);
+  abpsAlert(`${l.productName || l.description}\n\nJob Cards / Product Serial Numbers that would be reserved:\n\n${lines.join('\n')}`);
 }
 
 function cpdiRenderDetail() {

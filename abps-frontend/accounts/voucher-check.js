@@ -283,9 +283,9 @@ async function tvcDeleteVoucher(voucherId, voucherNumber) {
   try {
     const data = await acFetch("deleteTourVoucher", { voucherId });
     hideBlockingOverlay();
-    if (!data.success) { alert(data.error); return; }
+    if (!data.success) { abpsAlert(data.error); return; }
     loadVoucherCheckQueue();
-  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
 }
 
 async function submitTourVoucherCheck(voucherId) {
