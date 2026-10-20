@@ -71,7 +71,9 @@ function nlRender() {
 function nlRowHtml(it, sr) {
   const color = NL_SIGNAL_COLORS[it.signalType] || "#475569";
   const date = it.publishedAt ? (typeof formatOrdinalDate === "function" ? formatOrdinalDate(it.publishedAt) : String(it.publishedAt).slice(0, 10)) : "";
-  const place = [it.location, it.state].filter(Boolean).join(", ");
+  const place = [it.location, it.state, it.country].filter(Boolean).join(", ");
+  // High = a clear, named project to call about now; Medium = probably useful, worth a check.
+  const level = it.confidence == null ? "" : (it.confidence >= 80 ? "High" : "Medium");
   const none = '<span class="nlr-none">Not stated</span>';
   const also = (it.alsoReported || []).length
     ? `<div class="nlr-sub" style="margin-top:4px;">Also: ${it.alsoReported.slice(0, 4).map(a => a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.sourceName || "link")}</a>` : escapeHtml(a.sourceName || "")).join(", ")}${it.alsoReported.length > 4 ? ` +${it.alsoReported.length - 4}` : ""}</div>` : "";
@@ -88,7 +90,7 @@ function nlRowHtml(it, sr) {
   return `<tr id="nl-row-${it.newsId}">
       <td class="nlr-center">${sr}</td>
       <td class="nlr-center">${escapeHtml(date) || none}</td>
-      <td class="nlr-center"><span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:0.72rem; font-weight:800; color:#fff; background:${color};">${escapeHtml(it.signalType || "News")}</span>${it.confidence != null ? `<div class="nlr-sub" style="margin-top:4px;">AI ${it.confidence}%</div>` : ""}</td>
+      <td class="nlr-center"><span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:0.72rem; font-weight:800; color:#fff; background:${color};">${escapeHtml(it.signalType || "News")}</span>${level ? `<div style="margin-top:4px; font-size:0.74rem; font-weight:800; color:${level === "High" ? "#15803d" : "#b45309"};">${level}</div>` : ""}</td>
       <td>${it.companyName ? `<strong>${escapeHtml(it.companyName)}</strong>` : none}${place ? `<div class="nlr-sub">${escapeHtml(place)}</div>` : ""}</td>
       <td>${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="font-weight:700; color:#0f172a;">${escapeHtml(it.title)} ↗</a>` : `<strong>${escapeHtml(it.title)}</strong>`}${it.projectSummary ? `<div style="margin-top:4px;">${escapeHtml(it.projectSummary)}</div>` : ""}${it.whyRelevant ? `<div class="nlr-sub" style="margin-top:4px;">${escapeHtml(it.whyRelevant)}</div>` : ""}</td>
       <td>${it.capacity ? `<div>${escapeHtml(it.capacity)}</div>` : ""}${it.estimatedValue ? `<div style="font-weight:700;">${escapeHtml(it.estimatedValue)}</div>` : ""}${!it.capacity && !it.estimatedValue ? none : ""}</td>
