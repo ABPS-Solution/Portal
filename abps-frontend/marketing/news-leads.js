@@ -39,7 +39,7 @@ function nlOnSearch(v) { clearTimeout(nlSearchTimer); nlSearchTimer = setTimeout
 function nlRender() {
   const tabs = document.getElementById("nl-tabs");
   if (tabs) {
-    const labels = { New: "To review", Accepted: "Made into leads", Dismissed: "Dismissed", Filtered: "Filtered out" };
+    const labels = { New: "To review", Accepted: "Made into leads", Dismissed: "Dismissed" };
     tabs.innerHTML = Object.entries(labels).map(([k, label]) => {
       const on = nlState.status === k;
       return `<button class="nav-btn-styled" onclick="nlSetStatus('${k}')" style="width:auto; padding:7px 14px; font-size:0.82rem; background:${on ? "var(--brand)" : "#e2e8f0"}; color:${on ? "#fff" : "#334155"};">${label} (${nlState.counts[k] || 0})</button>`;
