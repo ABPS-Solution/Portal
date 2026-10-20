@@ -71,6 +71,7 @@ function ddocBreadcrumb(parts) {
 
 // ── By Type ─────────────────────────────────────────────────────────────
 function ddocShowTypes() {
+  ddocState.lastLoad = null;
   ddocBreadcrumb([{ label: "All types", go: ddocShowTypes }]);
   const mount = document.getElementById("ddoc-mount");
   const byDept = {};
@@ -90,6 +91,7 @@ function ddocShowTypes() {
 }
 
 async function ddocOpenCategory(categoryKey) {
+  ddocState.lastLoad = null;
   const cat = ddocState.categories.find(c => c.key === categoryKey);
   if (!cat) return;
   ddocBreadcrumb([{ label: "All types", go: ddocShowTypes }, { label: cat.label, go: () => ddocOpenCategory(categoryKey) }]);
@@ -142,6 +144,7 @@ async function ddocOpenFolder(categoryKey, group) {
 
 // ── By Project ──────────────────────────────────────────────────────────
 async function ddocShowProjects() {
+  ddocState.lastLoad = null;
   ddocBreadcrumb([{ label: "All projects", go: ddocShowProjects }]);
   const mount = document.getElementById("ddoc-mount");
   mount.innerHTML = `<div class="ddoc-loading">Loading projects...</div>`;
@@ -184,15 +187,32 @@ function ddocSearchInput(value) {
 }
 
 // ── Document list (shared by folder, project and search views) ──────────
-async function ddocLoadDocuments(payload, groupByCategory) {
+// Documents list stays current on its own (20 Oct 2026): while a document
+// list is open it is re-read every 20 s and redrawn only when it changed.
+// The search box and the Refresh list button were removed; ddocSearchInput /
+// ddocRunIndex are now unused (flagged, not deleted).
+setInterval(() => {
+  const panel = document.getElementById("canvas-module-drive-documents");
+  if (!ddocState.lastLoad || document.hidden || !panel || panel.style.display === "none") return;
+  ddocLoadDocuments(ddocState.lastLoad.payload, ddocState.lastLoad.groupByCategory, { quiet: true });
+}, 20000);
+
+async function ddocLoadDocuments(payload, groupByCategory, { quiet = false } = {}) {
   // The folder is already in the breadcrumb except in search results.
   const showGroup = payload.action === "searchDocuments";
   const mount = document.getElementById("ddoc-mount");
-  mount.innerHTML = `<div class="ddoc-loading">Loading documents...</div>`;
+  if (!quiet) { ddocState.lastLoad = { payload, groupByCategory }; ddocState.lastSig = null; mount.innerHTML = `<div class="ddoc-loading">Loading documents...</div>`; }
   try {
     const data = await apFetch(payload);
     if (!data.success) throw new Error(data.error || "Could not load documents.");
     const docs = data.documents || [];
+    if (quiet) {
+      // ignore an answer for a list the person has since left
+      if (ddocState.lastLoad?.payload !== payload) return;
+      const sig = JSON.stringify(docs);
+      if (sig === ddocState.lastSig) return;
+      ddocState.lastSig = sig;
+    } else ddocState.lastSig = JSON.stringify(docs);
     if (!docs.length) { mount.innerHTML = `<div class="ddoc-empty">No documents found.</div>`; return; }
     const sections = new Map();
     docs.forEach(d => {
@@ -219,7 +239,7 @@ async function ddocLoadDocuments(payload, groupByCategory) {
         ${byDept[d].map(renderSection).join("")}
       </div>`).join("");
   } catch (err) {
-    if (err.message === "SESSION_EXPIRED") return;
+    if (err.message === "SESSION_EXPIRED" || quiet) return;
     mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
   }
 }

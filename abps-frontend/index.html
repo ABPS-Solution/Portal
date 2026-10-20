@@ -3081,14 +3081,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <div class="ddoc-head">
         <h2 class="panel-title" style="margin:0;">Documents</h2>
-        <button id="ddoc-admin-bar" class="ddoc-btn ddoc-btn-ghost" style="display:none;" onclick="ddocRunIndex()">Refresh list</button>
       </div>
       <div class="ddoc-toolbar">
         <div class="ddoc-view-switch">
           <button id="ddoc-view-type" class="ddoc-view-btn active" onclick="ddocSetView('type')">By Type</button>
           <button id="ddoc-view-project" class="ddoc-view-btn" onclick="ddocSetView('project')">By Project</button>
         </div>
-        <input type="text" class="ddoc-search-input" id="ddoc-search" placeholder="Search documents (BOQ ID, PO number, vendor, file name...)" oninput="ddocSearchInput(this.value)">
       </div>
       <div id="ddoc-breadcrumb"></div>
       <div id="ddoc-mount"></div>
