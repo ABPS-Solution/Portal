@@ -1601,6 +1601,9 @@ async function submitLead() {
         `;
       }
 
+      // A lead made from a News Leads card: link the card to it.
+      if (window._newsLeadCreateCtx && typeof nlAfterLeadCreated === "function") nlAfterLeadCreated(d.leadId);
+
       if (activeEmailLeadContextIndex !== null) {
         const capturedEmailLeadIndex = activeEmailLeadContextIndex;
 
@@ -3165,7 +3168,7 @@ function isMarketingAccessRestrictedToCardDetailsOnly() {
   if (userPermissions.cardDetails !== true) return false;
   const broaderMarketingPerms = [
     "searchCompany", "searchTasks", "searchStatus", "searchQualification",
-    "searchCityState", "emailLeads", "meetingPreparation", "morningMeeting",
+    "searchCityState", "emailLeads", "meetingPreparation", "morningMeeting", "newsLeads",
     "orderPaymentProgress", "commissioningReport", "purchaseOrder", "uploadRevisedPo"
   ];
   return !broaderMarketingPerms.some(key => userPermissions[key] === true);

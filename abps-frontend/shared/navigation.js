@@ -215,6 +215,8 @@ async function navigateToModule(key) {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") {
       executeInboundEmailSyncPipelineFetch();
+    } else if (key === "newsLeads") {
+      if (typeof nlInit === "function") nlInit();
     } else if (key === "morningMeeting") {
       if (typeof mmInit === "function") mmInit();
     } else if (key === "meetingPreparation") {
@@ -400,6 +402,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
   const canMorningMeeting         = userPermissionsObject.morningMeeting === true;
+  const canNewsLeads              = userPermissionsObject.newsLeads === true;
+  if (document.getElementById("mod-news-leads")) document.getElementById("mod-news-leads").style.display = canNewsLeads ? "block" : "none";
   const canOrderPaymentProgress    = userPermissionsObject.orderPaymentProgress === true;
 
   // 2. EXTRACT RAW WAREHOUSE ACCESS PRIVILEGES MATRIX
@@ -663,7 +667,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // --- EVALUATE DEPARTMENT ENCLOSURE OVERLAYS ---
   const marketingHeaderBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingHeaderBlock) {
-    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting) ? "block" : "none";
+    marketingHeaderBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   }
 
   const storeHeaderBlock = document.getElementById("dashboard-store-department-header-block");
