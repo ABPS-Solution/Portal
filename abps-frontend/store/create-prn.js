@@ -246,7 +246,40 @@ async function initializePRNPanel() {
   prnDraftRestoreCreate();
 }
 
+// Automatic PRN switch (20 Oct 2026). On: BOQs get their PRN created and
+// authorized by the system; only BOQs waiting before switch-on stay here.
+async function renderAutoPrnBar() {
+  const el = document.getElementById("auto-prn-bar");
+  if (!el) return;
+  let enabled = false;
+  try { const d = await apFetch({ action: "fetchAutoPrnSetting" }); if (d.success) enabled = !!d.enabled; } catch (e) {}
+  const isSuper = localStorage.getItem("isUserSuperAdminGlobal") === "true";
+  if (!enabled && !isSuper) { el.style.display = "none"; return; }
+  const btn = isSuper
+    ? `<button onclick="toggleAutoPrn(${!enabled})" style="width:auto; margin-left:auto; padding:6px 14px; border:none; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.8rem; color:#fff; background:${enabled ? '#b91c1c' : '#15803d'};">${enabled ? 'Turn Automatic PRN Off' : 'Turn Automatic PRN On'}</button>`
+    : '';
+  el.style.cssText = "display:flex; align-items:center; gap:12px; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius); font-size:0.85rem; font-weight:700;"
+    + (enabled ? "background:#f0fdf4; border-left:4px solid #15803d; color:#14532d;" : "background:#eff6ff; border-left:4px solid #2563eb; color:#1e3a8a;");
+  el.innerHTML = (enabled
+    ? "Automatic PRN is ON: PRNs are created and authorized automatically when a BOQ is authorized or revised. Only BOQs from before it was turned on are listed here."
+    : "Automatic PRN is OFF: PRNs are created and authorized by hand.") + btn;
+}
+
+async function toggleAutoPrn(turnOn) {
+  const msg = turnOn
+    ? "Turn Automatic PRN ON?\n\nFrom now on, every BOQ authorized or revised gets its PRN created and authorized automatically (Store Qty = free stock, the rest Purchase). BOQs already waiting stay manual."
+    : "Turn Automatic PRN OFF?\n\nPRNs go back to being created and authorized by hand.";
+  if (!(await abpsConfirm(msg, { okLabel: turnOn ? "Turn On" : "Turn Off", title: "Automatic PRN" }))) return;
+  try {
+    const d = await apFetch({ action: "setAutoPrnEnabled", enabled: turnOn });
+    if (!d.success) { abpsAlert(d.error || "Could not change the setting."); return; }
+  } catch (e) { abpsAlert("Network error: " + e.message); return; }
+  renderAutoPrnBar();
+  loadPRNNeedQueue();
+}
+
 async function loadPRNNeedQueue() {
+  renderAutoPrnBar();
   const zone = document.getElementById("prn-needqueue-zone");
   if (!zone) return;
   zone.style.display = "block"; // undo the "hide after success" state from a prior PRN creation
