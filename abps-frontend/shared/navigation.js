@@ -601,6 +601,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
   if (document.getElementById("mod-revise-prn")) document.getElementById("mod-revise-prn").style.display = canRevisePRN ? "block" : "none";
   if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
+  // The 4 PRN sections are hidden since Automatic PRN (20 Oct 2026). Code is kept so they can be revived.
+  ["mod-purchase-request-note", "mod-purchase-authorize-prn", "mod-revise-prn", "mod-authorize-prn-revision"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = "none";
+  });
   if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";

@@ -33,6 +33,8 @@ async function initializeSecurityAdminPanel() {
   if (emailInboxesTabBtn) emailInboxesTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   const signatureTabBtn = document.getElementById("sa-tab-signature");
   if (signatureTabBtn) signatureTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
+  const autoPrnTabBtn = document.getElementById("sa-tab-autoprn");
+  if (autoPrnTabBtn) autoPrnTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   const pinsModeBtn = document.getElementById("pinmode-btn-changepin");
   if (pinsModeBtn) pinsModeBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
   switchSecurityAdminTab('permissions');
@@ -61,7 +63,7 @@ function switchSecurityAdminTab(tab) {
   // already hidden for anyone else, but this refuses a direct call too
   // (e.g. a stale bookmarked handler), same defense-in-depth spirit as
   // the server-side gate on its own routes.
-  if ((tab === 'users' || tab === 'emailinboxes' || tab === 'signature') && !saViewerIsSuperAdmin()) tab = 'permissions';
+  if ((tab === 'users' || tab === 'emailinboxes' || tab === 'signature' || tab === 'autoprn') && !saViewerIsSuperAdmin()) tab = 'permissions';
   // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
   // shows (admin_db.trusted_devices) is only ever populated by Google
   // Sign-In from an office IP, and Google Sign-In has been hidden from
@@ -75,8 +77,9 @@ function switchSecurityAdminTab(tab) {
   if (tab === 'emailinboxes' && typeof loadEmailInboxes === 'function') loadEmailInboxes();
   if (tab === 'pdfkeys') loadPdfShiftCredits();
   if (tab === 'signature') loadSignatorySignature();
+  if (tab === 'autoprn' && typeof renderAutoPrnBar === 'function') renderAutoPrnBar('sa-autoprn-bar');
   if (tab === 'docaccess') loadDocumentAccessMatrix();
-  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys', 'signature'].forEach(t => {
+  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';

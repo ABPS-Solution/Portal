@@ -3493,6 +3493,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="sa-tab-emailinboxes" class="nav-btn-styled" onclick="switchSecurityAdminTab('emailinboxes')" style="flex:1; padding:11px 16px;">Email Inboxes</button>
       <button id="sa-tab-pdfkeys" class="nav-btn-styled" onclick="switchSecurityAdminTab('pdfkeys')" style="flex:1; padding:11px 16px;">PDF Keys</button>
       <button id="sa-tab-signature" class="nav-btn-styled" onclick="switchSecurityAdminTab('signature')" style="flex:1; padding:11px 16px; display:none;">Authorized Signature</button>
+      <button id="sa-tab-autoprn" class="nav-btn-styled" onclick="switchSecurityAdminTab('autoprn')" style="flex:1; padding:11px 16px; display:none;">Automatic PRN</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — a visual, per-user, department-colored view
@@ -3581,6 +3582,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="sa-panel-signature" style="display:none;">
       <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">This signature (Alok Kumar, authorized signatory) is printed on the final authorized copy of outgoing documents: RM Purchase Orders and their revisions, Project Dispatch Invoices and their revisions, and Delivery Challans. Draft copies never carry it. Use a clear scan of the signature on a white or transparent background, cropped close.</p>
       <div id="sa-signature-body"></div>
+    </div>
+
+    <div id="sa-panel-autoprn" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">When on, every BOQ that is authorized or revised (from any screen) gets its PRN created and authorized straight away: Store Qty uses all free stock, the rest is Purchase, and the PRN document is made. Turning it on also processes everything already waiting.</p>
+      <div id="sa-autoprn-bar"></div>
     </div>
 
     <div id="sa-panel-holidays" style="display:none;">
