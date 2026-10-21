@@ -125,7 +125,7 @@ async function openCPOAllocationPicker(rowId) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${escapeHtml(row.unit || "")} of ${row.itemCode} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmtQty(lineQty)} ${escapeHtml(row.unit || "")} of ${escapeHtml(poAllocMaterialLabel(row.itemCode, row.description))} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${pendingRowsHtml}${memoRowsHtml}${extraRowHtml}</div>
       <div id="cpo-alloc-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -1478,4 +1478,10 @@ function prnSuccessTile(label, value, mono) {
 }
 function prnSuccessGrid(tiles) {
   return `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:6px;">${tiles.join("")}</div>`;
+}
+
+// Full "Name - Rating - Make" for an item code, for the Allocate to PRNs title.
+function poAllocMaterialLabel(itemCode, fallback) {
+  const hit = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
+  return (hit && (hit.combinedName || hit.productName)) || fallback || itemCode || "";
 }

@@ -898,7 +898,7 @@ function openRPOAllocationModal(idx) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(li.unit || "")} of ${escapeHtml(li.itemCode || li.description || "")} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(li.unit || "")} of ${escapeHtml(poAllocMaterialLabel(li.itemCode, li.description))} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="rpo-alloc-modal-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
@@ -1783,7 +1783,7 @@ function openAPORAllocationModal(requestId, idx) {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:12px; width:100%; max-width:1140px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
       <div style="padding:18px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(line.unit || "")} of ${escapeHtml(line.itemCode || line.description || "")} to PRNs</div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Allocate ${fmt(vdq)} ${escapeHtml(line.unit || "")} of ${escapeHtml(poAllocMaterialLabel(line.itemCode, line.description))} to PRNs</div>
       </div>
       <div style="overflow-y:auto; flex:1; padding:16px 20px;">${noPrnNotice}${rowsHtml}${extraRowHtml}</div>
       <div id="apor-alloc-modal-summary" style="padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700;"></div>
