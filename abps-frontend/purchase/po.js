@@ -1751,7 +1751,9 @@ async function authorizePOFromForm() {
   }
   if (window.cpoMaterialRows.length === 0) return showErr("Add at least one material row.");
 
-  for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+  const transportAuthErr = cpoIsTransport() ? cpoTransportRowsError(window.cpoMaterialRows) : "";
+  if (transportAuthErr) return showErr(transportAuthErr);
+  for (let i = 0; i < (cpoIsTransport() ? 0 : window.cpoMaterialRows.length); i++) {
     const row = window.cpoMaterialRows[i];
     const n = i + 1;
     if (!row.itemCode) return showErr(`Row ${n}: select a material from the search (item code required).`);
