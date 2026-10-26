@@ -295,76 +295,61 @@ function executeClientSideStoreTicketFilterSearch() {
     return;
   }
 
-  filteredOutputList.forEach(ticket => {
-    const card = document.createElement("div");
-    card.className = "contact-summary-card-parent";
-    
-    let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
-    
-    let itemsTableRowsHtml = "";
-    itemsArray.forEach(i => {
-      const mappedQty = (i.released !== undefined && i.released !== null) ? i.released : i.quantity;
-      itemsTableRowsHtml += `
-        <tr>
-          <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${escapeHtml(i.materialName)}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
-        </tr>`;
-    });
-
-    let badgeColorStyle = "background:#fef3c7; color:#b45309;"; 
+  // One table, styled like PPS Tracking: one row per ticket, its materials
+  // listed inside the row (Requested / Issued).
+  const colB = "border-left:1.5px solid var(--border); border-bottom:1px solid var(--border);";
+  const firstB = "border-bottom:1px solid var(--border);";
+  const headB = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
+  const th = (label, extra = "") => `<th style="padding:8px; font-size:0.7rem; text-align:center; ${extra} ${headB}">${label}</th>`;
+  const rowsHtml = filteredOutputList.map(ticket => {
     const currentStatus = (ticket.status || "Pending").toString().trim();
-    if (currentStatus === "Approved") badgeColorStyle = "background:#dcfce7; color:#15803d;";
-    if (currentStatus === "Rejected" || currentStatus === "Expired" || currentStatus === "Rejected by Admin") badgeColorStyle = "background:#fee2e2; color:#b91c1c;";
-
-    const statusBadgeText = currentStatus.toUpperCase();
-    const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
-
-    let cleanCreatedDate = formatOrdinalDateTime(ticket.dateCreated);
-    let cleanActionedDate = ticket.dateActioned ? formatOrdinalDateTime(ticket.dateActioned) : "Not Actioned Yet";
-
-    card.innerHTML = `
-      <div class="contact-summary-header-row" onclick="toggleMatrixCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
-        <div class="contact-summary-title-info" style="width:100%;">
-          <div class="meta-row-line-block" style="display:flex; align-items:center; justify-content:space-between;">
-            <div>
-              <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
-              <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
-              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "General Store")}</strong>
-              
-            </div>
-            <div>
-              <span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badgeColorStyle}">${statusBadgeText}</span>
-              <span id="matrix-card-caret-${ticket.ticketId}" style="margin-left:8px; font-weight:700; color:var(--muted);">▸</span>
-            </div>
-          </div>
-          <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
-            ${ticket.legacyCompanyName
-              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span> <strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
-              : `<span>Project ID:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
-            <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
-          </div>
-        </div>
-      </div>
-      <div id="matrix-card-body-${ticket.ticketId}" style="display:none; padding-top:8px; border-top:1px dashed var(--border); margin-top:6px;">
-        <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
-          <strong>Requested By:</strong> ${escapeHtml(ticket.requestedBy)} | <strong>Actioned By:</strong> ${escapeHtml(ticket.actionedBy || "Pending Review")}<br/>  
-          <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
-        </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-          <table class="prn-bordered-table mit-pps-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
-            <thead>
-              <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
-                <th style="text-align:left; padding:4px;">Material Description</th>
-                <th style="text-align:right; padding:4px;">Quantity</th>
-              </tr>
-            </thead>
-            <tbody>${itemsTableRowsHtml}</tbody>
-          </table>
-        </div>
-      </div>
-    `;
-    resultsFeedZone.appendChild(card);
-  });
+    let badge = "background:#fef3c7; color:#b45309;";
+    if (currentStatus === "Approved") badge = "background:#dcfce7; color:#15803d;";
+    if (/reject|expired|cancel/i.test(currentStatus)) badge = "background:#fee2e2; color:#b91c1c;";
+    const actionWord = /reject/i.test(currentStatus) ? "Rejected" : (/cancel/i.test(currentStatus) ? "Cancelled" : "Approved");
+    const jcs = (ticket.jobCardNumbers || []).length ? ticket.jobCardNumbers : (ticket.jobCardNumber ? [ticket.jobCardNumber] : []);
+    const jcText = jcs.length ? jcs.map(j => (String(j).match(/^JC_Set-d+/) || [j])[0]).join(", ") : "-";
+    const items = Array.isArray(ticket.items) ? ticket.items : [];
+    const itemsHtml = items.length ? items.map((i, k) => {
+      const issued = (i.released !== undefined && i.released !== null) ? i.released : null;
+      const issColor = issued == null ? "var(--muted)" : (Number(issued) + 1e-9 < Number(i.quantity) ? "#b45309" : "#15803d");
+      return `<div style="display:flex; gap:10px; justify-content:space-between; align-items:flex-start; padding:4px 0; ${k ? "border-top:1px dashed var(--border);" : ""}">
+          <div style="text-align:left;"><span style="font-weight:600;">${escapeHtml(i.materialName || "")}</span>${i.itemCode ? ` <span style="font-family:monospace; font-size:0.72rem; color:var(--muted);">${escapeHtml(i.itemCode)}</span>` : ""}</div>
+          <div style="white-space:nowrap; font-family:monospace; font-weight:700;">${fmtQty(i.quantity)} / <span style="color:${issColor};">${issued == null ? "-" : fmtQty(issued)}</span> <span style="font-family:inherit; font-weight:500; color:#475569;">${escapeHtml(i.unitType || "")}</span></div>
+        </div>`;
+    }).join("") : `<span style="color:var(--muted);">-</span>`;
+    const links = [
+      ticket.pdfUrl ? `<a href="${escapeHtml(driveLink(ticket.pdfUrl))}" target="_blank" style="font-weight:700; color:var(--brand);">Ticket PDF ↗</a>` : "",
+      ticket.parentTicketId ? `<div>From: <a href="javascript:void(0)" onclick="matrixOpenLinkedTicket(${jsArg(ticket.parentTicketId)})" style="font-family:monospace; font-weight:700; color:#b45309;">${escapeHtml(ticket.parentTicketId)}</a></div>` : "",
+      (ticket.releaseTicketIds || []).length ? `<div>Release: ${ticket.releaseTicketIds.map(id => `<a href="javascript:void(0)" onclick="matrixOpenLinkedTicket(${jsArg(id)})" style="font-family:monospace; font-weight:700; color:#15803d;">${escapeHtml(id)}</a>`).join(", ")}</div>` : "",
+    ].filter(Boolean).join("");
+    const notes = ticket.justificationNotes ? `<div style="margin-top:4px; font-size:0.74rem; color:#475569; text-align:left;"><strong>Notes:</strong> ${escapeHtml(ticket.justificationNotes)}</div>` : "";
+    return `<tr style="vertical-align:top;">
+        <td style="padding:8px; text-align:left; ${firstB}"><span style="font-family:monospace; font-weight:800; color:var(--brand);">${escapeHtml(ticket.ticketId)}</span><div style="margin-top:4px;"><span style="font-size:0.66rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badge}">${escapeHtml(currentStatus.toUpperCase())}</span></div><div style="margin-top:4px; font-size:0.76rem;">${links}</div></td>
+        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.storeTargetScope || "Raw Materials Store")}<div style="color:#475569; font-size:0.76rem;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</div></td>
+        <td style="padding:8px; text-align:center; word-break:break-word; ${colB}">${ticket.legacyCompanyName ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:1px 5px; border-radius:4px; font-size:0.7rem;">LEGACY</span> ${escapeHtml(ticket.legacyCompanyName)}` : escapeHtml(ticket.projectId || "None")}</td>
+        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(jcText)}</td>
+        <td style="padding:8px; ${colB}">${itemsHtml}${notes}</td>
+        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.requestedBy || "-")}<div style="color:#475569; font-size:0.76rem;">${formatOrdinalDateTime(ticket.dateCreated)}</div></td>
+        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.actionedBy || "Pending")}<div style="color:#475569; font-size:0.76rem;">${ticket.dateActioned ? actionWord + " " + formatOrdinalDateTime(ticket.dateActioned) : "Not yet"}</div></td>
+      </tr>`;
+  }).join("");
+  const tableWrap = document.createElement("div");
+  tableWrap.style.cssText = "overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);";
+  tableWrap.innerHTML = `
+    <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1200px; font-size:0.84rem; background:#fff;">
+      <thead><tr style="background:#f8fafc;">
+        <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:150px; border-bottom:2px solid #94a3b8;">Ticket / Status</th>
+        ${th("Store / Outgoing Use", "min-width:130px;")}
+        ${th("Project ID", "min-width:170px;")}
+        ${th("Job Card(s)", "min-width:110px;")}
+        ${th("Materials (Requested / Issued)", "min-width:340px;")}
+        ${th("Requested By / On", "min-width:130px;")}
+        ${th("Approved By / On", "min-width:130px;")}
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  resultsFeedZone.appendChild(tableWrap);
 }
 
 function toggleMatrixCardBody(ticketId) {
