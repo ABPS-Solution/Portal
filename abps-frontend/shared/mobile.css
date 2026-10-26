@@ -94,3 +94,29 @@
 @media (max-width: 360px) {
   .dashboard-grid { grid-template-columns: 1fr !important; }
 }
+
+/* Admin sections on phones (26 Oct 2026): Security & Login Access tabs and
+   any other row of 3+ toggle buttons become a tidy 2-column grid of compact
+   buttons instead of a long stack of full-width bars. */
+@media (max-width: 640px) {
+  #canvas-module-security-admin div:has(> .nav-btn-styled + .nav-btn-styled + .nav-btn-styled),
+  #canvas-module-admin-dashboard div:has(> button + button + button) {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    margin-bottom: 14px !important;
+  }
+  #canvas-module-security-admin div:has(> .nav-btn-styled + .nav-btn-styled + .nav-btn-styled) > .nav-btn-styled,
+  #canvas-module-admin-dashboard div:has(> button + button + button) > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 9px 6px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    border-radius: 8px !important;
+    min-height: 44px;
+  }
+  #canvas-module-security-admin .panel-title { font-size: 1.15rem; margin-bottom: 10px; }
+  #canvas-module-security-admin > div[style*="padding:20px"] { padding: 12px !important; }
+}
