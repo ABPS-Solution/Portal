@@ -3574,22 +3574,45 @@ async function openMergeLeadPicker(targetLeadId, encodedCompany) {
   const companyName = decodeURIComponent(encodedCompany || "");
   let r;
   try { r = await apFetch({ action: "fetchOpenLeadsForCompany", companyName }); }
-  catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not load the company's leads."); return; }
+  catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not load the company's leads. " + friendlyErr(e)); return; }
+  if (!r.success) { abpsAlert(r.error || "Could not load the company's leads."); return; }
   const others = (r.leads || []).filter(l => l.leadId !== targetLeadId);
   if (!others.length) { abpsAlert("This company has no other lead without a PO to merge into this one."); return; }
-  const list = others.map((l, i) => `${i + 1}. ${l.leadName || l.leadId} (${l.leadId})${l.contacts ? " - " + l.contacts : ""}`).join("\n");
-  const pick = await abpsPrompt(`Merge which lead INTO ${targetLeadId}? Its contacts, tasks and offers move here and it is deleted.\n\n${list}\n\nEnter the number:`);
-  const idx = parseInt(pick, 10) - 1;
-  if (isNaN(idx) || !others[idx]) return;
-  const source = others[idx];
-  if (!(await abpsConfirm(`Merge ${source.leadId} into ${targetLeadId}? This cannot be undone.`))) return;
+  const target = (r.leads || []).find(l => l.leadId === targetLeadId);
+  const source = await chooseLeadToMerge(target ? (target.leadName || targetLeadId) : targetLeadId, others);
+  if (!source) return;
+  if (!(await abpsConfirm(`Merge "${source.leadName || source.leadId}" into "${target ? target.leadName || targetLeadId : targetLeadId}"?\n\nIts contacts, tasks and offers move across and it is deleted. This cannot be undone.`))) return;
+  showBlockingOverlay("Merging leads...");
   try {
     const m = await apFetch({ action: "mergeLeads", sourceLeadId: source.leadId, targetLeadId });
+    hideBlockingOverlay();
     if (!m.success) { abpsAlert(m.error || "Could not merge the leads. Please try again."); return; }
-    abpsAlert("Leads merged. Search again to see the combined lead.");
     const srcCard = document.getElementById(`contact-parent-wrapper-${source.leadId}`);
     if (srcCard) srcCard.remove();
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not merge the leads. Please try again."); }
+    abpsAlert("Leads merged. Search again to see the combined lead.");
+  } catch (e) { hideBlockingOverlay(); if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not merge the leads. " + friendlyErr(e)); }
+}
+
+// Click-to-pick list of leads to merge away. Resolves to the chosen lead or null.
+function chooseLeadToMerge(targetName, leads) {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100001; display:flex; align-items:center; justify-content:center; padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff; border-radius:10px; max-width:620px; width:100%; max-height:85vh; overflow:auto; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;';
+    box.innerHTML = `<div style="font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:6px;">Merge a lead into ${escapeHtml(targetName)}</div>
+      <div style="font-size:0.86rem; color:var(--muted); margin-bottom:14px;">Click the lead that is the same enquiry entered twice.</div>
+      ${leads.map((l, i) => `<button type="button" data-i="${i}" class="merge-pick-btn" style="display:block; width:100%; text-align:left; padding:10px 12px; margin-bottom:8px; background:#f8fafc; border:1.5px solid #94a3b8; border-radius:8px; cursor:pointer;">
+          <strong>${escapeHtml(l.leadName || l.leadId)}</strong> <span style="color:var(--muted);">(${escapeHtml(l.status || '')})</span>
+          ${l.contacts ? `<div style="font-size:0.84rem; margin-top:3px;">${escapeHtml(l.contacts)}</div>` : ''}</button>`).join('')}
+      <div style="display:flex; justify-content:flex-end; margin-top:6px;"><button type="button" class="nav-btn-styled merge-cancel-btn" style="background:#64748b; width:auto; padding:8px 20px;">Cancel</button></div>`;
+    const done = (v) => { wrap.remove(); resolve(v); };
+    box.querySelectorAll('.merge-pick-btn').forEach(btn => btn.addEventListener('click', () => done(leads[Number(btn.dataset.i)])));
+    box.querySelector('.merge-cancel-btn').addEventListener('click', () => done(null));
+    wrap.addEventListener('click', e => { if (e.target === wrap) done(null); });
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+  });
 }
 
 
