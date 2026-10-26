@@ -139,6 +139,9 @@ async function handleCpdiProjectChange(projectId) {
   }
 }
 
+// A line can be billed from Job Cards (has a BOQ) or from Direct Supply challans.
+function cpdiBillable(l) { return !!l.boqId || Number(l.directSupplyReadyQty) > 0 || (l.needsBoqJc !== false && Number(l.alreadyInvoicedQty) > 0); }
+
 function cpdiInitInvoiceStateFromLines() {
   cpdiInvoiceState = {
     invoiceDocDate: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10),
@@ -147,7 +150,7 @@ function cpdiInitInvoiceStateFromLines() {
     billTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     shipTo: { name: "", address: "", state: "", gstNo: "", contactName: "", contactNo: "" },
     lineItems: cpdiCache.lines.map(l => {
-      const qty = l.boqId ? l.readyToInvoiceQty : 0;
+      const qty = cpdiBillable(l) ? l.readyToInvoiceQty : 0;
       return { lineId: l.lineId, description: l.description, hsnNumber: l.hsnNumber, unit: l.unit,
         quantity: qty, ratePerQuantity: l.ratePerQuantity, totalBasicPrice: qty * (parseFloat(l.ratePerQuantity) || 0) };
     }),
@@ -168,7 +171,7 @@ function showCpdiReadySerials(idx) {
 function cpdiRenderDetail() {
   const body = document.getElementById("cpdi-jc-body");
   body.innerHTML = cpdiCache.lines.map((l, idx) => {
-    const hasBoq = !!l.boqId;
+    const hasBoq = cpdiBillable(l);
     const blockerMsgs = [];
     if (l.pendingTicketsCount > 0) blockerMsgs.push(`${l.pendingTicketsCount} pending store ticket(s)`);
     if (l.pendingBoqIncreaseCount > 0) blockerMsgs.push(`${l.pendingBoqIncreaseCount} open BOQ Increase Request(s)`);
@@ -176,7 +179,7 @@ function cpdiRenderDetail() {
     const showQtys = hasBoq || isManual;
     const maxQty = showQtys ? l.readyToInvoiceQty : l.orderedQuantity;
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${isManual ? `<div style="color:#475569; font-size:0.78rem; font-weight:700; margin-top:2px;">No BOQ / JC: billed by hand, up to the PO quantity</div>` : ''}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
+      <td style="padding:8px;">${escapeHtml([l.productName, l.productRating, l.descriptionOfMaterial].filter(Boolean).join(' - ') || l.description)}${isManual ? `<div style="color:#475569; font-size:0.78rem; font-weight:700; margin-top:2px;">No BOQ / JC: billed by hand, up to the PO quantity</div>` : ''}${Number(l.directSupplyReadyQty) > 0 ? `<div style="color:#1d4ed8; font-size:0.78rem; font-weight:700; margin-top:2px;">Includes ${l.directSupplyReadyQty} supplied directly to site (Direct Supply challan)</div>` : ''}${blockerMsgs.length ? `<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:2px;">⚠ ${blockerMsgs.join(', ')} — this product is blocked</div>` : ''}</td>
       <td style="padding:8px; text-align:center;">${showQtys ? l.orderedQuantity : '—'}</td>
       <td style="padding:8px; text-align:center;">${showQtys ? l.alreadyInvoicedQty : '—'}</td>
       <td style="padding:8px; text-align:center; font-weight:700; color:${maxQty > 0 ? '#15803d' : 'var(--muted)'};">${showQtys ? l.readyToInvoiceQty : 'Final only'}</td>
@@ -217,10 +220,10 @@ function updateCpdiGenerateButtonsState() {
   partialBtn.style.opacity = partialBtn.disabled ? "0.5" : "1";
   partialBtn.style.cursor = partialBtn.disabled ? "not-allowed" : "pointer";
 
-  const boqLines = cpdiCache.lines.filter(l => l.boqId);
+  const boqLines = cpdiCache.lines.filter(l => cpdiBillable(l));
   const billNow = (l) => Number((cpdiInvoiceState.lineItems[cpdiCache.lines.indexOf(l)] || {}).quantity) || 0;
   const unsettledLines = boqLines.filter(l =>
-    !(l.jcTotal > 0 && l.jcQaPassed === l.jcTotal && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity
+    !((l.jcTotal > 0 ? l.jcQaPassed === l.jcTotal : !l.boqId) && (l.alreadyInvoicedQty + l.readyToInvoiceQty) >= l.orderedQuantity
       && billNow(l) === l.readyToInvoiceQty)
   );
   const allSettled = unsettledLines.length === 0;
@@ -235,7 +238,7 @@ function updateCpdiGenerateButtonsState() {
   if (anyBlocked) finalReasons.push(`${blockedLines.length} product(s) blocked by pending store tickets/BOQ Increase Requests`);
   unsettledLines.forEach(l => {
     const name = l.productName || l.description || 'This product';
-    if (!(l.jcTotal > 0)) finalReasons.push(`${name}: no Job Card exists yet`);
+    if (!(l.jcTotal > 0) && l.boqId) finalReasons.push(`${name}: no Job Card exists yet`);
     else if (l.jcQaPassed !== l.jcTotal) finalReasons.push(`${name}: ${l.jcTotal - l.jcQaPassed} of ${l.jcTotal} Job Card(s) not yet QA-passed`);
     else if ((l.alreadyInvoicedQty + l.readyToInvoiceQty) < l.orderedQuantity) finalReasons.push(`${name}: only ${l.alreadyInvoicedQty + l.readyToInvoiceQty} of ${l.orderedQuantity} ordered qty invoiced/ready`);
     else if (billNow(l) !== l.readyToInvoiceQty) finalReasons.push(`${name}: a Final Invoice bills everything left, so Qty to Bill Now must be ${l.readyToInvoiceQty}`);
@@ -430,7 +433,7 @@ function cpdiAddLineItemRow() {
   const line = cpdiAllLines.find(l => l.lineId === lineId);
   if (!line) return;
   cpdiCache.lines.push(line);
-  const qty = line.boqId ? line.readyToInvoiceQty : 0;
+  const qty = cpdiBillable(line) ? line.readyToInvoiceQty : 0;
   cpdiInvoiceState.lineItems.push({
     lineId: line.lineId, description: line.description, hsnNumber: line.hsnNumber, unit: line.unit,
     quantity: qty, ratePerQuantity: line.ratePerQuantity, totalBasicPrice: qty * (parseFloat(line.ratePerQuantity) || 0),

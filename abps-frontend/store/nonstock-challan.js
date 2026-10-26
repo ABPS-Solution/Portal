@@ -3,7 +3,7 @@
 // the ticket pool on Material Outward on Delivery Challan.
 //   Gas Refill      empty cylinders to the vendor (the refill comes back on its RM PO GRN).
 //   Rejected Return Not OK material back to the vendor, picked from open "Return to Vendor" rejections.
-//   Direct Supply   project RM PO material sent by the supplier straight to the customer / site.
+//   Direct Supply   a product on the customer's PO sent by a supplier straight to the customer / site.
 // The builder only picks the lines; the draft card, Generate Draft and
 // Authorize are the same as for ticket challans (material-outward.js).
 // ═══════════════════════════════════════════════════════════════════════
@@ -13,7 +13,7 @@ window._mnsState = window._mnsState || { kind: null, vendor: "", projectId: "", 
 const MNS_KINDS = [
   { kind: "Gas Refill", hint: "Empty cylinders sent for refill. Full-cylinder stock does not change; the refill comes back on its RM PO." },
   { kind: "Rejected Return", hint: "Rejected (Not OK) material going back to the vendor. It was never in stock." },
-  { kind: "Direct Supply", hint: "Material on a project RM PO sent by the supplier straight to the customer or site." },
+  { kind: "Direct Supply", hint: "A product on the customer's PO sent by a supplier straight to the customer or site. It then counts as dispatched and can be billed on the Dispatch Invoice." },
 ];
 
 function mnsRenderSection() {
@@ -48,7 +48,7 @@ function mnsBuilderHtml() {
           <input type="text" id="mns-project" value="${escapeHtml(st.projectId)}" autocomplete="off" placeholder="Type to search..."
             oninput="mnsProjectSearch(this.value)" onfocus="mnsProjectSearch(this.value)" style="width:100%; padding:8px; border:1.5px solid #94a3b8; border-radius:var(--radius);" />
           <div id="mns-project-dd" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <button class="nav-btn-styled" style="width:auto; background:var(--brand);" onclick="mnsLoadSources()">Show PO Materials</button>
+        <button class="nav-btn-styled" style="width:auto; background:var(--brand);" onclick="mnsLoadSources()">Show PO Products</button>
       </div>${mnsSourcesTableHtml()}`;
   }
   const vendorBox = `<div style="flex:1 1 280px; position:relative;"><label class="field-label" style="margin-top:0;">Vendor Name *</label>
@@ -82,17 +82,17 @@ function mnsSourcesTableHtml() {
   const st = window._mnsState;
   if (!st.sourcesLoaded) return "";
   if (!st.sources.length) {
-    return `<div style="margin-top:12px; padding:12px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">${st.kind === "Direct Supply" ? "No PO material is still due for this project." : "This vendor has no rejected material waiting to go back."}</div>`;
+    return `<div style="margin-top:12px; padding:12px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">${st.kind === "Direct Supply" ? "Every product on this project's PO has already been supplied or billed." : "This vendor has no rejected material waiting to go back."}</div>`;
   }
   const isRej = st.kind === "Rejected Return";
   const head = isRej
     ? ["Material", "GRN", "Action", "Can send", "Qty to send"]
-    : ["Material", "PO", "PRN", "Vendor", "Still due", "Qty supplied"];
+    : ["Product (customer PO)", "PO Qty", "Can still supply", "Qty supplied"];
   const rows = st.sources.map((s, i) => {
     const cap = isRej ? s.freeQty : s.dueQty;
     const cells = isRej
       ? [escapeHtml(s.materialName || s.itemCode), escapeHtml(s.grnNumber || ""), escapeHtml(s.action || ""), `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`]
-      : [escapeHtml(s.description), escapeHtml(s.poNo), escapeHtml((s.prnId || "").replace(/^PRN_/, "")), escapeHtml(s.vendorName || ""), `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`];
+      : [escapeHtml(s.description), `${escapeHtml(fmtQty(s.orderedQty))} ${escapeHtml(s.unit || "")}`, `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`];
     return `<tr>${cells.map(c => `<td style="padding:7px; border:1px solid var(--border); word-break:break-word;">${c}</td>`).join("")}
       <td style="padding:6px; border:1px solid var(--border); width:120px;"><input type="number" min="0" max="${cap}" step="any" inputmode="decimal" value="${escapeHtml(String(s._qty ?? ""))}" placeholder="0"
         oninput="window._mnsState.sources[${i}]._qty = this.value" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td></tr>`;
@@ -231,7 +231,7 @@ async function mnsCreateDraft() {
     if (over) return abpsAlert(`${over.materialName || over.description}: the quantity is more than can be sent.`);
     lines = st.kind === "Rejected Return"
       ? picked.map(s => ({ rejectionId: s.rejectionId, quantity: Number(s._qty) }))
-      : picked.map(s => ({ poNo: s.poNo, itemCode: s.itemCode, prnId: s.prnId, quantity: Number(s._qty) }));
+      : picked.map(s => ({ poLineId: s.poLineId, quantity: Number(s._qty) }));
   }
   const vd = (window._mowVendorDetails || {})[st.vendor] || {};
   const payload = st.kind === "Direct Supply"
