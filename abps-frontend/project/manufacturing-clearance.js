@@ -52,6 +52,7 @@ function syncMcStatusPills() {
 
 function initializeManufacturingClearancePanel() {
   mcCurrentStatus = "Inactive";
+  setMcMfcFilter("all");
   const si = document.getElementById('mc-search-input');
   if (si) si.value = '';
   mcLineItemState = {};
@@ -136,12 +137,31 @@ async function loadManufacturingClearanceList() {
 // ── Active-tab expandable wrapper cards ──────────────────────────────
 // Hold status takes priority over the Internal MFC given/pending pair —
 // a held product needs attention regardless of where MFC stands.
-function mcStatusPill(project) {
+// Internal MFC status (26 Oct 2026): Pending = nothing cleared yet; Partial =
+// some product / quantity cleared; Given = every PO line cleared in full.
+function mcMfcStatus(project) {
+  const total = Number(project.totalLines) || 0;
+  const started = Number(project.mfcStartedLines) || 0, full = Number(project.mfcFullLines) || 0;
+  if (total > 0 && full === total) return { key: "given", text: "Internal MFC Given", color: "#2f9e58" };
+  if (started > 0) return { key: "partial", text: "Partial Internal MFC Given", color: "#ea580c" };
+  return { key: "pending", text: "Internal MFC Pending", color: "#64748b" };
+}
+function mcHoldPill(project) {
   const total = Number(project.totalLines) || 0, held = Number(project.heldLines) || 0;
   if (total > 0 && held === total) return { text: "Completely On Hold", color: "#b91c1c" };
   if (held > 0) return { text: "Partially On Hold", color: "#d97706" };
-  if (project.mfcInt) return { text: "Internal MFC Given", color: "#2f9e58" };
-  return { text: "Internal MFC Pending", color: "var(--muted)" };
+  return null;
+}
+function mcStatusPill(project) { return mcHoldPill(project) || mcMfcStatus(project); }
+let mcMfcFilter = "all";
+function setMcMfcFilter(key) {
+  mcMfcFilter = key;
+  document.querySelectorAll("#mc-mfc-filter-row button").forEach(b => {
+    const on = b.dataset.key === key;
+    b.style.background = on ? (b.dataset.color || "var(--brand)") : "#fff";
+    b.style.color = on ? "#fff" : (b.dataset.color || "#334155");
+  });
+  filterMcProjects();
 }
 
 function renderMcProjectCard(project) {
@@ -150,6 +170,9 @@ function renderMcProjectCard(project) {
   card.className = "contact-summary-card-parent mc-filter-row";
   card.id = `mc-card-${safeId}`;
   card.dataset.search = (project.companyName + ' ' + project.projectId).toLowerCase();
+  const mfcStatus = mcMfcStatus(project);
+  const holdPill = mcHoldPill(project);
+  card.dataset.mfc = mfcStatus.key;
 
   const status = mcStatusPill(project);
   const deliveryLabel = project.mfcInt ? "Final Delivery Date from MFC" : "Tentative Delivery Date";
@@ -165,7 +188,8 @@ function renderMcProjectCard(project) {
             <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="white-space:nowrap;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
           </div>
         </div>
-        <span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${status.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${status.text}</span>
+        ${holdPill ? `<span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${holdPill.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${holdPill.text}</span>` : ""}
+        <span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${mfcStatus.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${mfcStatus.text}</span>
         <span id="mc-caret-${safeId}" style="flex-shrink:0; font-weight:700; color:var(--muted); font-size:1rem;">▸</span>
       </div>
     </div>
@@ -181,12 +205,15 @@ function filterMcProjects() {
   let shown = 0, total = 0;
   document.querySelectorAll('#mc-active-cards-container .mc-filter-row, #mc-list-body .mc-filter-row').forEach(el => {
     total++;
-    const hit = !q || (el.dataset.search || '').includes(q);
+    const hit = (!q || (el.dataset.search || '').includes(q))
+      && (mcCurrentStatus !== "Active" || mcMfcFilter === "all" || el.dataset.mfc === mcMfcFilter);
     el.style.display = hit ? '' : 'none';
     if (hit) shown++;
   });
   const empty = document.getElementById('mc-search-empty');
-  if (empty) empty.style.display = (q && total && !shown) ? 'block' : 'none';
+  if (empty) empty.style.display = (total && !shown && (q || mcMfcFilter !== "all")) ? 'block' : 'none';
+  const fr = document.getElementById("mc-mfc-filter-row");
+  if (fr) fr.style.display = mcCurrentStatus === "Active" ? "flex" : "none";
 }
 
 async function toggleMcCardBody(projectId) {

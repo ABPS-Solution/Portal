@@ -3346,6 +3346,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <input id="mc-search-input" type="text" autocomplete="off" placeholder="Search by company name or Project ID..." oninput="filterMcProjects()" style="width:100%; padding:10px 12px 10px 36px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;">
       <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none;">&#128269;</span>
     </div>
+    <div id="mc-mfc-filter-row" style="display:none; gap:8px; flex-wrap:wrap; margin:0 0 12px;">
+      <button data-key="all" data-color="#1e40af" onclick="setMcMfcFilter('all')" style="padding:7px 14px; border:1.5px solid #1e40af; border-radius:999px; font-weight:700; font-size:0.8rem; cursor:pointer;">All</button>
+      <button data-key="pending" data-color="#64748b" onclick="setMcMfcFilter('pending')" style="padding:7px 14px; border:1.5px solid #64748b; border-radius:999px; font-weight:700; font-size:0.8rem; cursor:pointer;">Internal MFC Pending</button>
+      <button data-key="partial" data-color="#ea580c" onclick="setMcMfcFilter('partial')" style="padding:7px 14px; border:1.5px solid #ea580c; border-radius:999px; font-weight:700; font-size:0.8rem; cursor:pointer;">Partial Internal MFC Given</button>
+      <button data-key="given" data-color="#2f9e58" onclick="setMcMfcFilter('given')" style="padding:7px 14px; border:1.5px solid #2f9e58; border-radius:999px; font-weight:700; font-size:0.8rem; cursor:pointer;">Internal MFC Given</button>
+    </div>
     <div id="mc-search-empty" style="display:none; padding:14px; text-align:center; color:var(--muted);">No projects match your search.</div>
     <table id="mc-list-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
       <colgroup>
