@@ -437,6 +437,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canProjectTimeline = userPermissionsObject.projectTimeline === true;
   const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
   const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
+  const canViewPendingWork = userPermissionsObject.viewPendingWorkDashboard === true;
+  if (document.getElementById("mod-pending-work")) document.getElementById("mod-pending-work").style.display = canViewPendingWork ? "block" : "none";
   const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
@@ -692,7 +694,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
       const canSecurityAdmin = userPermissionsObject.securityLoginAccess === true;
       if (document.getElementById("mod-security-admin")) document.getElementById("mod-security-admin").style.display = canSecurityAdmin ? "block" : "none";
       const adminHeaderBlock = document.getElementById("dashboard-admin-department-header-block");
-      if (adminHeaderBlock) adminHeaderBlock.style.display = (canSecurityAdmin || canViewAdminDashboard) ? "block" : "none";
+      if (adminHeaderBlock) adminHeaderBlock.style.display = (canSecurityAdmin || canViewAdminDashboard || canViewPendingWork) ? "block" : "none";
 
       const canTourExpense = userPermissionsObject.tourExpense === true;
       if (document.getElementById("mod-tour-expense")) document.getElementById("mod-tour-expense").style.display = canTourExpense ? "block" : "none";

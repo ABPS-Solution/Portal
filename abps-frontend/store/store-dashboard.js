@@ -21,7 +21,7 @@ function sdLoadCustom() {
 }
 
 async function sdLoadDashboard(customVal) {
-  ["sd-s-tickets","sd-s-pending","sd-s-boqneedprn","sd-s-grns",
+  ["sd-s-tickets","sd-s-pending","sd-s-grns",
    "sd-s-boqinc","sd-s-gateawaiting","sd-s-qaawaiting","sd-s-rejrate","sd-s-sweeps","sd-s-challans","sd-s-outward"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = "…";
   });
@@ -43,7 +43,6 @@ function sdRenderDashboard(data) {
 
   // Row 1 stat cards — live queues
   document.getElementById("sd-s-pending").textContent   = stats.pendingApprovals;
-  document.getElementById("sd-s-boqneedprn").textContent = stats.boqsNeedingPRN ?? "—";
   document.getElementById("sd-s-gateawaiting").textContent = stats.gateAwaitingGRN.count;
   const outwardEl = document.getElementById("sd-s-outward");
   if (outwardEl) outwardEl.textContent = stats.unactionedMaterialOutward ?? 0;
