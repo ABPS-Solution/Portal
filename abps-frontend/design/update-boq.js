@@ -786,26 +786,19 @@ async function submitUpdateBOQ() {
       const selectorZone = document.getElementById("update-boq-selector-zone");
       if (selectorZone) selectorZone.style.display = "none";
 
-      const fb = document.getElementById(feedbackId);
-      if (fb) {
-        fb.style.borderLeftColor = "var(--accent)";
-        fb.style.background      = "#f0fff4";
-        fb.style.color           = "#276749";
-        fb.style.display         = "block";
-        fb.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:800; margin-bottom:10px;">Bill of Quantity Revision Submitted for Re-Authorization!</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:0.8rem; margin-bottom:14px;">
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">BOQ ID</span><span style="font-family:monospace; font-weight:800;">${_lastDraft?.boqId || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Status</span><span style="font-weight:700;">Awaiting Authorization</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Project ID</span><span style="font-weight:700;">${_lastDraft?.projectId || ""}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Customer</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.customerName || "")}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Name</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.productName || "")}</span></div>
-            <div><span style="font-size:0.65rem; font-weight:700; color:#276749; text-transform:uppercase; display:block;">Product Rating</span><span style="font-weight:700;">${escapeHtml(_lastDraft?.productRating || "")}</span></div>
-          </div>
-          <button onclick="const sz=document.getElementById('update-boq-selector-zone'); if(sz) sz.style.display='grid'; initializeUpdateBOQPanel().catch(()=>{});"
-            style="background:var(--accent); color:#fff; border:none; padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; cursor:pointer;">
-            + Revise Another Bill of Quantity
-          </button>`;
+      if (document.getElementById(feedbackId)) {
+        // Same success box as the rest of the app (showSuccessWithReset).
+        const d = _lastDraft || {};
+        const row = (label, value, mono) => value ? `<div style="display:grid; grid-template-columns:110px 1fr; gap:10px; padding:5px 0; border-top:1px solid #dcfce7;">
+            <span style="font-size:0.72rem; font-weight:700; color:#15803d; text-transform:uppercase; padding-top:2px;">${label}</span>
+            <span style="font-weight:600; color:#14532d; word-break:break-word; ${mono ? "font-family:monospace; font-size:0.78rem; font-weight:500; color:#475569;" : ""}">${escapeHtml(value)}</span></div>` : "";
+        showSuccessWithReset(feedbackId,
+          `<div style="font-size:1rem; font-weight:800; margin-bottom:4px;">BOQ revision sent for re-authorization</div>
+           <div style="margin-bottom:10px;"><span style="display:inline-block; background:#fef3c7; color:#92400e; font-weight:700; font-size:0.74rem; padding:2px 10px; border-radius:999px;">Awaiting Authorization</span></div>
+           <div style="font-size:0.95rem; font-weight:700; color:#111827; margin-bottom:8px;">${escapeHtml([d.productName, d.productRating].filter(Boolean).join(" - "))}</div>
+           ${row("Customer", d.customerName)}${row("Project ID", d.projectId)}${row("BOQ ID", d.boqId, true)}`,
+          "Revise Another Bill of Quantity",
+          "const sz=document.getElementById('update-boq-selector-zone'); if(sz) sz.style.display='grid'; initializeUpdateBOQPanel().catch(()=>{});");
       }
     } else {
       showBOQBanner(feedbackId, data.error || "Revision submission failed.", "error");
