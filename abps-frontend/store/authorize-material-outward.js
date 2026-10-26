@@ -156,12 +156,14 @@ async function amoAuthorize(id) {
 async function amoReject(id) {
   const c = window._amoChallans.find(x => String(x.challan_id) === String(id));
   if (!c) return;
+  const ns = ["Gas Refill", "Rejected Return", "Direct Supply"].includes(c.outward_type);
+  if (!await abpsConfirm(`Reject ${c.challan_number || "this challan"}?\n\nThe draft is deleted as if it was never made${ns ? "; its materials can be picked again on a new challan" : "; its tickets go back to Material Outward on Delivery Challan"}. Nothing in stock changes.`)) return;
   showBlockingOverlay("Rejecting...");
   try {
     const data = await apFetch({ action: "discardDeliveryChallanDraft", challanId: id, operatorName: appActiveOperatorIdentityString || "Unknown" });
     hideBlockingOverlay();
     if (!data.success) { amoInlineError(id, data.error || "Reject failed."); return; }
-    amoShowDone(`<div style="font-weight:700;">${escapeHtml(c.challan_number || "Draft #" + id)} rejected. Its tickets are back in Material Outward on Delivery Challan.</div>`);
+    amoShowDone(`<div style="font-weight:700;">${escapeHtml(c.challan_number || "Draft #" + id)} rejected.${["Gas Refill", "Rejected Return", "Direct Supply"].includes(c.outward_type) ? " Its materials can be picked again on a new challan." : " Its tickets are back in Material Outward on Delivery Challan."}</div>`);
   } catch (err) {
     hideBlockingOverlay();
     amoInlineError(id, err.message);

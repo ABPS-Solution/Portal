@@ -87,18 +87,19 @@ function mnsSourcesTableHtml() {
   const isRej = st.kind === "Rejected Return";
   const head = isRej
     ? ["Material", "GRN", "Action", "Can send", "Qty to send"]
-    : ["Product (customer PO)", "PO Qty", "Can still supply", "Qty supplied"];
+    : ["Product Name", "PO Qty", "Can still supply", "Qty supplied"];
   const rows = st.sources.map((s, i) => {
     const cap = isRej ? s.freeQty : s.dueQty;
     const cells = isRej
       ? [escapeHtml(s.materialName || s.itemCode), escapeHtml(s.grnNumber || ""), escapeHtml(s.action || ""), `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`]
-      : [escapeHtml(s.description), `${escapeHtml(fmtQty(s.orderedQty))} ${escapeHtml(s.unit || "")}`, `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`];
-    return `<tr>${cells.map(c => `<td style="padding:7px; border:1px solid var(--border); word-break:break-word;">${c}</td>`).join("")}
-      <td style="padding:6px; border:1px solid var(--border); width:120px;"><input type="number" min="0" max="${cap}" step="any" inputmode="decimal" value="${escapeHtml(String(s._qty ?? ""))}" placeholder="0"
+      : [escapeHtml(s.description) + (s.boqAuthorized === false ? '<div style="color:#b91c1c; font-size:0.78rem; font-weight:700; margin-top:3px;">⚠ BOQ not authorized yet. Cannot be supplied until it is.</div>' : ''), `${escapeHtml(fmtQty(s.orderedQty))} ${escapeHtml(s.unit || "")}`, `${escapeHtml(fmtQty(cap))} ${escapeHtml(s.unit || "")}`];
+    const blocked = s.boqAuthorized === false;
+    return `<tr style="${blocked ? 'background:#fef2f2;' : ''}">${cells.map(c => `<td style="padding:7px; border:1.5px solid #94a3b8; word-break:break-word;">${c}</td>`).join("")}
+      <td style="padding:6px; border:1.5px solid #94a3b8; width:120px;"><input type="number" min="0" max="${cap}" step="any" inputmode="decimal" ${blocked ? 'disabled' : ''} value="${escapeHtml(String(s._qty ?? ""))}" placeholder="0"
         oninput="window._mnsState.sources[${i}]._qty = this.value" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td></tr>`;
   }).join("");
-  return `<div style="overflow-x:auto; margin-top:12px;"><table style="width:100%; border-collapse:collapse;">
-      <thead><tr style="background:var(--highlight-bg);">${head.map(h => `<th style="padding:8px; border:1px solid var(--border); text-align:left; font-size:0.8rem;">${h}</th>`).join("")}</tr></thead>
+  return `<div style="overflow-x:auto; margin-top:12px;"><table style="width:100%; border-collapse:collapse; border:1.5px solid #94a3b8;">
+      <thead><tr style="background:var(--highlight-bg);">${head.map(h => `<th style="padding:8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:left; font-size:0.8rem;">${h}</th>`).join("")}</tr></thead>
       <tbody>${rows}</tbody></table></div>
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
       <button class="nav-btn-styled" id="mns-create-btn" style="width:auto; background:var(--accent);" onclick="mnsCreateDraft()">Create Draft Challan</button></div>`;
