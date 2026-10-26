@@ -123,7 +123,7 @@ function mnsGasSearch(i, query) {
   dd.innerHTML = hits.length
     ? hits.map(c => `<div onmousedown="event.preventDefault(); mnsPickGas(${i}, this.dataset.code, this.dataset.name)" data-code="${escapeHtml(c.itemCode)}" data-name="${escapeHtml(c.combinedName || c.productName || c.itemCode)}"
         style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
-        <span style="font-family:monospace; color:var(--muted);">${escapeHtml(c.itemCode)}</span> ${escapeHtml(c.combinedName || c.productName || "")}</div>`).join("")
+        ${escapeHtml(c.combinedName || c.productName || "")}</div>`).join("")
     : `<div style="padding:8px 12px; font-size:0.8rem; color:#b91c1c;">No item code found.</div>`;
   dd.style.display = "block";
 }
