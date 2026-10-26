@@ -170,6 +170,7 @@ function vdOpenForm(vendorName) {
         ${field("phoneNumber", "Phone", v && v.phoneNumber, 'inputmode="tel"')}
         ${field("email", "Email", v && v.email, 'inputmode="email"')}
         ${field("city", "City", v && v.city)}
+        ${field("country", "Country", (v && v.country) || "India", 'oninput="vdCountryChanged()"')}
         ${field("state", "State", v && v.state)}
         ${field("stateCode", "State Code", v && v.stateCode, 'maxlength="2"')}
         <div style="grid-column:1/-1;"><label class="field-label" style="margin-top:0;">Address</label>
@@ -185,6 +186,7 @@ function vdOpenForm(vendorName) {
       </div>
     </div>`;
   document.body.appendChild(ov);
+  vdCountryChanged();
   document.getElementById("vdf-vendorName").focus();
 }
 
@@ -203,10 +205,24 @@ function vdGstinState() {
   }
 }
 
+// Outside India: no GSTIN or State Code (boxes cleared and locked).
+function vdCountryChanged() {
+  const c = (document.getElementById("vdf-country")?.value || "").trim().toLowerCase();
+  const foreign = c !== "" && c !== "india";
+  ["gstin", "stateCode"].forEach(k => {
+    const el = document.getElementById("vdf-" + k);
+    if (!el) return;
+    if (foreign) el.value = "";
+    el.disabled = foreign;
+    el.placeholder = foreign ? "Not needed outside India" : "";
+    el.style.background = foreign ? "#f1f5f9" : "";
+  });
+}
+
 async function vdSave(originalName) {
   const val = (id) => (document.getElementById("vdf-" + id)?.value || "").trim();
   const vendor = {};
-  ["vendorName", "gstin", "typeOfVendor", "contactPerson", "phoneNumber", "email", "city", "state", "stateCode", "address", "cgstPercent", "sgstPercent", "igstPercent"]
+  ["vendorName", "gstin", "typeOfVendor", "contactPerson", "phoneNumber", "email", "city", "country", "state", "stateCode", "address", "cgstPercent", "sgstPercent", "igstPercent"]
     .forEach(k => vendor[k] = val(k));
   const err = document.getElementById("vdf-error");
   if (!vendor.vendorName) { err.textContent = "Vendor name is required."; err.style.display = "block"; return; }

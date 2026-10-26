@@ -150,7 +150,7 @@ async function submitMaterialRequestTicketToBackend() {
     if (!legacyCompanyNameVal) {
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
-        feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please type the legacy project's Company Name.`;
+        feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Please type the Old Project's Company Name.`;
       }
       return;
     }
@@ -1686,8 +1686,8 @@ function handleTicketLegacyToggleChange(checked) {
     if (customerNameField) customerNameField.value = "";
     if (boqJobCardRow) boqJobCardRow.style.display = "none";
     window.ticketJobCardsCache = [];
-    ticketBOQDisplayReset("— Not applicable (legacy project) —");
-    ticketJobCardDisplayReset("— Not applicable (legacy project) —");
+    ticketBOQDisplayReset("— Not applicable (Old Project) —");
+    ticketJobCardDisplayReset("— Not applicable (Old Project) —");
     resetMaterialRequestCascadingLockState();
     handleTicketLegacyCompanyNameInput("");
   } else {

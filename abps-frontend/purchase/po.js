@@ -1106,8 +1106,8 @@ function handleCPOVendorChange() {
   if (!v) { preview.style.display = "none"; persistCPODraft(); return; }
   preview.style.display = "block";
   preview.innerHTML = `<strong>${escapeHtml(v.vendorName)}</strong> &nbsp;|&nbsp; ${escapeHtml(v.address || "(no address)")} &nbsp;|&nbsp; GSTIN: ${escapeHtml(v.gstin || "—")} &nbsp;|&nbsp; ${escapeHtml(v.state || "—")} (Code ${v.stateCode || "—"}) &nbsp;|&nbsp; ${escapeHtml(v.email || "—")}`
-    + ((!(v.gstin || "").trim() || !(v.address || "").trim())
-      ? `<div style="margin-top:6px; color:#b45309; font-weight:700;">This vendor's details are incomplete (${[!(v.gstin || "").trim() ? "no GSTIN" : "", !(v.address || "").trim() ? "no address" : ""].filter(Boolean).join(", ")}). Complete them in Vendor List; the PO can still be created.</div>` : "");
+    + (((!(v.gstin || "").trim() && String(v.country || "India").toLowerCase() === "india") || !(v.address || "").trim())
+      ? `<div style="margin-top:6px; color:#b45309; font-weight:700;">This vendor's details are incomplete (${[!(v.gstin || "").trim() && String(v.country || "India").toLowerCase() === "india" ? "no GSTIN" : "", !(v.address || "").trim() ? "no address" : ""].filter(Boolean).join(", ")}). Complete them in Vendor List; the PO can still be created.</div>` : "");
   // Prefilled from the vendor's own record — still a normal editable
   // input afterward, this just sets the starting value.
   const cgstEl = document.getElementById("cpo-cgst");

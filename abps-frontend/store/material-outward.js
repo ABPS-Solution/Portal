@@ -667,7 +667,7 @@ async function runMaterialOutwardSearch() {
             return `
             <tr>
               <td style="${td(true)}">${escapeHtml(formatOrdinalDate(c.challan_date) || c.challan_date || '')}</td>
-              <td style="${td()}">${escapeHtml(c.project_id || c.company_name || 'Legacy')}</td>
+              <td style="${td()}">${escapeHtml(c.project_id || c.company_name || 'Old Project')}</td>
               <td style="${td()} font-size:0.78rem;">${ticketsHtml}</td>
               <td style="${td()} padding-top:4px; padding-bottom:4px;">${materialsHtml}</td>
               <td style="${td()}">${escapeHtml(c.returnable_status || '—')}</td>

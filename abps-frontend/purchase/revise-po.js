@@ -173,14 +173,17 @@ async function initializeRPOEditingTab() {
       feed.innerHTML = `<div style="text-align:center; padding:26px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No pending revisions to edit.</div>`;
       return;
     }
+    // Same card as Create RM PO's Pending POs (Editing).
     feed.innerHTML = revisions.map(r => `
-      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
-        <div>
-          <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${r.poNo}</div>
-          <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${escapeHtml(r.vendorName || "")} &nbsp;·&nbsp; ${r.revisionKind}</div>
-          ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Draft #${r.checkingDraftCount}</div>` : ""}
+      <div class="contact-summary-card-parent" style="margin-bottom:0;">
+        <div class="contact-summary-header-row" onclick="openPORevisionForEdit(${jsArg(r.requestId)}, ${jsArg(r.poNo)})" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:0; padding-bottom:0; border-bottom:none;">
+          <div>
+            <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${escapeHtml(r.poNo)}</span>
+            <span style="margin-left:8px; font-weight:700;">${escapeHtml(r.vendorName || "")}</span>
+            ${r.checkingDraftCount > 0 ? `<span style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700;">Draft #${r.checkingDraftCount}</span>` : ""}
+          </div>
+          <div style="font-size:1rem; color:#334155; font-weight:600;">${escapeHtml(r.revisionKind || "")} Revision &nbsp;|&nbsp; <strong style="color:var(--brand);">Edit →</strong></div>
         </div>
-        <button class="nav-btn-styled" onclick="openPORevisionForEdit('${r.requestId}', '${r.poNo}')" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
       </div>`).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;

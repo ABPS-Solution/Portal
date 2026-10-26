@@ -195,7 +195,7 @@ ${spareCellsHtml}
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             ${ticket.legacyCompanyName
-              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
+              ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">Old Project</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
               : `<span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
@@ -308,27 +308,33 @@ function executeClientSideStoreTicketFilterSearch() {
     if (/reject|expired|cancel/i.test(currentStatus)) badge = "background:#fee2e2; color:#b91c1c;";
     const actionWord = /reject/i.test(currentStatus) ? "Rejected" : (/cancel/i.test(currentStatus) ? "Cancelled" : "Approved");
     const jcs = (ticket.jobCardNumbers || []).length ? ticket.jobCardNumbers : (ticket.jobCardNumber ? [ticket.jobCardNumber] : []);
-    const jcText = jcs.length ? jcs.map(j => (String(j).match(/^JC_Set-d+/) || [j])[0]).join(", ") : "-";
+    const jcShort = jcs.map(j => (String(j).match(/^JC_Set-\d+/) || [j])[0]);
+    const jcCell = (ticket.boqProduct || jcShort.length)
+      ? `${ticket.boqProduct ? `<div style="font-weight:600; color:#111827;">${escapeHtml(ticket.boqProduct)}</div>` : ""}${jcShort.length ? `<div style="margin-top:3px; color:var(--brand); font-weight:700;">(${escapeHtml(jcShort.join(", "))})</div>` : ""}`
+      : `<span style="color:var(--muted);">-</span>`;
     const items = Array.isArray(ticket.items) ? ticket.items : [];
     const itemsHtml = items.length ? items.map((i, k) => {
       const issued = (i.released !== undefined && i.released !== null) ? i.released : null;
       const issColor = issued == null ? "var(--muted)" : (Number(issued) + 1e-9 < Number(i.quantity) ? "#b45309" : "#15803d");
-      return `<div style="display:flex; gap:10px; justify-content:space-between; align-items:flex-start; padding:4px 0; ${k ? "border-top:1px dashed var(--border);" : ""}">
-          <div style="text-align:left;"><span style="font-weight:600;">${escapeHtml(i.materialName || "")}</span>${i.itemCode ? ` <span style="font-family:monospace; font-size:0.72rem; color:var(--muted);">${escapeHtml(i.itemCode)}</span>` : ""}</div>
-          <div style="white-space:nowrap; font-family:monospace; font-weight:700;">${fmtQty(i.quantity)} / <span style="color:${issColor};">${issued == null ? "-" : fmtQty(issued)}</span> <span style="font-family:inherit; font-weight:500; color:#475569;">${escapeHtml(i.unitType || "")}</span></div>
+      return `<div style="display:flex; align-items:stretch; ${k ? "border-top:1px dashed var(--border);" : ""}">
+          <div style="flex:1; min-width:0; text-align:left; font-weight:600; padding:5px 10px 5px 0;">${escapeHtml(i.materialName || "")}</div>
+          <div style="width:130px; flex-shrink:0; border-left:1.5px solid var(--border); padding:5px 0 5px 10px; white-space:nowrap; font-family:monospace; font-weight:700;">${fmtQty(i.quantity)} / <span style="color:${issColor};">${issued == null ? "-" : fmtQty(issued)}</span> <span style="font-family:inherit; font-weight:500; color:#475569;">${escapeHtml(i.unitType || "")}</span></div>
         </div>`;
     }).join("") : `<span style="color:var(--muted);">-</span>`;
     const links = [
-      ticket.pdfUrl ? `<a href="${escapeHtml(driveLink(ticket.pdfUrl))}" target="_blank" style="font-weight:700; color:var(--brand);">Ticket PDF ↗</a>` : "",
       ticket.parentTicketId ? `<div>From: <a href="javascript:void(0)" onclick="matrixOpenLinkedTicket(${jsArg(ticket.parentTicketId)})" style="font-family:monospace; font-weight:700; color:#b45309;">${escapeHtml(ticket.parentTicketId)}</a></div>` : "",
       (ticket.releaseTicketIds || []).length ? `<div>Release: ${ticket.releaseTicketIds.map(id => `<a href="javascript:void(0)" onclick="matrixOpenLinkedTicket(${jsArg(id)})" style="font-family:monospace; font-weight:700; color:#15803d;">${escapeHtml(id)}</a>`).join(", ")}</div>` : "",
     ].filter(Boolean).join("");
+    const ticketNo = ticket.pdfUrl
+      ? `<a href="${escapeHtml(driveLink(ticket.pdfUrl))}" target="_blank" title="Open ticket document" style="font-family:monospace; font-weight:800; color:var(--brand); text-decoration:underline;">${escapeHtml(ticket.ticketId)}</a>`
+      : `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${escapeHtml(ticket.ticketId)}</span>`;
     const notes = ticket.justificationNotes ? `<div style="margin-top:4px; font-size:0.74rem; color:#475569; text-align:left;"><strong>Notes:</strong> ${escapeHtml(ticket.justificationNotes)}</div>` : "";
     return `<tr style="vertical-align:top;">
-        <td style="padding:8px; text-align:left; ${firstB}"><span style="font-family:monospace; font-weight:800; color:var(--brand);">${escapeHtml(ticket.ticketId)}</span><div style="margin-top:4px;"><span style="font-size:0.66rem; font-weight:700; border-radius:4px; padding:2px 6px; ${badge}">${escapeHtml(currentStatus.toUpperCase())}</span></div><div style="margin-top:4px; font-size:0.76rem;">${links}</div></td>
-        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.storeTargetScope || "Raw Materials Store")}<div style="color:#475569; font-size:0.76rem;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</div></td>
-        <td style="padding:8px; text-align:center; word-break:break-word; ${colB}">${ticket.legacyCompanyName ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:1px 5px; border-radius:4px; font-size:0.7rem;">LEGACY</span> ${escapeHtml(ticket.legacyCompanyName)}` : escapeHtml(ticket.projectId || "None")}</td>
-        <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(jcText)}</td>
+        <td style="padding:8px; text-align:left; ${firstB}">${ticketNo}${links ? `<div style="margin-top:4px; font-size:0.76rem;">${links}</div>` : ""}</td>
+        <td style="padding:8px; text-align:center; ${colB}"><span style="font-size:0.68rem; font-weight:700; border-radius:4px; padding:3px 7px; white-space:nowrap; ${badge}">${escapeHtml(currentStatus.toUpperCase())}</span></td>
+        <td style="padding:8px; text-align:center; ${colB}"><div style="font-weight:700; color:#111827;">${escapeHtml(ticket.storeTargetScope || "Raw Materials Store")}</div><div style="margin-top:5px;"><span style="display:inline-block; background:var(--highlight-bg); color:var(--brand); font-weight:700; font-size:0.76rem; padding:2px 9px; border-radius:999px;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</span></div></td>
+        <td style="padding:8px; text-align:center; word-break:break-word; ${colB}">${ticket.legacyCompanyName ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:1px 5px; border-radius:4px; font-size:0.7rem;">Old Project</span> ${escapeHtml(ticket.legacyCompanyName)}` : escapeHtml(ticket.projectId || "None")}</td>
+        <td style="padding:8px; text-align:center; word-break:break-word; ${colB}">${jcCell}</td>
         <td style="padding:8px; ${colB}">${itemsHtml}${notes}</td>
         <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.requestedBy || "-")}<div style="color:#475569; font-size:0.76rem;">${formatOrdinalDateTime(ticket.dateCreated)}</div></td>
         <td style="padding:8px; text-align:center; ${colB}">${escapeHtml(ticket.actionedBy || "Pending")}<div style="color:#475569; font-size:0.76rem;">${ticket.dateActioned ? actionWord + " " + formatOrdinalDateTime(ticket.dateActioned) : "Not yet"}</div></td>
@@ -337,13 +343,14 @@ function executeClientSideStoreTicketFilterSearch() {
   const tableWrap = document.createElement("div");
   tableWrap.style.cssText = "overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);";
   tableWrap.innerHTML = `
-    <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1200px; font-size:0.84rem; background:#fff;">
+    <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1300px; font-size:0.84rem; background:#fff;">
       <thead><tr style="background:#f8fafc;">
-        <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:150px; border-bottom:2px solid #94a3b8;">Ticket / Status</th>
-        ${th("Store / Outgoing Use", "min-width:130px;")}
+        <th style="padding:8px; font-size:0.7rem; text-align:left; min-width:140px; border-bottom:2px solid #94a3b8;">Ticket</th>
+        ${th("Status", "min-width:90px;")}
+        ${th("Store / Outgoing Use", "min-width:140px;")}
         ${th("Project ID", "min-width:170px;")}
-        ${th("Job Card(s)", "min-width:110px;")}
-        ${th("Materials (Requested / Issued)", "min-width:340px;")}
+        ${th("Job Card(s)", "min-width:200px;")}
+        ${th("Material Name (Requested / Issued)", "min-width:340px;")}
         ${th("Requested By / On", "min-width:130px;")}
         ${th("Approved By / On", "min-width:130px;")}
       </tr></thead>
