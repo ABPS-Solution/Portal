@@ -436,3 +436,66 @@ function enableTableCrosshair(el) {
   });
   document.documentElement.addEventListener("mouseleave", clear);
 }
+
+// ── Project ID / Customer Name pickers wrap and grow (26 Oct 2026) ──────
+// A text <input> can't wrap, so long Project IDs were cut off. Each project
+// picker is swapped for a one-line <textarea> with the same id, attributes
+// and handlers; it grows with its text (also when code sets .value) and
+// Enter never adds a new line.
+const ABPS_PROJECT_PICKER_SELECTOR = [
+  'handleSharedProjectTypeaheadInput', 'handleCrpoProjectTypeaheadInput', 'cvarHandleProjectInput',
+  'handleCBOQImportProjectSearch', 'handlePstatProjectInput', 'handleSrchPOProjectInput', 'handleMatrixProjectSearchInput',
+].map(fn => `input[type="text"][oninput*="${fn}"], input:not([type])[oninput*="${fn}"]`).join(', ');
+function abpsGrowProjectBox(ta) {
+  if (!ta.offsetParent) { ta.style.height = ''; return; }
+  ta.style.height = 'auto';
+  ta.style.height = Math.max(ta.scrollHeight, ta._abpsMinH || 0) + 'px';
+}
+function abpsUpgradeProjectPicker(inp) {
+  if (!inp || inp.tagName !== 'INPUT' || inp.dataset.abpsWrapDone) return;
+  const ta = document.createElement('textarea');
+  for (const a of Array.from(inp.attributes)) { if (a.name !== 'type' && a.name !== 'value') ta.setAttribute(a.name, a.value); }
+  ta.rows = 1;
+  ta.value = inp.value;
+  ta.disabled = inp.disabled;
+  ta.dataset.abpsWrapDone = '1';
+  const cs = getComputedStyle(inp);
+  ta._abpsMinH = inp.offsetHeight || parseFloat(cs.height) || 0;
+  ta.style.resize = 'none';
+  ta.style.overflow = 'hidden';
+  ta.style.whiteSpace = 'pre-wrap';
+  ta.style.wordBreak = 'break-word';
+  ta.style.fontFamily = cs.fontFamily;
+  ta.style.lineHeight = '1.35';
+  ta.style.display = cs.display === 'inline' ? 'block' : cs.display;
+  if (!ta.style.width) ta.style.width = '100%';
+  const proto = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+  Object.defineProperty(ta, 'value', {
+    get() { return proto.get.call(this); },
+    set(v) { proto.set.call(this, String(v ?? '').replace(/[\r\n]+/g, ' ')); abpsGrowProjectBox(this); requestAnimationFrame(() => abpsGrowProjectBox(this)); },
+  });
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+  ta.addEventListener('input', () => {
+    if (/[\r\n]/.test(ta.value)) ta.value = ta.value;
+    abpsGrowProjectBox(ta);
+  });
+  inp.replaceWith(ta);
+  requestAnimationFrame(() => abpsGrowProjectBox(ta));
+}
+function abpsUpgradeProjectPickers(root) {
+  (root || document).querySelectorAll(ABPS_PROJECT_PICKER_SELECTOR).forEach(abpsUpgradeProjectPicker);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  abpsUpgradeProjectPickers(document);
+  new MutationObserver(muts => {
+    for (const m of muts) for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      if (n.matches && n.matches(ABPS_PROJECT_PICKER_SELECTOR)) abpsUpgradeProjectPicker(n);
+      else if (n.querySelector) abpsUpgradeProjectPickers(n);
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+  // Re-fit when a hidden panel is opened (height is 0 while hidden).
+  document.addEventListener('click', () => setTimeout(() => {
+    document.querySelectorAll('textarea[data-abps-wrap-done]').forEach(t => { if (t.offsetParent) abpsGrowProjectBox(t); });
+  }, 50), true);
+});
