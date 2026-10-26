@@ -210,7 +210,7 @@ async function parseGateDocumentsWithAI() {
       challanMimeType: secondary ? secondary.mimeType : "image/jpeg",
       canonicalMaterialsCatalog: existingMaterialNamesList
     });
-    if (!data.success) return abpsAlert("AI Processing failed: " + data.error);
+    if (!data.success) return abpsAlert("Could not read the document. " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
 
     if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems)) {
@@ -265,7 +265,7 @@ async function parseGateDocumentsWithAI() {
     });
     document.getElementById('gate-ai-verification-workspace').style.display = "block";
   } catch(e) { 
-    abpsAlert("AI extraction pipeline failed: " + e.message); 
+    abpsAlert("Could not read the document. " + friendlyErr(e)); 
   } finally { 
     btn.disabled = false; btn.textContent = "Process Documents with AI"; 
   }
@@ -276,7 +276,7 @@ async function commitGateEntryRecordsToBackend() {
   const banner = document.getElementById('store-gate-runtime-feedback-banner');
   const uploadWrapperBlock = document.getElementById('gate-upload-fields-wrapper-group');
   
-  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return abpsAlert("Process data missing.");
+  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return abpsAlert("Click Process Documents with AI first.");
 
   if (!document.getElementById('gate-meta-vendor').value.trim()) return abpsAlert("Vendor Name is compulsory.");
   // Which number is required tracks which document was actually uploaded —
@@ -375,10 +375,10 @@ async function commitGateEntryRecordsToBackend() {
           " style="background:#15803d; color:white; padding:8px 16px; font-weight:700;">+ Create New Entry</button>
         </div>`;
     } else {
-      abpsAlert("Submission Error: " + data.error);
+      abpsAlert("Could not save the Gate Entry. " + data.error);
       btn.disabled = false; btn.textContent = "Generate Gate Entry";
     }
-  } catch(e) { hideBlockingOverlay(); abpsAlert(e.message); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
+  } catch(e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); btn.disabled = false; btn.textContent = "Generate Gate Entry"; }
 }
 
 window.activeGateRejectionLinks = {}; // rejectionId -> { linkedQty, itemCode, materialName, unitType }

@@ -184,7 +184,7 @@ async function handlePinvProjectChange(projectId, restoreDraft) {
     renderPinvDetail();
     persistPinvDraft();
   } catch(e) {
-    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("pinv-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1009,7 +1009,7 @@ async function submitPinvGeneration() {
       showBOQBanner("pinv-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("pinv-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -1527,7 +1527,7 @@ async function submitPinvRevision() {
       showBOQBanner("pinv-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("pinv-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("pinv-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

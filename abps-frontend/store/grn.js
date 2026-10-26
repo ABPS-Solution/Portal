@@ -283,7 +283,7 @@ async function deleteGateEntryAsSuperAdmin(gateNumber, btn) {
     initializeStoreEntryWorkspaceQueue();
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
-    abpsAlert(e.message);
+    abpsAlert(friendlyErr(e));
     btn.disabled = false; btn.textContent = "Delete Entry";
   }
 }

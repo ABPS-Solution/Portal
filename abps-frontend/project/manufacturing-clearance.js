@@ -526,7 +526,7 @@ async function saveMcGatingField(projectId, field, value) {
       }
     }
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -810,7 +810,7 @@ async function submitMcClearance(projectId) {
       abpsAlert(data.error || "Failed to submit Manufacturing Clearance.");
     }
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }
@@ -942,7 +942,7 @@ async function commitProductRename() {
     closeProductRenameModal();
     await loadMcLineItems(target.projectId);
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
     if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
   }
 }
@@ -963,7 +963,7 @@ async function holdMcProduct(projectId, lineId) {
     await loadMcLineItems(projectId);
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -983,7 +983,7 @@ async function unholdMcProduct(projectId, lineId) {
     await loadMcLineItems(projectId);
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -1035,7 +1035,7 @@ async function mcActivateProject(projectId) {
     if (data.success) { loadManufacturingClearanceList(); }
     else abpsAlert(data.error || "Failed to activate.");
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }
@@ -1049,7 +1049,7 @@ async function mcReactivateProject(projectId) {
     if (data.success) { loadManufacturingClearanceList(); }
     else abpsAlert(data.error || "Failed to reactivate.");
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }

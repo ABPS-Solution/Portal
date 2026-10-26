@@ -143,7 +143,7 @@ async function edToggleModuleStatus(employeeId, module, currentStatus, ns) {
     hideBlockingOverlay();
     if (data.success) edLoadEmployeeDetailsTable(ns);
     else cfg.feedback(data.error, "error");
-  } catch (e) { hideBlockingOverlay(); cfg.feedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); cfg.feedback(friendlyErr(e), "error"); }
 }
 
 // Same bordered/wrapping table shape as voucher-search.js's
@@ -266,7 +266,7 @@ async function edSubmitAddEmployee(ns) {
     } else {
       cfg.feedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); cfg.feedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); cfg.feedback(friendlyErr(e), "error"); }
 }
 
 async function edSubmitUpdateEmployee(employeeId, ns) {
@@ -286,7 +286,7 @@ async function edSubmitUpdateEmployee(employeeId, ns) {
     hideBlockingOverlay();
     if (data.success) { edLoadEmployeeDetailsTable(ns); cfg.success("Saved.", "Edit Another Employee", cfg.afterSave); }
     else cfg.feedback(data.error, "error");
-  } catch (e) { hideBlockingOverlay(); cfg.feedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); cfg.feedback(friendlyErr(e), "error"); }
 }
 
 async function edSubmitDeleteEmployee(employeeId, employeeName, ns) {
@@ -298,7 +298,7 @@ async function edSubmitDeleteEmployee(employeeId, employeeName, ns) {
     hideBlockingOverlay();
     if (data.success) { edLoadEmployeeDetailsTable(ns); cfg.success(`"${employeeName}" deleted.`, "Back to Employee Details", cfg.afterDelete); }
     else cfg.feedback(data.error, "error");
-  } catch (e) { hideBlockingOverlay(); cfg.feedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); cfg.feedback(friendlyErr(e), "error"); }
 }
 
 // ── Position-Based Daily Expense Limits (migration 167) — Tour Expense
@@ -383,7 +383,7 @@ async function submitAddExpenseLimit() {
     document.getElementById("el-new-manager-limit").value = "";
     document.getElementById("el-new-staff-limit").value = "";
     loadExpenseLimitsTable();
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }
 
 async function submitUpdateExpenseLimit(expenseType) {
@@ -406,7 +406,7 @@ async function submitUpdateExpenseLimit(expenseType) {
     }
     hideBlockingOverlay();
     loadExpenseLimitsTable();
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }
 
 async function submitDeleteExpenseLimit(expenseType) {
@@ -420,5 +420,5 @@ async function submitDeleteExpenseLimit(expenseType) {
     }
     hideBlockingOverlay();
     loadExpenseLimitsTable();
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }

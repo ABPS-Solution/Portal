@@ -279,7 +279,7 @@ async function submitJCSHDownload() {
       showBOQBanner("jcsh-feedback", data.error || "Failed to generate PDF.", "error");
     }
   } catch(e) {
-    showBOQBanner("jcsh-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("jcsh-feedback", friendlyErr(e), "error");
   } finally {
     jcshSubmitInProgress = false;
     btn.disabled = false; btn.textContent = originalText;

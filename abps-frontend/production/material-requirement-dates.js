@@ -201,7 +201,7 @@ async function submitMaterialRequirementDates(ns, prnId, btn) {
     }
   } catch (e) {
     btn.disabled = false; btn.textContent = originalText;
-    showPurchaseFeedback("mrd-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("mrd-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -619,7 +619,7 @@ async function submitReviseMRDQueue(ns, prnId, btn) {
     }
   } catch (e) {
     btn.disabled = false; btn.textContent = originalText;
-    showPurchaseFeedback("rmrd-delta-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rmrd-delta-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -707,7 +707,7 @@ async function submitReviseMRDOther(ns, prnId, btn) {
     }
   } catch (e) {
     btn.disabled = false; btn.textContent = originalText;
-    showPurchaseFeedback("rmrd-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rmrd-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -740,7 +740,7 @@ async function mrdToggleGate(turnOn) {
   try {
     const d = await apFetch({ action: "setMrdGateSetting", enabled: turnOn, operatorName: appActiveOperatorIdentityString });
     if (!d.success) { abpsAlert(d.error || "Could not change the setting."); return; }
-  } catch (e) { abpsAlert("Network error: " + e.message); return; }
+  } catch (e) { abpsAlert(friendlyErr(e)); return; }
   mrdRenderGateBar("mrd-gate-bar-assign");
   mrdRenderGateBar("mrd-gate-bar-revise");
 }

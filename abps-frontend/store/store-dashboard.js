@@ -31,10 +31,10 @@ async function sdLoadDashboard(customVal) {
       periodType:  sdCurrentPeriod,
       periodValue: customVal || ""
     });
-    if (!data.success) { abpsAlert("Store Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     sdRenderDashboard(data);
   } catch(e) {
-    abpsAlert("Store Dashboard error: " + e.message);
+    abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

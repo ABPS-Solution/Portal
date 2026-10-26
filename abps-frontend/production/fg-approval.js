@@ -267,7 +267,7 @@ async function uploadFGDedicatedFile(fgId, docType, file) {
     return null;
   } catch(e) {
     if (e.message === "SESSION_EXPIRED") throw e;
-    return "Network error: " + e.message;
+    return friendlyErr(e);
   }
 }
 
@@ -421,7 +421,7 @@ async function removeFGDocRow(fgId, documentId, tempId) {
     st.docs = st.docs.filter(d => d.documentId !== documentId);
     refreshFGDocTable(fgId);
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -475,7 +475,7 @@ async function triggerFGReplaceUpload(fgId, documentId) {
     if (doc) { doc.url = data.url; doc.fileName = data.fileName; doc.createdAt = data.createdAt; doc.qaChecked = false; }
     refreshFGDocTable(fgId);
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
     if (btn) { btn.disabled = false; btn.textContent = "Replace"; }
   }
 }
@@ -501,7 +501,7 @@ async function triggerFGNewRowUpload(fgId, tempId) {
     st.docs.push({ documentId: data.documentId, docType: row.docType, docLabel: data.docLabel, fileName: data.fileName, url: data.url, createdAt: data.createdAt, qaChecked: false });
     refreshFGDocTable(fgId);
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
     if (btn) { btn.disabled = false; btn.textContent = "Upload"; }
   }
 }
@@ -632,7 +632,7 @@ async function submitFGApprovalDecision(fgId, action) {
   } catch(e) {
     hideBlockingOverlay();
     feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-    feedback.textContent = "Network error: " + e.message;
+    feedback.textContent = friendlyErr(e);
     feedback.scrollIntoView({ behavior:"smooth", block:"center" });
   }
 }

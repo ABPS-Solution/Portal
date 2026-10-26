@@ -135,7 +135,7 @@ async function handleCpdiProjectChange(projectId) {
       recalcPdiTotals(cpdiInvoiceState, 'cpdi');
     });
   } catch(e) {
-    showBOQBanner("cpdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cpdi-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -571,7 +571,7 @@ async function submitCpdiCreate() {
       showBOQBanner("cpdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("cpdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cpdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

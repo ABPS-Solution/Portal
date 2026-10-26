@@ -47,7 +47,7 @@ async function initializeDriveDocumentsPanel() {
     ddocSetView(ddocState.view);
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }
 
@@ -115,7 +115,7 @@ async function ddocOpenCategory(categoryKey) {
       </div>`;
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }
 
@@ -165,7 +165,7 @@ async function ddocShowProjects() {
       </div>`;
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }
 
@@ -240,7 +240,7 @@ async function ddocLoadDocuments(payload, groupByCategory, { quiet = false } = {
       </div>`).join("");
   } catch (err) {
     if (err.message === "SESSION_EXPIRED" || quiet) return;
-    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    mount.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }
 
@@ -332,7 +332,7 @@ async function loadDocumentAccessMatrix() {
     daccRender();
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    body.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    body.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }
 
@@ -407,7 +407,7 @@ async function daccToggle(personKey, category, department, grant) {
     daccRender();
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    abpsAlert(err.message);
+    abpsAlert(friendlyErr(err));
   }
 }
 
@@ -421,7 +421,7 @@ async function daccToggleScreen(personKey, enabled, box) {
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
     box.checked = !enabled;
-    abpsAlert(err.message);
+    abpsAlert(friendlyErr(err));
   }
 }
 
@@ -448,6 +448,6 @@ async function daccShowDownloadLog() {
       </table></div>`;
   } catch (err) {
     if (err.message === "SESSION_EXPIRED") return;
-    body.innerHTML = `<div class="ddoc-error">${escapeHtml(err.message)}</div>`;
+    body.innerHTML = `<div class="ddoc-error">${escapeHtml(friendlyErr(err))}</div>`;
   }
 }

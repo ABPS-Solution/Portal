@@ -10,7 +10,7 @@ async function openCPOAllocationPicker(rowId) {
     memoReqs = (res && res.success) ? (res.memoRequests || []) : [];
     pendingBoqs = (res && res.success) ? (res.pendingBoqs || []) : [];
   } catch (e) {
-    abpsAlert("Could not load the PRN list for this material: " + e.message);
+    abpsAlert("Could not load the PRN list for this material. " + friendlyErr(e));
     return;
   }
   // Read back by saveCPOAllocationPicker to derive the row's Design Rate /
@@ -239,7 +239,7 @@ async function initializePRNPanel() {
     projDrop.placeholder = "Type Project ID or Customer Name...";
   } catch(e) {
     projDrop.placeholder = "Error loading projects";
-    showPurchaseFeedback("prn-feedback", "Failed to load project list: " + e.message, "error");
+    showPurchaseFeedback("prn-feedback", "Could not load the project list. " + friendlyErr(e), "error");
   }
 
   loadPRNNeedQueue();
@@ -276,7 +276,7 @@ async function toggleAutoPrn(turnOn) {
     if (!d.success) { abpsAlert(d.error || "Could not change the setting."); return; }
     const p = d.processed || {};
     if (turnOn) abpsAlert(`Automatic PRN is ON.\n\nPending PRNs authorized: ${(p.authorizedPending || []).length}\nNew automatic PRNs: ${(p.autoPrns || []).length}${(p.errors || []).length ? `\nCould not process: ${p.errors.length} (see Create PRN logs)` : ''}`, { title: "Automatic PRN" });
-  } catch (e) { abpsAlert("Network error: " + e.message); return; }
+  } catch (e) { abpsAlert(friendlyErr(e)); return; }
   renderAutoPrnBar();
 }
 
@@ -557,7 +557,7 @@ async function handlePRNBOQChange(boqId, skipToCreate) {
     return;
   } catch(e) {
     document.getElementById("prn-feedback").style.display = "block";
-    document.getElementById("prn-feedback").textContent = "Network error: " + e.message;
+    document.getElementById("prn-feedback").textContent = friendlyErr(e);
   }
 }
 
@@ -909,7 +909,7 @@ async function authorizePRN(prnId) {
     hideBlockingOverlay();
     if (authBtn) { authBtn.disabled = false; authBtn.textContent = window.aprnKindFilter === 'Revision' ? "Authorize PRN Revision" : "Authorize PRN"; }
     if (rejBtn) rejBtn.disabled = false;
-    showPurchaseFeedback("aprn-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("aprn-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -935,7 +935,7 @@ async function rejectPRN(prnId) {
   } catch (e) {
     if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = window.aprnKindFilter === 'Revision' ? "Reject PRN Revision" : "Reject PRN"; }
     if (authBtn) authBtn.disabled = false;
-    showPurchaseFeedback("aprn-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("aprn-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1229,7 +1229,7 @@ async function submitNewPRNCreation() {
   } catch(e) {
     hideBlockingOverlay();
     if (bodyZone) bodyZone.style.display = "grid";
-    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("prn-feedback", friendlyErr(e), "error");
     btn.disabled = false; btn.textContent = "Save & Submit for Authorization";
   }
 }
@@ -1457,7 +1457,7 @@ async function generatePRNPDF() {
       showPurchaseFeedback("prn-feedback", data.error || "PDF generation failed.", "error");
     }
   } catch(e) {
-    showPurchaseFeedback("prn-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("prn-feedback", friendlyErr(e), "error");
   } finally {
     btn.disabled = false; btn.textContent = "Generate & Save PDF";
   }

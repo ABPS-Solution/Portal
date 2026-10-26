@@ -66,7 +66,7 @@ async function promptRenameRMPONumber(oldPoNo) {
     initializeAuthorizePOPanel();
   } catch (e) {
     hideBlockingOverlay();
-    abpsAlert(e.message || "Failed to rename PO.");
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -347,7 +347,7 @@ async function searchRMPOMatrixUI() {
     });
     if (!data.success) { srchpoShowFeedback(data.error, true); results.innerHTML = ""; return; }
     renderSrchPOResultsAsPOCards(data.results || []);
-  } catch(e) { srchpoShowFeedback(e.message, true); results.innerHTML = ""; }
+  } catch(e) { srchpoShowFeedback(friendlyErr(e), true); results.innerHTML = ""; }
 }
 
 function renderSrchPOResultsAsPOCards(list) {
@@ -407,7 +407,7 @@ async function markTransportPOCompleted(poNo, btn) {
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
     btn.disabled = false; btn.textContent = "Mark Completed";
-    abpsAlert(e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -1710,12 +1710,12 @@ async function submitCreatePO() {
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Submit for Authorization";
-      showErr("Server error: " + data.error);
+      showErr(data.error);
     }
   } catch(e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Submit for Authorization";
-    showErr("Network error: " + e.message);
+    showErr(friendlyErr(e));
   }
 }
 
@@ -1829,12 +1829,12 @@ async function authorizePOFromForm() {
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       btn.disabled = false; btn.textContent = "Authorize PO";
-      showErr("Server error: " + data.error);
+      showErr(data.error);
     }
   } catch (e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Authorize PO";
-    showErr("Network error: " + e.message);
+    showErr(friendlyErr(e));
   }
 }
 
@@ -1857,14 +1857,14 @@ async function rejectPOFromForm() {
     } else {
       banner.style.display = "block";
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Error: " + data.error;
+      banner.textContent = data.error;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   } catch (e) {
     hideBlockingOverlay();
     banner.style.display = "block";
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-    banner.textContent = "Network error: " + e.message;
+    banner.textContent = friendlyErr(e);
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
   }
 }
@@ -1971,14 +1971,14 @@ async function saveEditedPO() {
     } else {
       btn.disabled = false; btn.textContent = "Save & Generate Draft";
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Server error: " + data.error;
+      banner.textContent = data.error;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   } catch (e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Save & Generate Draft";
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-    banner.textContent = "Network error: " + e.message;
+    banner.textContent = friendlyErr(e);
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
   }
 }
@@ -2009,13 +2009,13 @@ async function generateCheckingDraftOnly() {
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     } else {
       banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-      banner.textContent = "Server error: " + data.error;
+      banner.textContent = data.error;
       banner.scrollIntoView({ behavior:"smooth", block:"center" });
     }
   } catch (e) {
     hideBlockingOverlay();
     banner.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
-    banner.textContent = "Network error: " + e.message;
+    banner.textContent = friendlyErr(e);
     banner.scrollIntoView({ behavior:"smooth", block:"center" });
   }
 }
@@ -2170,7 +2170,7 @@ async function parseRawMaterialPOWithAI() {
     });
     const data = res;
 
-    if (!data.success) { showPurchaseFeedback("rm-po-feedback", "⚠️ AI Processing failed: " + (data.error || "Unknown error"), "error"); return; }
+    if (!data.success) { showPurchaseFeedback("rm-po-feedback", "⚠️ Could not read the document. " + (data.error || "Please try again."), "error"); return; }
 
     activeParsedRMPOPayload = data.extractedData;
 
@@ -2267,7 +2267,7 @@ async function parseRawMaterialPOWithAI() {
     document.getElementById("rm-po-verification-zone").style.display = "block";
 
   } catch(e) {
-    showPurchaseFeedback("rm-po-feedback", "⚠️ Parse error: " + e.message, "error");
+    showPurchaseFeedback("rm-po-feedback", "⚠️ Could not read the document. " + friendlyErr(e), "error");
   } finally {
     btn.disabled = false; btn.textContent = "Process PO with AI";
   }
@@ -2372,12 +2372,12 @@ async function commitRawMaterialPOToBackend() {
         </div>`;
     } else {
       feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; border-radius:var(--radius); margin-bottom:12px;";
-      feedback.textContent = "Failed: " + (data.error || "Unknown error.");
+      feedback.textContent = (data.error || "Could not save. Please try again.");
     }
   } catch(e) {
     hideBlockingOverlay();
     feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; border-radius:var(--radius); margin-bottom:12px;";
-    feedback.textContent = "Network error: " + e.message;
+    feedback.textContent = friendlyErr(e);
   } finally {
     btn.disabled = false; btn.textContent = "Submit Purchase Order";
   }

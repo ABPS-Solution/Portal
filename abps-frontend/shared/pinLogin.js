@@ -155,7 +155,7 @@ async function submitPinLoginAttempt() {
       pinInput.focus();
     }
   } catch (e) {
-    showFeedback("Connection error: " + e.message, true);
+    showFeedback(friendlyErr(e), true);
     pinInput.disabled = false;
   }
 }
@@ -220,6 +220,6 @@ async function submitDeviceEnrollmentCode() {
       showFeedback(data.error || "Enrollment failed.", true);
     }
   } catch (e) {
-    showFeedback("Connection error: " + e.message, true);
+    showFeedback(friendlyErr(e), true);
   }
 }

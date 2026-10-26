@@ -111,7 +111,7 @@ async function attributeCqCommunication(communicationId) {
       showBOQBanner("cq-feedback", "⚠️ " + (data.error || "Failed."), "error");
     }
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -170,7 +170,7 @@ async function refreshCqIncomingEmailsNow() {
     if (!data.success) showBOQBanner("cq-feedback", data.error || "Failed to poll.", "error");
     await loadCqIncomingEmails();
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   } finally {
     btn.disabled = false; btn.textContent = "Check for New Emails";
   }
@@ -418,7 +418,7 @@ async function submitCqCreateQuery(messageId) {
       document.getElementById(bannerId).scrollIntoView({ behavior: "smooth", block: "center" });
     }
   } catch (e) {
-    showBOQBanner(bannerId, "Network error: " + e.message, "error");
+    showBOQBanner(bannerId, friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -444,7 +444,7 @@ async function deleteCqIncomingEmail(messageId) {
     if (data.success) await loadCqIncomingEmails();
     else showBOQBanner("cq-feedback", "⚠️ " + (data.error || "Failed."), "error");
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -662,7 +662,7 @@ async function checkCqEmailNow(queryId) {
     await loadCqCommunicationsForQuery(queryId);
     await loadCqPendingQueries(); // refresh hasResolutionEmail/hasUnusedExtensionEmail/hasBreach flags
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -685,7 +685,7 @@ async function submitCqExtendTarget(queryId) {
     if (data.success) { showBOQBanner(bannerId, "Target Closing Date extended.", "success"); await loadCqPendingQueries(); }
     else { showBOQBanner(bannerId, "⚠️ " + (data.error || "Failed."), "error"); document.getElementById(bannerId).scrollIntoView({ behavior: "smooth", block: "center" }); }
   } catch (e) {
-    showBOQBanner(bannerId, "Network error: " + e.message, "error");
+    showBOQBanner(bannerId, friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -712,7 +712,7 @@ async function submitCqUpdateQuery(queryId) {
     if (data.success) { showBOQBanner("cq-feedback", "Changes saved.", "success"); await loadCqPendingQueries(); }
     else { showBOQBanner("cq-feedback", "⚠️ " + (data.error || "Failed."), "error"); }
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -750,7 +750,7 @@ async function submitCqCloseQuery(queryId) {
     if (data.success) { showBOQBanner(bannerId, "Query closed and moved to Resolved Queries.", "success"); await loadCqPendingQueries(); }
     else { showBOQBanner(bannerId, "⚠️ " + (data.error || "Failed."), "error"); document.getElementById(bannerId).scrollIntoView({ behavior: "smooth", block: "center" }); }
   } catch (e) {
-    showBOQBanner(bannerId, "Network error: " + e.message, "error");
+    showBOQBanner(bannerId, friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -836,6 +836,6 @@ async function reopenCqQuery(queryId) {
       showBOQBanner("cq-feedback", "⚠️ " + (data.error || "Failed."), "error");
     }
   } catch (e) {
-    showBOQBanner("cq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("cq-feedback", friendlyErr(e), "error");
   }
 }

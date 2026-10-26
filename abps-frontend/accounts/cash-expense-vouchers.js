@@ -124,6 +124,6 @@ async function cevCloseVoucher(expenseId) {
     document.getElementById("ce-feedback").style.display = "none"; // clear any prior error banner
   } catch (e) {
     hideBlockingOverlay();
-    showCashExpenseFeedback("Network error: " + e.message, "error");
+    showCashExpenseFeedback(friendlyErr(e), "error");
   }
 }

@@ -36,7 +36,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     }
   }
   
-  if (!comp) return abpsAlert("Specify Company parameters.");
+  if (!comp) return abpsAlert("Type a company name to search.");
   if (btn) {
     btn.disabled = true; 
     btn.innerHTML = '<div class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></div> Searching...';
@@ -148,7 +148,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
       if (staleBackRow) staleBackRow.style.display = "none";
     }
   } catch(e) { 
-    abpsAlert("Lookup Failed: " + e.message); 
+    abpsAlert("Could not search. " + friendlyErr(e)); 
   } finally { 
     if (btn) {
       btn.disabled = false; 

@@ -258,7 +258,7 @@ async function tvcUploadBillForLine(lineId) {
     } else {
       showTourFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }
 
 function tvcRecalcTotals(voucherId) {
@@ -285,7 +285,7 @@ async function tvcDeleteVoucher(voucherId, voucherNumber) {
     hideBlockingOverlay();
     if (!data.success) { abpsAlert(data.error); return; }
     loadVoucherCheckQueue();
-  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
 }
 
 async function submitTourVoucherCheck(voucherId) {
@@ -336,5 +336,5 @@ async function submitTourVoucherCheck(voucherId) {
     } else {
       showTourFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }

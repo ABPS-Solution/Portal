@@ -151,7 +151,7 @@ async function runConsumptionVarianceReport() {
     }
     cvarRenderTable(data.rows || []);
   } catch (e) {
-    showCvarFeedback('Network error: ' + e.message, 'error');
+    showCvarFeedback(friendlyErr(e), 'error');
     if (resultsEl) resultsEl.style.display = 'none';
   }
 }
@@ -203,6 +203,6 @@ async function downloadConsumptionVarianceReportFile() {
     document.body.removeChild(link);
   } catch (e) {
     hideBlockingOverlay();
-    showCvarFeedback('Network error: ' + e.message, 'error');
+    showCvarFeedback(friendlyErr(e), 'error');
   }
 }

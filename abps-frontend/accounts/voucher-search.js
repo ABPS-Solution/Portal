@@ -500,7 +500,7 @@ async function tvsDeleteVoucher(voucherId) {
     hideBlockingOverlay();
     if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
 }
 
 async function tvsUnlinkTicket(voucherId, travellerId) {
@@ -511,7 +511,7 @@ async function tvsUnlinkTicket(voucherId, travellerId) {
     hideBlockingOverlay();
     if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
 }
 
 // Lazy-loaded picker for linking an Unactioned travel/hotel booking (made
@@ -562,7 +562,7 @@ async function tvsLinkBooking(voucherId, travellerId) {
     hideBlockingOverlay();
     if (!data.success) { abpsAlert(data.error); return; }
     runTourVoucherSearch();
-  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
 }
 
 // Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
@@ -658,7 +658,7 @@ async function tvsSubmitLineActual(voucherId, lineId, previousValue) {
   } catch (e) {
     input.disabled = false;
     input.value = previousValue;
-    if (errEl) errEl.textContent = "Network error: " + e.message;
+    if (errEl) errEl.textContent = friendlyErr(e);
   }
 }
 
@@ -669,7 +669,7 @@ async function tvsRegenerateVoucherPdf(voucherId, btn) {
     if (!data.success) { abpsAlert(data.error || "Could not generate the PDF."); if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; } return; }
     runTourVoucherSearch();
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
     if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; }
   }
 }

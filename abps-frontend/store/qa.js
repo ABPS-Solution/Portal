@@ -396,12 +396,12 @@ async function commitQARevisionToBackend(grnNumber, btn) {
       abpsAlert("Q/A revision applied successfully.");
       runQARevisionSearch();
     } else {
-      abpsAlert("Server Error: " + data.error);
+      abpsAlert("Not saved. " + data.error);
       btn.disabled = false; btn.textContent = "Submit Q/A Revision";
     }
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network request execution failure: " + e.message);
+    abpsAlert(friendlyErr(e));
     btn.disabled = false; btn.textContent = "Submit Q/A Revision";
   }
 }
@@ -1034,12 +1034,12 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      abpsAlert("Server Error: " + data.error);
+      abpsAlert("Not saved. " + data.error);
       btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
     }
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network request execution failure: " + e.message);
+    abpsAlert(friendlyErr(e));
     btn.disabled = false; btn.textContent = window.activeRejectedMaterialToggle === 'completed' ? 'Update Action' : 'Submit Action';
   }
 }

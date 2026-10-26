@@ -478,6 +478,6 @@ async function submitMaterialChangeDecision(ticketId, useTicks) {
     if (!document.getElementById("material-change-approvals-feed").children.length) initializeMaterialChangeApprovalsWorkspace();
   } catch (e) {
     hideBlockingOverlay();
-    if (e.message !== "SESSION_EXPIRED") show(false, "Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") show(false, friendlyErr(e));
   }
 }

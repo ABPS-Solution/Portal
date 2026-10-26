@@ -832,12 +832,12 @@ async function commitStoreEntryVerificationToBackend(gateNum, encodedItem) {
           " style="background:#15803d; color:white; padding:8px 16px; font-weight:700;">+ Create New Entry</button>
         </div>`;
     } else {
-      abpsAlert("Submission Rejected: " + data.error);
+      abpsAlert("Not saved. " + data.error);
       btn.disabled = false; btn.textContent = "Submit Store Entry and GRN";
     }
   } catch(e) { 
     hideBlockingOverlay();
-    abpsAlert("Network request execution failure: " + e.message); 
+    abpsAlert(friendlyErr(e)); 
     btn.disabled = false; btn.textContent = "Submit Store Entry and GRN"; 
   }
 }
@@ -911,7 +911,7 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
     return;
   }
   if (validationError) {
-    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ Quantity Balancing Violation: OK Quantity + Not OK Quantity must equal Received Quantity exactly.", "error");
+    showBOQBanner('store-grn-runtime-feedback-banner', "⚠️ OK Qty + Not OK Qty must add up to the Received Qty.", "error");
     banner.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
@@ -942,12 +942,12 @@ async function commitStoreQAToBackend(grnNum, encodedItem, btnEl) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      abpsAlert("Server Error: " + data.error);
+      abpsAlert("Not saved. " + data.error);
       btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
     }
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network request execution failure: " + e.message);
+    abpsAlert(friendlyErr(e));
     btn.disabled = false; btn.textContent = "Submit Q/A & Add Stock";
   }
 }
@@ -992,12 +992,12 @@ async function commitRepairQAToBackend(grnNum, btn) {
           " style="background: #15803d; color: white; padding:8px 16px; font-weight:700;">Refresh Queue</button>
         </div>`;
     } else {
-      abpsAlert("Server Error: " + data.error);
+      abpsAlert("Not saved. " + data.error);
       btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
     }
   } catch(e) {
     hideBlockingOverlay();
-    abpsAlert("Network request execution failure: " + e.message);
+    abpsAlert(friendlyErr(e));
     btn.disabled = false; btn.textContent = "Confirm Repair Q/A & Add to Stock";
   }
 }
@@ -1647,7 +1647,7 @@ async function loadAssStockForItem(itemCode, materialName) {
     assStockCache = { ...data, materialName };
     renderAssStockRows();
   } catch(e) {
-    showBOQBanner("ass-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("ass-feedback", friendlyErr(e), "error");
   }
 }
 

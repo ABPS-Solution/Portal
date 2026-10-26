@@ -186,7 +186,7 @@ async function importCBOQFromExisting() {
 
   try {
     const data = await apFetch({ action: "fetchBOQMaterialRowsForImport", boqId: boqId });
-    if (!data.success) { abpsAlert("Import failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not import. " + data.error); return; }
 
     // Strip trailing decimal noise (DB numeric columns come back as
     // strings like "16.000") the same way formatRateSmart does server-side:
@@ -235,7 +235,7 @@ async function importCBOQFromExisting() {
 
     window.cboqImportSourceInfo = { boqId, sourceProjectId: data.sourceProjectId, sourceProductName: data.sourceProductName, sourceProductRating: data.sourceProductRating };
   } catch(e) {
-    abpsAlert("Network request execution failure: " + e.message);
+    abpsAlert(friendlyErr(e));
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
@@ -394,7 +394,7 @@ async function loadCboqAllowedProductsInner(projectId) {
   } catch(e) {
     if (seq !== cboqAllowedProductsRequestSeq) return;
     if (search) search.placeholder = "Network error";
-    if (banner) { banner.style.display = "block"; banner.textContent = "Network error loading allowed products: " + e.message; }
+    if (banner) { banner.style.display = "block"; banner.textContent = "Could not load the product list. " + friendlyErr(e); }
   }
 }
 
@@ -966,7 +966,7 @@ async function submitCreateBOQ() {
     }
   } catch(e) {
     hideBlockingOverlay();
-    showBOQBanner("create-boq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("create-boq-feedback", friendlyErr(e), "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Submit BOQ for Authorization";

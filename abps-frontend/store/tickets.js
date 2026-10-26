@@ -526,7 +526,7 @@ async function addItemToShoppingBasketRow() {
   
   if (!materialName || isNaN(quantity) || quantity <= 0) {
     restoreAddBtn();
-    abpsAlert("Please select a material item line and enter a valid quantity count.");
+    abpsAlert("Pick a material and enter a quantity.");
     return;
   }
   
@@ -551,7 +551,7 @@ async function addItemToShoppingBasketRow() {
 
     if (quantity > availableQty) {
       restoreAddBtn();
-      abpsAlert(`Spare Store Lockout: Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
+      abpsAlert(`Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
       return;
     }
 
@@ -561,7 +561,7 @@ async function addItemToShoppingBasketRow() {
       totalRequestedQuantity += existingLineItem.quantity;
       if (totalRequestedQuantity > availableQty) {
         restoreAddBtn();
-        abpsAlert(`Spare Store Lockout: Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
+        abpsAlert(`Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
         return;
       }
       existingLineItem.quantity = totalRequestedQuantity;
@@ -705,7 +705,7 @@ async function addItemToShoppingBasketRow() {
 
   if (!itemData) {
     restoreAddBtn();
-    abpsAlert("Material not found in inventory catalog. Please sync stock first.");
+    abpsAlert("This material was not found in the store list. Refresh the page and pick it again.");
     return;
   }
   
@@ -918,7 +918,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
   const materialRequestPanelContainer = document.getElementById("canvas-module-store-material-request");
 
   if (!notesField || !notesField.value.trim()) {
-    abpsAlert("Compulsory Input Missing: You must fill out the Explain Request justification text box notes before sending to Admin.");
+    abpsAlert("Write why the extra material is needed before sending the request.");
     return;
   }
   if (basketMaterialChanges().length) {
@@ -971,12 +971,12 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
         </div>
       `;
     } else {
-      abpsAlert("Submission Rejected by Server: " + result.error);
+      abpsAlert("Not saved. " + result.error);
       btn.disabled = false;
       btn.textContent = "Send Approval Request to Admin";
     }
   } catch(e) { 
-    abpsAlert("Network request execution failure: " + e.message); 
+    abpsAlert(friendlyErr(e)); 
     btn.disabled = false;
     btn.textContent = "Send Approval Request to Admin";
   }
@@ -1462,10 +1462,10 @@ async function executeShortfallResolution(ticketId, projectId, resolutionType) {
         }
       }, 3500);
     } else {
-      abpsAlert("Resolution failed: " + (data.error || "Unknown error."));
+      abpsAlert("Could not save. " + (data.error || "Please try again."));
     }
   } catch(e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -2172,7 +2172,7 @@ async function submitAssReservationChanges() {
     const data = await apFetch({ action: "submitReserveStockChanges", itemCode: assStockCache.itemCode, changes, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (data.success) showAssReservationSuccess(assStockCache.materialName);
     else showBOQBanner("ass-feedback", data.error || "Failed.", "error");
-  } catch(e) { showBOQBanner("ass-feedback", "Network error: " + e.message, "error"); }
+  } catch(e) { showBOQBanner("ass-feedback", friendlyErr(e), "error"); }
   finally { hideBlockingOverlay(); }
 }
 

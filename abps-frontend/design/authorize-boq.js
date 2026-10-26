@@ -236,7 +236,7 @@ async function authorizeBOQRevision(updateId) {
     hideBlockingOverlay();
     if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
     if (rejBtn) rejBtn.disabled = false;
-    showBOQBanner("auth-boq-upd-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("auth-boq-upd-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -263,7 +263,7 @@ async function rejectBOQRevision(updateId) {
   } catch (e) {
     if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject Revision"; }
     if (authBtn) authBtn.disabled = false;
-    showBOQBanner("auth-boq-upd-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("auth-boq-upd-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -288,7 +288,7 @@ async function rejectBOQDraft(boqId) {
   } catch (e) {
     if (rejBtn) { rejBtn.disabled = false; rejBtn.textContent = "Reject BOQ"; }
     if (submitBtn) submitBtn.disabled = false;
-    showBOQBanner("auth-boq-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("auth-boq-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -815,7 +815,7 @@ async function submitEBOQAuthorize() {
     }
   } catch(e) {
     hideBlockingOverlay();
-    showBOQBanner(feedbackId, "Network error: " + e.message, "error");
+    showBOQBanner(feedbackId, friendlyErr(e), "error");
   } finally {
     _submitBOQAuthorizeInProgress = false;
     btn.disabled = false;

@@ -194,7 +194,7 @@ async function oppToggleProject(projectId) {
       window.oppScheduleDataCache[projectId] = data.success ? data : { error: data.error || 'Failed to load.' };
       if (data.success) window.oppActiveTranchesByProject[projectId] = (data.tranches || []).map(t => ({ ...t }));
     } catch (e) {
-      window.oppScheduleDataCache[projectId] = { error: 'Network error: ' + e.message };
+      window.oppScheduleDataCache[projectId] = { error: friendlyErr(e) };
     }
     const wrapNow = document.getElementById(`opp-editor-expand-${projectId}`);
     if (wrapNow && window.oppExpandedProjects.has(projectId)) {
@@ -471,7 +471,7 @@ async function oppSaveSchedule(projectId) {
       showBOQBanner(fbId, data.error || "Failed.", "error");
     }
   } catch (e) {
-    showBOQBanner(fbId, "Network error: " + e.message, "error");
+    showBOQBanner(fbId, friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

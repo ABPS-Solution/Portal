@@ -156,7 +156,7 @@ async function searchVendorCostingInfoUI() {
     window.svciResultsCache.sort((a, b) => getVal(b) - getVal(a));
     window.svciLastSearchMeta = { materialLabel, vendorLabel, dateRangeLabel };
     renderSVCIResultsTable();
-  } catch(e) { svciShowFeedback(e.message, true); results.innerHTML = ""; }
+  } catch(e) { svciShowFeedback(friendlyErr(e), true); results.innerHTML = ""; }
 }
 
 // Column-header click-to-sort: first click on a column sorts descending, a
@@ -254,7 +254,7 @@ async function downloadSVCIPdf(btn) {
       sortColumnLabel, sortDirectionLabel,
       rows: list
     });
-    if (!data.success) { abpsAlert("Could not generate PDF: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not make the PDF. " + data.error); return; }
     const byteChars = atob(data.pdfBase64);
     const byteNumbers = new Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
@@ -269,7 +269,7 @@ async function downloadSVCIPdf(btn) {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   } catch(e) {
-    abpsAlert("Network error generating PDF: " + e.message);
+    abpsAlert("Could not make the PDF. " + friendlyErr(e));
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;

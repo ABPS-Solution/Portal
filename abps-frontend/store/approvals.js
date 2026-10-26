@@ -179,7 +179,7 @@ async function submitBOQIncreaseDecision(ticketId) {
     hideBlockingOverlay();
     if (e.message !== "SESSION_EXPIRED") {
       feedback.style.cssText = "display:block; background:#fee2e2; border-left:4px solid #b91c1c; color:#b91c1c; padding:12px; margin-bottom:12px;";
-      feedback.textContent   = "Network error: " + e.message;
+      feedback.textContent   = friendlyErr(e);
     }
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit Decision for This Ticket"; }
   }
@@ -198,7 +198,7 @@ async function confirmFGReleaseSelection(ticketId) {
     const cardNode = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
     if (cardNode) cardNode.remove();
   } catch(e) {
-    errZone.textContent = "Network error: " + e.message;
+    errZone.textContent = friendlyErr(e);
     errZone.style.display = "block";
   }
 }

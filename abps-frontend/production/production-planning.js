@@ -409,7 +409,7 @@ async function pplanSetPurchasedOutside(boqId, on) {
     pplanClearInitDraft(boqId);
     await loadProductionPlanForProject();
     loadProductionPlanningQueue();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 // Table form — Process Name / Initial Planning Date (frozen) / Current
@@ -545,7 +545,7 @@ async function pplanSubmitInitialPlan(boqId) {
     pplanClearInitDraft(boqId);
     await loadProductionPlanForProject(); // reload real server state rather than guess it locally
     loadProductionPlanningQueue();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 async function pplanUpdateTarget(boqId, stepKey, targetDate) {
@@ -556,7 +556,7 @@ async function pplanUpdateTarget(boqId, stepKey, targetDate) {
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.target = data.targetDate;
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 // Starting Date (11 Sep 2026) — purely informational, never gates
@@ -569,7 +569,7 @@ async function pplanUpdateStartDate(boqId, stepKey, startDate) {
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.startDate = data.startDate;
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 // Admin-only testing override for the frozen Initial Planning Date.
@@ -580,7 +580,7 @@ async function pplanAdminOverridePlanned(boqId, stepKey) {
     const data = await apFetch({ action: "adminOverridePlannedDate", operatorName: appActiveOperatorIdentityString, boqId, stepKey, date });
     if (!data.success) { abpsAlert(data.error || "Could not override the Initial Planning Date."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 // Per-Job-Card mark/unmark (11 Sep 2026, migration 192; the only way to
@@ -604,7 +604,7 @@ async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
       step.doneJobCards = Array.from(set);
     }
     pplanRenderLanes();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 // Super-admin testing override: move an already-completed step's
@@ -621,7 +621,7 @@ async function pplanAdminRedateStep(boqId, stepKey, date) {
     if (!data.success) { abpsAlert(data.error || "Could not change this date."); return; }
     step.actual = data.actualDate;
     pplanRenderLanes();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 async function pplanUnmarkStepJcDone(boqId, stepKey, jobCardNumber) {
@@ -636,7 +636,7 @@ async function pplanUnmarkStepJcDone(boqId, stepKey, jobCardNumber) {
       step.doneJobCards = (step.doneJobCards || []).filter(j => j !== jobCardNumber);
     }
     pplanRenderLanes();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 async function pplanAdminSetPackingFgDate(boqId) {
@@ -646,7 +646,7 @@ async function pplanAdminSetPackingFgDate(boqId) {
     const data = await apFetch({ action: "adminSetPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId, date });
     if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }
 
 async function pplanAdminClearPackingFgDate(boqId) {
@@ -654,5 +654,5 @@ async function pplanAdminClearPackingFgDate(boqId) {
     const data = await apFetch({ action: "adminClearPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId });
     if (!data.success) { abpsAlert(data.error || "Could not clear this override."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { abpsAlert("Network error: " + e.message); }
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }

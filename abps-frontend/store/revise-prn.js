@@ -310,7 +310,7 @@ async function submitRPRNDelta() {
       "success", true);
   } catch (e) {
     hideBlockingOverlay();
-    showPurchaseFeedback("rprn-delta-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rprn-delta-feedback", friendlyErr(e), "error");
     btn.disabled = false; btn.textContent = "Submit for Authorization";
   }
 }
@@ -492,7 +492,7 @@ async function submitRevisePRN() {
   } catch (e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Submit for Authorization";
-    showPurchaseFeedback("rprn-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rprn-feedback", friendlyErr(e), "error");
   }
 }
 

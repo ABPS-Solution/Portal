@@ -169,9 +169,9 @@ async function advAddNewCompany(encodedCompanyName) {
       advCachedCompanies.push(data.company);
       advSelectCompany(encodeURIComponent(data.company.companyName));
     } else {
-      abpsAlert("Could not add company: " + data.error);
+      abpsAlert("Could not add the company. " + data.error);
     }
-  } catch (e) { abpsAlert("Network error adding company: " + e.message); }
+  } catch (e) { abpsAlert("Could not add the company. " + friendlyErr(e)); }
 }
 
 document.addEventListener("click", (e) => {
@@ -207,5 +207,5 @@ async function submitTourAdvance() {
     } else {
       showTourFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showTourFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTourFeedback(friendlyErr(e), "error"); }
 }

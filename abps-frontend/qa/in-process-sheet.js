@@ -298,7 +298,7 @@ async function submitIPSHDownload() {
       showBOQBanner("ipsh-feedback", data.error || "Failed to generate PDF.", "error");
     }
   } catch(e) {
-    showBOQBanner("ipsh-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("ipsh-feedback", friendlyErr(e), "error");
   } finally {
     ipshSubmitInProgress = false;
     btn.disabled = false; btn.textContent = originalText;

@@ -211,7 +211,7 @@ async function psnOpenDetail(fgId) {
     if (!data.success) { showPurchaseFeedback('psn-feedback', escapeHtml(data.error || 'Could not load this record.'), 'error'); detailEl.innerHTML = ''; return; }
     detailEl.innerHTML = psnRenderDetail(data);
   } catch (err) {
-    showPurchaseFeedback('psn-feedback', 'Failed to load product detail.', 'error');
+    showPurchaseFeedback('psn-feedback', 'Could not load the product details. Please try again.', 'error');
     detailEl.innerHTML = '';
   }
 }
@@ -420,7 +420,7 @@ async function psnRebuildSnapshot(fgId) {
     showPurchaseFeedback('psn-feedback', `Source record rebuilt (${escapeHtml(data.snapshotStatus)}).`, data.snapshotStatus === 'ok' ? 'success' : 'error', true);
     if (psnActiveFgId) await psnOpenDetail(psnActiveFgId);
   } catch (err) {
-    showPurchaseFeedback('psn-feedback', 'Rebuild failed, please try again.', 'error');
+    showPurchaseFeedback('psn-feedback', 'Could not rebuild. Please try again.', 'error');
   }
 }
 

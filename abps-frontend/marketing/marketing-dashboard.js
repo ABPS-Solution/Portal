@@ -39,10 +39,10 @@ async function mdLoadDashboard(customVal, opts) {
       periodType:  mdCurrentPeriod,
       periodValue: customVal || ""
     });
-    if (!data.success) { if (!silent) abpsAlert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { if (!silent) abpsAlert("Could not load the dashboard. " + data.error); return; }
     mdRenderDashboard(data);
   } catch(e) {
-    if (!silent) abpsAlert("Dashboard error: " + e.message);
+    if (!silent) abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

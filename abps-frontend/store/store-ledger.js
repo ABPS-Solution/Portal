@@ -149,7 +149,7 @@ async function generateStoreLedgerReport(prefix, storeType) {
     }
     renderStoreLedgerTable(prefix, data.rows || []);
   } catch (e) {
-    showStoreLedgerFeedback(prefix, 'Network error: ' + e.message, 'error');
+    showStoreLedgerFeedback(prefix, friendlyErr(e), 'error');
     if (resultsEl) resultsEl.style.display = 'none';
   }
 }
@@ -199,6 +199,6 @@ async function downloadStoreLedgerReportFile(prefix, storeType) {
     document.body.removeChild(link);
   } catch (e) {
     hideBlockingOverlay();
-    showStoreLedgerFeedback(prefix, 'Network error: ' + e.message, 'error');
+    showStoreLedgerFeedback(prefix, friendlyErr(e), 'error');
   }
 }

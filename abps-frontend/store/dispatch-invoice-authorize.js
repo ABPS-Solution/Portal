@@ -110,7 +110,7 @@ async function submitApdiAuthorize() {
       else showBOQBanner("apdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("apdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("apdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -125,7 +125,7 @@ async function adminDeleteApdiDraft(invoiceId) {
     if (data.success) { await initializeApdiWorkspace(); showBOQBanner("apdi-feedback", "Invoice draft rejected. Its units are back to Ready to Invoice.", "success"); }
     else showBOQBanner("apdi-feedback", data.error || "Failed.", "error");
   } catch(e) {
-    showBOQBanner("apdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("apdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

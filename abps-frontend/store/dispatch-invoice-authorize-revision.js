@@ -200,7 +200,7 @@ async function submitArpdiAuthorize() {
       else showBOQBanner("arpdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("arpdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("arpdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -214,7 +214,7 @@ async function adminDeleteArpdiRequest(requestId) {
     if (data.success) { await initializeArpdiWorkspace(); showBOQBanner("arpdi-feedback", "Revision request rejected. The invoice is unchanged.", "success"); }
     else showBOQBanner("arpdi-feedback", data.error || "Failed.", "error");
   } catch(e) {
-    showBOQBanner("arpdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("arpdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

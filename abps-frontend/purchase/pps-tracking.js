@@ -637,7 +637,7 @@ async function savePPSDeliverySchedule(prnId, btn) {
       showBOQBanner("pps-feedback", data.error || "Failed to save delivery schedule.", "error");
     }
   } catch (e) {
-    showBOQBanner("pps-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("pps-feedback", friendlyErr(e), "error");
   } finally {
     btn.disabled = false; btn.textContent = originalText;
     hideBlockingOverlay();

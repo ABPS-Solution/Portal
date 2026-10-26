@@ -142,7 +142,7 @@ async function mprepOnCompanySelected(companyName) {
     mprepPopulatePersonDropdown(options);
     mprepSetPersonDropdownDisabled(false, "Select a contact or ALL people");
   } catch (e) {
-    mprepShowError("Network error loading contacts: " + e.message);
+    mprepShowError("Could not load the contacts. " + friendlyErr(e));
   }
 }
 
@@ -186,7 +186,7 @@ async function mprepGenerateBrief() {
     mprepRenderBrief(data.facts, data.aiBrief, data.aiError);
   } catch (e) {
     if (resultsNode) resultsNode.innerHTML = "";
-    mprepShowError("Network error generating briefing: " + e.message);
+    mprepShowError("Could not make the brief. " + friendlyErr(e));
   } finally {
     if (generateBtn) generateBtn.disabled = false;
   }
@@ -420,7 +420,7 @@ async function mprepDownloadBrief() {
       mprepShowError(data.error || "Failed to generate the brief PDF.");
     }
   } catch (e) {
-    mprepShowError("Network error generating the brief PDF: " + e.message);
+    mprepShowError("Could not make the brief PDF. " + friendlyErr(e));
   } finally {
     hideBlockingOverlay();
     if (btn) { btn.disabled = false; btn.textContent = originalText; }

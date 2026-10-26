@@ -117,7 +117,7 @@ async function createMaterialDescriptionInline(text, inputId, dropdownId, hidden
     await loadMaterialDescriptionsIntoCache(true);
     selectMaterialDescriptionOption(data.descriptionId, data.descriptionText, inputId, dropdownId, hiddenIdFieldId, onSelectFn, extraArg);
   } catch (e) {
-    abpsAlert("Network error creating description: " + e.message);
+    abpsAlert("Could not create the description. " + friendlyErr(e));
     if (dropdown) dropdown.style.display = "none";
   }
 }

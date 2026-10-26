@@ -75,10 +75,10 @@ async function admLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("ptlTodayOverride") || "",
     });
-    if (!data.success) { abpsAlert("Admin Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     admRenderDashboard(data);
   } catch (e) {
-    abpsAlert("Admin Dashboard error: " + e.message);
+    abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

@@ -191,7 +191,7 @@ async function refetchEmailLeadsListWithFilters(opts) {
       try { localStorage.setItem("abps_active_email_leads_cache", JSON.stringify(cachedInboundEmailLeadsArray)); } catch(e) { /* quota — ok */ }
       applyEmailLeadsCompanySearchAndRender();
     } else if (feedCanvas) {
-      feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Failed to load leads: ${escapeHtml(data.error || "Unknown error")}</div>`;
+      feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Failed to load leads: ${escapeHtml(data.error || "Please try again.")}</div>`;
     }
   } catch (e) {
     if (feedCanvas) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</div>`;
@@ -303,11 +303,11 @@ async function executeInboundEmailSyncPipelineFetch() {
       feedbackNode.style.display = "none";
     } else {
       feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
-      feedbackNode.textContent = "Failed to load leads: " + (data.error || "Unknown backend error context.");
+      feedbackNode.textContent = "Could not load the email leads. " + (data.error || "Please try again.");
     }
   } catch (error) {
     feedbackNode.style.cssText = "display: block; padding: 12px; border-radius: var(--radius); background: #fff5f5; border: 1px solid var(--warn); color: var(--warn); font-weight: 700; text-align: center; margin-bottom: 16px;";
-    feedbackNode.textContent = "Network runtime connection failure: " + error.message;
+    feedbackNode.textContent = friendlyErr(error);
     console.error("Inbound email pipeline operational sync crash: ", error);
   } finally {
     // 5. Restore full structural button states parameters regardless of success or failure paths
@@ -605,7 +605,7 @@ async function saveEmailLeadAssignment(mIdx, clear) {
     applyEmailLeadsCompanySearchAndRender();
   } catch (e) {
     if (e && e.message === "SESSION_EXPIRED") return;
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -697,12 +697,12 @@ async function saveEmailLeadNote(idx, messageId) {
       if (input) { input.value = ""; input.disabled = false; input.focus(); }
       if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     } else {
-      abpsAlert("Failed to add note: " + (d.error || "Unknown error"));
+      abpsAlert("Could not add the note. " + (d.error || "Please try again."));
       if (input) input.disabled = false;
       if (btn) { btn.disabled = false; btn.textContent = "Add"; }
     }
   } catch(e) {
-    abpsAlert("Error: " + e.message);
+    abpsAlert(friendlyErr(e));
     if (input) input.disabled = false;
     if (btn) { btn.disabled = false; btn.textContent = "Add"; }
   }

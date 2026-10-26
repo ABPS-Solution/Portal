@@ -205,7 +205,7 @@ async function rpdiAddDocuments(invoiceId, input) {
     await loadRpdiDocuments(invoiceId);
     rpdiDocsFeedback(invoiceId, `${documents.length} document(s) added. The invoice was not revised.`, true);
   } catch(e) {
-    rpdiDocsFeedback(invoiceId, e.message, false);
+    rpdiDocsFeedback(invoiceId, friendlyErr(e), false);
   } finally {
     hideBlockingOverlay();
   }
@@ -223,7 +223,7 @@ async function rpdiReplaceDocument(invoiceId, documentId, docType, input) {
     await loadRpdiDocuments(invoiceId);
     rpdiDocsFeedback(invoiceId, "Document replaced. The invoice was not revised.", true);
   } catch(e) {
-    rpdiDocsFeedback(invoiceId, e.message, false);
+    rpdiDocsFeedback(invoiceId, friendlyErr(e), false);
   } finally {
     hideBlockingOverlay();
   }
@@ -238,7 +238,7 @@ async function rpdiRemoveDocument(invoiceId, documentId) {
     await loadRpdiDocuments(invoiceId);
     rpdiDocsFeedback(invoiceId, "Document removed. The invoice was not revised.", true);
   } catch(e) {
-    rpdiDocsFeedback(invoiceId, e.message, false);
+    rpdiDocsFeedback(invoiceId, friendlyErr(e), false);
   } finally {
     hideBlockingOverlay();
   }
@@ -530,7 +530,7 @@ async function submitRpdiCreateRequest() {
       showBOQBanner("rpdi-feedback", data.error || "Failed.", "error");
     }
   } catch(e) {
-    showBOQBanner("rpdi-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("rpdi-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }

@@ -102,15 +102,15 @@ async function uploadDrawingDirect(file, projectId, drawingType, onProgress) {
           headers: { "Content-Range": file.size ? `bytes ${off}-${end - 1}/${file.size}` : "bytes */0" },
           body: file.slice(off, end),
         });
-        if (r.status === 308 || r.ok) resp = r; else lastErr = new Error("Drive upload failed (" + r.status + ")");
+        if (r.status === 308 || r.ok) resp = r; else lastErr = new Error("The drawing could not be uploaded to Google Drive. Please try again.");
       } catch (e) { lastErr = e; await new Promise(res => setTimeout(res, 1500 * (attempt + 1))); }
     }
-    if (!resp) throw lastErr || new Error("Drive upload failed.");
+    if (!resp) throw lastErr || new Error("The drawing could not be uploaded to Google Drive. Please try again.");
     if (onProgress) onProgress(Math.round((end / (file.size || 1)) * 100));
     if (resp.ok) { fileId = (await resp.json()).id; break; }
     if (file.size === 0) break;
   }
-  if (!fileId) throw new Error("Drive did not confirm the upload.");
+  if (!fileId) throw new Error("Google Drive did not confirm the upload. Please upload it again.");
   return apFetch({ action: "finishDrawingUpload", projectId, drawingType, fileId, fileName: file.name });
 }
 
