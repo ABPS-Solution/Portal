@@ -1617,11 +1617,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div id="gate-upload-fields-wrapper-group" style="display: block;">
           <div class="card-row gate-upload-row">
             <div class="gate-upload-col">
-              <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
+              <div class="card-box" id="gate-invoice-box" onclick="gateOpenDocumentSource('invoice')" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
               <div id="gate-invoice-box-filelist"></div>
             </div>
             <div class="gate-upload-col">
-              <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
+              <div class="card-box" id="gate-challan-box" onclick="gateOpenDocumentSource('challan')" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
               <div id="gate-challan-box-filelist"></div>
             </div>
           </div>
@@ -6520,6 +6520,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="store/create-prn.js"></script>
 <script src="store/revise-prn.js"></script>
 <script src="store/gate-entry.js"></script>
+<script src="store/gate-camera.js"></script>
 <script src="store/grn.js"></script>
 <script src="store/qa.js"></script>
 <script src="store/tickets.js"></script>

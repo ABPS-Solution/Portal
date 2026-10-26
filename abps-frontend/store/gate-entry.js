@@ -34,19 +34,34 @@ function combineGateImagesToSingleBase64(files) {
       return;
     }
 
-    const loadImage = file => new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = e => {
+    // Decode straight at the reduced size (createImageBitmap) and one page at a
+    // time: a 12 MP phone photo decoded at full size is ~48 MB of memory, which
+    // on a low-RAM phone gets the tab killed.
+    const loadImage = async file => {
+      if (window.createImageBitmap) {
+        try {
+          const probe = await createImageBitmap(file);
+          const w = probe.width, h = probe.height;
+          if (w <= 1600) return probe;
+          probe.close();
+          return await createImageBitmap(file, { resizeWidth: 1600, resizeHeight: Math.round(h * 1600 / w), resizeQuality: 'high' });
+        } catch (e) { /* fall through to the <img> path */ }
+      }
+      return new Promise((res, rej) => {
+        const url = URL.createObjectURL(file);
         const img = new Image();
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = e.target.result;
-      };
-      reader.onerror = rej;
-      reader.readAsDataURL(file);
-    });
+        img.onload = () => { URL.revokeObjectURL(url); res(img); };
+        img.onerror = e => { URL.revokeObjectURL(url); rej(e); };
+        img.src = url;
+      });
+    };
+    const loadAllSequentially = async () => {
+      const out = [];
+      for (const f of files) out.push(await loadImage(f));
+      return out;
+    };
 
-    Promise.all(files.map(loadImage)).then(images => {
+    loadAllSequentially().then(images => {
       // A phone camera photo is routinely 3000-4000px wide and several MB —
       // stacking 2-3 of those at full resolution produced a base64 payload
       // well over the backend's 20MB request body limit ("request entity
@@ -59,8 +74,9 @@ function combineGateImagesToSingleBase64(files) {
       // how high-res the source photos are.
       const MAX_PAGE_WIDTH = 1600;
       const scaleImage = img => {
-        const scale = Math.min(1, MAX_PAGE_WIDTH / img.naturalWidth);
-        return { img, width: Math.round(img.naturalWidth * scale), height: Math.round(img.naturalHeight * scale) };
+        const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+        const scale = Math.min(1, MAX_PAGE_WIDTH / nw);
+        return { img, width: Math.round(nw * scale), height: Math.round(nh * scale) };
       };
       const scaled = images.map(scaleImage);
 
@@ -119,6 +135,8 @@ function combineGateImagesToSingleBase64(files) {
         base64 = shrunk.toDataURL('image/jpeg', 0.6).split(',')[1];
       }
 
+      images.forEach(im => { if (im.close) im.close(); });
+      canvas.width = canvas.height = 0;
       resolve({ base64, mimeType: 'image/jpeg' });
     }).catch(reject);
   });
