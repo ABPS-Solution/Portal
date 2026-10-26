@@ -20,6 +20,9 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 let mowServiceTicketsCache = [];
+// Challans with no stock issue (store/nonstock-challan.js builds them).
+const MOW_NON_STOCK_TYPES = ["Gas Refill", "Rejected Return", "Direct Supply"];
+function mowIsNonStock(type) { return MOW_NON_STOCK_TYPES.includes(type); }
 let mowDraftsCache = [];
 window._mowSelectedPoolTickets = window._mowSelectedPoolTickets || new Set();
 
@@ -62,8 +65,8 @@ async function loadMaterialOutwardServiceQueue() {
     window._mowSelectedPoolTickets = new Set(
       [...window._mowSelectedPoolTickets].filter(id => mowServiceTicketsCache.some(t => t.ticket_id === id))
     );
-    if (mowServiceTicketsCache.length === 0 && mowDraftsCache.length === 0) {
-      feed.innerHTML = `<div style="color:var(--muted); padding:20px; text-align:center;">No approved tickets are awaiting a Delivery Challan.</div>`;
+    if (mowServiceTicketsCache.length === 0 && mowDraftsCache.length === 0 && (window._mowTab || "new") === "new") {
+      feed.innerHTML = mnsRenderSection() + `<div style="color:var(--muted); padding:20px; text-align:center;">No approved tickets are awaiting a Delivery Challan.</div>`;
       return;
     }
     // New Challan / Editing tabs (24 Sep 2026, same idea as Create PO): a
@@ -76,7 +79,7 @@ async function loadMaterialOutwardServiceQueue() {
     const tabsHtml = `<div style="display:flex; gap:8px;">${tabBtn("new", "New Challan")}${tabBtn("editing", `Pending Challans (Editing) (${editing.length})`)}</div>`;
     feed.innerHTML = tabsHtml + (tab === "editing"
       ? (editing.length ? editing.map(d => renderDraftChallanCard(d, true)).join("") : `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No challans are waiting for edits.</div>`)
-      : fresh.map(renderDraftChallanCard).join("") + renderTicketPoolSection());
+      : mnsRenderSection() + fresh.map(d => renderDraftChallanCard(d)).join("") + renderTicketPoolSection());
     if (data.offline) feed.insertAdjacentHTML("afterbegin", `<div style="padding:10px 12px; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; border-radius:var(--radius); font-weight:600;">You're offline — showing the last saved queue. Your typing is kept on this device; save once you're back online.</div>`);
     mowDraftsCache.forEach(d => { if (document.getElementById(`mow-draft-card-${d.challan_id}`)) { mowRestoreCardLocal(d.challan_id); mowValidateDraftCard(d.challan_id); } });
     autoGrowAllIn(feed);
@@ -225,6 +228,7 @@ async function mowRemoveTicketFromDraft(challanId, ticketId) {
 function renderDraftChallanCard(draft, collapsible) {
   const challanId = draft.challan_id;
   const linkedTickets = draft.linked_tickets || [];
+  const isNs = mowIsNonStock(draft.outward_type);
   const items = draft.line_items && draft.line_items.length
     ? draft.line_items
     : linkedTickets.flatMap(t => mowBuildDisplayLineItems({ ticket_id: t.ticketId, items: t.items }));
@@ -245,7 +249,7 @@ function renderDraftChallanCard(draft, collapsible) {
       <td style="padding:8px; border:1px solid var(--border); text-align:center;">${i + 1}</td>
       <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.description || '')}</td>
       <td style="padding:6px; border:1px solid var(--border); text-align:center;">
-        <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-challan-id="${challanId}"
+        <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-line-index="${i}" data-challan-id="${challanId}"
                value="${escapeHtml(it.hsnCode || '')}" oninput="mowValidateDraftCard(${challanId})"
                style="width:100%; max-width:140px; text-align:center; padding:6px; border:1.5px solid ${(it.hsnCode || '').trim() ? '#94a3b8' : '#dc2626'}; background:#fff; border-radius:var(--radius);" />
       </td>
@@ -256,12 +260,13 @@ function renderDraftChallanCard(draft, collapsible) {
   return `
     <div class="section" id="mow-draft-card-${challanId}" style="padding:16px; border:1px solid var(--brand); border-radius:var(--radius); margin-bottom:16px; background:#fbfdff;">
       ${collapsible ? mowDraftCollapsedHeader(draft, expanded) : `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Draft Challan #${challanId} <span style="font-weight:600; color:var(--muted); font-size:0.85rem;">(${linkedTickets.length} ticket${linkedTickets.length === 1 ? '' : 's'})</span></div>
+        <div style="font-weight:800; font-size:1rem; color:var(--brand);">Draft Challan #${challanId} <span style="font-weight:600; color:var(--muted); font-size:0.85rem;">(${isNs ? escapeHtml(draft.outward_type) + ', no stock issue' : linkedTickets.length + ' ticket' + (linkedTickets.length === 1 ? '' : 's')})</span></div>
       </div>`}
       <div id="mow-draft-body-${challanId}" style="display:${expanded ? 'block' : 'none'};">
 
       <div style="margin-top:12px;">${linkedTicketsHtml}</div>
-      ${collapsible ? mowEditAddTicketsSection(draft) : ''}
+      ${collapsible && !isNs ? mowEditAddTicketsSection(draft) : ''}
+      ${isNs ? mowNonStockNote(draft) : ''}
 
       <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px;">
@@ -272,7 +277,7 @@ function renderDraftChallanCard(draft, collapsible) {
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
-          ${draft.outward_type === 'Processing'
+          ${draft.outward_type === 'Processing' || draft.outward_type === 'Gas Refill' || draft.outward_type === 'Rejected Return'
             ? mowVendorPickerFor(challanId, draft.vendor_name || '')
             : mowFieldFor(challanId, 'Company Name', 'company', draft.consignee_name, true)}
           ${mowFieldFor(challanId, 'Contact Name', 'contact-name', draft.contact_person_name, true)}
@@ -292,7 +297,7 @@ function renderDraftChallanCard(draft, collapsible) {
         </div>
 
         <h4 style="margin:0 0 6px; font-size:1.15rem; font-weight:800; color:var(--brand);">Materials List</h4>
-        <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">Description, Qty and Unit come from the linked tickets' approved release — not editable here. HSN Code is required for every row.</p>
+        <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">${isNs ? "Description, Qty and Unit are what was picked when this challan was created. To change them, discard this draft and create it again." : "Description, Qty and Unit come from the linked tickets' approved release — not editable here."} HSN Code is required for every row.</p>
         <table class="prn-view-table" style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
           <colgroup><col style="width:7%;" /><col style="width:47%;" /><col style="width:16%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
@@ -334,8 +339,10 @@ function mowDraftCollapsedHeader(draft, expanded) {
         ${cell('Challan No', escapeHtml(draft.challan_number || '—'), true)}
         ${cell('Challan Date', escapeHtml(today))}
         ${cell('Draft', 'Draft #' + escapeHtml(String(draft.checking_draft_count || 0)))}
-        ${cell('Ticket ID' + (tickets.length === 1 ? '' : 's'), tickets.map(t => escapeHtml(t.ticketId)).join('<br>') || '—', true)}
-        ${cell('Company Name', companies.map(escapeHtml).join('<br>') || '—')}
+        ${mowIsNonStock(draft.outward_type)
+          ? cell('Project', escapeHtml(draft.project_id || '—'), true)
+          : cell('Ticket ID' + (tickets.length === 1 ? '' : 's'), tickets.map(t => escapeHtml(t.ticketId)).join('<br>') || '—', true)}
+        ${cell(mowIsNonStock(draft.outward_type) ? 'Sent To' : 'Company Name', (mowIsNonStock(draft.outward_type) ? escapeHtml(draft.consignee_name || draft.vendor_name || '—') : companies.map(escapeHtml).join('<br>')) || '—')}
       </div>
       <span id="mow-draft-chevron-${id}" style="flex:none; font-size:1.1rem; color:var(--brand);">${expanded ? '▴' : '▾'}</span>
     </div>`;
@@ -461,8 +468,13 @@ function mowCollectCardPayload(challanId) {
   });
   const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
   const ticketIds = (draft?.linked_tickets || []).map(t => t.ticketId);
+  const nonStock = draft && mowIsNonStock(draft.outward_type) ? (() => {
+    const hsnByLine = {};
+    document.querySelectorAll(`.mow-hsn-input[data-challan-id="${challanId}"]`).forEach(inp => { hsnByLine[inp.dataset.lineIndex] = inp.value.trim(); });
+    return { outwardType: draft.outward_type, hsnByLine, projectId: draft.project_id || '' };
+  })() : {};
   return {
-    challanId, ticketIds,
+    challanId, ticketIds, ...nonStock,
     returnableStatus: document.getElementById(`mow-status-${challanId}`)?.value || '',
     vendorName: val(`mow-vendor-${challanId}`),
     companyName: val(`mow-company-${challanId}`),
@@ -659,7 +671,12 @@ async function runMaterialOutwardSearch() {
             const materialsHtml = materials.length
               ? materials.map((it, i) => `<div style="padding:4px 0;${i ? ' border-top:1px solid var(--border);' : ''}">${escapeHtml(it.description || it.materialName || '')} — <b>${escapeHtml(String(it.quantity ?? ''))} ${escapeHtml(it.unit || '')}</b></div>`).join('')
               : '—';
-            const ticketsHtml = (c.ticket_ids || []).map(escapeHtml).join('<br>') || '—';
+            const rp = c.refill_progress || {};
+            const ticketsHtml = mowIsNonStock(c.outward_type)
+              ? `<b>${escapeHtml(c.outward_type)}</b>` + (c.outward_type === 'Gas Refill'
+                  ? `<br>${Number(rp.returned) >= Number(rp.sent) - 1e-9 ? '<span style="color:#15803d; font-weight:700;">Refilled</span>' : `Awaiting refill (${escapeHtml(fmtQty(rp.returned || 0))} of ${escapeHtml(fmtQty(rp.sent || 0))} back)`}`
+                  : '')
+              : ((c.ticket_ids || []).map(escapeHtml).join('<br>') || '—');
             const challanNo = escapeHtml(c.challan_number || '');
             const challanHtml = c.document_url
               ? `<a href="${driveLink(c.document_url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${challanNo} ↗</a>`
@@ -788,4 +805,15 @@ function mowSwitchTab(tab) {
   const banner = document.getElementById("mow-feedback-banner");
   if (banner) banner.style.display = "none";
   loadMaterialOutwardServiceQueue();
+}
+
+
+// What a no-stock challan's draft card says above its fields.
+function mowNonStockNote(draft) {
+  const text = {
+    "Gas Refill": "Empty cylinders going for refill. Full-cylinder stock does not change. The challan is marked Refilled when the refill from this vendor passes Q/A on its RM PO.",
+    "Rejected Return": "Rejected (Not OK) material going back to the vendor. No stock moves. The rejection still closes when the vendor's material comes back through Gate Entry.",
+    "Direct Supply": "Sent by the supplier straight to the customer or site. On authorize it is counted as received on the PO and issued to the project. Store stock does not change.",
+  }[draft.outward_type] || "";
+  return `<div style="margin-top:10px; padding:10px 12px; background:#eff6ff; border-left:4px solid var(--brand); border-radius:var(--radius); font-size:0.82rem;">${escapeHtml(text)}</div>`;
 }
