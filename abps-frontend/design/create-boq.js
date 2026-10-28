@@ -644,11 +644,6 @@ function boqSuggestRate(lines, need) {
   const wAvg = ls.reduce((a, l) => a + l.rate * l.qty, 0) / sumQ;
   const qtys = ls.map(l => l.qty), rates = ls.map(l => l.rate);
   const out = { count: ls.length, weightedAvg: r2(wAvg), minRate: Math.min(...rates), maxRate: Math.max(...rates), rate: r2(wAvg), method: "weighted" };
-  if (need > 0 && ls.length >= 3 && Math.max(...qtys) >= 2 * Math.min(...qtys)) {
-    let sw = 0, swr = 0;
-    ls.forEach(l => { const d = Math.log(l.qty / need); const w = l.qty * Math.exp(-(d * d) / (2 * 0.81)); sw += w; swr += w * l.rate; });
-    if (sw > 1e-9) { out.rate = r2(swr / sw); out.method = "qtyAware"; }
-  }
   return out;
 }
 function boqRowsForPrefix(prefix) {
@@ -754,9 +749,7 @@ function boqRateHintHtml(row, prefix) {
   if (!sug) return wrap(`No PO in last ${boqPurchaseRateWindowDays} days, not auto-filled<br>${lastLine}`, "#b45309");
   const range = sug.minRate === sug.maxRate ? "" : ` (range ${inr(sug.minRate)} to ${inr(sug.maxRate)})`;
   const title = (e.lines || []).map(l => `${l.poNo}: ${trimNum(l.qty)} @ ${inr(l.rate)}`).join(" | ");
-  const main = sug.method === "qtyAware"
-    ? `Suggested ${inr(sug.rate)} for qty ${trimNum(boqRowNeed(prefix, row))}<br>Avg ${inr(sug.weightedAvg)} over ${sug.count} POs in ${boqPurchaseRateWindowDays} days${range}`
-    : `Avg ${inr(sug.weightedAvg)} over ${sug.count} PO${sug.count === 1 ? "" : "s"} in ${boqPurchaseRateWindowDays} days${range}`;
+  const main = `Avg ${inr(sug.weightedAvg)} over ${sug.count} PO${sug.count === 1 ? "" : "s"} in ${boqPurchaseRateWindowDays} days${range}`;
   const oldRate = window.boqImportedRates && window.boqImportedRates.get(row);
   const oldNote = oldRate !== undefined && window.boqAutoRateRows.get(row) !== undefined && Number(oldRate) !== Number(row.designRatePerQuantity)
     ? `<br>Old BOQ had ${inr(oldRate)}` : "";

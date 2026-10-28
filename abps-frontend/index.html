@@ -1363,13 +1363,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dept-header">
         <div class="dept-bar" style="background:#1e293b;"></div>
         <span class="dept-name">Admin</span>
-        <div id="mod-admin-dashboard-wrapper" style="display:none;">
-          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+          <div id="mod-admin-dashboard-wrapper" style="display:none;">
+            <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+          </div>
+          <div id="mod-pending-work-wrapper" style="display:none;">
+            <button class="dept-dash-pill" id="mod-pending-work" onclick="openPendingWorkDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Pending Work Dashboard</button>
+          </div>
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security-admin" onclick="switchActiveDashboardModule('security-admin')"><span class="mc-label">Security &amp; Login Access</span></div>
-        <div class="menu-card" id="mod-pending-work" style="display:none;" onclick="openPendingWorkDashboard()"><span class="mc-label">Pending Work Dashboard</span></div>
       </div>
     </div>
 
@@ -5161,15 +5165,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
          (last-purchase-rate / design-costed basis — no FIFO costing
          exists anywhere in this schema), labelled as such in their own
          sub-label rather than presented as an exact valuation. -->
-  <div id="canvas-module-pending-work" class="workspace-panel" style="display:none;">
-    <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
-      <button class="nav-btn-styled" style="width:auto; background:var(--accent);" onclick="loadPendingWorkDashboard()">Refresh</button>
-      <button class="nav-btn-styled" onclick="exitPendingWorkDashboard()">Return to Main Dashboard</button>
-    </div>
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Pending Work Dashboard</h2>
-      <div id="pwk-body"></div>
-    </div>
+  <div id="canvas-module-pending-work" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+    <div id="pwk-body" class="dd-body" style="padding:0 14px 10px; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,minmax(0,1fr)); gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;"></div>
   </div>
 
     <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">

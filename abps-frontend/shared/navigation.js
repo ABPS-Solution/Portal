@@ -438,7 +438,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
   const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
   const canViewPendingWork = userPermissionsObject.viewPendingWorkDashboard === true;
-  if (document.getElementById("mod-pending-work")) document.getElementById("mod-pending-work").style.display = canViewPendingWork ? "block" : "none";
+  if (document.getElementById("mod-pending-work-wrapper")) document.getElementById("mod-pending-work-wrapper").style.display = canViewPendingWork ? "block" : "none";
   const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
   const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
