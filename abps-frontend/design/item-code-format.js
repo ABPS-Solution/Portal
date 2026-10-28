@@ -143,6 +143,8 @@ function icfValidateValues(template, values) {
   const tieRodThreadsPh = tieRodShape ? placeholders[tieRodShape.threadsIndex] : null;
   const ctIdShape = icfCtIdNotNeeded(segments, vals);
   const ctIdPh = ctIdShape ? placeholders[ctIdShape.idIndex] : null;
+  const brass = icfBrassNutApplies(segments, vals);
+  const brassSkip = brass ? [placeholders[brass.platingIndex], placeholders[brass.gradeIndex]] : [];
 
   for (const ph of placeholders) {
     const raw = vals[ph.index];
@@ -167,6 +169,7 @@ function icfValidateValues(template, values) {
     if (!v) {
       if (ph === tieRodThreadsPh && threadsIsOptional) continue;
       if (ph === ctIdPh) continue;
+      if (brassSkip.includes(ph)) continue;
       return `"${ph.label}" is required.`;
     }
     if ((ph.kind === 'number' || ph.kind === 'mirror') && !icfIsValidNumericPlaceholderValue(v, ph.label)) {
@@ -700,4 +703,27 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
       return el ? el.value.trim() : '';
     });
   };
+}
+
+// Brass Nut (28 Oct 2026, team rule): a brass nut has no plating and no grade.
+// STRUCTURAL match: a material choice that offers "Brass", then the literal
+// " Nut, ", a plating choice, ", ", a grade choice and " Grade". When Brass is
+// picked, the plating and grade are not required and the name is "Brass Nut".
+function icfMatchBrassNutShape(segments) {
+  const [m, l1, plating, l2, grade, l3] = segments;
+  if (!m || m.kind !== 'choice' || !(m.options || []).includes('Brass')) return null;
+  if (!l1 || l1.kind !== 'literal' || !/^\s*Nut,\s*$/.test(l1.text)) return null;
+  if (!plating || plating.kind !== 'choice' || !l2 || l2.kind !== 'literal' || !/^\s*,\s*$/.test(l2.text)) return null;
+  if (!grade || grade.kind !== 'choice' || !l3 || l3.kind !== 'literal' || !/^\s*Grade\s*$/.test(l3.text)) return null;
+  return { materialIndex: m.index, platingIndex: plating.index, gradeIndex: grade.index };
+}
+function icfBrassNutApplies(segments, values) {
+  const shape = icfMatchBrassNutShape(segments);
+  const vals = Array.isArray(values) ? values : [];
+  return shape && String(vals[shape.materialIndex] || '').trim() === 'Brass' ? shape : null;
+}
+function icfApplyBrassNutRule(template, values, rendered) {
+  const { segments, error } = icfParseTemplate(template);
+  if (error || !icfBrassNutApplies(segments, values)) return rendered;
+  return 'Brass Nut';
 }

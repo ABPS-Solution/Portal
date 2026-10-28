@@ -819,7 +819,8 @@ function updateIcfNewPreview() {
   const nameEl = document.getElementById("icf-new-preview-name");
   const ratingEl = document.getElementById("icf-new-preview-rating");
   try {
-    nameEl.textContent = icfRenderTemplate(icfSelectedFormat.materialNameTemplate, icfNameGetValues ? icfNameGetValues() : []) || "—";
+    const nameVals = icfNameGetValues ? icfNameGetValues() : [];
+    nameEl.textContent = icfApplyBrassNutRule(icfSelectedFormat.materialNameTemplate, nameVals, icfRenderTemplate(icfSelectedFormat.materialNameTemplate, nameVals)) || "—";
   } catch(e) { nameEl.textContent = "—"; }
   try {
     if (icfSelectedFormat.ratingTemplate) {
