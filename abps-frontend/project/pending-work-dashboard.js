@@ -36,12 +36,20 @@ async function loadPendingWorkDashboard() {
     if (!data.success) throw new Error(data.error || "Could not load the pending work.");
     body.innerHTML = data.groups.map(g => {
       const accent = PWK_DEPT_ACCENT[g.dept] || "var(--brand)";
-      return `<div class="dd-card" style="display:flex; flex-direction:column; gap:8px; min-height:0; border-top:4px solid ${accent};">
-        <div style="font-weight:800; color:${accent};">${escapeHtml(g.dept)}${g.error ? ' <span style="color:#b91c1c; font-size:0.78rem; font-weight:600;">(could not load)</span>' : ""}</div>
-        ${g.cards.map(c => `<div class="dd-stat-card stat-live" style="flex:1; min-height:0;">
-          <div class="dd-stat-label">${escapeHtml(c.label)}</div>
-          <div class="dd-stat-val" style="color:${Number(c.value) > 0 ? "#b91c1c" : "var(--text)"};">${c.value === null ? "—" : escapeHtml(String(c.value))}</div>
-        </div>`).join("")}
+      const waiting = g.cards.reduce((n, c) => n + (Number(c.value) || 0), 0);
+      return `<div style="background:var(--card); border:1px solid var(--border); border-left:5px solid ${accent}; border-radius:var(--radius); padding:10px 12px 12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+          <span style="font-size:1.05rem; font-weight:800; letter-spacing:0.3px; color:${accent};">${escapeHtml(g.dept)}</span>
+          ${g.error
+            ? '<span style="font-size:0.75rem; font-weight:700; color:#b91c1c;">Could not load</span>'
+            : `<span style="font-size:0.75rem; font-weight:700; padding:2px 10px; border-radius:999px; background:${waiting > 0 ? "#fee2e2" : "#dcfce7"}; color:${waiting > 0 ? "#b91c1c" : "#15803d"};">${waiting > 0 ? waiting + " waiting" : "All clear"}</span>`}
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">
+          ${g.cards.map(c => `<div class="dd-stat-card stat-live" style="height:96px; min-height:96px; justify-content:flex-start;">
+            <div class="dd-stat-label">${escapeHtml(c.label)}</div>
+            <div class="dd-stat-val" style="margin-top:auto; color:${Number(c.value) > 0 ? "#b91c1c" : "var(--text)"};">${c.value === null ? "—" : escapeHtml(String(c.value))}</div>
+          </div>`).join("")}
+        </div>
       </div>`;
     }).join("");
   } catch (e) {
