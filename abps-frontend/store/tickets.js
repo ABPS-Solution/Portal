@@ -461,7 +461,7 @@ function checkSpareStoreSuggestion() {
   }
 
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
-  const qty = parseInt(document.getElementById("ticket-item-quantity-input").value, 10);
+  const qty = Math.round((parseFloat(document.getElementById("ticket-item-quantity-input").value) || 0) * 1000) / 1000;
 
   if (!selectedMaterial || !qty || qty <= 0) {
     banner.style.display = "none";
@@ -501,7 +501,7 @@ async function addItemToShoppingBasketRow() {
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   
   const materialName = itemSelect.value;
-  const quantity = parseInt(qtyInput.value, 10);
+  const quantity = Math.round((parseFloat(qtyInput.value) || 0) * 1000) / 1000;
 
   // Button loading state
   const addBtn = document.getElementById("ticket-add-item-action-btn");

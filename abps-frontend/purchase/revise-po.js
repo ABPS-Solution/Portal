@@ -576,7 +576,7 @@ function renderPORevisionCard() {
     const workingAllocs = li._workingAllocations || [];
     const vdqNow = parseFloat(li.quantity) || 0;
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
-    const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
+    const unallocNow = Math.round((vdqNow - allocSum) * 1000) / 1000;
     const chipsHtml = (workingAllocs.length || li._allocationTouched)
       ? workingAllocs.filter(a => (Number(a.quantity) || 0) > 1e-9).map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
@@ -929,7 +929,7 @@ function updateRPOAllocModalSummary(idx) {
     sum += v;
     inp.style.borderColor = v > need + 1e-9 ? "#b91c1c" : "var(--brand)";
   });
-  const unalloc = Math.round((vdq - sum) * 100) / 100;
+  const unalloc = Math.round((vdq - sum) * 1000) / 1000;
   const extraEl = document.getElementById("rpo-alloc-extra-value");
   if (extraEl) extraEl.textContent = fmt(Math.max(0, unalloc));
   const el = document.getElementById("rpo-alloc-modal-summary");
@@ -1500,7 +1500,7 @@ function renderAPORCard(r) {
     const workingAllocs = line._workingAllocations || [];
     const vdqNow = parseFloat(line.quantity) || 0;
     const allocSum = workingAllocs.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
-    const unallocNow = Math.round((vdqNow - allocSum) * 100) / 100;
+    const unallocNow = Math.round((vdqNow - allocSum) * 1000) / 1000;
     const chipsHtml = (workingAllocs.length || line._allocationTouched)
       ? workingAllocs.filter(a => (Number(a.quantity) || 0) > 1e-9).map(a => `<div style="display:inline-block; background:#e0f2fe; color:var(--brand); font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${a.prnId}">${a.prnId}: <strong>${a.quantity}</strong></div>`).join("")
         + (unallocNow > 0 ? `<div style="display:inline-block; background:#fef3c7; color:#78350f; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 0 3px 0;">Extra: <strong>${unallocNow}</strong></div>` : "")
@@ -1812,7 +1812,7 @@ function updateAPORAllocModalSummary(requestId, idx) {
     if (v < 0) { v = 0; inp.value = "0"; }
     sum += v;
   });
-  const unalloc = Math.round((vdq - sum) * 100) / 100;
+  const unalloc = Math.round((vdq - sum) * 1000) / 1000;
   const extraEl = document.getElementById("apor-alloc-extra-value");
   if (extraEl) extraEl.textContent = fmt(Math.max(0, unalloc));
   const el = document.getElementById("apor-alloc-modal-summary");

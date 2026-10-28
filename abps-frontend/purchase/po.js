@@ -426,7 +426,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
     // Extra = ordered qty not tied to any PRN, mirroring Create PO's allot chips.
     const allocSum = [...allocs, ...boqAllocsView].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const pendingChipsView = boqAllocsView.map(a => `<div style="display:inline-block; background:#ede9fe; color:#5b21b6; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;" title="${escapeHtml(a.boqId || '')}">PRN pending: ${escapeHtml(a.boqId || '')}: <strong>${fmt(a.quantity)}</strong></div>`).join("");
-    const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 100) / 100;
+    const extraQty = Math.round(((parseFloat(l.quantity) || 0) - allocSum) * 1000) / 1000;
     const projectChips = isTransportPO
       ? ((Array.isArray(l.projectIds) && l.projectIds.length ? l.projectIds : [l.projectId]).filter(Boolean)
           .map(p => `<div style="display:inline-block; background:#ede9fe; color:#6d28d9; font-size:0.72rem; padding:2px 8px; border-radius:4px; margin:0 4px 3px 0;">${escapeHtml(p)}</div>`).join("")
@@ -1156,7 +1156,7 @@ function renderCPOMaterialRows() {
     const boqAllocList = row.boqAllocations || [];
     const allocSum = [...allocList, ...boqAllocList].reduce((s, a) => s + (Number(a.quantity) || 0), 0);
     const lineQtyNow = parseFloat(row.quantity) || 0;
-    const unallocNow = Math.round((lineQtyNow - allocSum) * 100) / 100;
+    const unallocNow = Math.round((lineQtyNow - allocSum) * 1000) / 1000;
 
     // Rate / Qty is locked (can't be typed) until Quantity has a real value
     // AND the row has actually been through Allocate to PRNs at least once
@@ -1532,7 +1532,7 @@ function updateCPOAllocTotals(lineQty) {
     if (v > cap + 1e-9) overCap.push(inp.dataset.prnid);
     inp.style.borderColor = v > cap + 1e-9 ? "#b91c1c" : "var(--brand)";
   });
-  const unalloc = Math.round((lineQty - sum) * 100) / 100;
+  const unalloc = Math.round((lineQty - sum) * 1000) / 1000;
   const extraEl = document.getElementById("cpo-alloc-extra-value");
   if (extraEl) extraEl.textContent = (Math.max(0, unalloc)).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const el = document.getElementById("cpo-alloc-summary");

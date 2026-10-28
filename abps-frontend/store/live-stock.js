@@ -1159,7 +1159,7 @@ async function refreshRPRNDeltaLiveStock() {
       span.dataset.liveSpare = baseSpare;
       span.dataset.liveTotal = effectiveTotal;
 
-      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
+      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 1000) / 1000) : 0;
       const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
       span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
       const bufferedReqForCap = itemForSpan ? (Number(itemForSpan.bufferedRequirement) || 0) : Infinity;
@@ -1168,7 +1168,7 @@ async function refreshRPRNDeltaLiveStock() {
           if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
           const cap = Math.min(effectiveTotal, bufferedReqForCap);
           inp.max = cap;
-          if (currentVal > cap) { inp.value = Math.round(cap * 100) / 100; inp.dispatchEvent(new Event("input")); }
+          if (currentVal > cap) { inp.value = Math.round(cap * 1000) / 1000; inp.dispatchEvent(new Event("input")); }
         } else {
           // Decrease/removed rows have THREE ceilings: the requirement
           // itself (totalCovered), the NEW buffered BOQ requirement (a
@@ -1178,7 +1178,7 @@ async function refreshRPRNDeltaLiveStock() {
           const realCap = Math.min(totalCovered_dataset(inp), bufferedReqForCap, effectiveTotal);
           inp.max = realCap;
           if (currentVal > realCap) {
-            inp.value = Math.round(realCap * 100) / 100;
+            inp.value = Math.round(realCap * 1000) / 1000;
             inp.dispatchEvent(new Event("input"));
           }
         }
@@ -1230,7 +1230,7 @@ async function refreshRevisePRNLiveStock() {
         const serverCap = s.raw + s.spare + (Number(li.storeQty) || 0);
         const cap = Math.min(requirementCap, total, serverCap);
         inp.max = cap;
-        if (currentTyped > cap) { inp.value = Math.round(cap * 100) / 100; updateRevisePRNRow(idx); }
+        if (currentTyped > cap) { inp.value = Math.round(cap * 1000) / 1000; updateRevisePRNRow(idx); }
       }
     });
   } catch (e) { /* silent — quantities still editable without this */ }
@@ -1325,7 +1325,7 @@ async function refreshAPRNLiveStock() {
         const cap = Math.min(requirementCap, total);
         inp.max = cap;
         if (currentTyped > cap) {
-          inp.value = Math.round(cap * 100) / 100;
+          inp.value = Math.round(cap * 1000) / 1000;
           updateAPRNRow(idx, inp.value, window.aprnExpandedId);
         }
       }
@@ -1406,7 +1406,7 @@ async function refreshPRNCreateLiveStock() {
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
-      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 100) / 100) : 0;
+      const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 1000) / 1000) : 0;
       // Decrease/removed rows already hold their pre-filled amount from
       // this PRN's PRIOR authorization — that's not a new claim being
       // made, so it needs adding back to the live pool before simulating
@@ -1444,7 +1444,7 @@ async function refreshPRNCreateLiveStock() {
           if (inp.disabled) { inp.disabled = false; inp.style.opacity = "1"; }
           const cap = Math.min(effectiveTotal, bufferedReqForCap);
           inp.max = cap;
-          if (currentVal > cap) { inp.value = Math.round(cap * 100) / 100; inp.dispatchEvent(new Event("input")); }
+          if (currentVal > cap) { inp.value = Math.round(cap * 1000) / 1000; inp.dispatchEvent(new Event("input")); }
         }
       }
     });
@@ -1460,7 +1460,7 @@ function updatePRNDecreaseRowPurchaseQty(idx, input) {
   const realCap = Math.min(totalCovered, bufferedReq, isNaN(liveCap) ? totalCovered : liveCap);
   let val = parseFloat(input.value) || 0;
   if (val < 0) { val = 0; input.value = "0"; }
-  if (val > realCap) { val = Math.round(realCap * 100) / 100; input.value = val; }
+  if (val > realCap) { val = Math.round(realCap * 1000) / 1000; input.value = val; }
   const purchaseCell = document.getElementById(`prn-create-purchaseqty-${idx}`);
   if (!purchaseCell) return;
   const purchaseQty = Math.max(0, bufferedReq - val);
@@ -1503,13 +1503,13 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   // Round to 2dp defensively — floating point math upstream (e.g. 48 * 1.16) can produce
   // values like 55.67999999999999 instead of 55.68, which would otherwise silently clamp
   // a user's valid, exact-match entry down to an ugly long-decimal value.
-  const bufferedQty = Math.round((Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0) * 100) / 100;
+  const bufferedQty = Math.round((Number(prnCurrentData.lineItems[idx].bufferedPurchaseQty) || 0) * 1000) / 1000;
   const liveStockSpan = document.querySelector(`.prn-livestock-total[data-itemcode="${prnCurrentData.lineItems[idx].itemCode}"]`);
   // Default to 0 (not Infinity) until live stock has actually loaded, so nothing can be over-entered in the gap
   const liveStockMax  = (liveStockSpan && liveStockSpan.dataset.liveTotal !== undefined) ? (Number(liveStockSpan.dataset.liveTotal) || 0) : 0;
-  const cap = Math.round(Math.min(bufferedQty, liveStockMax) * 100) / 100;
+  const cap = Math.round(Math.min(bufferedQty, liveStockMax) * 1000) / 1000;
 
-  let storeQty = Math.round((parseFloat(inputEl.value) || 0) * 100) / 100;
+  let storeQty = Math.round((parseFloat(inputEl.value) || 0) * 1000) / 1000;
   if (storeQty > cap) {
     storeQty = cap;
     inputEl.value = storeQty;
@@ -1566,7 +1566,7 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
       : rows.map(r => `
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.85rem; font-weight:600; color:#334155;">${r.boqId}</td>
-            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b45309;">${(Math.round(r.assignedQty * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td style="padding:8px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#b45309;">${(Math.round(r.assignedQty * 1000) / 1000).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
           </tr>`).join("");
     body.innerHTML = `
       <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:16px;">
@@ -1574,7 +1574,7 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
         <tbody>
           <tr style="background:#f0fdf4;">
             <td style="padding:10px 6px; font-size:0.85rem; font-weight:800; color:#15803d;">Available (unassigned)</td>
-            <td style="padding:10px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#15803d;">${(Math.round((availableQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td style="padding:10px 6px; text-align:right; font-family:monospace; font-size:0.95rem; font-weight:800; color:#15803d;">${(Math.round((availableQty || 0) * 1000) / 1000).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
           </tr>
         </tbody>
       </table>

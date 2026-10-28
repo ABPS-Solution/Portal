@@ -152,7 +152,7 @@ function handleCPOAllocInput(inputEl, lineQty) {
   const effectiveCap = Math.min(ownNeedCap, remainingForThis);
   const typed = parseFloat(inputEl.value) || 0;
   if (typed > effectiveCap + 1e-9) {
-    inputEl.value = Math.round(effectiveCap * 100) / 100;
+    inputEl.value = Math.round(effectiveCap * 1000) / 1000;
   }
   updateCPOAllocTotals(lineQty);
 }
@@ -1077,11 +1077,11 @@ function renderPRNCreateTable() {
       if (this.classList.contains("prn-create-decrease-storeqty")) return;
       const idx = this.dataset.idx;
       const item = pending.lineItems[idx];
-      const bufferedReq = Math.round((Number(item.bufferedRequirement) || 0) * 100) / 100;
+      const bufferedReq = Math.round((Number(item.bufferedRequirement) || 0) * 1000) / 1000;
       const liveSpan = document.querySelector(`.prn-create-livestock[data-itemcode="${item.itemCode}"]`);
       const liveMax  = (liveSpan && liveSpan.dataset.liveTotal !== undefined) ? Number(liveSpan.dataset.liveTotal) || 0 : 0;
-      const cap = Math.round(Math.min(bufferedReq, liveMax) * 100) / 100;
-      let val = Math.round((parseFloat(this.value) || 0) * 100) / 100;
+      const cap = Math.round(Math.min(bufferedReq, liveMax) * 1000) / 1000;
+      let val = Math.round((parseFloat(this.value) || 0) * 1000) / 1000;
       if (val > cap) { val = cap; this.value = val; this.style.border = "1.5px solid #ef4444"; }
       else { this.style.border = "1.5px solid var(--brand)"; }
 
@@ -1269,7 +1269,7 @@ function renderAllPRNCards(prns, boqId) {
     // 270 stays "270", 280.8 stays "280.8", nothing shows as "270.00".
     const fmtSmart = (n) => {
       const num = Number(n) || 0;
-      return Number.isInteger(num) ? String(num) : String(Math.round(num * 100) / 100);
+      return Number.isInteger(num) ? String(num) : String(Math.round(num * 1000) / 1000);
     };
     let rowsHtml = "";
     (data.lineItems || []).forEach((li, liIdx) => {

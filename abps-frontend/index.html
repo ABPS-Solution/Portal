@@ -1794,7 +1794,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div style="flex: 0 0 120px;">
               <label class="field-label" style="margin-top:0;">Quantity</label>
-              <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" oninput="checkSpareStoreSuggestion()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+              <input type="number" id="ticket-item-quantity-input" min="0" step="any" inputmode="decimal" placeholder="Qty" oninput="checkSpareStoreSuggestion()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
             </div>
             <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="flex: 0 0 110px; width: 110px; height: 34px; padding: 0 12px; border-radius: var(--radius); transition: all 0.15s ease;" disabled>+ Add</button>
           </div>

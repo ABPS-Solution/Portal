@@ -201,7 +201,7 @@ function renderMaterialListByType(materials) {
         </div>
         <div style="border-top:1px dashed #e2e8f0; padding-top:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:#b91c1c;">${(Math.round(item.totalPurchaseQty * 100) / 100).toString()}</span>
+            <span style="font-family:monospace; font-size:1.2rem; font-weight:800; color:#b91c1c;">${(Math.round(item.totalPurchaseQty * 1000) / 1000).toString()}</span>
             <span style="font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#fee2e2; color:#b91c1c;">${(item.unit || "NOS").toUpperCase()}</span>
           </div>
           <div style="font-size:0.65rem; color:var(--muted); font-weight:600; margin-top:2px;">To Purchase</div>
@@ -240,7 +240,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
 
   const prnIds = Object.keys(byPrn).sort();
   const unitLabel = (unit || "NOS").toUpperCase();
-  const fmtQtyN = (n) => (Math.round((Number(n) || 0) * 100) / 100).toString();
+  const fmtQtyN = (n) => (Math.round((Number(n) || 0) * 1000) / 1000).toString();
 
   // "3rd Sept 2026" style — ordinal day + short month name, used both in the
   // PRN table's Production Requirement Date column and the timeline below.
@@ -391,7 +391,7 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
         <tfoot>
           <tr style="border-top:2px solid var(--border);">
             <td style="padding:8px 6px; font-size:0.82rem; font-weight:800; color:#334155;">Total</td>
-            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:1.15rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 100) / 100).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
+            <td style="padding:8px 6px; text-align:center; font-family:monospace; font-size:1.15rem; font-weight:800; color:var(--brand);">${(Math.round((totalQty || 0) * 1000) / 1000).toString()} <span style="font-size:0.7rem; font-weight:700; color:var(--muted);">${unitLabel}</span></td>
             <td></td>
           </tr>
         </tfoot>
@@ -414,7 +414,7 @@ async function loadMaterialBreakdownPrnPending(itemCode, unitLabel) {
     const scope = materialListSelectedProjectId;
     const list = (data.pendingBoqs || []).filter(b => !scope || b.projectId === scope);
     if (!list.length) return;
-    const fmtN = (n) => (Math.round((Number(n) || 0) * 100) / 100).toString();
+    const fmtN = (n) => (Math.round((Number(n) || 0) * 1000) / 1000).toString();
     zone.innerHTML = `
       <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#5b21b6; letter-spacing:0.5px; margin-bottom:6px;">PRN pending (BOQ authorized, no PRN yet)</div>
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">

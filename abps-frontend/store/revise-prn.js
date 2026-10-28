@@ -88,7 +88,7 @@ function renderRPRNDeltaTable() {
 
   let rowsHtml = "";
   pending.lineItems.forEach((item, idx) => {
-    const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 100) / 100;
+    const qty = Math.round((Number(item.bufferedPurchaseQty) || 0) * 1000) / 1000;
     const common = `
         <td style="padding:8px; text-align:center; font-size:0.78rem; font-weight:700; color:#64748b; width:40px;">${idx + 1}</td><td style="padding:8px; font-family:monospace; font-size:0.78rem; font-weight:700; color:var(--brand);">${item.itemCode}</td>
         <td style="padding:8px; font-size:0.82rem; font-weight:600;">${escapeHtml(item.materialName || "")}</td>
@@ -196,11 +196,11 @@ function renderRPRNDeltaTable() {
       if (this.classList.contains("rprn-delta-decrease-storeqty")) return;
       const idx = this.dataset.idx;
       const item = pending.lineItems[idx];
-      const bufferedReq = Math.round((Number(item.bufferedRequirement) || 0) * 100) / 100;
+      const bufferedReq = Math.round((Number(item.bufferedRequirement) || 0) * 1000) / 1000;
       const liveSpan = document.querySelector(`.rprn-delta-livestock[data-itemcode="${item.itemCode}"]`);
       const liveMax  = (liveSpan && liveSpan.dataset.liveTotal !== undefined) ? Number(liveSpan.dataset.liveTotal) || 0 : 0;
-      const cap = Math.round(Math.min(bufferedReq, liveMax) * 100) / 100;
-      let val = Math.round((parseFloat(this.value) || 0) * 100) / 100;
+      const cap = Math.round(Math.min(bufferedReq, liveMax) * 1000) / 1000;
+      let val = Math.round((parseFloat(this.value) || 0) * 1000) / 1000;
       if (val > cap) { val = cap; this.value = val; this.style.border = "1.5px solid #ef4444"; }
       else { this.style.border = "1.5px solid var(--brand)"; }
 
@@ -240,7 +240,7 @@ function updateRPRNDeltaDecreaseRowPurchaseQty(idx, input) {
   const realCap = Math.min(totalCovered, bufferedReq, isNaN(liveCap) ? totalCovered : liveCap);
   let val = parseFloat(input.value) || 0;
   if (val < 0) { val = 0; input.value = "0"; }
-  if (val > realCap) { val = Math.round(realCap * 100) / 100; input.value = val; }
+  if (val > realCap) { val = Math.round(realCap * 1000) / 1000; input.value = val; }
   const purchaseCell = document.getElementById(`rprn-delta-purchaseqty-${idx}`);
   if (!purchaseCell) return;
   const purchaseQty = Math.max(0, bufferedReq - val);

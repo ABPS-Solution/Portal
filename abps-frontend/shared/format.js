@@ -147,7 +147,7 @@ function formatDateDMY(value) {
 
 function trimNum(n) {
   const x = Number(n) || 0;
-  return Number.isInteger(x) ? String(x) : x.toFixed(2);
+  return Number.isInteger(x) ? String(x) : String(Math.round(x * 1000) / 1000);
 }
 
 // ═══════════════════════════════════════════════════════
