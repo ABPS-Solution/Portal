@@ -49,7 +49,7 @@ function mnsBuilderHtml() {
             oninput="mnsProjectSearch(this.value)" onfocus="mnsProjectSearch(this.value)" style="width:100%; padding:8px; border:1.5px solid #94a3b8; border-radius:var(--radius);" />
           <div id="mns-project-dd" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
         <button class="nav-btn-styled" style="width:auto; background:var(--brand);" onclick="mnsLoadSources()">Show PO Products</button>
-      </div>${mnsSourcesTableHtml()}`;
+      </div><div id="mns-sources-wrap">${mnsSourcesTableHtml()}</div>`;
   }
   const vendorBox = `<div style="flex:1 1 280px; position:relative;"><label class="field-label" style="margin-top:0;">Vendor Name *</label>
       <input type="text" id="mns-vendor" value="${escapeHtml(st.vendor)}" autocomplete="off" placeholder="Search vendor..."
@@ -57,7 +57,7 @@ function mnsBuilderHtml() {
       <div id="mns-vendor-dd" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>`;
   if (st.kind === "Rejected Return") {
     return top + `<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">${vendorBox}
-        <button class="nav-btn-styled" style="width:auto; background:var(--brand);" onclick="mnsLoadSources()">Show Rejected Material</button></div>${mnsSourcesTableHtml()}`;
+        <button class="nav-btn-styled" style="width:auto; background:var(--brand);" onclick="mnsLoadSources()">Show Rejected Material</button></div><div id="mns-sources-wrap">${mnsSourcesTableHtml()}</div>`;
   }
   // Gas Refill
   const rows = st.rows.map((r, i) => `<tr>
@@ -82,11 +82,11 @@ function mnsSourcesTableHtml() {
   const st = window._mnsState;
   if (!st.sourcesLoaded) return "";
   if (!st.sources.length) {
-    return `<div style="margin-top:12px; padding:12px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">${st.kind === "Direct Supply" ? "Every product on this project's PO has already been supplied or billed." : "This vendor has no rejected material waiting to go back."}</div>`;
+    return `<div style="margin-top:12px; padding:12px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">${st.kind === "Direct Supply" ? "Every product on this project's PO has already been supplied or billed." : "This vendor has nothing left to send back. Rejections must be marked Return to Vendor for Replacement or Repair, and material already on a draft challan is not shown again."}</div>`;
   }
   const isRej = st.kind === "Rejected Return";
   const head = isRej
-    ? ["Material", "GRN", "Action", "Can send", "Qty to send"]
+    ? ["Material Name", "GRN", "Action", "Can send", "Qty to send"]
     : ["Product Name", "PO Qty", "Can still supply", "Qty supplied"];
   const rows = st.sources.map((s, i) => {
     const cap = isRej ? s.freeQty : s.dueQty;
@@ -96,7 +96,7 @@ function mnsSourcesTableHtml() {
     const blocked = s.boqAuthorized === false;
     return `<tr style="${blocked ? 'background:#fef2f2;' : ''}">${cells.map(c => `<td style="padding:7px; border:1.5px solid #94a3b8; word-break:break-word;">${c}</td>`).join("")}
       <td style="padding:6px; border:1.5px solid #94a3b8; width:120px;"><input type="number" min="0" max="${cap}" step="any" inputmode="decimal" ${blocked ? 'disabled' : ''} value="${escapeHtml(String(s._qty ?? ""))}" placeholder="0"
-        oninput="window._mnsState.sources[${i}]._qty = this.value" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td></tr>`;
+        oninput="mnsSetQty(${i}, this, ${cap})" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td></tr>`;
   }).join("");
   return `<div style="overflow-x:auto; margin-top:12px;"><table style="width:100%; border-collapse:collapse; border:1.5px solid #94a3b8;">
       <thead><tr style="background:var(--highlight-bg);">${head.map(h => `<th style="padding:8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:left; font-size:0.8rem;">${h}</th>`).join("")}</tr></thead>
@@ -137,6 +137,7 @@ function mnsPickGas(i, code, name) {
 let mnsVendorSeq = 0;
 async function mnsVendorSearch(query) {
   window._mnsState.vendor = query;
+  mnsClearSources();
   const input = document.getElementById("mns-vendor");
   const dd = document.getElementById("mns-vendor-dd");
   if (!input || !dd) return;
@@ -166,6 +167,7 @@ function mnsPickVendor(name) {
 
 async function mnsProjectSearch(query) {
   window._mnsState.projectId = query;
+  mnsClearSources();
   const input = document.getElementById("mns-project");
   const dd = document.getElementById("mns-project-dd");
   if (!input || !dd) return;
@@ -251,4 +253,20 @@ async function mnsCreateDraft() {
     abpsAlert(friendlyErr(err));
     if (btn) { btn.disabled = false; btn.textContent = "Create Draft Challan"; }
   }
+}
+
+// A typed quantity can never be more than what can still go on the challan.
+function mnsSetQty(i, input, cap) {
+  let v = parseFloat(input.value);
+  if (v > cap) { v = cap; input.value = cap; }
+  window._mnsState.sources[i]._qty = isNaN(v) ? "" : input.value;
+}
+
+// The list belongs to the vendor / project it was loaded for; changing the name hides it.
+function mnsClearSources() {
+  const st = window._mnsState;
+  if (!st.sourcesLoaded) return;
+  st.sourcesLoaded = false; st.sources = [];
+  const wrap = document.getElementById("mns-sources-wrap");
+  if (wrap) wrap.innerHTML = "";
 }
