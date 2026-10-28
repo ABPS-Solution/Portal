@@ -36,13 +36,12 @@ async function loadPendingWorkDashboard() {
     if (!data.success) throw new Error(data.error || "Could not load the pending work.");
     body.innerHTML = data.groups.map(g => {
       const accent = PWK_DEPT_ACCENT[g.dept] || "var(--brand)";
-      const waiting = g.cards.reduce((n, c) => n + (Number(c.value) || 0), 0);
       return `<div style="background:var(--card); border:1px solid var(--border); border-left:5px solid ${accent}; border-radius:var(--radius); padding:10px 12px 12px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
           <span style="font-size:1.05rem; font-weight:800; letter-spacing:0.3px; color:${accent};">${escapeHtml(g.dept)}</span>
           ${g.error
             ? '<span style="font-size:0.75rem; font-weight:700; color:#b91c1c;">Could not load</span>'
-            : `<span style="font-size:0.75rem; font-weight:700; padding:2px 10px; border-radius:999px; background:${waiting > 0 ? "#fee2e2" : "#dcfce7"}; color:${waiting > 0 ? "#b91c1c" : "#15803d"};">${waiting > 0 ? waiting + " waiting" : "All clear"}</span>`}
+            : ''}
         </div>
         <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">
           ${g.cards.map(c => `<div class="dd-stat-card stat-live" style="height:96px; min-height:96px; justify-content:flex-start;">
