@@ -737,7 +737,7 @@ function renderRegisteredDevicesList(devices) {
       : `<span style="color:#15803d;">Full Access</span>`;
     return `
     <tr style="border-top:1px solid var(--border);">
-      <td style="padding:8px;">${d.device_label}</td>
+      <td style="padding:8px;">${escapeHtml(d.device_label || "")}</td>
       <td style="padding:8px; font-size:0.92rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
       <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
@@ -798,7 +798,7 @@ function openDeviceRestrictionModal(deviceId) {
   modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;";
   modal.innerHTML = `<div style="background:#fff; border-radius:12px; width:100%; max-width:480px; max-height:82vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;">
     <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#f8fafc;">
-      <div style="font-weight:800; font-size:1rem; color:var(--brand);">Restrict Access — ${device.device_label}</div>
+      <div style="font-weight:800; font-size:1rem; color:var(--brand);">Restrict Access — ${escapeHtml(device.device_label || "")}</div>
       <div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Check the section(s) this device may use. Leave everything unchecked for normal, full access based on the account's own permissions.</div>
     </div>
     <div style="overflow-y:auto; flex:1; padding:14px 20px;">${bodyHtml}</div>

@@ -2401,7 +2401,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
           feedbackBanner.innerHTML = `
             <strong>Company not found in your leads database.</strong><br/>
             <span style="font-size:0.85rem;">The document appears to be from: <strong>${escapeHtml(data.aiDetectedCompany)}</strong></span><br/>
-            <span style="font-size:0.82rem; margin-top:6px; display:block; color:#78350f;">${data.suggestion || 'Make sure this company exists in your leads with a matching name, then try again.'}</span>
+            <span style="font-size:0.82rem; margin-top:6px; display:block; color:#78350f;">${escapeHtml(data.suggestion || '') || 'Make sure this company exists in your leads with a matching name, then try again.'}</span>
             <div style="margin-top:10px; font-size:0.8rem; color:#92400e;">
               The file has <strong>NOT</strong> been saved. Fix the company name in your leads first, then re-upload this document.
             </div>

@@ -221,7 +221,7 @@ function renderBOQRevisionRows(updateId) {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'boqrev'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>`}
+        >${escapeHtml(boqRowMaterialDisplayText(row))}</textarea>`}
         <div id="boqrev-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">
@@ -601,7 +601,7 @@ function renderUBOQMaterialRows() {
           oninput="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           onfocus="handleBOQRowMaterialSearch(this.value, ${idx}, 'uboq'); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
-        >${boqRowMaterialDisplayText(row)}</textarea>`}
+        >${escapeHtml(boqRowMaterialDisplayText(row))}</textarea>`}
         <div id="uboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
       </td>
       <td style="padding:4px;">

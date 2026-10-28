@@ -1700,7 +1700,7 @@ function showAssReservationSuccess(materialName) {
   if (searchWrap) searchWrap.style.display = "none";
   const feedback = document.getElementById("ass-feedback");
   feedback.style.display = "block";
-  feedback.innerHTML = `<div style="padding:12px; border-left:4px solid #22c55e; background:#f0fdf4; border-radius:var(--radius); color:#15803d; font-weight:600;">Reservation changed Successfully for ${materialName}</div>
+  feedback.innerHTML = `<div style="padding:12px; border-left:4px solid #22c55e; background:#f0fdf4; border-radius:var(--radius); color:#15803d; font-weight:600;">Reservation changed Successfully for ${escapeHtml(materialName)}</div>
     <button id="ass-reserve-another-btn" class="nav-btn-styled" style="margin-top:10px; background:var(--brand); padding:8px 18px; font-weight:700;" onclick="resetAssReservationPanel()">+ Reserve Another Store Stock</button>`;
 }
 
