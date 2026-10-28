@@ -124,7 +124,7 @@ function handleCBOQImportProjectSearch(query) {
   if (filtered.length === 0) { dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching Project ID found.</div>`; dropdown.style.display = "block"; return; }
 
   dropdown.innerHTML = filtered.map(b => `
-    <div onclick="selectCBOQImportProjectOption('${b.projectId.replace(/'/g,"\\'")}', '${b.boqId.replace(/'/g,"\\'")}')"
+    <div onclick="selectCBOQImportProjectOption(${jsArg(b.projectId)}, ${jsArg(b.boqId)})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${b.projectId} <span style="color:var(--muted); font-size:0.75rem;">(Order Qty: ${Math.round(Number(b.orderQuantity) || 0)})</span>
@@ -420,13 +420,13 @@ function showCBOQProductDropdown() {
   dropdown.innerHTML = options.map(opt => opt.onHold ? `
     <div title="${escapeHtml(opt.holdReason || '')}"
       style="padding:8px 12px; cursor:not-allowed; border-bottom:1px solid #f1f5f9; font-size:0.82rem; color:var(--muted); background:#f8fafc; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-      <span>${opt.displayLabel || opt.productName}</span>
+      <span>${escapeHtml(opt.displayLabel || opt.productName)}</span>
       <span style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap;">⏸ On Hold</span>
     </div>` : `
     <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}', '${opt.lineId || ''}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${opt.displayLabel || opt.productName}
+      ${escapeHtml(opt.displayLabel || opt.productName)}
     </div>`).join("");
   dropdown.style.display = "block";
 }

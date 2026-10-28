@@ -309,13 +309,13 @@ async function loadPRNNeedQueue() {
       const heldBadge = item.onHold
         ? `<span title="${escapeHtml(item.holdReason || '')}" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">⏸ On Hold</span>`
         : `<button class="nav-btn-styled prn-queue-create-btn" data-boqid="${item.boqId.replace(/"/g,"&quot;")}" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-              onclick="jumpToPRNFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.boqId.replace(/'/g, "\\'")}', this)">
+              onclick="jumpToPRNFromQueue(${jsArg(item.projectId)}, ${jsArg(item.boqId)}, this)">
               Create PRN →
             </button>`;
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #e5c877;${item.onHold ? ' background:#fef2f2;' : ''}">
           <div style="min-width:0;${item.onHold ? ' opacity:0.7;' : ''}">
-            <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${item.productDisplayLabel || item.productName || ""}</div>
+            <div style="font-size:0.95rem; font-weight:700; color:var(--text);">${escapeHtml(item.productDisplayLabel || item.productName || "")}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
             ${heldBadge}
@@ -1030,7 +1030,7 @@ function renderPRNCreateTable() {
       <div style="font-size:0.85rem; font-weight:700; color:#111827;">${isDelta ? "Revised" : "New"} Purchase Request Note for</div>
       <div style="font-size:0.85rem; font-weight:700; color:var(--brand); margin-top:2px;">${pending.boqId} ${revBadge}</div>
       <div style="font-size:0.82rem; margin-top:6px;"><span style="color:#111827; font-weight:700;">Company Name:</span> <span style="color:var(--brand); font-weight:600;">${escapeHtml(prnHeaderMeta.customerName || "—")}</span></div>
-      <div style="font-size:0.82rem; margin-top:2px;"><span style="color:#111827; font-weight:700;">Product:</span> <span style="color:var(--brand); font-weight:600;">${prnHeaderProductLabel || "—"}</span></div>
+      <div style="font-size:0.82rem; margin-top:2px;"><span style="color:#111827; font-weight:700;">Product:</span> <span style="color:var(--brand); font-weight:600;">${escapeHtml(prnHeaderProductLabel || "—")}</span></div>
     </div>
     <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
       <table class="store-basket-data-table prn-bordered-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1050px;">

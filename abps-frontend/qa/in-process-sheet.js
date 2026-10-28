@@ -23,7 +23,7 @@ function ipshBOQPopulate(options) {
   const list = document.getElementById("ipsh-boq-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectIPSHBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectIPSHBOQ(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
@@ -65,7 +65,7 @@ function ipshJobCardPopulate(options) {
   const list = document.getElementById("ipsh-jobcard-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectIPSHJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectIPSHJobCard(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }

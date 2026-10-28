@@ -1537,8 +1537,8 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
     <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:1100px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
         <div>
-          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong>${make ? ` &nbsp;·&nbsp; Make: <strong>${escapeHtml(make)}</strong>` : ''}</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${escapeHtml(materialName)}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${escapeHtml(itemCode)}</strong>${make ? ` &nbsp;·&nbsp; Make: <strong>${escapeHtml(make)}</strong>` : ''}</div>
           <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Available ${trimNum(availableQty || 0)} + Reserved ${trimNum(reservedQty || 0)}</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-shrink:0; margin-left:14px;">
@@ -1790,7 +1790,7 @@ function handleEiDelivPOInput(query) {
       if (!dd) return;
       if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
       dd.innerHTML = data.results.map(r => `
-        <div onclick="document.getElementById('ei-deliv-po-input').value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('ei-deliv-po-dd').style.display='none';"
+        <div onclick="document.getElementById('ei-deliv-po-input').value=${jsArg(r.poNo)}; document.getElementById('ei-deliv-po-dd').style.display='none';"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
           <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
@@ -1833,7 +1833,7 @@ function handleEiDelivVendorInput(query) {
       if (!dd) return;
       if (!data.success || !data.vendors.length) { dd.style.display = "none"; return; }
       dd.innerHTML = data.vendors.map(v => `
-        <div onclick="document.getElementById('ei-deliv-vendor-input').value='${v.replace(/'/g,"\\'")}'; document.getElementById('ei-deliv-vendor-dd').style.display='none';"
+        <div onclick="document.getElementById('ei-deliv-vendor-input').value=${jsArg(v)}; document.getElementById('ei-deliv-vendor-dd').style.display='none';"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
       dd.style.display = "block";

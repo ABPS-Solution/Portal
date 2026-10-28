@@ -172,7 +172,7 @@ function handlePtlProjectInput(query) {
   ).slice(0, 12);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(p => `
-    <div onmousedown="event.preventDefault();" onclick="selectPtlProject('${p.projectId.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault();" onclick="selectPtlProject(${jsArg(p.projectId)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${escapeHtml(p.projectId)}</span>
@@ -2577,7 +2577,7 @@ function ptlRenderLdBoard(board, realised) {
     : `<span style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:#fef3c7; color:#92400e;">Projected</span>`;
 
   const row = (r, showMarginal) => `<tr style="border-bottom:1px solid var(--border);">
-    <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject('${r.projectId.replace(/'/g, "\\'")}');">${escapeHtml(r.projectId)}</td>
+    <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject(${jsArg(r.projectId)});">${escapeHtml(r.projectId)}</td>
     <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "-")}</td>
     <td style="padding:8px 10px; text-align:right;">${r.ld.delayDays != null ? r.ld.delayDays + "d" : "-"}</td>
     <td style="padding:8px 10px;">${dispatchBadge(r)}</td>

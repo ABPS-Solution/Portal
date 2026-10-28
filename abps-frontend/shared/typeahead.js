@@ -61,7 +61,7 @@ function handleSharedProjectTypeaheadInput(query, inputId, dropdownId, includeCo
     // response lands second wins — sometimes clobbering the correct
     // selection with the stale/garbage one. Keeping focus on the input
     // through the click means only the real selection ever fires change.
-    return `<div onmousedown="event.preventDefault();" onclick="selectSharedProjectTypeahead('${p.replace(/'/g,"\\'")}', '${inputId}', '${dropdownId}')"
+    return `<div onmousedown="event.preventDefault();" onclick="selectSharedProjectTypeahead(${jsArg(p)}, '${inputId}', '${dropdownId}')"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}

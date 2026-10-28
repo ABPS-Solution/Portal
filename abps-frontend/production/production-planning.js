@@ -209,7 +209,7 @@ function pplanRenderNeedQueueList(title, items, emptyMessage) {
           ${dueLine}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-          onclick="jumpToProductionPlanFromQueue('${item.projectId.replace(/'/g, "\\'")}')">
+          onclick="jumpToProductionPlanFromQueue(${jsArg(item.projectId)})">
           Plan Now →
         </button>
       </div>`;
@@ -457,8 +457,8 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
             const jcIsDone = (s.doneJobCards || []).includes(jc);
             const shortJc = escapeHtml(pplanShortJobCard(jc));
             const onclick = !canWrite ? '' : jcIsDone
-              ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`
-              : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`;
+              ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}',${jsArg(jc)})"`
+              : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}',${jsArg(jc)})"`;
             return `<span ${onclick} title="${escapeHtml(jc)}" style="font-size:0.68rem; font-weight:700; font-family:monospace; padding:3px 8px; border-radius:12px; ${canWrite ? 'cursor:pointer;' : ''} background:${jcIsDone ? c : '#fff'}; color:${jcIsDone ? '#fff' : c}; border:1.5px solid ${c};">${jcIsDone ? '✓ ' : ''}${shortJc}</span>`;
           }).join('')}</div>`
         : `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;

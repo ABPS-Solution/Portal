@@ -372,8 +372,8 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
     <div style="background:#fff;border-radius:var(--radius);padding:24px;max-width:1140px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:12px;">
         <div>
-          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${materialName}</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${itemCode}</strong></div>
+          <div style="font-size:1rem;font-weight:800;color:var(--brand);">${escapeHtml(materialName)}</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">Item Code: <strong>${escapeHtml(itemCode)}</strong></div>
         </div>
         <button onclick="document.getElementById('material-project-breakdown-modal-overlay').remove()" style="background:transparent;border:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 0 0 10px;">&times;</button>
       </div>

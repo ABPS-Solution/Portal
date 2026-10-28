@@ -62,7 +62,7 @@ function cvarHandleProjectInput(query) {
   }
   dropdown.innerHTML = matches.map(p => {
     const companyName = (meta[p] && meta[p].companyName) || '';
-    return `<div onmousedown="event.preventDefault();" onclick="cvarSelectProject('${p.replace(/'/g, "\\'")}', ${jsArg(companyName)})"
+    return `<div onmousedown="event.preventDefault();" onclick="cvarSelectProject(${jsArg(p)}, ${jsArg(companyName)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${escapeHtml(p)}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}
@@ -97,7 +97,7 @@ function cvarRenderSelectedProjects() {
   mount.innerHTML = window.cvarSelectedProjects.map(p => `
     <span style="display:inline-flex; align-items:center; gap:5px; background:var(--highlight-bg); color:var(--brand); font-weight:600; font-size:0.78rem; padding:4px 8px; border-radius:14px; border:1px solid var(--border);">
       ${escapeHtml(p.label)}
-      <span onclick="cvarRemoveProject('${p.id.replace(/'/g, "\\'")}')" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
+      <span onclick="cvarRemoveProject(${jsArg(p.id)})" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
     </span>`).join('');
 }
 

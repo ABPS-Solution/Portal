@@ -913,7 +913,7 @@ async function selectProductRenameCandidate(newItemCode) {
       <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">${escapeHtml(data.oldProductName)} → ${escapeHtml(data.newProductName)}${data.newRating ? ' - ' + escapeHtml(data.newRating) : ''}</div>
       ${boqRows}
       <label class="field-label" style="margin-top:12px;">Type the Project ID (<strong>${escapeHtml(target.projectId)}</strong>) to confirm *</label>
-      <input type="text" id="mc-rename-confirm-input" oninput="document.getElementById('mc-rename-confirm-btn').disabled = (this.value.trim() !== '${target.projectId.replace(/'/g,"\\'")}');"
+      <input type="text" id="mc-rename-confirm-input" oninput="document.getElementById('mc-rename-confirm-btn').disabled = (this.value.trim() !== ${jsArg(target.projectId)});"
         style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:6px;" />
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <button class="nav-btn-styled" id="mc-rename-confirm-btn" disabled style="background:var(--danger); opacity:0.5; cursor:not-allowed;" onclick="commitProductRename()">Confirm Rename</button>

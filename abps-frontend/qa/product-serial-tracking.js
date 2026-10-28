@@ -130,7 +130,7 @@ async function psnFetchSearchSuggestions(q) {
     if (!data.success || !data.rows || data.rows.length === 0) { dd.style.display = 'none'; return; }
     const matches = data.rows.slice(0, 8);
     dd.innerHTML = matches.map(h => `
-      <div class="psn-suggestion-row" onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, '${(h.productSerialNumber || '').replace(/'/g, "\\'")}')">
+      <div class="psn-suggestion-row" onmousedown="event.preventDefault();" onclick="psnSelectSearchSuggestion(${h.fgId}, ${jsArg((h.productSerialNumber || ''))})">
         <span style="font-weight:700; font-family:ui-monospace, 'SF Mono', Consolas, monospace;">${escapeHtml(h.productSerialNumber || '')}</span>
         <span style="font-size:0.75rem; color:var(--muted); margin-left:8px;">${escapeHtml(h.productName || '')}${h.productRating ? ' ' + escapeHtml(h.productRating) : ''}</span>
         <div style="font-size:0.7rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px;">${escapeHtml(h.customerName || 'N/A')} ${psnStatusBadge(h.status)}</div>

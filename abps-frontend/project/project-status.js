@@ -20,7 +20,7 @@ function handlePstatProjectInput(query) {
   const matches = window.pstatKnownProjectCodes.filter(p => p.toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(p => `
-    <div onclick="selectPstatProject('${p.replace(/'/g,"\\'")}')"
+    <div onclick="selectPstatProject(${jsArg(p)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${p}</div>`).join("");
   dd.style.display = "block";

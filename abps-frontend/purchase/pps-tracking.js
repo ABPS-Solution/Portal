@@ -149,7 +149,7 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-          onclick="jumpToPPSFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
+          onclick="jumpToPPSFromQueue(${jsArg(item.projectId)}, ${jsArg(item.prnId)}, this)">
           Action →
         </button>
       </div>`;

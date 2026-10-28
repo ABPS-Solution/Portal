@@ -81,7 +81,7 @@ async function loadMRDNeedQueue() {
           ${(item.staleLines || []).length ? `<ul style="margin:6px 0 0; padding-left:18px; font-size:0.8rem; color:#78350f; line-height:1.55;">${item.staleLines.map(l => `<li><strong>${escapeHtml(l.materialName || l.itemCode)}</strong>: ${l.neverDated ? `never dated, needs ${trimNum(l.needNow)} ${escapeHtml(l.unit || "")}` : `dated for ${trimNum(l.datedFor)}, now needs ${trimNum(l.needNow)} ${escapeHtml(l.unit || "")}${l.datedAt ? ` (dates saved ${escapeHtml(formatOrdinalDateTime(l.datedAt))})` : ""}`}</li>`).join("")}</ul>` : ""}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-          onclick="jumpToMRDFromQueue('${item.projectId.replace(/'/g, "\\'")}', '${item.prnId.replace(/'/g, "\\'")}', this)">
+          onclick="jumpToMRDFromQueue(${jsArg(item.projectId)}, ${jsArg(item.prnId)}, this)">
           Assign Dates →
         </button>
       </div>`;
@@ -310,7 +310,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
 
   const submitBtn = readOnly ? "" : `
     <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-      <button class="nav-btn-styled" id="${ns}-submit-btn" onclick="${submitFnName}('${ns}', '${prnId.replace(/'/g,"\\'")}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">${ns === 'mrd' ? 'Submit Requirement Dates' : 'Save Revised Dates'}</button>
+      <button class="nav-btn-styled" id="${ns}-submit-btn" onclick="${submitFnName}('${ns}', ${jsArg(prnId)}, this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">${ns === 'mrd' ? 'Submit Requirement Dates' : 'Save Revised Dates'}</button>
     </div>`;
 
   const readOnlyNote = readOnly ? `<div style="padding:10px 14px; margin-bottom:12px; background:#f1f5f9; border-radius:var(--radius); color:#475569; font-size:0.82rem; font-weight:600;">These requirement dates are already submitted — view only. Use Revise Material Requirement Date to change them.</div>` : "";
@@ -517,7 +517,7 @@ async function loadRMRDQueueTab() {
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">More material now has to be purchased than when dates were given (a PRN revision, or store stock moved to another product). Add dates for the extra quantity.</span>
           <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-            onclick="jumpToRMRDDelta('${item.prnId.replace(/'/g, "\\'")}', this)">
+            onclick="jumpToRMRDDelta(${jsArg(item.prnId)}, this)">
             Revise Dates →
           </button>
         </div>

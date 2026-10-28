@@ -370,7 +370,7 @@ function handleCqCreateProjectInput(messageId, query) {
   if (matches.length === 0) { dd.innerHTML = `<div style="padding:8px 10px; font-size:0.8rem; color:var(--muted);">No matches.</div>`; dd.style.display = "block"; return; }
   dd.innerHTML = matches.map(p => {
     const companyName = (cqProjectMeta[p] && cqProjectMeta[p].companyName) || "";
-    return `<div onmousedown="event.preventDefault();" onclick="selectCqCreateProject('${messageId}', '${p.replace(/'/g, "\\'")}')"
+    return `<div onmousedown="event.preventDefault();" onclick="selectCqCreateProject('${messageId}', ${jsArg(p)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}

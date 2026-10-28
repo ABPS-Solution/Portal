@@ -47,7 +47,7 @@ async function loadRPRNQueueTab() {
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>
           <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
-            onclick="jumpToRPRNDelta('${item.boqId.replace(/'/g, "\\'")}', this)">
+            onclick="jumpToRPRNDelta(${jsArg(item.boqId)}, this)">
             Revise PRN →
           </button>
         </div>

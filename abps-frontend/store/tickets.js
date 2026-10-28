@@ -1050,7 +1050,7 @@ function ticketBOQPopulate(options) {
   const list = document.getElementById("ticket-boq-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectTicketBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectTicketBOQ(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
@@ -1087,7 +1087,7 @@ function ticketJobCardPopulate(options) {
   const list = document.getElementById("ticket-job-card-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectTicketJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectTicketJobCard(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
@@ -2259,7 +2259,7 @@ function ticketExpectedReturnSearch(query, i) {
     return;
   }
   dd.innerHTML = matches.map(item => `
-    <div onmousedown="event.preventDefault(); ticketSelectExpectedReturn(${i}, '${String(item.itemCode).replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); ticketSelectExpectedReturn(${i}, ${jsArg(String(item.itemCode))})"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; gap:10px; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="flex:1; font-weight:600;">${escapeHtml(item.combinedName || item.productName || "")}</span>

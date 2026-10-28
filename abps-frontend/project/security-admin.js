@@ -348,7 +348,7 @@ async function loadTrustedDevices() {
     tbody.innerHTML = data.devices.map(d => `
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${escapeHtml(d.user_name || '—')}</td>
-        <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
+        <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(d.device_label || '—')}</td>
         <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
         <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
         <td style="padding:8px;">${formatOrdinalDate(d.expires_at)}</td>

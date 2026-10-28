@@ -416,7 +416,7 @@ function handleRPOOtherSearchInput(query) {
         const data = await apFetch({ action: "searchRMPOsByPONumber", query });
         if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
         dd.innerHTML = data.results.map(r => `
-          <div onclick="selectRPOOtherSearchSuggestion('${r.poNo.replace(/'/g,"\\'")}')"
+          <div onclick="selectRPOOtherSearchSuggestion(${jsArg(r.poNo)})"
             style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
             onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
             <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}

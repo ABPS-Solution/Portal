@@ -2140,7 +2140,7 @@ function handleMatrixProjectSearchInput(rawValue) {
     const matches = (window.matrixKnownProjectCodes || []).filter(p => p.toLowerCase().includes(query)).slice(0, 10);
     if (matches.length > 0) {
       dd.innerHTML = matches.map(p => `
-        <div onclick="selectMatrixProjectSuggestion('${p.replace(/'/g,"\\'")}')"
+        <div onclick="selectMatrixProjectSuggestion(${jsArg(p)})"
           style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${p}</div>`).join("");
       dd.style.display = "block";

@@ -138,7 +138,7 @@ function handleQARevVendorSearch(query) {
       const data = await apFetch({ action: "searchVendorNamesForRejectedMaterial", query });
       if (!drop) return;
       if (!data.success || !data.vendors.length) { drop.style.display = "none"; return; }
-      drop.innerHTML = data.vendors.map(v => `<div onclick="document.getElementById('qarev-vendor').value='${v.replace(/'/g,"\\'")}'; document.getElementById('qarev-vendor-drop').style.display='none';" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
+      drop.innerHTML = data.vendors.map(v => `<div onclick="document.getElementById('qarev-vendor').value=${jsArg(v)}; document.getElementById('qarev-vendor-drop').style.display='none';" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
       drop.style.display = "block";
     } catch(e) { if (drop) drop.style.display = "none"; }
   }, 250);
@@ -763,7 +763,7 @@ function handleRejVendorSearch(query) {
       const data = await apFetch({ action: "searchVendorNamesForRejectedMaterial", query });
       if (!dropdown) return;
       if (!data.success || !data.vendors.length) { dropdown.style.display = "none"; return; }
-      dropdown.innerHTML = data.vendors.map(v => `<div onclick="selectRejVendorSuggestion('${v.replace(/'/g,"\\'")}')" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
+      dropdown.innerHTML = data.vendors.map(v => `<div onclick="selectRejVendorSuggestion(${jsArg(v)})" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${v}</div>`).join("");
       dropdown.style.display = "block";
     } catch(e) { if (dropdown) dropdown.style.display = "none"; }
   }, 250);

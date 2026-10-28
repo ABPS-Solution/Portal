@@ -157,7 +157,7 @@ function handleSrchPOPoInput(query) {
       if (!dd) return;
       if (!data.success || !data.results.length) { dd.style.display = "none"; return; }
       dd.innerHTML = data.results.map(r => `
-        <div onmousedown="event.preventDefault(); const i=document.getElementById('srchpo-po-input'); i.value='${r.poNo.replace(/'/g,"\\'")}'; document.getElementById('srchpo-po-dd').style.display='none'; srchpoLockField('srchpo-po-input','srchpo-po-locked', i.value);"
+        <div onmousedown="event.preventDefault(); const i=document.getElementById('srchpo-po-input'); i.value=${jsArg(r.poNo)}; document.getElementById('srchpo-po-dd').style.display='none'; srchpoLockField('srchpo-po-input','srchpo-po-locked', i.value);"
           style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
           onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
           <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${r.poNo}</span>${escapeHtml(r.vendorName || '')}
@@ -249,7 +249,7 @@ function handleSrchPOProjectInput(query) {
   const matches = projects.filter(p => p.toString().toLowerCase().includes(q)).slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(p => `
-    <div onclick="selectSrchPOProject('${p.toString().replace(/'/g,"")}')"
+    <div onclick="selectSrchPOProject(${jsArg(p.toString())})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${p}</div>`).join("");
   dd.style.display = "block";

@@ -71,7 +71,7 @@ async function handleRpdiTypeaheadInput(query) {
   }
   dd.innerHTML = matches.map(p => {
     const companyName = (rpdiProjectMeta[p] && rpdiProjectMeta[p].companyName) || "";
-    return `<div onmousedown="event.preventDefault();" onclick="selectRpdiProject('${p.replace(/'/g,"\\'")}')"
+    return `<div onmousedown="event.preventDefault();" onclick="selectRpdiProject(${jsArg(p)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.88rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${p}</span>${companyName ? ` <span style="color:var(--muted);">— ${escapeHtml(companyName)}</span>` : ''}

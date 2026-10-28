@@ -299,7 +299,7 @@ function fgBOQPopulate(options) {
   const list = document.getElementById("fg-add-boq-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectFGBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectFGBOQ(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
@@ -395,7 +395,7 @@ function fgJobCardPopulate(options) {
   const list = document.getElementById("fg-add-jobcard-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectFGJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectFGJobCard(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
