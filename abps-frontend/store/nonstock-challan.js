@@ -61,16 +61,16 @@ function mnsBuilderHtml() {
   }
   // Gas Refill
   const rows = st.rows.map((r, i) => `<tr>
-      <td style="padding:6px; border:1px solid var(--border); position:relative;">
+      <td style="padding:6px; border:1.5px solid #94a3b8; position:relative;">
         <input type="text" id="mns-gas-name-${i}" value="${escapeHtml(r.name)}" autocomplete="off" placeholder="Search the gas item code..."
           oninput="mnsGasSearch(${i}, this.value)" style="width:100%; padding:6px; border:1.5px solid ${r.itemCode ? "#94a3b8" : "#dc2626"}; border-radius:4px;" />
         <div id="mns-gas-dd-${i}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></td>
-      <td style="padding:6px; border:1px solid var(--border); width:130px;"><input type="number" min="0" step="any" inputmode="decimal" value="${escapeHtml(String(r.quantity))}" oninput="window._mnsState.rows[${i}].quantity = this.value" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td>
-      <td style="padding:6px; border:1px solid var(--border); width:70px; text-align:center;"><button class="nav-btn-styled" style="width:auto; background:#fee2e2; color:#b91c1c; padding:2px 8px;" onclick="mnsRemoveGasRow(${i})">✕</button></td>
+      <td style="padding:6px; border:1.5px solid #94a3b8; width:130px;"><input type="number" min="0" step="any" inputmode="decimal" value="${escapeHtml(String(r.quantity))}" oninput="window._mnsState.rows[${i}].quantity = this.value" style="width:100%; padding:6px; text-align:center; border:1.5px solid #94a3b8; border-radius:4px;" /></td>
+      <td style="padding:6px; border:1.5px solid #94a3b8; width:70px; text-align:center;"><button class="nav-btn-styled" style="width:auto; background:#fee2e2; color:#b91c1c; padding:2px 8px;" onclick="mnsRemoveGasRow(${i})">✕</button></td>
     </tr>`).join("");
   return top + `<div style="display:flex; gap:10px; flex-wrap:wrap;">${vendorBox}</div>
-    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-      <thead><tr style="background:var(--highlight-bg);"><th style="padding:8px; border:1px solid var(--border); text-align:left;">Gas (empty cylinders)</th><th style="padding:8px; border:1px solid var(--border);">Qty</th><th style="border:1px solid var(--border);"></th></tr></thead>
+    <table style="width:100%; border-collapse:collapse; margin-top:12px; border:1.5px solid #94a3b8;">
+      <thead><tr style="background:var(--highlight-bg);"><th style="padding:8px; border:1.5px solid #94a3b8; text-align:left;">Gas (empty cylinders)</th><th style="padding:8px; border:1.5px solid #94a3b8;">Qty</th><th style="border:1.5px solid #94a3b8;"></th></tr></thead>
       <tbody>${rows}</tbody></table>
     <div style="display:flex; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap;">
       <button class="nav-btn-styled" style="width:auto; background:#64748b;" onclick="mnsAddGasRow()">+ Add Row</button>

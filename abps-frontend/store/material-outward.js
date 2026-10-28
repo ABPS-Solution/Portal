@@ -246,15 +246,15 @@ function renderDraftChallanCard(draft, collapsible) {
 
   const materialRowsHtml = items.map((it, i) => `
     <tr>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center;">${i + 1}</td>
-      <td style="padding:8px; border:1px solid var(--border); white-space:normal; word-break:break-word;">${escapeHtml(it.description || '')}</td>
-      <td style="padding:6px; border:1px solid var(--border); text-align:center;">
+      <td style="padding:8px; border:1.5px solid #94a3b8; text-align:center;">${i + 1}</td>
+      <td style="padding:8px; border:1.5px solid #94a3b8; white-space:normal; word-break:break-word;">${escapeHtml(it.description || '')}</td>
+      <td style="padding:6px; border:1.5px solid #94a3b8; text-align:center;">
         <input type="text" class="mow-hsn-input" data-item-code="${escapeHtml(it.itemCode || '')}" data-line-index="${i}" data-challan-id="${challanId}"
                value="${escapeHtml(it.hsnCode || '')}" oninput="mowValidateDraftCard(${challanId})"
                style="width:100%; max-width:140px; text-align:center; padding:6px; border:1.5px solid ${(it.hsnCode || '').trim() ? '#94a3b8' : '#dc2626'}; background:#fff; border-radius:var(--radius);" />
       </td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:800; font-size:1.1rem;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
-      <td style="padding:8px; border:1px solid var(--border); text-align:center;">${escapeHtml(it.unit || "—")}</td>
+      <td style="padding:8px; border:1.5px solid #94a3b8; text-align:center; font-family:monospace; font-weight:800; font-size:1.1rem;">${escapeHtml(String(fmtQty(it.quantity ?? 0)))}</td>
+      <td style="padding:8px; border:1.5px solid #94a3b8; text-align:center;">${escapeHtml(it.unit || "—")}</td>
     </tr>`).join("");
 
   return `
@@ -298,14 +298,14 @@ function renderDraftChallanCard(draft, collapsible) {
 
         <h4 style="margin:0 0 6px; font-size:1.15rem; font-weight:800; color:var(--brand);">Materials List</h4>
         <p style="margin:0 0 8px; font-size:0.78rem; color:var(--muted);">${isNs ? "Description, Qty and Unit are what was picked when this challan was created. To change them, discard this draft and create it again." : "Description, Qty and Unit come from the linked tickets' approved release — not editable here."} HSN Code is required for every row.</p>
-        <table class="prn-view-table" style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed;">
+        <table class="prn-view-table" style="width:100%; border-collapse:collapse; margin-bottom:14px; table-layout:fixed; border:1.5px solid #94a3b8;">
           <colgroup><col style="width:7%;" /><col style="width:47%;" /><col style="width:16%;" /><col style="width:15%;" /><col style="width:15%;" /></colgroup>
           <thead><tr style="background:var(--highlight-bg);">
-            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Sr</th>
-            <th style="padding:9px 8px; border:1px solid var(--border); text-align:left; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Description of Material</th>
-            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">HSN Code *</th>
-            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Qty</th>
-            <th style="padding:9px 8px; border:1px solid var(--border); font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Unit</th>
+            <th style="padding:9px 8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Sr</th>
+            <th style="padding:9px 8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:left; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Description of Material</th>
+            <th style="padding:9px 8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">HSN Code *</th>
+            <th style="padding:9px 8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Qty</th>
+            <th style="padding:9px 8px; border:1.5px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.85rem; font-weight:800; text-transform:uppercase; color:#334155;">Unit</th>
           </tr></thead>
           <tbody>${materialRowsHtml || '<tr><td colspan="5" style="padding:8px; text-align:center; color:var(--muted);">No items on this challan.</td></tr>'}</tbody>
         </table>
@@ -656,10 +656,10 @@ async function runMaterialOutwardSearch() {
     // line WITHIN the same cell (not a separate row per material), so a
     // multi-material, multi-ticket challan still reads as one register
     // entry.
-    const th = (t, first) => `<th style="padding:8px; text-align:left; font-size:0.8rem; ${first ? '' : 'border-left:2px solid #94a3b8; '}border-bottom:2px solid #94a3b8;">${t}</th>`;
-    const td = (first) => `padding:8px; vertical-align:middle; word-wrap:break-word; ${first ? '' : 'border-left:2px solid #94a3b8; '}border-bottom:2px solid #94a3b8;`;
+    const th = (t, first) => `<th style="padding:8px; text-align:left; font-size:0.8rem; ${first ? '' : 'border-left:1.5px solid #94a3b8; '}border-bottom:2px solid #94a3b8;">${t}</th>`;
+    const td = (first) => `padding:8px; vertical-align:middle; word-wrap:break-word; ${first ? '' : 'border-left:1.5px solid #94a3b8; '}border-bottom:1.5px solid #94a3b8;`;
     results.innerHTML = `
-      <div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
+      <div style="overflow-x:auto; border:1.5px solid #94a3b8; border-radius:var(--radius);">
       <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <colgroup><col style="width:10%;" /><col style="width:15%;" /><col style="width:11%;" /><col style="width:43%;" /><col style="width:9%;" /><col style="width:12%;" /></colgroup>
         <thead><tr style="background:var(--highlight-bg);">
