@@ -558,7 +558,7 @@ async function addItemToShoppingBasketRow() {
     const existingLineItem = ticketFindBasketLine_(spareMatch ? spareMatch.itemCode : "", cleanSearchKey);
     let totalRequestedQuantity = quantity;
     if (existingLineItem) {
-      totalRequestedQuantity += existingLineItem.quantity;
+      totalRequestedQuantity = Math.round((totalRequestedQuantity + (Number(existingLineItem.quantity) || 0)) * 1000) / 1000;
       if (totalRequestedQuantity > availableQty) {
         restoreAddBtn();
         abpsAlert(`Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
@@ -603,7 +603,7 @@ async function addItemToShoppingBasketRow() {
 
     const existingLineItem = ticketFindBasketLine_(jcmMatchFGAdd.itemCode, cleanSearchKey);
     let totalRequestedQuantity = quantity;
-    if (existingLineItem) totalRequestedQuantity += existingLineItem.quantity;
+    if (existingLineItem) totalRequestedQuantity = Math.round((totalRequestedQuantity + (Number(existingLineItem.quantity) || 0)) * 1000) / 1000;
 
     // Finished Goods Store has no BOQ Increase / Excess Material Request
     // path at all (see handleBOQIncreaseDecision / createBOQLimitIncreaseRequestTicket
@@ -651,7 +651,7 @@ async function addItemToShoppingBasketRow() {
       const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
       // What is in stock is issued now; the rest becomes the Production Memo
       // purchase quantity on the same row (memoQty, migration 249).
-      const totalCons = quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0);
+      const totalCons = Math.round((quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0)) * 1000) / 1000;
       const canIssue = Math.max(0, Number(consMatch.remainingQty) || 0);
       const issueQty = Math.min(totalCons, canIssue);
       const shortQty = Math.round((totalCons - issueQty) * 1000) / 1000;
@@ -748,7 +748,7 @@ async function addItemToShoppingBasketRow() {
   const existingLineItem = ticketFindBasketLine_(jcmMatch.itemCode || itemData.itemCode, cleanSearchKey);
   let totalRequestedQuantity = quantity;
   if (existingLineItem) {
-    totalRequestedQuantity += existingLineItem.quantity;
+    totalRequestedQuantity = Math.round((totalRequestedQuantity + (Number(existingLineItem.quantity) || 0)) * 1000) / 1000;
   }
 
   // Total Stock check runs FIRST, independently of the JC-limit check —
