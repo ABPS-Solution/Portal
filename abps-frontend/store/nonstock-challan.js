@@ -240,6 +240,7 @@ async function mnsCreateDraft() {
   const payload = st.kind === "Direct Supply"
     ? { outwardType: st.kind, projectId: st.projectId.trim(), companyName: st.companyName || "", returnableStatus: "Non-Returnable", lines }
     : { outwardType: st.kind, vendorName: st.vendor.trim(), address: vd.address || "", state: vd.state || "",
+        contactName: vd.contactPerson || "", contactNumber: vd.phoneNumber || "",
         returnableStatus: st.kind === "Gas Refill" ? "Returnable" : "", lines };
   const btn = document.getElementById("mns-create-btn");
   if (btn) { btn.disabled = true; btn.textContent = "Creating..."; }

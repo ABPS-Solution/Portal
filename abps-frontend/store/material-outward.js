@@ -788,6 +788,10 @@ function mowPickVendor(challanId, name) {
     const st = document.getElementById(`mow-state-${challanId}`);
     if (addr && vd.address) { addr.value = vd.address; autoGrowTextField(addr); }
     if (st && vd.state) { st.value = vd.state; autoGrowTextField(st); }
+    const cn = document.getElementById(`mow-contact-name-${challanId}`);
+    const cp = document.getElementById(`mow-contact-number-${challanId}`);
+    if (cn && vd.contactPerson && !cn.value.trim()) cn.value = vd.contactPerson;
+    if (cp && vd.phoneNumber && !cp.value.trim()) cp.value = vd.phoneNumber;
   }
   mowValidateDraftCard(challanId);
   mowSaveCardLocal(challanId);
