@@ -546,9 +546,7 @@ function renderPORevisionCard() {
   const rowsHtml = isTransportRev ? rpoTransportRowsHtml(lineItems) : lineItems.map((li, idx) => {
     if (kind === "PRN Driven" && !li.changed && !li._removed && !li.isNew) return ""; // unchanged — not shown, but still counted in the totals below
 
-    // Same item code on several rows (different descriptions): pooled after
-    // the PO, so these rows can only be cancelled with the whole PO.
-    if (!li.isNew && lineItems.filter(x => !x.isNew && x.itemCode === li.itemCode).length > 1) {
+    if (false) {
       return `
     <div data-lineidx="${idx}" style="background:#f8fafc; border:1.5px dashed #94a3b8; border-radius:8px; margin-bottom:12px; padding:10px 12px;">
       <span style="font-weight:800; font-size:0.85rem; color:#334155;">Row ${idx + 1} locked</span>
@@ -996,7 +994,25 @@ function collectRPOLines() {
                deliveryDate: li.deliveryDate || null, allocations, _received: Number(li.receivedQty) || 0, _idx: idx,
                _designRate: li.designRatePerQuantity, _sourceAllocations: li.allocations || [], _allocationTouched: li._allocationTouched,
                _removed: !!li._removed, _isNew: !!li.isNew };
-    });
+    }).reduce(rpoGroupSharedCodes, []);
+}
+
+// Rows that share an item code go to the server as ONE line: total qty, the
+// first row's PRN allocations (the PO holds them per item code), and every
+// row in `rows` so each keeps its own description / qty / rate (5 Nov 2026).
+function rpoGroupSharedCodes(out, l) {
+  if (l._isNew) { out.push(l); return out; }
+  const prev = out.find(o => !o._isNew && o.itemCode === l.itemCode);
+  const asRow = (x) => ({ additionalDescription: x.additionalDescription || "", quantity: x._removed ? 0 : (Number(x.vendorDiscussedQty) || 0),
+                          rate: x.rate, discountPercent: x.discountPercent, deliveryDate: x.deliveryDate });
+  if (!prev) { out.push(l); return out; }
+  if (!prev.rows) prev.rows = [asRow(prev)];
+  prev.rows.push(asRow(l));
+  prev.vendorDiscussedQty = prev.rows.reduce((t, r) => t + r.quantity, 0);
+  prev._removed = prev._removed && l._removed;
+  prev._allocationTouched = prev._allocationTouched || l._allocationTouched;
+  if (!(prev.additionalDescription || "").trim()) prev.additionalDescription = l.additionalDescription;
+  return out;
 }
 
 async function submitPORevisionUI() {
