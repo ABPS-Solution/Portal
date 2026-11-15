@@ -178,7 +178,7 @@ function pdRenderDashboard(data) {
     : dueToday.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
-          <td style="padding:4px;">${r.label}</td>
+          <td style="padding:4px;">${escapeHtml(r.label)}</td>
         </tr>`).join("");
 
   const timelineOverdueTbody = document.getElementById("pd-timeline-overdue-tbody");
@@ -187,7 +187,7 @@ function pdRenderDashboard(data) {
     : overdue.map(r => `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;"><span style="font-family:monospace; font-weight:700; font-size:0.72rem;">${r.projectId}</span><br/><span style="color:var(--muted); font-size:0.72rem;">${escapeHtml(r.companyName)}</span></td>
-          <td style="padding:4px;">${r.label}</td>
+          <td style="padding:4px;">${escapeHtml(r.label)}</td>
           <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${r.daysOverdue}d</td>
         </tr>`).join("");
 

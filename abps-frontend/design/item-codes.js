@@ -557,7 +557,7 @@ async function submitNewItemCode() {
         <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
           <span>Code: <strong style="font-family:monospace; font-size:1rem; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #15803d;">${data.itemCode || itemCode}</strong></span>
           <span>Product: <strong>${escapeHtml(displayName_)}${displayRating_ ? " - " + escapeHtml(displayRating_) : ""}${make ? " - Make: " + escapeHtml(make) : ""}</strong></span>
-          <span>Type: <strong>${window.typeLabelDisplay_(typeOfMat)}</strong></span>
+          <span>Type: <strong>${escapeHtml(window.typeLabelDisplay_(typeOfMat))}</strong></span>
           <span>Unit: <strong>${unit}</strong></span>
         </div>
         ${aiNote}

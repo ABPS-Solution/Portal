@@ -39,7 +39,7 @@ async function initializeArpdiWorkspace() {
     window._arpdiRequestsById = {};
     data.requests.forEach(r => { window._arpdiRequestsById[r.requestId] = r; });
   } catch(e) {
-    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -97,7 +97,7 @@ function arpdiChangedField(f) {
 }
 function arpdiBulletHtml(f) {
   const disp = (v) => f.isDate ? (v ? formatOrdinalDate(v) : '—') : (f.isText ? (v || '—') : ARPDI_FMT(v));
-  return `<li><strong>${f.label}</strong>: ${disp(f.cur)} → <span style="font-weight:700; color:#b45309;">${disp(f.rev)}</span></li>`;
+  return `<li><strong>${escapeHtml(f.label)}</strong>: ${disp(f.cur)} → <span style="font-weight:700; color:#b45309;">${disp(f.rev)}</span></li>`;
 }
 
 function renderArpdiCard(r) {

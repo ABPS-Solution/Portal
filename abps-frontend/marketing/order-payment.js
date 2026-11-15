@@ -330,7 +330,7 @@ function oppRenderTranches(projectId) {
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex-shrink:0; align-self:flex-end;">
-            <span id="opp-status-badge-${projectId}-${i}" style="display:inline-block; padding:5px 10px; border-radius:10px; font-size:0.7rem; font-weight:700; background:${isReceived ? '#dcfce7' : (t.status === 'Partially Received' ? '#fef3c7' : '#f1f5f9')}; color:${isReceived ? '#15803d' : (t.status === 'Partially Received' ? '#b45309' : '#475569')};">${t.status}</span>
+            <span id="opp-status-badge-${projectId}-${i}" style="display:inline-block; padding:5px 10px; border-radius:10px; font-size:0.7rem; font-weight:700; background:${isReceived ? '#dcfce7' : (t.status === 'Partially Received' ? '#fef3c7' : '#f1f5f9')}; color:${isReceived ? '#15803d' : (t.status === 'Partially Received' ? '#b45309' : '#475569')};">${escapeHtml(t.status)}</span>
           </div>
           <button type="button" onclick="oppRemoveTranche('${projectId}', ${i})" title="Remove this payment" style="flex-shrink:0; align-self:flex-end; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; padding:6px 9px; cursor:pointer;">✕</button>
         </div>
@@ -576,8 +576,8 @@ function oppRenderAggregateStrip(data) {
   const el = document.getElementById("opp-aggregate-strip");
   const bucket = (label, b, color) => `
     <div style="flex:1; min-width:120px; background:${color.bg}; border:1px solid ${color.border}; border-radius:var(--radius); padding:10px 12px;">
-      <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:${color.text};">${label}</div>
-      <div style="font-size:1.02rem; font-weight:800; color:${color.text}; font-family:monospace;">₹${oppFmt(b.amount)}</div>
+      <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:${escapeHtml(color.text)};">${label}</div>
+      <div style="font-size:1.02rem; font-weight:800; color:${escapeHtml(color.text)}; font-family:monospace;">₹${oppFmt(b.amount)}</div>
       <div style="font-size:0.66rem; color:var(--muted);">${b.count} payment${b.count === 1 ? '' : 's'}${b.oldestDate ? ' · oldest ' + oppFmtDate(b.oldestDate) : ''}</div>
     </div>`;
   const red = { bg: '#fee2e2', border: '#fca5a5', text: '#b91c1c' };

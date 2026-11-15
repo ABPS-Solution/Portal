@@ -158,7 +158,7 @@ async function loadCqIncomingEmails() {
     cqIncomingEmails = data.emails || [];
     renderCqIncomingList();
   } catch (e) {
-    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${e.message}</div>`;
+    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -469,7 +469,7 @@ async function loadCqPendingQueries() {
     cqPendingQueries = data.queries || [];
     renderCqPendingList();
   } catch (e) {
-    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${e.message}</div>`;
+    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -779,7 +779,7 @@ async function searchCqResolvedQueries() {
     cqResolvedQueries = data.queries || [];
     renderCqResolvedList();
   } catch (e) {
-    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${e.message}</div>`;
+    list.innerHTML = `<div style="padding:14px; color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

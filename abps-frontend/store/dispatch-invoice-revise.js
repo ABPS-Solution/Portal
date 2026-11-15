@@ -123,7 +123,7 @@ async function loadRpdiHistory(projectId) {
         </tbody>
       </table>`;
   } catch(e) {
-    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
+    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -292,7 +292,7 @@ async function loadRpdiForm(invoiceId) {
       renderRpdiForm();
     });
   } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
+    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -567,7 +567,7 @@ async function initializeRpdiEditingTab() {
         <div id="rpdi-edit-card-${r.requestId}" style="display:none; border-top:2px solid #94a3b8; padding:14px 16px;"></div>
       </div>`).join('');
   } catch(e) {
-    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -631,7 +631,7 @@ async function toggleRpdiEditCard(requestId) {
       <div id="rpdi-edit-feedback-${requestId}" style="margin-top:10px;"></div>`;
     renderRpdiForm();
   } catch(e) {
-    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 function updateRpdiEditLineItem(idx, key, value) {
@@ -653,7 +653,7 @@ async function saveRpdiEdit(requestId) {
     });
     if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`; return; }
   } catch(e) {
-    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
     return;
   } finally {
     hideBlockingOverlay();
@@ -681,7 +681,7 @@ async function generateRpdiCheckingDraftOnly(requestId) {
       ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the draft could not be generated. Click the button again to retry.</div>`
       : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
-    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   } finally {
     hideBlockingOverlay();
   }

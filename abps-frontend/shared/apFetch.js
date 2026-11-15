@@ -311,6 +311,8 @@ async function apFetch(payload) {
   delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("sessionToken");
   abpsMarkActivity(payload);
+  // One id per call (kept on retries): the server answers a repeat with the first reply.
+  if (!payload._requestId && window.crypto && crypto.randomUUID) payload._requestId = crypto.randomUUID();
   const res = await fetchWithRetry(GAS_URL, {
     method: "POST",
     body: JSON.stringify(payload),

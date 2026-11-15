@@ -40,7 +40,7 @@ async function initializeAuthorizePOPanel() {
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
-  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 // go-live: super-admin-only PO number correction (see the "Fix PO Number"
@@ -97,7 +97,7 @@ function toggleAuthorizePOCard(poNo) {
     try {
       await initializeCreatePOPanel(poNo, `po-auth-expand-${poNo}`);
     } catch (e) {
-      expandDiv.innerHTML = `<p style="color:var(--warn);">Failed to load: ${e.message}</p>`;
+      expandDiv.innerHTML = `<p style="color:var(--warn);">Failed to load: ${escapeHtml(e.message)}</p>`;
     }
   })();
 }
@@ -394,7 +394,7 @@ async function toggleSrchPOCard(poNo) {
     const data = await apFetch({ action: "fetchRMPOFullDetail", poNo });
     if (!data.success) { expandDiv.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
     expandDiv.innerHTML = renderRMPOViewOnlyDetail(data.po, data.lineItems || []);
-  } catch(e) { expandDiv.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { expandDiv.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 async function markTransportPOCompleted(poNo, btn) {
@@ -799,7 +799,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
         return;
       }
     } catch (e) {
-      body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Network error loading ${authorizePoNo}: ${e.message}</div>`;
+      body.innerHTML = `<div style="padding:20px; color:#b91c1c;">Network error loading ${authorizePoNo}: ${escapeHtml(e.message)}</div>`;
       return;
     }
   } else if (draft) {
@@ -2073,7 +2073,7 @@ async function initializeEditPOPanel() {
         </div>
         <div id="po-edit-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
-  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 function toggleEditPOCard(poNo) {
@@ -2097,7 +2097,7 @@ function toggleEditPOCard(poNo) {
     try {
       await initializeCreatePOPanel(poNo, `po-edit-expand-${poNo}`, 'edit');
     } catch (e) {
-      expandDiv.innerHTML = `<p style="color:var(--warn);">Failed to load: ${e.message}</p>`;
+      expandDiv.innerHTML = `<p style="color:var(--warn);">Failed to load: ${escapeHtml(e.message)}</p>`;
     }
   })();
 }

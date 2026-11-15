@@ -30,7 +30,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
   const header = `
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
       ${prn.pdfUrl ? `<a href="${driveLink(prn.pdfUrl)}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${prn.prnId}</a>` : `<span style="font-family:monospace; font-weight:800; font-size:0.9rem;">${prn.prnId}</span>`}
-      <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status || "—"}</span>
+      <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${escapeHtml(prn.status || "—")}</span>
     </div>`;
   if (materials.length === 0) {
     el.innerHTML = header + `<div style="padding:10px; color:var(--muted); font-size:0.82rem;">No PPS lines for this PRN.</div>`;
@@ -255,7 +255,7 @@ async function loadPPSForPRN() {
       ? `<a href="${driveLink(prn.pdfUrl)}" target="_blank" style="font-family:monospace; font-weight:800; color:var(--brand); text-decoration:underline;">${prnId}</a>`
       : `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${prnId}</span>`;
     header.innerHTML = prnIdHtml +
-      (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status}</span>` : "");
+      (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${escapeHtml(prn.status)}</span>` : "");
   }
 
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading PPS tracking...</div>`;
@@ -428,7 +428,7 @@ async function loadPPSForPRN() {
         <button class="nav-btn-styled" id="pps-save-schedule-btn" onclick="savePPSDeliverySchedule('${prnId}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">Save Delivery Schedule</button>
       </div>`}`;
   } catch (e) {
-    body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    body.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 

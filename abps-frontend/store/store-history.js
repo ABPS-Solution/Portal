@@ -45,7 +45,7 @@ async function initializeStoreHistoryMatrixWorkspace() {
     if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Set your filters above and click Search.</div>`;
 
   } catch (error) {
-    if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn);">Network Exception: ${error.message}</div>`;
+    if (resultsFeedZone) resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn);">Network Exception: ${escapeHtml(error.message)}</div>`;
   }
 }
 

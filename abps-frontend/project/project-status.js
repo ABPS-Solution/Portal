@@ -79,7 +79,7 @@ async function runProjectStatusSearch() {
     renderPstatHeaderMetrics(lanes);
     renderPstatLanes(lanes, lanesContainer);
   } catch (e) {
-    lanesContainer.innerHTML = `<div class="pstat-empty-state" style="color:var(--warn);">Network error: ${e.message}</div>`;
+    lanesContainer.innerHTML = `<div class="pstat-empty-state" style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -255,7 +255,7 @@ function renderPstatLane(lane) {
       : `<div class="pstat-stage-primary">${sd.data.primary}</div>`;
     return `
     <div class="pstat-stage" data-state="${escapeHtml(sd.data.state)}">
-      <div class="pstat-stage-label">${sd.label}</div>
+      <div class="pstat-stage-label">${escapeHtml(sd.label)}</div>
       ${primaryHtml}
       <div class="pstat-stage-sub">${sd.data.sub}</div>
     </div>`;
@@ -364,7 +364,7 @@ function renderPstatLaneDetail(lane) {
 }
 
 function renderPstatOrphanLane(lane) {
-  const prnRows = (lane.orphanPrns || []).map(p => `<div class="pstat-po-card"><div class="pstat-po-row1"><span>${p.prnId}</span><span>${p.status || "—"}</span></div><div class="pstat-po-row2">References BOQ ${p.boqId} — not found among this project's BOQs.</div></div>`).join("");
+  const prnRows = (lane.orphanPrns || []).map(p => `<div class="pstat-po-card"><div class="pstat-po-row1"><span>${p.prnId}</span><span>${escapeHtml(p.status || "—")}</span></div><div class="pstat-po-row2">References BOQ ${p.boqId} — not found among this project's BOQs.</div></div>`).join("");
   const jcRows = (lane.orphanJcs || []).map(jc => `<div class="pstat-po-card"><div class="pstat-po-row1"><span>${jc.jobCardNumber}</span><span>Set ${jc.setNumber}</span></div><div class="pstat-po-row2">References BOQ ${jc.boqId} — not found among this project's BOQs.</div></div>`).join("");
   return `
     <div class="pstat-lane" data-accent="attention">

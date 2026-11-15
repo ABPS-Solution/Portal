@@ -68,7 +68,7 @@ async function loadRPRNQueueTab() {
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {
-    feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -376,7 +376,7 @@ async function loadPRNForRevision() {
     if (!data.success) { body.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
     window.rprnState = { prn: data.prn, lineItems: data.lineItems || [] };
     renderRevisePRNTable();
-  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`; }
+  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`; }
 }
 
 function renderRevisePRNTable() {
@@ -519,7 +519,7 @@ function prnStatusLabel(status, stillToOrder) {
 
 function prnStatusChip(status, stillToOrder) {
   const s = prnStatusLabel(status, stillToOrder);
-  return `<span style="display:inline-block; font-size:0.68rem; font-weight:800; padding:3px 9px; border-radius:4px; background:${s.bg}; color:${s.fg};">${s.text}</span>`;
+  return `<span style="display:inline-block; font-size:0.68rem; font-weight:800; padding:3px 9px; border-radius:4px; background:${s.bg}; color:${s.fg};">${escapeHtml(s.text)}</span>`;
 }
 
 // ═══════════════════════════════════════════════════════

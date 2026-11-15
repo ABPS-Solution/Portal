@@ -1129,7 +1129,7 @@ async function loadPinvReviseHistory(projectId) {
         </tbody>
       </table>`;
   } catch(e) {
-    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
+    historyZone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -1153,7 +1153,7 @@ async function togglePinvDocuments(invoiceId) {
       `<div style="margin-bottom:2px;">${escapeHtml(d.docLabel)}${d.fileName ? ` — ${escapeHtml(d.fileName)}` : ""}: <a href="${escapeHtml(driveLink(d.url))}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
     ).join("");
   } catch(e) {
-    zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
+    zone.innerHTML = `<span style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</span>`;
   }
 }
 
@@ -1190,7 +1190,7 @@ async function loadPinvReviseForm(invoiceId) {
     renderPinvReviseInvoiceForm();
     document.getElementById("pinv-revise-generate-btn-wrap").style.display = "block";
   } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${e.message}</div>`;
+    zone.innerHTML = `<div style="padding:12px; color:#b91c1c; font-size:0.9rem;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

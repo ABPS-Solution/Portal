@@ -80,6 +80,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      # Fails on NEW server/user text put into HTML without escapeHtml()/jsArg().
+      # Existing findings are listed in .github/scripts/escaping-baseline.json.
+      - name: Check for unescaped text in HTML
+        run: node .github/scripts/check-escaping.js abps-frontend
       - name: Smoke-test the frontend in a headless browser
         run: |
           npm i --no-save --prefix /tmp/smoke playwright@1

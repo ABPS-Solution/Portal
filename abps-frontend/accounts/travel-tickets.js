@@ -739,7 +739,7 @@ function ttkRenderTicketsTable(tickets) {
           <td style="${cell} font-weight:700;">${tv ? escapeHtml(tv.employeeName) : '—'}</td>
           <td style="${cell} ${colBorder}">${tv ? escapeHtml(tv.departmentName || '—') : '—'}</td>
           <td style="${cell} ${colBorder} font-weight:700;">${tv ? formatINRComma(tv.price) : '—'}</td>
-          <td style="${cell} ${colBorder}"><span style="padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; background:${statusColor.bg}; color:${statusColor.fg};">${tv ? tv.status : '—'}</span></td>
+          <td style="${cell} ${colBorder}"><span style="padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; background:${statusColor.bg}; color:${statusColor.fg};">${escapeHtml(tv ? tv.status : '—')}</span></td>
           <td style="${cell} ${colBorder}">${escapeHtml(t.modeOfTravel)}</td>
           <td style="${cell} ${colBorder}">${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}</td>
           <td style="${cell} ${colBorder}">${escapeHtml(t.tripType)}</td>
@@ -946,7 +946,7 @@ function ttkRenderHotelsTable(hotels) {
           <td style="${cell} font-weight:700;">${tv ? escapeHtml(tv.employeeName) : '—'}</td>
           <td style="${cell} ${colBorder}">${tv ? escapeHtml(tv.departmentName || '—') : '—'}</td>
           <td style="${cell} ${colBorder} font-weight:700;">${tv ? formatINRComma(tv.price) : '—'}</td>
-          <td style="${cell} ${colBorder}"><span style="padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; background:${statusColor.bg}; color:${statusColor.fg};">${tv ? tv.status : '—'}</span></td>
+          <td style="${cell} ${colBorder}"><span style="padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700; background:${statusColor.bg}; color:${statusColor.fg};">${escapeHtml(tv ? tv.status : '—')}</span></td>
           <td style="${cell} ${colBorder}">${t.hotelName ? escapeHtml(t.hotelName) : '—'}</td>
           <td style="${cell} ${colBorder}">${escapeHtml(t.hotelCity)}</td>
           <td style="${cell} ${colBorder}">${t.nights ?? '—'}</td>

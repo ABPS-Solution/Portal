@@ -31,7 +31,7 @@ async function initializeFGApprovalWorkspace() {
     data.items.forEach(item => feed.appendChild(renderFGApprovalCard(item)));
   } catch(e) {
     if (e.message !== "SESSION_EXPIRED") {
-      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${escapeHtml(e.message)}</div>`;
     }
   }
 }
@@ -128,7 +128,7 @@ async function toggleFGApprovalCardBody(fgId) {
     body.innerHTML = renderFGApprovalDetailBody(fgId);
     updateFGApprovalSubmitState(fgId);
   } catch(e) {
-    body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    body.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -276,7 +276,7 @@ function renderFGDocTable(fgId) {
 
   const existingRows = st.docs.map(d => `
     <tr>
-      <td style="padding:8px; border-bottom:2px solid #94a3b8;">${d.docLabel}</td>
+      <td style="padding:8px; border-bottom:2px solid #94a3b8;">${escapeHtml(d.docLabel)}</td>
       <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8;"><a href="${escapeHtml(driveLink(d.url))}" target="_blank" style="color:var(--brand); font-weight:600;">${escapeHtml(d.fileName || d.docLabel)}</a></td>
       <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:0.78rem; color:var(--muted); white-space:nowrap;">${formatFGUploadTime(d.createdAt)}</td>
       <td style="padding:8px; border-left:2px solid #94a3b8; border-bottom:2px solid #94a3b8; text-align:center;">
@@ -290,7 +290,7 @@ function renderFGDocTable(fgId) {
 
   const newRows = st.newRows.map(r => {
     const typeCell = r.docType
-      ? `<div style="font-weight:600;">${r.docLabel}</div>`
+      ? `<div style="font-weight:600;">${escapeHtml(r.docLabel)}</div>`
       : `<div onclick="toggleFGDocTypeDropdown(${fgId}, ${r.tempId}, this)" style="cursor:pointer; padding:6px 8px; border:1.5px solid var(--brand); border-radius:4px; color:var(--muted); font-size:0.82rem; display:flex; justify-content:space-between; align-items:center; gap:6px; background:#fff;">
           <span>— Select Type —</span><span>▾</span>
         </div>`;

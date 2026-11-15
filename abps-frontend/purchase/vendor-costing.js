@@ -80,7 +80,7 @@ function handleSVCIVendorInput(query) {
     <div onclick="selectSVCIVendor(${jsArg(v.vendorName||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${escapeHtml(v.vendorName)}${v.city ? `<span style="color:var(--muted); font-size:0.75rem;"> — ${escapeHtml(v.city)}${v.state ? ', ' + v.state : ''}</span>` : ''}
+      ${escapeHtml(v.vendorName)}${v.city ? `<span style="color:var(--muted); font-size:0.75rem;"> — ${escapeHtml(v.city)}${escapeHtml(v.state ? ', ' + v.state : '')}</span>` : ''}
     </div>`).join("");
   dd.style.display = "block";
 }
@@ -200,7 +200,7 @@ function renderSVCIResultsTable() {
     <tr style="border-bottom:1px solid #e2e8f0;">
       <td style="padding:8px; font-family:monospace; font-weight:700;">${r.poPdfUrl ? `<a href="${driveLink(r.poPdfUrl)}" target="_blank" style="color:var(--brand); text-decoration:underline;">${r.poNo}</a>` : `<span style="color:var(--brand);">${r.poNo}</span>`}</td>
       <td style="padding:8px; font-weight:600;">${escapeHtml(r.vendorName || "—")}</td>
-      <td style="padding:8px;">${escapeHtml(r.city || "—")}${r.state ? ', ' + r.state : ''}</td>
+      <td style="padding:8px;">${escapeHtml(r.city || "—")}${escapeHtml(r.state ? ', ' + r.state : '')}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.poQuantity)}</td>
       <td style="padding:8px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700;">${fmtQty(r.ratePerQty)}</td>
       <td style="padding:8px; text-align:center; white-space:nowrap;">${formatOrdinalDate(r.orderDate) || "—"}</td>

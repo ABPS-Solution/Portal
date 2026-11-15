@@ -164,7 +164,7 @@ async function loadMRDForPRN() {
     const prn = (window.mrdPrnListCache || {})[prnId];
     header.style.display = "block";
     header.innerHTML = `<span style="font-family:monospace; font-weight:800; color:var(--brand);">${prnId}</span>` +
-      (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${prn.status}</span>` : "");
+      (prn && prn.status ? ` <span style="font-size:0.68rem; font-weight:700; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:3px;">${escapeHtml(prn.status)}</span>` : "");
   }
 
   body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading materials…</div>`;
@@ -174,7 +174,7 @@ async function loadMRDForPRN() {
     const lines = data.lines || [];
     if (lines.length === 0) { body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">This PRN has no material lines.</div>`; return; }
     body.innerHTML = mrdRenderLinesTable('mrd', prnId, lines, data.alreadySubmitted, 'submitMaterialRequirementDates');
-  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`; }
+  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`; }
 }
 
 async function submitMaterialRequirementDates(ns, prnId, btn) {
@@ -537,7 +537,7 @@ async function loadRMRDQueueTab() {
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {
-    feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -586,7 +586,7 @@ async function jumpToRMRDDelta(prnId, btn) {
     deltaZone.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
-    deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${e.message}</div>`;
+    deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -680,7 +680,7 @@ async function loadReviseMRDForPRN() {
     const lines = data.lines || [];
     if (lines.length === 0) { body.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">This PRN has no material lines.</div>`; return; }
     body.innerHTML = mrdRenderLinesTable('rmrd', prnId, lines, false, 'submitReviseMRDOther');
-  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`; }
+  } catch (e) { body.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`; }
 }
 
 async function submitReviseMRDOther(ns, prnId, btn) {

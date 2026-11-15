@@ -255,7 +255,7 @@ async function loadAllowedNetworks() {
     tbody.innerHTML = data.networks.map(n => `
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px; font-family:monospace;">${n.cidr}</td>
-        <td style="padding:8px;">${n.label}</td>
+        <td style="padding:8px;">${escapeHtml(n.label)}</td>
         <td style="padding:8px;">${n.active ? 'Active' : 'Inactive'}</td>
         <td style="padding:8px;">${formatOrdinalDate(n.created_at)}</td>
         <td style="padding:8px;">${n.active ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="deactivateNetwork(${n.network_id})">Deactivate</button>` : '—'}</td>
@@ -302,7 +302,7 @@ async function loadHolidays() {
     tbody.innerHTML = data.holidays.map(h => `
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${formatDMYFromISO ? formatDMYFromISO(h.date) : h.date}</td>
-        <td style="padding:8px;">${h.label}</td>
+        <td style="padding:8px;">${escapeHtml(h.label)}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted);">${escapeHtml(h.createdBy || '—')}</td>
         <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteHoliday('${h.date}')">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No holidays configured.</td></tr>`;
@@ -389,7 +389,7 @@ function renderLoginLog() {
         <td style="padding:8px;">${escapeHtml(l.user_name || '—')}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
-        <td style="padding:8px;">${l.city ? `${l.city}, ` : ''}${l.country || '—'}</td>
+        <td style="padding:8px;">${l.city ? `${l.city}, ` : ''}${escapeHtml(l.country || '—')}</td>
         <td style="padding:8px;">${l.isp_asn || '—'}</td>
         <td style="padding:8px;">${l.is_vpn ? '⚠️ Yes' : 'No'}</td>
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
@@ -739,7 +739,7 @@ function renderRegisteredDevicesList(devices) {
     <tr style="border-top:1px solid var(--border);">
       <td style="padding:8px;">${escapeHtml(d.device_label || "")}</td>
       <td style="padding:8px; font-size:0.92rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
-      <td style="padding:8px;">${d.status}</td>
+      <td style="padding:8px;">${escapeHtml(d.status)}</td>
       <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
       <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
       <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
@@ -785,7 +785,7 @@ function openDeviceRestrictionModal(deviceId) {
     if (perms.length === 0) return '';
     return `
     <div style="margin-bottom:12px;">
-      <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">${card.label}</div>
+      <div style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">${escapeHtml(card.label)}</div>
       ${perms.map(p => `
         <label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:0.85rem; cursor:pointer;">
           <input type="checkbox" class="sa-device-restrict-cb" value="${p.dbColumn}" ${current.has(p.dbColumn) ? 'checked' : ''} style="width:15px; height:15px;">
@@ -1095,7 +1095,7 @@ function renderPermissionMatrix() {
       <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px;">
         <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:${card.color}0f; border-bottom:1px solid var(--border);">
           <div style="width:5px; height:18px; border-radius:2px; background:${card.color};"></div>
-          <span style="font-weight:800; color:${card.color}; font-size:1.15rem;">${card.label}</span>
+          <span style="font-weight:800; color:${card.color}; font-size:1.15rem;">${escapeHtml(card.label)}</span>
         </div>
         <div style="padding:14px 16px;">
           ${rowsHtml}

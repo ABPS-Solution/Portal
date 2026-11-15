@@ -47,7 +47,7 @@ async function openCPOAllocationPicker(rowId) {
   const rowsHtml = prefilled.map((p) => `
     <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; font-size:0.85rem;">
       <div style="flex:1; min-width:0;">
-        <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${escapeHtml(p.productName || "")}${p.productRating ? " " + p.productRating : ""}</div>
+        <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${escapeHtml(p.productName || "")}${escapeHtml(p.productRating ? " " + p.productRating : "")}</div>
         <div style="font-size:0.72rem; color:var(--muted);">${p.projectId || ""}</div>
       </div>
       <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
@@ -192,7 +192,7 @@ async function jumpToRPRNDelta(boqId, btn) {
     deltaZone.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch(e) {
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
-    deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${e.message}</div>`;
+    deltaZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -481,7 +481,7 @@ async function startNewPRNCreation() {
     renderPRNCreateTable();
     syncPRNQueueButtonState();
   } catch(e) {
-    createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${e.message}</div>`;
+    createZone.innerHTML = `<div style="padding:16px; background:#fef2f2; border:1px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-weight:600;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -632,7 +632,7 @@ async function initializeAuthorizePRNPanel() {
     });
     prnDraftRestoreAuthorize();
   } catch (e) {
-    feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${escapeHtml(e.message)}</div>`;
   } finally {
     // Never leave the feed blank — any silent early exit still shows something.
     if (feed && !feed.innerHTML.trim()) {

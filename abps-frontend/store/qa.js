@@ -225,7 +225,7 @@ async function runQARevisionSearch() {
         </div>
         <div id="qarev-detail-${r.grnNumber}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--border);"></div>
       </div>`).join("");
-  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 async function openQARevisionDetail(grnNumber) {
@@ -298,7 +298,7 @@ async function openQARevisionDetail(grnNumber) {
       ${blocked ? '' : `<div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitQARevisionToBackend('${grnNumber}', this)">Submit Q/A Revision</button>
       </div>`}`;
-  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 function autoBalanceQARevQuantities(okInput, grnNum, idx) {
@@ -597,7 +597,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
         qaDraftAttach(card, item.grnNumber);
       }
     });
-  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 // initializeStoreRepairQAWorkspace — Currently Being Repaired at ABPS,
@@ -880,12 +880,12 @@ async function initializeRejectedMaterialPanel(toggle) {
           <td style="width:90px; padding:8px 6px; text-align:center; font-weight:700; font-size:1rem;">${line.outstandingQuantity}</td>
           <td style="width:130px; padding:8px 6px; font-size:0.8rem; color:#64748b;">${escapeHtml(line.reasonForNotOk || "")}</td>
           <td style="width:170px; padding:8px 6px;">
-            ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
+            ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${escapeHtml(line.status)})</span>` :
               isEditable ? `
               <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" data-pending="${Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0}" onchange="rejUpdateSplitRest('${line.rejectionId}')" style="width:100%; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml(line.actionForRejectedMaterial)}</select>
               <div id="rej-split-rest-${line.rejectionId}" style="display:none; font-size:0.72rem; color:#475569; margin-top:3px;"></div>
               <div id="rej-splits-${line.rejectionId}"></div>
-              ${(Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0) > 0 ? `<button type="button" class="btn" style="width:auto; margin-top:4px; padding:2px 8px; font-size:0.72rem; background:#eff6ff; color:var(--brand); border:1px solid #bfdbfe;" onclick="rejAddSplit('${line.rejectionId}')">+ Split quantity</button>` : ''}` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+              ${(Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0) > 0 ? `<button type="button" class="btn" style="width:auto; margin-top:4px; padding:2px 8px; font-size:0.72rem; background:#eff6ff; color:var(--brand); border:1px solid #bfdbfe;" onclick="rejAddSplit('${line.rejectionId}')">+ Split quantity</button>` : ''}` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${escapeHtml(line.status)})</span>`}
           </td>
         </tr>`;
       });
@@ -936,7 +936,7 @@ async function initializeRejectedMaterialPanel(toggle) {
     if (!anyCardRendered) {
       feed.innerHTML = toggleBar + `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records found.</div>`;
     }
-  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { feed.innerHTML = toggleBar + `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 const REJ_ACTIONS = ["Return to Vendor for Replacement", "Return to Vendor for Repair", "Ask Vendor to repair at ABPS", "Ask ABPS to Repair at ABPS", "Under Deviation", "Scrap"];

@@ -615,7 +615,7 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
     if (seg.kind === 'choice') {
       const groupId = `${id}-group`;
       return `<span style="display:inline-flex; flex-direction:column; margin:4px 6px;">
-        <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${seg.label}</label>
+        <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${escapeHtml(seg.label)}</label>
         <div class="pill-group" id="${groupId}">
           ${seg.options.map((opt, oi) => `
             <input type="radio" name="${groupId}" id="${groupId}-${oi}" value="${opt.replace(/"/g,'&quot;')}">
@@ -638,7 +638,7 @@ function icfRenderFormInputs(containerEl, template, onChange, idPrefix, initialV
     // is still the authority; this only affects what the input widget allows.
     const inputType = (seg.kind === 'number' || seg.kind === 'mirror') && !icfIsSlashAllowedLabel(seg.label) ? 'number' : 'text';
     return `<span style="display:inline-flex; flex-direction:column; margin:4px 6px;">
-      <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${seg.label}</label>
+      <label style="font-size:0.68rem; font-weight:700; color:var(--brand); text-transform:uppercase;">${escapeHtml(seg.label)}</label>
       <input type="${inputType}" id="${id}" data-idx="${seg.index}"
         style="width:90px; padding:5px; border:1px solid var(--border); border-radius:3px; font-size:0.82rem;">
     </span>`;

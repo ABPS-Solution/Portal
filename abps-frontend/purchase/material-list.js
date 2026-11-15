@@ -81,7 +81,7 @@ async function loadMaterialListForPurchase() {
     materialListCache = data.materials || [];
     renderMaterialListFiltered();
   } catch(e) {
-    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${escapeHtml(e.message)}</div>`;
   } finally {
     if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
@@ -179,7 +179,7 @@ function renderMaterialListByType(materials) {
     };
     headerDiv.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${window.typeLabelDisplay_(type)}</span>
+        <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${escapeHtml(window.typeLabelDisplay_(type))}</span>
         <span style="font-size:0.72rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
       </div>
       <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">

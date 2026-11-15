@@ -129,7 +129,7 @@ function nlrPlanHtml(plan) {
       : (a.state === 'open' && a.due ? formatOrdinalDate(a.due) : "");
     return `<div class="nlr-plan-item ${m.cls}">
       <div class="nlr-plan-name">${escapeHtml(a.action)}</div>
-      <div class="nlr-plan-state"><span class="nlr-plan-badge">${m.label}</span>${when ? `<span class="nlr-plan-when">${escapeHtml(when)}</span>` : ""}</div>
+      <div class="nlr-plan-state"><span class="nlr-plan-badge">${escapeHtml(m.label)}</span>${when ? `<span class="nlr-plan-when">${escapeHtml(when)}</span>` : ""}</div>
     </div>`;
   }).join("");
 }

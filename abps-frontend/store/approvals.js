@@ -25,7 +25,7 @@ async function initializeBOQIncreaseApprovalsWorkspace() {
     });
   } catch(e) {
     if (e.message !== "SESSION_EXPIRED") {
-      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+      feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${escapeHtml(e.message)}</div>`;
     }
   }
 }
@@ -324,7 +324,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
     hideBlockingOverlay();
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
-      feedbackBanner.innerHTML = `<strong>Network Exception Failure:</strong> ${error.message}`;
+      feedbackBanner.innerHTML = `<strong>Network Exception Failure:</strong> ${escapeHtml(error.message)}`;
     }
     // Restoration loop rollbacks button state styles elements layout flags if network connection completely collapses
     if (approveBtn && rejectBtn) {

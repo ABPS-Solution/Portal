@@ -612,7 +612,7 @@ async function initializeCpdiEditingTab() {
         <div id="cpdi-edit-card-${inv.invoiceId}" style="display:none; border-top:2px solid #94a3b8; padding:14px 16px;"></div>
       </div>`).join('');
   } catch(e) {
-    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -655,7 +655,7 @@ async function toggleCpdiEditCard(invoiceId) {
       <div id="cpdi-edit-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
     cpdiRenderInvoiceForm();
   } catch(e) {
-    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -688,7 +688,7 @@ async function saveCpdiEdit(invoiceId) {
     const data = await apFetch({ action: "updateProjectDispatchInvoiceDraft", invoiceId, invoice: cpdiInvoiceState, operatorName: appActiveOperatorIdentityString || "Unknown" });
     if (!data.success) { fb.innerHTML = `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`; return; }
   } catch(e) {
-    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
     return;
   } finally {
     hideBlockingOverlay();
@@ -721,7 +721,7 @@ async function generateCpdiCheckingDraftOnly(invoiceId) {
       ? `<div style="color:#b45309; font-weight:600;">Changes saved, but the draft could not be generated. Click the button again to retry.</div>`
       : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
-    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   } finally {
     hideBlockingOverlay();
   }
@@ -743,7 +743,7 @@ async function generateCpdiDcCheckingDraft(invoiceId, challanId) {
       ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
       : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
-    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    fb.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   } finally {
     hideBlockingOverlay();
   }
@@ -768,7 +768,7 @@ async function generateCpdiDcCheckingDraftInline(containerId, challanId) {
       ? `<div style="color:#15803d; font-weight:600;">Delivery Challan Draft #${data.draftNumber} generated. <a href="${driveLink(data.url)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">Open ↗</a></div>`
       : `<div style="color:#b91c1c; font-weight:600;">${escapeHtml(data.error || 'Failed.')}</div>`;
   } catch(e) {
-    if (el) el.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    if (el) el.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   } finally {
     hideBlockingOverlay();
   }

@@ -188,8 +188,8 @@ function renderMcProjectCard(project) {
             <span id="mc-header-delivery-${safeId}" data-delivery-label="${escapeHtml(deliveryLabel)}" style="white-space:nowrap;">${deliveryLabel}: <strong style="color:#111827;">${formatOrdinalDate(deliveryValue) || "—"}</strong></span>
           </div>
         </div>
-        ${holdPill ? `<span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${holdPill.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${holdPill.text}</span>` : ""}
-        <span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${mfcStatus.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${mfcStatus.text}</span>
+        ${holdPill ? `<span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${holdPill.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${escapeHtml(holdPill.text)}</span>` : ""}
+        <span style="flex-shrink:0; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:${mfcStatus.color}; padding:4px 10px; border-radius:12px; white-space:nowrap;">${escapeHtml(mfcStatus.text)}</span>
         <span id="mc-caret-${safeId}" style="flex-shrink:0; font-weight:700; color:var(--muted); font-size:1rem;">▸</span>
       </div>
     </div>
@@ -274,7 +274,7 @@ async function loadMcLineItems(projectId) {
     mcGatingInitialSnapshot[projectId] = { ...data.gating };
     renderMcLineItemsTable(projectId, data.lineItems);
   } catch(e) {
-    contentEl.innerHTML = `<span style="color:#b91c1c;">Network error: ${e.message}</span>`;
+    contentEl.innerHTML = `<span style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</span>`;
   }
 }
 
@@ -1003,7 +1003,7 @@ function renderMcSubmitSuccess(projectId, summaryRows) {
   // display-ready strings; trimNum is for the quantity rows only and
   // would mangle a date string.
   const bulletsHtml = summaryRows.map(r =>
-    `<li style="margin-bottom:4px;">${r.label}: <strong>${r.raw ? r.before : trimNum(r.before)}</strong> → <strong style="color:#15803d;">${r.raw ? r.after : trimNum(r.after)}</strong></li>`
+    `<li style="margin-bottom:4px;">${escapeHtml(r.label)}: <strong>${r.raw ? r.before : trimNum(r.before)}</strong> → <strong style="color:#15803d;">${r.raw ? r.after : trimNum(r.after)}</strong></li>`
   ).join("");
 
   contentEl.innerHTML = `

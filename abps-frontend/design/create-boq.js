@@ -836,7 +836,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600; color:var(--text); flex:1;">${escapeHtml(item.combinedName || item.productName)}</span>
-      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${window.typeLabelDisplay_(item.typeOfMaterial)}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${escapeHtml(window.typeLabelDisplay_(item.typeOfMaterial))}</span>
     </div>`;
   }).join("");
   dropdown.style.display = "block";
@@ -1040,7 +1040,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
       }
     }
   } catch(e) {
-    bodyEl.innerHTML = `<p style="color:var(--warn);">Error loading BOQ: ${e.message}</p>`;
+    bodyEl.innerHTML = `<p style="color:var(--warn);">Error loading BOQ: ${escapeHtml(e.message)}</p>`;
   }
 }
 

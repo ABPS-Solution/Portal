@@ -128,7 +128,7 @@ function mmCountsTableHtml(data) {
   const total = `<tr class="mm-total"><th>Total</th>${MM_COUNTS.map(c => cell("__ALL__", c, data.totals[c.key])).join("")}</tr>`;
   return `<div style="overflow-x:auto; margin:12px 0 16px;">
     <table class="nlr-table mm-counts">
-      <thead><tr><th>ABPS Engineer</th>${MM_COUNTS.map(c => `<th class="nlr-center">${c.label}</th>`).join("")}</tr></thead>
+      <thead><tr><th>ABPS Engineer</th>${MM_COUNTS.map(c => `<th class="nlr-center">${escapeHtml(c.label)}</th>`).join("")}</tr></thead>
       <tbody>${rows}${total}</tbody>
     </table></div>`;
 }

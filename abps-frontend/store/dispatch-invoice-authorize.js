@@ -30,7 +30,7 @@ async function initializeApdiWorkspace() {
         <div id="apdi-card-${inv.invoiceId}" style="display:none; padding:12px 14px;"></div>
       </div>`).join('');
   } catch(e) {
-    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${e.message}</div>`;
+    feed.innerHTML = `<div style="color:#b91c1c; padding:14px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -61,7 +61,7 @@ async function toggleApdiCard(invoiceId) {
       </div>
       <div id="apdi-card-feedback-${invoiceId}" style="margin-top:10px;"></div>`;
   } catch(e) {
-    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${e.message}</div>`;
+    card.innerHTML = `<div style="color:#b91c1c;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

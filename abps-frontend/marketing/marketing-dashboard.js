@@ -129,7 +129,7 @@ function mdRenderDashboard(data) {
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;">${escapeHtml(l.company)}</td>
           <td style="padding:4px;">${escapeHtml(l.engineer)}</td>
-          <td style="padding:4px;">${l.status}</td>
+          <td style="padding:4px;">${escapeHtml(l.status)}</td>
           <td style="padding:4px; text-align:right; color:#b91c1c; font-weight:700;">${l.daysSince}d</td>
         </tr>`).join("");
 

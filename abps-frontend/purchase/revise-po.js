@@ -186,7 +186,7 @@ async function initializeRPOEditingTab() {
         </div>
       </div>`).join("");
   } catch (e) {
-    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -217,7 +217,7 @@ async function openPORevisionForEdit(requestId, poNo) {
     };
     renderPORevisionCard();
   } catch (e) {
-    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -380,7 +380,7 @@ ${rpoPoCardHtml(po, `
               <button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', true)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "#f59e0b")}`;
     }).join("");
   } catch (e) {
-    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -502,7 +502,7 @@ async function searchPOsForRevisionUI() {
           ? `<span style="font-size:0.74rem; font-weight:700; color:#b45309; background:#fef3c7; padding:5px 12px; border-radius:999px;">Revision already pending</span>`
           : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "var(--brand)")).join("");
   } catch (e) {
-    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -532,7 +532,7 @@ async function openPORevision(poNo, changedOnly) {
     window.rpoActive = { po: data.po, lineItems, kind: changedOnly ? "PRN Driven" : "Standalone" };
     renderPORevisionCard();
   } catch (e) {
-    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    zone.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -1368,7 +1368,7 @@ async function initializeAuthorizePORevisionPanel() {
         <div id="apor-expand-${r.requestId}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
   } catch (e) {
-    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
+    feed.innerHTML = `<p style="color:var(--warn);">Network error: ${escapeHtml(e.message)}</p>`;
   }
 }
 

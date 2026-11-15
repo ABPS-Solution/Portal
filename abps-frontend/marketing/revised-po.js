@@ -454,7 +454,7 @@ function crpoRenderSuccess(data, h, review) {
     </div>`;
   const link = (url, text) => `<a href="${driveLink(url)}" target="_blank" rel="noopener" style="display:inline-block; margin:8px 10px 0 0; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 16px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">${text}</a>`;
   const notes = [];
-  if (data.oldProjectId) notes.push(`Project ID renamed from <b>${escapeHtml(data.oldProjectId)}</b> (${data.renamedIds} IDs renamed). BOQ / PRN documents and Drive folders are being updated in the background.`);
+  if (data.oldProjectId) notes.push(`Project ID renamed from <b>${escapeHtml(data.oldProjectId)}</b> (${escapeHtml(data.renamedIds)} IDs renamed). BOQ / PRN documents and Drive folders are being updated in the background.`);
   if (data.summary) notes.push(escapeHtml(data.summary));
   if (data.revisedBoqIds && data.revisedBoqIds.length) notes.push('Revised BOQs: ' + data.revisedBoqIds.map(x => escapeHtml(x)).join(', '));
   (data.docWarnings || []).forEach(w => notes.push(`<span style="color:#b45309;">${escapeHtml(w)}</span>`));

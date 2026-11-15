@@ -572,7 +572,7 @@ async function triggerLiveSpareStoreStockMetricsSync() {
     window.cachedSpareStoreStockCollection = data.stock || [];
     renderSpareStoreStockGrid();
   } catch(e) {
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Refresh failed: ${e.message}</div>`;
+    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Refresh failed: ${escapeHtml(e.message)}</div>`;
   } finally {
     if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
   }
@@ -638,7 +638,7 @@ function renderSpareStoreStockGrid() {
       };
       headerDiv.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${window.typeLabelDisplay_(type)}</span>
+          <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${escapeHtml(window.typeLabelDisplay_(type))}</span>
           <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
         </div>
         <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
@@ -1589,7 +1589,7 @@ async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, a
         <tbody>${rowsHtml}</tbody>
       </table>`;
   } catch(e) {
-    body.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`;
+    body.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -1863,7 +1863,7 @@ async function eiDelivRunSearch(params, label) {
     const schemeDelivered = { sectionBg: "#f0fdf4", sectionBorder: "#86efac", headerColor: "#15803d", badgeBg: "#dcfce7", badgeColor: "#15803d" };
     results.appendChild(renderExpectedInboundsSection("Delivered", data.delivered, schemeDelivered));
   } catch(e) {
-    results.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
+    results.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -1934,7 +1934,7 @@ async function loadExpectedInbounds() {
     if ((data.partiallyDelivered || []).length > 0) zone.appendChild(renderExpectedInboundsSection("Partially Delivered", data.partiallyDelivered, schemePartial));
 
   } catch(e) {
-    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
+    zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

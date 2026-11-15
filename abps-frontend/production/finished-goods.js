@@ -505,7 +505,7 @@ async function triggerFGBOQValidation() {
 
     updateFGSubmitButtonState();
   } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem;">Network error checking BOQ: ${e.message}</div>`;
+    zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem;">Network error checking BOQ: ${escapeHtml(e.message)}</div>`;
     window.fgBOQValidationPassed = false;
     window.fgBOQValidationRan = false;
     updateFGSubmitButtonState();

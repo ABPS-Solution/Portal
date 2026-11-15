@@ -452,7 +452,7 @@ function tvsRenderCard(v) {
               <span style="margin-left:8px; font-weight:700;">${escapeHtml(v.employeeName)}</span>
             </div>
             <span style="display:flex; align-items:center; gap:8px;">
-              <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
+              <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${escapeHtml(v.status)}</span>
               ${v.status === 'Unchecked' ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : ''}
             </span>
           </div>

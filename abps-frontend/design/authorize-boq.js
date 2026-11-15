@@ -84,7 +84,7 @@ async function initializeAuthorizeBOQPanel(mode) {
     });
     filterAuthBoqByCompany();
   } catch(e) {
-    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -159,7 +159,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
       cardsFeed.appendChild(card);
     });
   } catch (e) {
-    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${e.message}</div>`;
+    cardsFeed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Sync Error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

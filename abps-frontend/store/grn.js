@@ -222,7 +222,7 @@ async function initializeStoreEntryWorkspaceQueue() {
 
     // "Suggested matches" (AI item-code pills) removed 29 Sep 2026 — operators pick the material themselves.
 
-  } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+  } catch(e) { feed.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 // Per-line Purchase Order selection/split was removed (explicit
