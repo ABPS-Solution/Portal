@@ -690,7 +690,7 @@ function tvsRenderVoucherTable(vouchers) {
   return `<div style="overflow-x:auto;"><table id="tvs-voucher-table" style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border);">
     <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
       <th style="${th} text-align:center;">Sr No</th><th style="${th}">Voucher No</th><th style="${th}">Employee</th>
-      <th style="${th}">Department</th><th style="${th}">Place of Visit</th><th style="${th}">Purpose</th>
+      <th style="${th}">Place of Visit</th><th style="${th}">Purpose</th>
       <th style="${th}">Travel Dates</th><th style="${th} text-align:right;">Voucher Amount</th>
       <th style="${th} text-align:right;">Actual Amount</th><th style="${th} text-align:center;">Status</th>
     </tr></thead>
@@ -707,10 +707,9 @@ function tvsVoucherRowHtml(v, i) {
   const dates = v.visitStartDate === v.visitEndDate || !v.visitEndDate
     ? formatOrdinalDate(v.visitStartDate) : `${formatOrdinalDate(v.visitStartDate)} to ${formatOrdinalDate(v.visitEndDate)}`;
   return `<tr id="tvs-row-${v.voucherId}">
-    <td style="${td} text-align:center;"><a href="#" onclick="event.preventDefault(); tvsToggleRow(${v.voucherId})" style="font-weight:700; color:var(--brand);" title="Click to open the voucher">${i + 1}</a></td>
+    <td style="${td} text-align:center;"><button type="button" class="nlr-exp-btn" id="tvs-exp-${v.voucherId}" title="Open / close this voucher" onclick="tvsToggleRow(${v.voucherId})">${i + 1} ▾</button></td>
     <td style="${td} font-weight:700;">${escapeHtml(v.voucherNumber)}</td>
     <td style="${td}">${escapeHtml(v.employeeName)}</td>
-    <td style="${td}">${escapeHtml(v.departmentName || '—')}</td>
     <td style="${td}">${escapeHtml(v.placeOfVisit || '—')}</td>
     <td style="${td}">${escapeHtml(v.purposeOfVisit || '—')}</td>
     <td style="${td} white-space:nowrap;">${dates}</td>
@@ -725,6 +724,7 @@ function tvsToggleRow(voucherId) {
   if (!table) return;
   const old = document.getElementById("tvs-detail-row");
   if (old) old.remove();
+  document.querySelectorAll('[id^="tvs-exp-"]').forEach(el => { el.textContent = el.textContent.replace("▴", "▾"); });
   const wasOpen = tvsOpenVoucherId === voucherId;
   tvsOpenVoucherId = null;
   if (wasOpen) return;
@@ -732,8 +732,10 @@ function tvsToggleRow(voucherId) {
   const row = document.getElementById("tvs-row-" + voucherId);
   if (!v || !row) return;
   tvsOpenVoucherId = voucherId;
+  const exp = document.getElementById("tvs-exp-" + voucherId);
+  if (exp) exp.textContent = exp.textContent.replace("▾", "▴");
   const detail = document.createElement("tr");
   detail.id = "tvs-detail-row";
-  detail.innerHTML = `<td colspan="10" style="padding:14px 16px; background:#f8fafc; border-top:1px dashed var(--border);">${tvsRenderCard(v, true)}</td>`;
+  detail.innerHTML = `<td colspan="9" style="padding:14px 16px; background:#f8fafc; border-top:1px dashed var(--border);">${tvsRenderCard(v, true)}</td>`;
   row.after(detail);
 }
