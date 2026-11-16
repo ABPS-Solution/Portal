@@ -684,7 +684,7 @@ let tvsTableVouchers = [];
 let tvsOpenVoucherId = null;
 function tvsRenderVoucherTable(vouchers) {
   tvsTableVouchers = [...vouchers].sort((a, b) =>
-    String(a.voucherNumber || '').localeCompare(String(b.voucherNumber || ''), undefined, { numeric: true }));
+    String(b.voucherNumber || '').localeCompare(String(a.voucherNumber || ''), undefined, { numeric: true }));
   tvsOpenVoucherId = null;
   const th = "padding:8px 10px; text-align:left; font-size:0.78rem; text-transform:uppercase; color:var(--muted); white-space:nowrap;";
   return `<div style="overflow-x:auto;"><table id="tvs-voucher-table" style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border);">
