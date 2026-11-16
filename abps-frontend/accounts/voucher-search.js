@@ -272,7 +272,7 @@ async function runTourVoucherSearch() {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
       return;
     }
-    resultsEl.innerHTML = tvsTruncNote(data.truncated) + data.vouchers.map(v => tvsRenderCard(v)).join("");
+    resultsEl.innerHTML = tvsTruncNote(data.truncated) + tvsRenderVoucherTable(data.vouchers);
   } catch (e) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
@@ -339,7 +339,7 @@ function tvsRenderAdvanceTable(advances) {
     </div>`;
 }
 
-function tvsRenderCard(v) {
+function tvsRenderCard(v, asRowDetail) {
   const lines = v.lines || [];
   // Actual is editable per line, only once the voucher is Checked (that's
   // when actual_amount first exists) —
@@ -442,6 +442,27 @@ function tvsRenderCard(v) {
       <div id="tvs-link-picker-${v.voucherId}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);"></div>
     </div>`;
 
+  const detailInner = `${pdfLine}
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <colgroup>
+              <col style="width:6%;"><col style="width:10%;"><col style="width:14%;">
+              <col style="width:12%;"><col style="width:22%;"><col style="width:14%;"><col style="width:22%;">
+            </colgroup>
+            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted);">Sr No</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Date</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Type</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Voucher Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Description</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Actual Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Bill</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${ticketsBlock}${v.status === 'Unchecked' ? `<div style="margin-top:12px;"><button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete Voucher</button></div>` : ''}`;
+  if (asRowDetail) return detailInner;
   return `
     <div class="contact-summary-card-parent">
       <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
@@ -465,25 +486,7 @@ function tvsRenderCard(v) {
         </div>
       </div>
       <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px;">
-        <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-            <colgroup>
-              <col style="width:6%;"><col style="width:10%;"><col style="width:14%;">
-              <col style="width:12%;"><col style="width:22%;"><col style="width:14%;"><col style="width:22%;">
-            </colgroup>
-            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted);">Sr No</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Date</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Type</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Voucher Amount</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Description</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Actual Amount</th>
-              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Bill</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-        ${ticketsBlock}
+${detailInner}
       </div>
     </div>`;
 }
@@ -672,4 +675,65 @@ async function tvsRegenerateVoucherPdf(voucherId, btn) {
     abpsAlert(friendlyErr(e));
     if (btn) { btn.disabled = false; btn.textContent = "Generate PDF"; }
   }
+}
+
+// Expense-mode results as a table. Clicking the Sr No opens that row's full
+// voucher detail underneath; only one row is open at a time. Sorted by
+// voucher number.
+let tvsTableVouchers = [];
+let tvsOpenVoucherId = null;
+function tvsRenderVoucherTable(vouchers) {
+  tvsTableVouchers = [...vouchers].sort((a, b) =>
+    String(a.voucherNumber || '').localeCompare(String(b.voucherNumber || ''), undefined, { numeric: true }));
+  tvsOpenVoucherId = null;
+  const th = "padding:8px 10px; text-align:left; font-size:0.78rem; text-transform:uppercase; color:var(--muted); white-space:nowrap;";
+  return `<div style="overflow-x:auto;"><table id="tvs-voucher-table" style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border);">
+    <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+      <th style="${th} text-align:center;">Sr No</th><th style="${th}">Voucher No</th><th style="${th}">Employee</th>
+      <th style="${th}">Department</th><th style="${th}">Place of Visit</th><th style="${th}">Purpose</th>
+      <th style="${th}">Travel Dates</th><th style="${th} text-align:right;">Voucher Amount</th>
+      <th style="${th} text-align:right;">Actual Amount</th><th style="${th} text-align:center;">Status</th>
+    </tr></thead>
+    <tbody>${tvsTableVouchers.map((v, i) => tvsVoucherRowHtml(v, i)).join("")}</tbody></table></div>`;
+}
+
+function tvsVoucherRowHtml(v, i) {
+  const lines = v.lines || [];
+  const claimed = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+  const anyActual = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
+  const actual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
+  const statusColor = v.status === 'Checked' ? '#15803d' : '#b45309';
+  const td = "padding:8px 10px; font-size:0.85rem; vertical-align:middle; border-top:1px solid var(--border);";
+  const dates = v.visitStartDate === v.visitEndDate || !v.visitEndDate
+    ? formatOrdinalDate(v.visitStartDate) : `${formatOrdinalDate(v.visitStartDate)} to ${formatOrdinalDate(v.visitEndDate)}`;
+  return `<tr id="tvs-row-${v.voucherId}">
+    <td style="${td} text-align:center;"><a href="#" onclick="event.preventDefault(); tvsToggleRow(${v.voucherId})" style="font-weight:700; color:var(--brand);" title="Click to open the voucher">${i + 1}</a></td>
+    <td style="${td} font-weight:700;">${escapeHtml(v.voucherNumber)}</td>
+    <td style="${td}">${escapeHtml(v.employeeName)}</td>
+    <td style="${td}">${escapeHtml(v.departmentName || '—')}</td>
+    <td style="${td}">${escapeHtml(v.placeOfVisit || '—')}</td>
+    <td style="${td}">${escapeHtml(v.purposeOfVisit || '—')}</td>
+    <td style="${td} white-space:nowrap;">${dates}</td>
+    <td style="${td} text-align:right; font-weight:700;">${formatINRComma(claimed)}</td>
+    <td style="${td} text-align:right; font-weight:700; ${anyActual && actual > claimed + 0.005 ? 'color:#b91c1c;' : ''}">${anyActual ? formatINRComma(actual) : '—'}</td>
+    <td style="${td} text-align:center;"><span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.72rem; padding:3px 8px; border-radius:3px;">${escapeHtml(v.status)}</span></td>
+  </tr>`;
+}
+
+function tvsToggleRow(voucherId) {
+  const table = document.getElementById("tvs-voucher-table");
+  if (!table) return;
+  const old = document.getElementById("tvs-detail-row");
+  if (old) old.remove();
+  const wasOpen = tvsOpenVoucherId === voucherId;
+  tvsOpenVoucherId = null;
+  if (wasOpen) return;
+  const v = tvsTableVouchers.find(x => x.voucherId === voucherId);
+  const row = document.getElementById("tvs-row-" + voucherId);
+  if (!v || !row) return;
+  tvsOpenVoucherId = voucherId;
+  const detail = document.createElement("tr");
+  detail.id = "tvs-detail-row";
+  detail.innerHTML = `<td colspan="10" style="padding:14px 16px; background:#f8fafc; border-top:1px dashed var(--border);">${tvsRenderCard(v, true)}</td>`;
+  row.after(detail);
 }
