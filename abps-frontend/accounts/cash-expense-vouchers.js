@@ -39,7 +39,25 @@ function cevRender() {
   }
   panel.innerHTML = `
     <div style="font-weight:700; margin-bottom:14px; color:var(--text);">${cevOpenVouchers.length} voucher${cevOpenVouchers.length === 1 ? '' : 's'} waiting to be closed</div>
-    ${cevOpenVouchers.map(cevRenderCard).join("")}`;
+    ${cevWithAgeLine(cevOpenVouchers)}`;
+}
+
+// Red line under the vouchers 3 or more days old (list is oldest first).
+function cevIstDay(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date(d));
+}
+function cevWithAgeLine(list) {
+  const cutoff = cevIstDay(Date.now() - 3 * 86400000);
+  const sorted = [...list].sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
+  const oldCount = sorted.filter(v => cevIstDay(v.createdDate) <= cutoff).length;
+  const cards = sorted.map(cevRenderCard);
+  if (oldCount > 0) {
+    cards.splice(oldCount, 0, `<div style="display:flex; align-items:center; gap:8px; margin:4px 0 16px;">
+      <div style="flex:1; border-top:2px solid #dc2626;"></div>
+      <span style="color:#dc2626; font-size:0.78rem; font-weight:700;">Above: 3 or more days old</span>
+      <div style="flex:1; border-top:2px solid #dc2626;"></div></div>`);
+  }
+  return cards.join("");
 }
 
 function cevRenderCard(v) {
